@@ -209,7 +209,7 @@ Transform:
   m_GameObject: {fileID: 626445102}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 13, y: 6.5, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -244,10 +244,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f54c8131bc857479797c02d7b48b08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfParticles: 10
   particle_prefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
-  border_width: 20
-  border_height: 10
+  particles_num: 600
+  border_width: 26
+  border_height: 13
+  Gravity_force: 3
+  Max_influence_radius: 1
+  Framerate_max: 1000
+  Program_speed: 2
+  Target_density: 10
+  Pressure_multiplier: 70
+  Collision_damping_factor: 0.4
+  Smooth_Max: 5
+  Smooth_derivative_koefficient: 2.5
+  Look_ahead_factor: 0.02
+  Chunk_amount_multiplier: 2
+  border_thickness: 0.2
+  Viscocity: 0.2
 --- !u!4 &1319905413
 Transform:
   m_ObjectHideFlags: 0
