@@ -6,40 +6,44 @@ using UnityEngine.UIElements;
 using Unity.Mathematics;
 using System;
 using System.Linq;
-
+using Unity.VisualScripting;
+using System.Numerics;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
+using Quaternion = UnityEngine.Quaternion;
 public class Simulation : MonoBehaviour
 {
     public GameObject particle_prefab;
     private List<GameObject> particles = new();
     // Creating a 2D matrix where each element is a List of integers
-    private List<List<HashSet<Vector2>>> particle_chunks = new();
+    private List<List<HashSet<int>>> particle_chunks = new();
     private GameObject simulation_boundary;
 
-    public int particles_num = 10;
+    public int particles_num = 100;
     public int border_width = 20;
-    public int border_height = 10;
-    public float Gravity_force = 20f;
+    public int border_height = 12;
+    public float Gravity_force = 3f;
     public float Max_influence_radius = 1;
     public int Framerate_max = 1000;
-    public float Program_speed = 5f;
-    public int Particle_amount = 200;
-    public float Target_density = 130f;
-    public float Pressure_multiplier = 20f;
-    public float Wall_collision_damping_factor = 0.8f;
-    public float Smooth_Max = 150f;
-    public float Smooth_derivative_koefficient = 0.1f;
+    public float Program_speed = 2f;
+    public float Target_density = 6f;
+    public float Pressure_multiplier = 70f;
+    public float Collision_damping_factor = 0.4f;
+    public float Smooth_Max = 5f;
+    public float Smooth_derivative_koefficient = 1.5f;
     public float Look_ahead_factor = 0.02f;
     public int Chunk_amount_multiplier = 2;
-    public float Viscocity = 0.1f;
+    public float border_thickness = 0.2f;
+    public float Viscocity = 0.2f;
     private int Chunk_amount_x = 0;
     private int Chunk_amount_y = 0;
 
     private Vector2[] position;
     private Vector2[] velocity;
     // Predicted_velocities
-    private Vector2[] p_velocity;
+    private Vector2[] p_position;
     private List<float> density;
-    private float dTime;
+    private float delta_time;
 
     void Start()
     {
@@ -49,7 +53,7 @@ public class Simulation : MonoBehaviour
         // initialize particle property arrays
         position = new Vector2[particles_num];
         velocity = new Vector2[particles_num];
-        p_velocity = new Vector2[particles_num];
+        p_position = new Vector2[particles_num];
         density = new List<float>(particles_num);
 
 
@@ -57,15 +61,15 @@ public class Simulation : MonoBehaviour
         Chunk_amount_y = (int)(border_height * Chunk_amount_multiplier / Max_influence_radius);
 
         // Initialize particle_chunks
-        particle_chunks = new List<List<HashSet<Vector2>>>();
+        particle_chunks = new List<List<HashSet<int>>>();
 
         for (int depth1 = 0; depth1 < Chunk_amount_x; depth1++)
         {
-            List<HashSet<Vector2>> innerList = new();
+            List<HashSet<int>> innerList = new();
             
             for (int depth2 = 0; depth2 < Chunk_amount_y; depth2++)
             {
-                innerList.Add(new HashSet<Vector2>());
+                innerList.Add(new HashSet<int>());
             }
 
             particle_chunks.Add(innerList);
@@ -92,12 +96,15 @@ public class Simulation : MonoBehaviour
 
     void Update()
     {
-        dTime = Time.deltaTime;
+        delta_time = Time.deltaTime * Program_speed;
 
         Sort_particles();
 
+        Precalculate_densities();
+
         Physics();
 
+        // Render
         for (int i = 0; i < particles_num; i++)
         {
             particles[i].transform.position = new Vector3(position[i].x, position[i].y, 0);
@@ -109,12 +116,12 @@ public class Simulation : MonoBehaviour
         for(int i = 0; i < particles_num; i++)
         {
             // Set predicted velocities
-            p_velocity[i] = position[i] + velocity[i] * Look_ahead_factor;
+            p_position[i] = position[i] + velocity[i] * Look_ahead_factor;
 
-            int inChunkX = (int)Math.Floor(position[i].x * Chunk_amount_multiplier / Max_influence_radius);
-            int inChunkY = (int)Math.Floor(position[i].y * Chunk_amount_multiplier / Max_influence_radius);
-            float relative_position_x = position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
-            float relative_position_y = position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
+            int inChunkX = (int)Math.Floor(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
+            int inChunkY = (int)Math.Floor(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
+            float relative_position_x = p_position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
+            float relative_position_y = p_position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
 
             for (int x = -Chunk_amount_multiplier; x <= Chunk_amount_multiplier; x++)
             {
@@ -128,7 +135,7 @@ public class Simulation : MonoBehaviour
                     {
                         if (Chunk_amount_multiplier > new Vector2(x-relative_position_x, y-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x+1-relative_position_x, y-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x-relative_position_x, y+1-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x+1-relative_position_x, y+1-relative_position_y).magnitude)
                         {
-                            particle_chunks[cur_chunk_x][cur_chunk_y].Add(position[i]);
+                            particle_chunks[cur_chunk_x][cur_chunk_y].Add(i);
                         }
                     }
                 }
@@ -138,12 +145,12 @@ public class Simulation : MonoBehaviour
 
     float Influence(int particle_index)
     {
-        int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
+        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
+        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
 
         float totInfluence = particle_chunks[in_chunk_x][in_chunk_y]
-            .Sum(other_position =>
-                Smooth(Mathf.Sqrt(Mathf.Pow(position[particle_index].x - other_position.x, 2) + Mathf.Pow(position[particle_index].y - other_position.y, 2))));
+            .Sum(other_particle_index =>
+                Smooth(Mathf.Sqrt(Mathf.Pow(p_position[particle_index].x - p_position[other_particle_index].x, 2) + Mathf.Pow(p_position[particle_index].y - p_position[other_particle_index].y, 2))));
         return totInfluence;
     }
 
@@ -189,23 +196,23 @@ public class Simulation : MonoBehaviour
 
         Vector2 pressure_force = new(0.0f, 0.0f);
 
-        int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
+        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
+        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
 
-        foreach (Vector2 other_position in particle_chunks[in_chunk_x][in_chunk_y])
+        foreach (int other_particle_index in particle_chunks[in_chunk_x][in_chunk_y])
         {
-            if (other_position == position[particle_index])
+            if (other_particle_index == particle_index)
             {
                 continue;
             }
 
-            Vector2 relative_distance = position[particle_index] - other_position;
+            UnityEngine.Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
 
             float distance = relative_distance.magnitude;
 
             float abs_pressure_gradient = Smooth_der(distance);
 
-            Vector2 pressure_gradient = new(0.0f, 0.0f);
+            UnityEngine.Vector2 pressure_gradient = new(0.0f, 0.0f);
 
             if (distance != 0)
             {
@@ -219,27 +226,95 @@ public class Simulation : MonoBehaviour
                 pressure_gradient = 0.1f * abs_pressure_gradient * randomNormalizedVector;
             }
 
-            //                                                            SHOULD BE density[i]
-            float avg_pressure = Shared_pressure(density[particle_index], density[i]);
+            float avg_pressure = Shared_pressure(density[particle_index], density[other_particle_index]);
 
             // p(pos) = ∑_i (p_i * m / ρ_i * Smooth(pos - pos_i))
-            //                                                   SHOULD BE density[i]
-            pressure_force += avg_pressure * pressure_gradient / density[i];
+            pressure_force += avg_pressure * pressure_gradient / density[other_particle_index];
 
         }
 
-        return pressure_force;
+        return -pressure_force;
 
     }
 
-    void Apply_viscocity_to_velocity()
+    Vector2 Apply_viscocity_to_velocity(int particle_index)
     {
+        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
+        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
+        int tot_mass = 0;
 
+        Vector2 tot_force = new(0.0f, 0.0f);
+
+        foreach (int other_particle_index in particle_chunks[in_chunk_x][in_chunk_y])
+        {
+            tot_mass += 1;
+
+            if (other_particle_index == particle_index)
+            {
+                continue;
+            }
+
+            Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
+
+            float distance = relative_distance.magnitude;
+
+            if (distance == 0)
+                continue;
+            
+            float abs_force = Smooth(distance);
+
+            Vector2 force = new(relative_distance.normalized.x * abs_force, relative_distance.normalized.y * abs_force);
+
+            tot_force += force;
+        }
+
+        if (tot_mass == 0)
+        {
+            tot_mass = 1;
+        }
+
+        Vector2 average_viscocity_velocity_x = tot_force / tot_mass;
+
+        Vector2 new_velocity = (1 - Viscocity * delta_time) * velocity[particle_index] + Viscocity * delta_time * average_viscocity_velocity_x;
+
+        return new_velocity;
     }
 
     void Physics()
     {
+        for (int i = 0; i < particles_num; i++)
+        {
+            velocity[i].y -= Gravity_force * delta_time;
 
+            Vector2 pressure_force = Pressure_force(i);
+            
+            velocity[i] += pressure_force * delta_time / density[i];
+
+            velocity[i] = Apply_viscocity_to_velocity(i);
+
+            position[i] += velocity[i] * delta_time;
+
+            if (position[i].y > border_height - border_thickness)
+            {
+                velocity[i].y = -Mathf.Abs(velocity[i].y * Collision_damping_factor);
+                position[i].y = border_height - border_thickness;
+            }
+            if (position[i].y < border_thickness)
+            {
+                velocity[i].y = +Mathf.Abs(velocity[i].y * Collision_damping_factor);
+                position[i].y = border_thickness;
+            }
+            if (position[i].x > border_width - border_thickness)
+            {
+                velocity[i].x = -Mathf.Abs(velocity[i].x * Collision_damping_factor);
+                position[i].x = border_width - border_thickness;
+            }
+            if (position[i].x < border_thickness)
+            {
+                velocity[i].x = +Mathf.Abs(velocity[i].x * Collision_damping_factor);
+                position[i].x = border_thickness;
+            }
+        }
     }
 
     void Create_particle()
