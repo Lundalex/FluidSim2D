@@ -1,5 +1,3 @@
-// Simulation.cs
-
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
@@ -19,24 +17,25 @@ public class Simulation : MonoBehaviour
     private List<List<HashSet<int>>> particle_chunks = new();
     private GameObject simulation_boundary;
 
-    public int particles_num = 100;
-    public int border_width = 20;
-    public int border_height = 12;
+    public int particles_num = 600;
+    public int border_width = 26;
+    public int border_height = 13;
     public float Gravity_force = 3f;
     public float Max_influence_radius = 1;
     public int Framerate_max = 1000;
     public float Program_speed = 2f;
-    public float Target_density = 6f;
+    public float Target_density = 10f;
     public float Pressure_multiplier = 70f;
     public float Collision_damping_factor = 0.4f;
     public float Smooth_Max = 5f;
-    public float Smooth_derivative_koefficient = 1.5f;
+    public float Smooth_derivative_koefficient = 2.5f;
     public float Look_ahead_factor = 0.02f;
     public int Chunk_amount_multiplier = 2;
     public float border_thickness = 0.2f;
     public float Viscocity = 0.2f;
     private int Chunk_amount_x = 0;
     private int Chunk_amount_y = 0;
+    private float Chunk_amount_multiplier_squared = 0;
 
     private Vector2[] position;
     private Vector2[] velocity;
@@ -60,6 +59,7 @@ public class Simulation : MonoBehaviour
         Chunk_amount_x = (int)(border_width * Chunk_amount_multiplier / Max_influence_radius);
         Chunk_amount_y = (int)(border_height * Chunk_amount_multiplier / Max_influence_radius);
 
+        Chunk_amount_multiplier_squared = Chunk_amount_multiplier * Chunk_amount_multiplier;
         // Initialize particle_chunks
         particle_chunks = new List<List<HashSet<int>>>();
 
@@ -118,8 +118,8 @@ public class Simulation : MonoBehaviour
             // Set predicted velocities
             p_position[i] = position[i] + velocity[i] * Look_ahead_factor;
 
-            int inChunkX = (int)Math.Floor(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
-            int inChunkY = (int)Math.Floor(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
+            int inChunkX = (int)(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
+            int inChunkY = (int)(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
             float relative_position_x = p_position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
             float relative_position_y = p_position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
 
@@ -133,7 +133,10 @@ public class Simulation : MonoBehaviour
 
                     if (cur_chunk_x >= 0 && cur_chunk_x < Chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Chunk_amount_y)
                     {
-                        if (Chunk_amount_multiplier > new Vector2(x-relative_position_x, y-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x+1-relative_position_x, y-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x-relative_position_x, y+1-relative_position_y).magnitude || Chunk_amount_multiplier > new Vector2(x+1-relative_position_x, y+1-relative_position_y).magnitude)
+                        if (Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y-relative_position_y)*(y-relative_position_y) ||
+                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y-relative_position_y)*(y-relative_position_y)||
+                            Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y) ||
+                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y))
                         {
                             particle_chunks[cur_chunk_x][cur_chunk_y].Add(i);
                         }
