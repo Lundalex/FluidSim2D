@@ -14,7 +14,6 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 using UnityEngine.Jobs;
-// Stable 35 burst, deep analysis
 public class Simulation_w_jobs : MonoBehaviour
 {
     public GameObject particle_prefab;
