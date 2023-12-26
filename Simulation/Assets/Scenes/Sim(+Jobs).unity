@@ -259,29 +259,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f05fde1a603cc04887f99bc617ba124, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  particle_prefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   particles_num: 2000
+  Gravity_force: 4
+  Max_influence_radius: 2
+  Target_density: 13
+  Pressure_multiplier: 700
+  Near_density_multiplier: 5
+  Collision_damping_factor: 0.4
+  Viscocity: 0.005
   border_width: 60
   border_height: 30
-  Gravity_force: 3
-  Max_influence_radius: 2
-  Framerate_max: 1000
+  particle_spawner_dimensions: 25
+  border_thickness: 0.2
+  Chunk_capacity: 120
   Program_speed: 2
-  Target_density: 10
-  Pressure_multiplier: 1000
-  Collision_damping_factor: 0.4
+  Framerate_max: 1000
+  Particle_visual_size: 1.5
+  Max_interaction_radius: 8
+  Interaction_power: 200
+  Chunk_amount_multiplier: 2
   Smooth_Max: 5
   Smooth_derivative_koefficient: 2.5
-  Look_ahead_factor: 0.03
-  Chunk_amount_multiplier: 2
-  border_thickness: 0.2
-  Viscocity: 0.1
-  Max_interaction_radius: 5
-  Chunk_capacity: 120
-  Interaction_power: 200
-  Particle_chunks_tot_num: 0
-  Particle_visual_size: 1.5
-  velocity_visuals: 0
+  Max_velocity: 5
+  Look_ahead_factor: 0.05
+  particle_prefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
+  velocity_visuals: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
