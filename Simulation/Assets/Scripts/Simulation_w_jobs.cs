@@ -17,38 +17,41 @@ using UnityEngine.Jobs;
 public class Simulation_w_jobs : MonoBehaviour
 {
     [Header("Simulation settings")]
-    public int particles_num = 500;
-    public float Gravity_force = 3f;
-    public int Max_influence_radius = 2;
-    public float Target_density = 12f;
+    public int particles_num = 1000;
+    public float Gravity_force = 4f;
+    public int Max_influence_radius = 1;
+    public float Target_density = 50f;
     public float Pressure_multiplier = 200f;
-    public float Near_density_multiplier = 1;
+    public float Near_density_multiplier = 20;
     public float Collision_damping_factor = 0.4f;
-    public float Viscocity = 0.2f;
+    public float Viscocity = 0.01f;
 
     [Header("Boundrary settings")]
-    public int border_width = 26;
-    public int border_height = 13;
-    public int particle_spawner_dimensions = 20; // 10x10
+    public int border_width = 40;
+    public int border_height = 20;
+    public int particle_spawner_dimensions = 15; // l x l
     public float border_thickness = 0.2f;
-    private int Chunk_amount_x = 0;
-    private int Chunk_amount_y = 0;
-    public int Chunk_capacity = 70;
+    public int Chunk_capacity = 120;
 
     [Header("Rendering settings")]
-    public float Program_speed = 2f;
-    public float Framerate_max = 1000;
-    public float Particle_visual_size = 1;
+    public float Program_speed = 1.5f;
+    public float Time_step = -1;
+    public float Particle_visual_size = 1.5f;
     [Header("Interaction settings")]
-    public float Max_interaction_radius = 5;
-    public float Interaction_power = 120;
+    public float Max_interaction_radius = 7;
+    public float Interaction_power = 130;
 
     [Header("Advanced settings")]
+    private int Particle_sort_frequency = 1;
     public int Chunk_amount_multiplier = 2;
+
+    // Not in use ---
     public float Smooth_Max = 5f;
     public float Smooth_derivative_koefficient = 2.5f;
     public float Max_velocity = 5;
-    public float Look_ahead_factor = 0.02f;
+    // Not in use ---
+    public float Look_ahead_factor = 0.035f;
+
     [Header("Object reference(s)")]
     public GameObject particle_prefab;
 
@@ -56,6 +59,8 @@ public class Simulation_w_jobs : MonoBehaviour
     private Renderer[] particles_renderer;
     private GameObject simulation_boundary;
     private int Particle_chunks_tot_num;
+    private int Chunk_amount_x = 0;
+    private int Chunk_amount_y = 0;
     private int Chunk_amount_multiplier_squared;
     public bool velocity_visuals;
     private Vector2 mouse_position;
@@ -63,13 +68,13 @@ public class Simulation_w_jobs : MonoBehaviour
     private bool right_mouse_button_down;
     private Vector2[] position;
     private Vector2[] velocity;
+    private Vector2[] last_velocity;
     // Predicted_velocities
     private Vector2[] p_position;
     private float[] density;
     private float[] near_density;
     private int[] new_particle_chunks;
     private float delta_time;
-    private int Particle_sort_frequency = 2;
 
     void Start()
     {
@@ -83,10 +88,12 @@ public class Simulation_w_jobs : MonoBehaviour
         // initialize particle property arrays
         position = new Vector2[particles_num];
         velocity = new Vector2[particles_num];
+        last_velocity = new Vector2[particles_num];
         p_position = new Vector2[particles_num];
         density = new float[particles_num];
         near_density = new float[particles_num];
         particles = new Transform[particles_num];
+
         if (velocity_visuals)
         {
             particles_renderer = new Renderer[particles_num];
@@ -124,13 +131,20 @@ public class Simulation_w_jobs : MonoBehaviour
 
     void Update()
     {
-        delta_time = Time.deltaTime * Program_speed;
+        if (Time_step == -1)
+        {
+            delta_time = Time.deltaTime * Program_speed;
+        }
+        else
+        {
+            delta_time = Time_step;
+        }
         Vector3 xyz_mouse_pos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -Camera.main.transform.position.z));
         mouse_position = new(xyz_mouse_pos.x, xyz_mouse_pos.y);
         left_mouse_button_down = Input.GetMouseButton(0);
         right_mouse_button_down = Input.GetMouseButton(1);
 
-        if (Particle_sort_frequency == 2)
+        if (Particle_sort_frequency == 1)
         {
             Array.Fill(new_particle_chunks, -1);
             Sort_particles();
@@ -195,8 +209,10 @@ public class Simulation_w_jobs : MonoBehaviour
             // Set predicted positions
             p_position[i] = position[i] + velocity[i] * Look_ahead_factor;
 
-            int inChunkX = (int)(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
-            int inChunkY = (int)(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
+            last_velocity[i] = velocity[i];
+
+            int in_chunk_x = (int)Math.Floor(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
+            int in_chunk_y = (int)Math.Floor(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
             float relative_position_x = p_position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
             float relative_position_y = p_position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
 
@@ -205,8 +221,8 @@ public class Simulation_w_jobs : MonoBehaviour
                 for (int y = -Chunk_amount_multiplier; y <= Chunk_amount_multiplier; y++)
                 {
                     // current chunk
-                    int cur_chunk_x = inChunkX + x;
-                    int cur_chunk_y = inChunkY + y;
+                    int cur_chunk_x = in_chunk_x + x;
+                    int cur_chunk_y = in_chunk_y + y;
 
                     if (cur_chunk_x >= 0 && cur_chunk_x < Chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Chunk_amount_y)
                     {
@@ -294,25 +310,6 @@ public class Simulation_w_jobs : MonoBehaviour
         job_handle_list.Dispose();
     }
 
-    float Influence(int particle_index)
-    {
-        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-
-        float tot_influence = 0;
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        // List<int> chunk_list = new_particle_chunks.Skip(start_i).Take(Chunk_capacity).ToList();
-        List<int> chunk_list = new_particle_chunks.Skip(start_i).TakeWhile(item => item != -1).ToList();
-
-        foreach (var other_particle_index in chunk_list)
-        {
-                tot_influence += Smooth(Mathf.Sqrt(Mathf.Pow(p_position[particle_index].x - p_position[other_particle_index].x, 2) + Mathf.Pow(p_position[particle_index].y - p_position[other_particle_index].y, 2)));
-        }
-
-        return tot_influence;
-
-    }
-
     void Job_precalculate_densities()
     {
 
@@ -360,135 +357,6 @@ public class Simulation_w_jobs : MonoBehaviour
 
     }
 
-    float Smooth(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        return Smooth_Max * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-    }
-
-    float Smooth_der(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        //                   Smooth_derivative_koefficient
-        return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-    }
-
-    float Density_to_pressure(float density)
-    {
-        float density_error = density - Target_density;
-        float pressure = density_error * Pressure_multiplier;
-        return pressure;
-    }
-
-    float Shared_pressure(float density_A, float density_B)
-    {
-        float pressure_A = Density_to_pressure(density_A);
-        float pressure_B = Density_to_pressure(density_B);
-
-        float Shared_value = (pressure_A + pressure_B) / 2;
-
-        return Shared_value;
-    }
-
-    Vector2 Pressure_force(int particle_index)
-    {
-
-        Vector2 pressure_force = new(0.0f, 0.0f);
-
-        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-
-        // float tot_influence = 0;
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        // List<int> chunk_list = new_particle_chunks.Skip(start_i).Take(Chunk_capacity).ToList();
-        List<int> chunk_list = new_particle_chunks.Skip(start_i).TakeWhile(item => item != -1).ToList();
-
-        foreach (int other_particle_index in chunk_list)
-        {
-            if (other_particle_index == particle_index)
-            {
-                continue;
-            }
-
-            Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
-
-            float distance = relative_distance.magnitude;
-
-            float abs_pressure_gradient = Smooth_der(distance);
-
-            Vector2 pressure_gradient = new(0.0f, 0.0f);
-
-            if (distance != 0)
-            {
-                pressure_gradient = relative_distance.normalized * abs_pressure_gradient;
-            }
-            else
-            {
-                Vector2 randomNormalizedVector = new(Random.onUnitSphere.x, Random.onUnitSphere.y);
-
-                // * 0.1f to decrease pressure forces (for "corner particles")
-                pressure_gradient = 0.1f * abs_pressure_gradient * randomNormalizedVector;
-            }
-
-            float avg_pressure = Shared_pressure(density[particle_index], density[other_particle_index]);
-
-            // p(pos) = ∑_i (p_i * m / ρ_i * Smooth(pos - pos_i))
-            pressure_force += avg_pressure * pressure_gradient / density[other_particle_index];
-
-        }
-
-        return -pressure_force;
-
-    }
-
-    Vector2 Apply_viscocity_to_velocity(int particle_index)
-    {
-        int in_chunk_x = (int)Math.Floor(p_position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(p_position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-        int tot_mass = 0;
-
-        Vector2 tot_force = new(0.0f, 0.0f);
-
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        // List<int> chunk_list = new_particle_chunks.Skip(start_i).Take(Chunk_capacity).ToList();
-        List<int> chunk_list = new_particle_chunks.Skip(start_i).TakeWhile(item => item != -1).ToList();
-
-        foreach (int other_particle_index in chunk_list)
-        {
-
-            tot_mass += 1;
-
-            if (other_particle_index == particle_index)
-            {
-                continue;
-            }
-
-            Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
-
-            float distance = relative_distance.magnitude;
-
-            if (distance == 0)
-                continue;
-            
-            float abs_force = Smooth(distance);
-
-            Vector2 force = new(relative_distance.normalized.x * abs_force, relative_distance.normalized.y * abs_force);
-
-            tot_force += force;
-        }
-
-        if (tot_mass == 0)
-        {
-            tot_mass = 1;
-        }
-
-        Vector2 average_viscocity_velocity_x = tot_force / tot_mass;
-
-        Vector2 new_velocity = (1 - Viscocity * delta_time) * velocity[particle_index] + Viscocity * delta_time * average_viscocity_velocity_x;
-
-        return new_velocity;
-    }
-
     void Job_physics()
     {
 
@@ -496,6 +364,7 @@ public class Simulation_w_jobs : MonoBehaviour
         NativeArray<Vector2> n_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<Vector2> n_p_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
+        NativeArray<Vector2> n_last_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<float> n_density = new NativeArray<float>(particles_num, Allocator.TempJob);
         NativeArray<float> n_near_density = new NativeArray<float>(particles_num, Allocator.TempJob);
         NativeArray<int> n_new_particle_chunks = new NativeArray<int>(Particle_chunks_tot_num, Allocator.TempJob);
@@ -505,6 +374,7 @@ public class Simulation_w_jobs : MonoBehaviour
         n_p_position.CopyFrom(p_position);
         n_density.CopyFrom(density);
         n_near_density.CopyFrom(near_density);
+        n_last_velocity.CopyFrom(last_velocity);
         n_new_particle_chunks.CopyFrom(new_particle_chunks);
 
         Calculate_physics_job calculate_physics_job = new Calculate_physics_job {
@@ -535,6 +405,7 @@ public class Simulation_w_jobs : MonoBehaviour
             p_position = n_p_position,
             density = n_density,
             near_density = n_near_density,
+            last_velocity = n_last_velocity,
             new_particle_chunks = n_new_particle_chunks
         };
 
@@ -553,41 +424,8 @@ public class Simulation_w_jobs : MonoBehaviour
         n_p_position.Dispose();
         n_density.Dispose();
         n_near_density.Dispose();
+        n_last_velocity.Dispose();
         n_new_particle_chunks.Dispose();
-
-        // for (int i = 0; i < particles_num; i++)
-        // {
-        //     velocity[i].y -= Gravity_force * delta_time;
-
-        //     Vector2 pressure_force = Pressure_force(i);
-            
-        //     velocity[i] += pressure_force * delta_time / density[i];
-
-        //     velocity[i] = Apply_viscocity_to_velocity(i);
-
-        //     position[i] += velocity[i] * delta_time;
-
-        //     if (position[i].y > border_height - border_thickness)
-        //     {
-        //         velocity[i].y = -Mathf.Abs(velocity[i].y * Collision_damping_factor);
-        //         position[i].y = border_height - border_thickness;
-        //     }
-        //     if (position[i].y < border_thickness)
-        //     {
-        //         velocity[i].y = +Mathf.Abs(velocity[i].y * Collision_damping_factor);
-        //         position[i].y = border_thickness;
-        //     }
-        //     if (position[i].x > border_width - border_thickness)
-        //     {
-        //         velocity[i].x = -Mathf.Abs(velocity[i].x * Collision_damping_factor);
-        //         position[i].x = border_width - border_thickness;
-        //     }
-        //     if (position[i].x < border_thickness)
-        //     {
-        //         velocity[i].x = +Mathf.Abs(velocity[i].x * Collision_damping_factor);
-        //         position[i].x = border_thickness;
-        //     }
-        // }
     }
 
     void Create_particle(int particle_index)
@@ -774,15 +612,17 @@ public struct Calculate_density_job : IJobParallelFor {
     float Smooth(float distance)
     {
         // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        return Smooth_Max * Mathf.Exp(-Smooth_derivative_koefficient * distance);
+        if (distance > Max_influence_radius){return 0;}
+        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 2);
     }
 
     float Smooth_near(float distance)
     {
         // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        return Smooth_Max * Mathf.Exp(2 * -Smooth_derivative_koefficient * distance);
+        if (distance > Max_influence_radius){return 0;}
+        // return Smooth_Max * Mathf.Exp(2 * -Smooth_derivative_koefficient * distance);
+        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 3);
     }
-
 }
 
 // Still runs in the main-thread due to the Unity.transform method
@@ -828,6 +668,7 @@ public struct Calculate_physics_job : IJobParallelFor {
     [ReadOnly] public NativeArray<Vector2> p_position;
     [ReadOnly] public NativeArray<float> density;
     [ReadOnly] public NativeArray<float> near_density;
+    [ReadOnly] public NativeArray<Vector2> last_velocity;
     [ReadOnly] public NativeArray<int> new_particle_chunks;
 
     public void Execute(int i) {
@@ -836,12 +677,11 @@ public struct Calculate_physics_job : IJobParallelFor {
 
         Vector2 pressure_force = Pressure_force(i);
         Vector2 interaction_force = Interaction_force(i);
-            
-        velocity[i] += (pressure_force + interaction_force) * delta_time / density[i];
+        Vector2 viscocity_force = Viscocity_force(i);
+        //                                                                                   density[i] or ~60???
+        velocity[i] += (pressure_force + interaction_force + viscocity_force) * delta_time / 60;
 
-        velocity[i] = Apply_viscocity_to_velocity(i);
-
-        velocity[i] = new(Mathf.Min(velocity[i].x, Max_velocity), Mathf.Min(velocity[i].y, Max_velocity));
+        // velocity[i] = new(Mathf.Min(velocity[i].x, Max_velocity), Mathf.Min(velocity[i].y, Max_velocity));
 
         position[i] += velocity[i] * delta_time;
 
@@ -865,18 +705,6 @@ public struct Calculate_physics_job : IJobParallelFor {
             velocity[i] = new Vector2(+Mathf.Abs(velocity[i].x * Collision_damping_factor), velocity[i].y);
             position[i] = new Vector2(border_thickness, position[i].y);
         }
-    }
-
-    float Smooth(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        return Smooth_Max * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-    }
-
-    float Smooth_der(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
     }
 
     float Density_to_pressure(float density)
@@ -920,19 +748,22 @@ public struct Calculate_physics_job : IJobParallelFor {
             float distance = relative_distance.magnitude;
 
             float abs_pressure_gradient = Smooth_der(distance);
+            float abs_near_pressure_gradient = Smooth_near_der(distance);
 
             Vector2 pressure_gradient = new(0.0f, 0.0f);
+            Vector2 near_pressure_gradient = new(0.0f, 0.0f);
 
-            if (distance != 0)
-            {
-                pressure_gradient = relative_distance.normalized * abs_pressure_gradient;
-            }
-            else
+            if (distance == 0)
             {
                 Vector2 randomNormalizedVector = new(particle_index % 0.2842f, particle_index % 0.1827f);
 
-                // * 0.1f to decrease pressure forces (for "corner particles")
                 pressure_gradient = 0.05f * abs_pressure_gradient * randomNormalizedVector;
+                near_pressure_gradient = 0.05f * abs_near_pressure_gradient * randomNormalizedVector;
+            }
+            else
+            {
+                pressure_gradient = relative_distance.normalized * abs_pressure_gradient;
+                near_pressure_gradient = relative_distance.normalized * abs_near_pressure_gradient;
             }
 
             float density_A = density[particle_index];
@@ -945,21 +776,20 @@ public struct Calculate_physics_job : IJobParallelFor {
 
             float avg_near_pressure = (near_pressure_A + near_pressure_B) / 2;
 
-            // p(pos) = ∑_i (p_i * m / ρ_avg * Smooth(pos - pos_i))                           + avg_near_pressure * pressure_gradient
-            pressure_force += avg_pressure * pressure_gradient / ((density_A + density_B) / 2);
+            // p(pos) = ∑_i (p_i * m / ρ_avg * Smooth(pos - pos_i))
+            pressure_force += (avg_pressure * pressure_gradient + avg_near_pressure * near_pressure_gradient) / ((density_A + density_B) / 2);
 
         }
 
         return -pressure_force;
     }
 
-    Vector2 Apply_viscocity_to_velocity(int particle_index)
+    Vector2 Viscocity_force(int particle_index)
     {
+        Vector2 velocity_force = new(0.0f, 0.0f);
+
         int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
         int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-        int tot_mass = 0;
-
-        Vector2 tot_force = new(0.0f, 0.0f);
 
         int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
         int end_i = start_i + Chunk_capacity;
@@ -968,14 +798,7 @@ public struct Calculate_physics_job : IJobParallelFor {
         {
             int other_particle_index = new_particle_chunks[i];
 
-            if (other_particle_index == -1)
-            {
-                continue;
-            }
-
-            tot_mass += 1;
-
-            if (other_particle_index == particle_index)
+            if (other_particle_index == particle_index || other_particle_index == -1)
             {
                 continue;
             }
@@ -984,26 +807,33 @@ public struct Calculate_physics_job : IJobParallelFor {
 
             float distance = relative_distance.magnitude;
 
+            float abs_viscocity_gradient = Smooth_viscocity_laplacian(distance);
+
+            Vector2 viscocity_gradient = new(0.0f, 0.0f);
+
             if (distance == 0)
-                continue;
-            
-            float abs_force = Smooth(distance);
+            {
+                viscocity_gradient = new(0.0f, 0.0f);
+            }
+            else
+            {
+                viscocity_gradient = relative_distance.normalized * abs_viscocity_gradient;
+            }
 
-            Vector2 force = new(relative_distance.normalized.x * abs_force, relative_distance.normalized.y * abs_force);
+            Vector2 velocity_A = last_velocity[particle_index];
+            Vector2 velocity_B = last_velocity[other_particle_index];
 
-            tot_force += force;
+            float diff_velocity = velocity_A.magnitude - velocity_B.magnitude;
+
+            float density_A = density[particle_index];
+            float density_B = density[other_particle_index];
+
+            // p(pos) = ∑_i (m * v_diff / ρ_avg * Smooth_viscocity(pos - pos_i))
+            velocity_force += (diff_velocity * viscocity_gradient) / ((density_A + density_B) / 2);
+
         }
-
-        if (tot_mass == 0)
-        {
-            tot_mass = 1;
-        }
-
-        Vector2 average_viscocity_velocity_x = tot_force / tot_mass;
-
-        Vector2 new_velocity = (1 - Viscocity * delta_time) * velocity[particle_index] + Viscocity * delta_time * average_viscocity_velocity_x;
-
-        return new_velocity;
+        // Viscocity_multiplier*
+        return Viscocity * velocity_force;
     }
 
     Vector2 Interaction_force(int particle_index)
@@ -1036,8 +866,46 @@ public struct Calculate_physics_job : IJobParallelFor {
         if (distance == Max_interaction_radius){return 0.01f;}
         // Geogebra: https://www.geogebra.org/calculator/uneb7zw9
         return Mathf.Pow((Max_interaction_radius - distance) / flatness, 0.7f);
-
     }
 
+    float Smooth(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
+        if (distance > Max_influence_radius){return 0;}
+        // return Smooth_Max * Mathf.Exp(-Smooth_derivative_koefficient * distance);
+        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 2);
+    }
+
+    float Smooth_der(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
+        if (distance > Max_influence_radius){return 0;}
+        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
+        return -50 * (1 - distance/Max_influence_radius) / Max_influence_radius;
+    }
+
+    float Smooth_near(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
+        if (distance > Max_influence_radius){return 0;}
+        // return Smooth_Max * Mathf.Exp(2 * -Smooth_derivative_koefficient * distance);
+        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 3);
+    }
+
+    float Smooth_near_der(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
+        if (distance > Max_influence_radius){return 0;}
+        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
+        return -75 * Mathf.Pow(1 - distance/Max_influence_radius, 2) / Max_influence_radius;
+    }
+
+    float Smooth_viscocity_laplacian(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
+        if (distance > Max_influence_radius){return 0;}
+        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
+        return 45 / (3.14f * Mathf.Pow(Max_influence_radius, 6)) * (Max_influence_radius - distance);
+    }
 }
 
