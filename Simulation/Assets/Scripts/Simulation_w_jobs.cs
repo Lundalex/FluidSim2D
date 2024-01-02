@@ -14,36 +14,42 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 using UnityEngine.Jobs;
+using System.Threading.Tasks;
 public class Simulation_w_jobs : MonoBehaviour
 {
     [Header("Simulation settings")]
     public int particles_num = 1000;
+    public int rigid_bodies_num = 2;
     public float Gravity_force = 4f;
     public int Max_influence_radius = 1;
+    public int Lg_chunk_dims = 5;
     public float Target_density = 50f;
     public float Pressure_multiplier = 200f;
     public float Near_density_multiplier = 20;
     public float Collision_damping_factor = 0.4f;
     public float Viscocity = 0.01f;
+    public float Rb_Elasticity = 0.6f;
 
     [Header("Boundrary settings")]
     public int border_width = 40;
     public int border_height = 20;
     public int particle_spawner_dimensions = 15; // l x l
     public float border_thickness = 0.2f;
-    public int Chunk_capacity = 120;
+    public int Chunk_capacity = 100;
+    public int Lg_chunk_capacity = 150;
 
     [Header("Rendering settings")]
     public float Program_speed = 1.5f;
     public float Time_step = -1;
     public float Particle_visual_size = 1.5f;
+    public bool velocity_visuals;
+
     [Header("Interaction settings")]
     public float Max_interaction_radius = 7;
     public float Interaction_power = 130;
 
     [Header("Advanced settings")]
     private int Particle_sort_frequency = 1;
-    public int Chunk_amount_multiplier = 2;
 
     // Not in use ---
     public float Smooth_Max = 5f;
@@ -54,6 +60,22 @@ public class Simulation_w_jobs : MonoBehaviour
 
     [Header("Object reference(s)")]
     public GameObject particle_prefab;
+    public GameObject rigid_body_prefab;
+
+    // rigid bodies ---
+    private Transform[] rigid_bodies;
+    private Renderer[] rigid_bodies_renderer;
+    private Vector2[] rb_position;
+    private Vector2[] rb_velocity;
+    private float[] rb_radii;
+    private float[] rb_mass;
+    private float[] rb_influence_radii;
+    private int[] lg_particle_chunks;
+    private int[] lg_particle_chunks_template;
+    private int  Lg_chunk_amount_x;
+    private int  Lg_chunk_amount_y;
+    private int  Lg_particle_chunks_tot_num;
+    // rigid bodies ---
 
     private Transform[] particles;
     private Renderer[] particles_renderer;
@@ -61,8 +83,6 @@ public class Simulation_w_jobs : MonoBehaviour
     private int Particle_chunks_tot_num;
     private int Chunk_amount_x = 0;
     private int Chunk_amount_y = 0;
-    private int Chunk_amount_multiplier_squared;
-    public bool velocity_visuals;
     private Vector2 mouse_position;
     private bool left_mouse_button_down;
     private bool right_mouse_button_down;
@@ -73,7 +93,9 @@ public class Simulation_w_jobs : MonoBehaviour
     private Vector2[] p_position;
     private float[] density;
     private float[] near_density;
-    private int[] new_particle_chunks;
+    private int[] particle_chunks;
+    private int[] particle_chunks_template;
+    private int[] chunk_data_template;
     private float delta_time;
 
     void Start()
@@ -94,18 +116,35 @@ public class Simulation_w_jobs : MonoBehaviour
         near_density = new float[particles_num];
         particles = new Transform[particles_num];
 
+        // initialize rigid body property arrays
+        rigid_bodies = new Transform[rigid_bodies_num];
+        rigid_bodies_renderer = new Renderer[rigid_bodies_num];
+        rb_position = new Vector2[rigid_bodies_num];
+        rb_velocity = new Vector2[rigid_bodies_num];
+        rb_radii = new float[rigid_bodies_num];
+        rb_mass = new float[rigid_bodies_num];
+        rb_influence_radii = new float[rigid_bodies_num];
+
         if (velocity_visuals)
         {
             particles_renderer = new Renderer[particles_num];
         }
 
-        Chunk_amount_x = border_width * Chunk_amount_multiplier / Max_influence_radius;
-        Chunk_amount_y = border_height * Chunk_amount_multiplier / Max_influence_radius;
-
-        Chunk_amount_multiplier_squared = Chunk_amount_multiplier * Chunk_amount_multiplier;
-
+        Chunk_amount_x = border_width / Max_influence_radius;
+        Chunk_amount_y = border_height / Max_influence_radius;
         Particle_chunks_tot_num = Chunk_amount_x * Chunk_amount_y * Chunk_capacity;
-        new_particle_chunks = new int[Particle_chunks_tot_num];
+        particle_chunks = new int[Particle_chunks_tot_num];
+
+        Lg_chunk_amount_x = border_width / Lg_chunk_dims;
+        Lg_chunk_amount_y = border_height / Lg_chunk_dims;
+        Lg_particle_chunks_tot_num = Lg_chunk_amount_x * Lg_chunk_amount_y * Lg_chunk_capacity;
+        lg_particle_chunks = new int[Lg_particle_chunks_tot_num];
+
+        particle_chunks_template = new int[Particle_chunks_tot_num];
+        lg_particle_chunks_template = new int[Lg_particle_chunks_tot_num];
+        chunk_data_template = new int[Chunk_capacity];
+        Array.Fill(particle_chunks_template, -1);
+        Array.Fill(lg_particle_chunks_template, -1);
 
         for (int i = 0; i < particles_num; i++)
         {
@@ -116,16 +155,30 @@ public class Simulation_w_jobs : MonoBehaviour
             near_density[i] = 0.0f;
         }
 
+        for (int i = 0; i < rigid_bodies_num; i++)
+        {
+            rb_position[i] = new(0.0f, 0.0f);
+            rb_velocity[i] = new(0.0f, 0.0f);
+            rb_radii[i] = 3.5f;
+            rb_mass[i] = 10f;
+            rb_influence_radii[i] = 0.5f;
+        }
+
         // Create particles
         for (int i = 0; i < particles_num; i++)
         {
             Create_particle(i);
         }
 
-        // Assign random positions
+        for (int i = 0; i < rigid_bodies_num; i++)
+        {
+            Create_rigid_body_sphere(i);
+        }
+        
+        // Assign random positions to particles
         for (int i = 0; i < particles_num; i++)
         {
-            position[i] = Random_particle_position(i, particles_num);
+            position[i] = Particle_spawn_position(i, particles_num);
         }
     }
 
@@ -144,18 +197,44 @@ public class Simulation_w_jobs : MonoBehaviour
         left_mouse_button_down = Input.GetMouseButton(0);
         right_mouse_button_down = Input.GetMouseButton(1);
 
-        if (Particle_sort_frequency == 1)
-        {
-            Array.Fill(new_particle_chunks, -1);
-            Sort_particles();
-            Particle_sort_frequency = 0;
-        }
-        Particle_sort_frequency += 1;
+        // particle_chunks = (int[])particle_chunks_template.Clone();
+        // lg_particle_chunks = (int[])lg_particle_chunks_template.Clone();
+        // for (int i = 0; i < particles_num; i++)
+        // {
+        //     last_velocity[i] = velocity[i];
+        // }
+        // Job_populate_chunk_data();
 
+        // 0.20 ms
+        particle_chunks = (int[])particle_chunks_template.Clone();
+        lg_particle_chunks = (int[])lg_particle_chunks_template.Clone();
+        // 2.45 ms
+        Populate_lg_particle_chunks();
+        Populate_particle_chunks();
+
+
+        // 2.23 ms
         Job_precalculate_densities();
 
+        // 1.00 ms
+        // implement repeated calls to enable simulations of complex rb interactions
+        Job_rb_rb_collisions();
+
+        if (rigid_bodies_num > 20)
+        {
+            // 6.00 ms (with 100 rb:s)
+            Job_rb_particle_collisions();
+        }
+        else
+        {
+            // 0.63 ms (with 1 rb:s)
+            Rb_particle_collisions();
+        }
+
+        // 2.44 ms
         Job_physics();
 
+        // 7ms (with velocity_visuals on)
         Render();
     }
 
@@ -179,46 +258,55 @@ public class Simulation_w_jobs : MonoBehaviour
             }
         }
 
-        // NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
-
-        // // Copy positions from managed array to native array
-        // for (int i = 0; i < particles_num; i++)
-        // {
-        //     n_position[i] = position[i];
-        // }
-
-        // Transform_particle_position_job transform_particle_position_job = new Transform_particle_position_job
-        // {
-        //     position = n_position
-        // };
-
-        // // Schedule the job with TransformAccessArray
-        // TransformAccessArray transformAccessArray = new TransformAccessArray(particles);
-        // JobHandle jobhandle = transform_particle_position_job.Schedule(transformAccessArray);
-
-        // jobhandle.Complete();
-
-        // n_position.Dispose();
-        // transformAccessArray.Dispose();
+        for (int i = 0; i < rigid_bodies_num; i++)
+        {
+            rigid_bodies[i].position = rb_position[i];
+        }
     }
 
-    void Sort_particles()
+    void Populate_lg_particle_chunks()
     {
-        for(int i = 0; i < particles_num; i++)
+        // parallel.For???????
+        for (int i = 0; i < particles_num; i++)
         {
-            // Set predicted positions
+            // Set predicted positions - move this!!!!!!!!!!!!!!!!!!!
             p_position[i] = position[i] + velocity[i] * Look_ahead_factor;
-
             last_velocity[i] = velocity[i];
+                                                            // changed to Max_influence_radius
+            int in_chunk_x = (int)Math.Floor(position[i].x / Max_influence_radius);
+            int in_chunk_y = (int)Math.Floor(position[i].y / Max_influence_radius);
 
-            int in_chunk_x = (int)Math.Floor(p_position[i].x * Chunk_amount_multiplier / Max_influence_radius);
-            int in_chunk_y = (int)Math.Floor(p_position[i].y * Chunk_amount_multiplier / Max_influence_radius);
-            float relative_position_x = p_position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
-            float relative_position_y = p_position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
-
-            for (int x = -Chunk_amount_multiplier; x <= Chunk_amount_multiplier; x++)
+            int xy_index = in_chunk_x * Lg_chunk_amount_y * Lg_chunk_capacity + in_chunk_y * Lg_chunk_capacity;
+            int z_index = 0;
+            while (lg_particle_chunks[xy_index + z_index] != -1 && z_index < Lg_chunk_capacity - 1)
             {
-                for (int y = -Chunk_amount_multiplier; y <= Chunk_amount_multiplier; y++)
+                z_index += 1;
+            }
+            // Add to list if space is available
+            if (z_index < Lg_chunk_capacity - 1)
+            {
+                lg_particle_chunks[xy_index + z_index] = i;
+            }
+            else
+            {
+                Debug.Log("Lg chunk particle capacity reached");
+            }
+        }
+    }
+
+    void Populate_particle_chunks()
+    {
+        // parallel.For???????
+        for (int i = 0; i < particles_num; i++)
+        {
+            int in_chunk_x = (int)Math.Floor(p_position[i].x / Max_influence_radius);
+            int in_chunk_y = (int)Math.Floor(p_position[i].y / Max_influence_radius);
+            float relative_position_x = p_position[i].x / Max_influence_radius % 1;
+            float relative_position_y = p_position[i].y / Max_influence_radius % 1;
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
                 {
                     // current chunk
                     int cur_chunk_x = in_chunk_x + x;
@@ -226,22 +314,21 @@ public class Simulation_w_jobs : MonoBehaviour
 
                     if (cur_chunk_x >= 0 && cur_chunk_x < Chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Chunk_amount_y)
                     {
-                        if (Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y-relative_position_y)*(y-relative_position_y) ||
-                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y-relative_position_y)*(y-relative_position_y)||
-                            Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y) ||
-                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y))
+                        if (1 > (x-relative_position_x)*(x-relative_position_x)+(y-relative_position_y)*(y-relative_position_y) ||
+                            1 > (x+1-relative_position_x)*(x+1-relative_position_x)+(y-relative_position_y)*(y-relative_position_y)||
+                            1 > (x-relative_position_x)*(x-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y) ||
+                            1 > (x+1-relative_position_x)*(x+1-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y))
                         {
-                            // curx * Chunk_amount_x * Chunk_amount_y + cury * Chunk_amount_y + curz
                             int xy_index = cur_chunk_x * Chunk_amount_y * Chunk_capacity + cur_chunk_y * Chunk_capacity;
                             int z_index = 0;
-                            while (new_particle_chunks[xy_index + z_index] != -1 && z_index < Chunk_capacity - 1)
+                            while (particle_chunks[xy_index + z_index] != -1 && z_index < Chunk_capacity)
                             {
                                 z_index += 1;
                             }
                             // Add to list if space is available
                             if (z_index < Chunk_capacity)
                             {
-                                new_particle_chunks[xy_index + z_index] = i;
+                                particle_chunks[xy_index + z_index] = i;
                             }
                             else
                             {
@@ -253,66 +340,73 @@ public class Simulation_w_jobs : MonoBehaviour
             }
         }
     }
-    void Job_sort_particles()
+
+    void Job_populate_chunk_data()
     {
+        NativeArray<int> n_particle_chunks = new NativeArray<int>(Particle_chunks_tot_num, Allocator.TempJob);
+        NativeArray<int> n_lg_particle_chunks = new NativeArray<int>(Lg_particle_chunks_tot_num, Allocator.TempJob);
+        NativeArray<Vector2> n_p_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
+        NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
+        NativeArray<Vector2> n_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
 
         NativeList<JobHandle> job_handle_list = new NativeList<JobHandle>(Allocator.Temp);
 
-        // MAYBE - MIGHT NEED TO RESET THE VALUES EACH ITERATION --- PLACE SOMEWHERE ELSE TO AVOID FOR LOOP WITH ca 50000 elements each update iteration !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
-        NativeArray<Vector2> n_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
-        NativeArray<int> n_new_particle_chunks = new NativeArray<int>(Particle_chunks_tot_num, Allocator.TempJob);
-        NativeArray<Vector2> n_p_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
-
-        n_new_particle_chunks.CopyFrom(new_particle_chunks);
         n_position.CopyFrom(position);
         n_velocity.CopyFrom(velocity);
-        n_p_position.CopyFrom(p_position);
+        n_particle_chunks.CopyFrom(particle_chunks);
+        n_lg_particle_chunks.CopyFrom(lg_particle_chunks);
 
-        Particle_sort_job particle_sort_job = new Particle_sort_job {
-            start_index = 0,
-            end_index = particles_num,
-            Chunk_amount_multiplier = Chunk_amount_multiplier,
-            Max_influence_radius = Max_influence_radius,
-            Look_ahead_factor = Look_ahead_factor,
-            Chunk_amount_multiplier_squared = Chunk_amount_multiplier_squared,
-            Chunk_amount_y = Chunk_amount_y,
-            Chunk_amount_x = Chunk_amount_x,
-            Chunk_capacity = Chunk_capacity,
-            border_width = border_width,
-            border_height = border_height,
-            border_thickness = border_thickness,
-            position = n_position,
+        Populate_particle_chunks_job populate_particle_chunks_job = new Populate_particle_chunks_job {
             velocity = n_velocity,
-            new_particle_chunks = n_new_particle_chunks,
-            p_position = n_p_position
+            position = n_position,
+            particle_chunks = n_particle_chunks,
+            p_position = n_p_position,
+            Max_influence_radius = Max_influence_radius,
+            Chunk_amount_x = Chunk_amount_x,
+            Chunk_amount_y = Chunk_amount_y,
+            Chunk_capacity = Chunk_capacity,
+            particles_num = particles_num,
+            Look_ahead_factor = Look_ahead_factor
         };
+        JobHandle handle_1 = populate_particle_chunks_job.Schedule();
+        job_handle_list.Add(handle_1);
 
-        JobHandle job_handle = particle_sort_job.Schedule();
+        Populate_lg_particle_chunks_job populate_lg_particle_chunks_job = new Populate_lg_particle_chunks_job {
+            lg_particle_chunks = n_lg_particle_chunks,
+            position = n_position,
+            Max_influence_radius = Max_influence_radius,
+            Lg_chunk_amount_y = Lg_chunk_amount_y,
+            Lg_chunk_capacity = Lg_chunk_capacity,
+            particles_num = particles_num,
+        };
+        JobHandle handle_2 = populate_lg_particle_chunks_job.Schedule();
+        job_handle_list.Add(handle_2);
 
+        JobHandle.CompleteAll(job_handle_list);
 
-        job_handle.Complete();
-
+        for (int i = 0; i < Particle_chunks_tot_num; i++)
+        {
+            particle_chunks[i] = n_particle_chunks[i];
+        }
+        for (int i = 0; i < Lg_particle_chunks_tot_num; i++)
+        {
+            lg_particle_chunks[i] = n_lg_particle_chunks[i];
+        }
         for (int i = 0; i < particles_num; i++)
         {
             p_position[i] = n_p_position[i];
         }
 
-        for (int i = 0; i < Particle_chunks_tot_num; i++)
-        {
-            new_particle_chunks[i] = n_new_particle_chunks[i];
-        }
- 
+        n_particle_chunks.Dispose();
+        n_lg_particle_chunks.Dispose();
+        n_p_position.Dispose();
         n_position.Dispose();
         n_velocity.Dispose();
-        n_new_particle_chunks.Dispose();
-        n_p_position.Dispose();
         job_handle_list.Dispose();
     }
 
     void Job_precalculate_densities()
     {
-
         // MAYBE - MIGHT NEED TO RESET THE VALUES EACH ITERATION --- PLACE SOMEWHERE ELSE TO AVOID FOR LOOP WITH ca 50000 elements each update iteration !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         NativeArray<Vector2> n_p_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
@@ -320,12 +414,11 @@ public class Simulation_w_jobs : MonoBehaviour
         NativeArray<float> n_near_density = new NativeArray<float>(particles_num, Allocator.TempJob);
         NativeArray<int> n_new_particle_chunks = new NativeArray<int>(Particle_chunks_tot_num, Allocator.TempJob);
 
-        n_new_particle_chunks.CopyFrom(new_particle_chunks);
+        n_new_particle_chunks.CopyFrom(particle_chunks);
         n_p_position.CopyFrom(p_position);
         n_position.CopyFrom(position);
 
         Calculate_density_job calculate_density_job = new Calculate_density_job {
-            Chunk_amount_multiplier = Chunk_amount_multiplier,
             Max_influence_radius = Max_influence_radius,
             Smooth_Max = Smooth_Max,
             Smooth_derivative_koefficient = Smooth_derivative_koefficient,
@@ -334,7 +427,7 @@ public class Simulation_w_jobs : MonoBehaviour
             Chunk_capacity = Chunk_capacity,
             p_position = n_p_position,
             position = n_position,
-            new_particle_chunks = n_new_particle_chunks,
+            particle_chunks = n_new_particle_chunks,
             density = n_density,
             near_density = n_near_density
         };
@@ -359,8 +452,6 @@ public class Simulation_w_jobs : MonoBehaviour
 
     void Job_physics()
     {
-
-        // MAYBE - MIGHT NEED TO RESET THE VALUES EACH ITERATION --- PLACE SOMEWHERE ELSE TO AVOID FOR LOOP WITH ca 50000 elements each update iteration !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         NativeArray<Vector2> n_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
         NativeArray<Vector2> n_p_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
@@ -375,7 +466,7 @@ public class Simulation_w_jobs : MonoBehaviour
         n_density.CopyFrom(density);
         n_near_density.CopyFrom(near_density);
         n_last_velocity.CopyFrom(last_velocity);
-        n_new_particle_chunks.CopyFrom(new_particle_chunks);
+        n_new_particle_chunks.CopyFrom(particle_chunks);
 
         Calculate_physics_job calculate_physics_job = new Calculate_physics_job {
             Gravity_force = Gravity_force,
@@ -388,7 +479,6 @@ public class Simulation_w_jobs : MonoBehaviour
             Smooth_derivative_koefficient = Smooth_derivative_koefficient,
             Target_density = Target_density,
             Pressure_multiplier = Pressure_multiplier,
-            Chunk_amount_multiplier = Chunk_amount_multiplier,
             Max_influence_radius = Max_influence_radius,
             Viscocity = Viscocity,
             Max_interaction_radius = Max_interaction_radius,
@@ -406,7 +496,7 @@ public class Simulation_w_jobs : MonoBehaviour
             density = n_density,
             near_density = n_near_density,
             last_velocity = n_last_velocity,
-            new_particle_chunks = n_new_particle_chunks
+            particle_chunks = n_new_particle_chunks
         };
 
         JobHandle jobhandle = calculate_physics_job.Schedule(particles_num, 32);
@@ -431,7 +521,7 @@ public class Simulation_w_jobs : MonoBehaviour
     void Create_particle(int particle_index)
 
     {
-        GameObject particle = Instantiate(particle_prefab, Random_particle_position(particle_index, particles_num), Quaternion.identity);
+        GameObject particle = Instantiate(particle_prefab, new(0,0,0), Quaternion.identity);
         particle.transform.localScale = new Vector3(0.2f * Particle_visual_size, 0.2f * Particle_visual_size, 0.2f * Particle_visual_size);
         particle.transform.parent = transform;
         particles[particle_index] = particle.transform;
@@ -443,9 +533,9 @@ public class Simulation_w_jobs : MonoBehaviour
 
     Color SetColorByFunction(float gradient_value)
     {
-        gradient_value = Mathf.Min(gradient_value, 3f);
+        gradient_value = Mathf.Min(gradient_value, 5f);
 
-        float normalizedValue = gradient_value / 3f;
+        float normalizedValue = gradient_value / 5f;
 
         Color newColor = Color.Lerp(Color.blue, Color.red, normalizedValue);
 
@@ -480,7 +570,7 @@ public class Simulation_w_jobs : MonoBehaviour
         lineRenderer.endWidth = 0.1f;
     }
     
-    Vector3 Random_particle_position(int particle_index, int max_index)
+    Vector2 Particle_spawn_position(int particle_index, int max_index)
     {
         float x = (border_width - particle_spawner_dimensions) / 2 + Mathf.Floor(particle_index % Mathf.Sqrt(max_index)) * (particle_spawner_dimensions / Mathf.Sqrt(max_index));
         float y = (border_height - particle_spawner_dimensions) / 2 + Mathf.Floor(particle_index / Mathf.Sqrt(max_index)) * (particle_spawner_dimensions / Mathf.Sqrt(max_index));
@@ -488,424 +578,317 @@ public class Simulation_w_jobs : MonoBehaviour
         {
             throw new ArgumentException("Particle spawn dimensions larger than either border_width or border_height");
         }
-        return new Vector3(x, y);
+        return new Vector2(x, y);
     }
-}
 
-// Does not work since all job worker threads write to the same array (new_particle_chunks)
-[BurstCompile]
-public struct Particle_sort_job : IJob {
-    public int start_index;
-    public int end_index;
-    public int Chunk_amount_multiplier;
-    public int Max_influence_radius;
-    public float Look_ahead_factor;
-    public float Chunk_amount_multiplier_squared;
-    public int Chunk_amount_y;
-    public int Chunk_amount_x;
-    public int Chunk_capacity;
-    public int border_width;
-    public int border_height;
-    public float border_thickness;
+    void Create_rigid_body_sphere(int rb_index)
+    {
+        GameObject rigid_body_object = Instantiate(particle_prefab, new(0,0,0), Quaternion.identity);
+        rb_position[rb_index] = new(border_width / 2 + rb_index*8 - rigid_bodies_num*4, border_height - 1);
+        float rigid_body_scale = 6.3f;
+        rigid_body_object.transform.localScale = new Vector3(rigid_body_scale, rigid_body_scale, rigid_body_scale);
+        rigid_body_object.transform.parent = transform;
+        rigid_bodies[rb_index] = rigid_body_object.transform;
+        rigid_bodies_renderer[rb_index] = rigid_body_object.GetComponent<Renderer>();
+        rigid_bodies_renderer[rb_index].material.color = Color.white;
+    }
 
-    [ReadOnly] public NativeArray<Vector2> position;
-    [ReadOnly] public NativeArray<Vector2> velocity;
-    public NativeArray<int> new_particle_chunks;
-    public NativeArray<Vector2> p_position;
-    public void Execute() {
+    void Job_rb_rb_collisions()
+    {
+        NativeArray<float> n_rb_radii = new NativeArray<float>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<float> n_rb_mass = new NativeArray<float>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector2> n_rb_velocity = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector2> n_rb_position = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector2> copy_rb_velocity = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector2> copy_rb_position = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
 
-        for (int i = start_index; i < end_index; i++)
+        n_rb_radii.CopyFrom(rb_radii);
+        n_rb_mass.CopyFrom(rb_mass);
+        n_rb_velocity.CopyFrom(rb_velocity);
+        n_rb_position.CopyFrom(rb_position);
+        copy_rb_velocity.CopyFrom(rb_velocity);
+        copy_rb_position.CopyFrom(rb_position);
+
+        Resolve_eventual_rb_rb_collisions_job resolve_eventual_rb_rb_collisions_job = new Resolve_eventual_rb_rb_collisions_job
         {
-            
-            // Set predicted positions
-            p_position[i] = position[i] + velocity[i] * Look_ahead_factor;
-            if (p_position[i].x > border_width - border_thickness){p_position[i] = new(border_width - border_thickness, p_position[i].y);}
-            if (p_position[i].x < border_thickness){p_position[i] = new(border_thickness, p_position[i].y);}
-            if (p_position[i].y > border_height - border_thickness){p_position[i] = new(p_position[i].x, border_height - border_thickness);}
-            if (p_position[i].y < border_thickness){p_position[i] = new(p_position[i].x, border_thickness);}
+            Rb_Elasticity = Rb_Elasticity,
+            rigid_bodies_num = rigid_bodies_num,
+            rb_radii = n_rb_radii,
+            rb_mass = n_rb_mass,
+            copy_rb_velocity = copy_rb_velocity,
+            copy_rb_position = copy_rb_position,
+            rb_velocity = n_rb_velocity,
+            rb_position = n_rb_position
+        };
+        //                                                                                           "1" might not be suitable for large amounts of rb:s
+        JobHandle jobHandle = resolve_eventual_rb_rb_collisions_job.Schedule(rigid_bodies_num, 1);
+        jobHandle.Complete();
 
-            int inChunkX = (int)(position[i].x * Chunk_amount_multiplier / Max_influence_radius);
-            int inChunkY = (int)(position[i].y * Chunk_amount_multiplier / Max_influence_radius);
-            float relative_position_x = p_position[i].x * Chunk_amount_multiplier / Max_influence_radius % 1;
-            float relative_position_y = p_position[i].y * Chunk_amount_multiplier / Max_influence_radius % 1;
+        n_rb_velocity.CopyTo(rb_velocity);
+        n_rb_position.CopyTo(rb_position);
 
-            for (int x = -Chunk_amount_multiplier; x <= Chunk_amount_multiplier; x++)
+        n_rb_radii.Dispose();
+        n_rb_mass.Dispose();
+        n_rb_velocity.Dispose();
+        n_rb_position.Dispose();
+        copy_rb_velocity.Dispose();
+        copy_rb_position.Dispose();
+    }
+
+    void Job_rb_particle_collisions()
+    {
+        NativeArray<Vector2> n_position = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
+        NativeArray<Vector2> n_velocity = new NativeArray<Vector2>(particles_num, Allocator.TempJob);
+        NativeArray<Vector2> n_rb_velocity = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector2> n_rb_position = new NativeArray<Vector2>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<float> n_rb_radii = new NativeArray<float>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<float> n_rb_mass = new NativeArray<float>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<int> n_lg_particle_chunks = new NativeArray<int>(Lg_particle_chunks_tot_num, Allocator.TempJob);
+        NativeArray<Vector3_20x_array> position_data = new NativeArray<Vector3_20x_array>(rigid_bodies_num, Allocator.TempJob);
+        NativeArray<Vector3_20x_array> velocity_delta_data = new NativeArray<Vector3_20x_array>(rigid_bodies_num, Allocator.TempJob);
+
+        for (int i = 0; i < rigid_bodies_num; i++)
+        {
+            position_data[i] = Vector3_20x_array.CreateInitialized();
+            velocity_delta_data[i] = Vector3_20x_array.CreateInitialized();
+        }
+
+        n_position.CopyFrom(position);
+        n_rb_velocity.CopyFrom(rb_velocity);
+        n_rb_position.CopyFrom(rb_position);
+        n_velocity.CopyFrom(velocity);
+        n_rb_radii.CopyFrom(rb_radii);
+        n_rb_mass.CopyFrom(rb_mass);
+        n_lg_particle_chunks.CopyFrom(lg_particle_chunks);
+
+        Resolve_eventual_rb_particle_collisions_job resolve_eventual_rb_particle_collisions_job = new Resolve_eventual_rb_particle_collisions_job
+        {
+            Gravity_force = Gravity_force,
+            delta_time = delta_time,
+            Lg_chunk_dims = Lg_chunk_dims,
+            Lg_chunk_amount_x = Lg_chunk_amount_x,
+            Lg_chunk_amount_y = Lg_chunk_amount_y,
+            Lg_chunk_capacity = Lg_chunk_capacity,
+            Rb_Elasticity = Rb_Elasticity,
+            Collision_damping_factor = Collision_damping_factor,
+            border_height = border_height,
+            border_width = border_width,
+            border_thickness = border_thickness,
+            rb_radii = n_rb_radii,
+            rb_mass = n_rb_mass,
+            lg_particle_chunks = n_lg_particle_chunks,
+            position = n_position,
+            velocity = n_velocity,
+            rb_velocity = n_rb_velocity,
+            rb_position = n_rb_position,
+            position_data = position_data,
+            velocity_delta_data = velocity_delta_data
+        };
+
+        JobHandle jobHandle = resolve_eventual_rb_particle_collisions_job.Schedule(rigid_bodies_num, 8);
+        jobHandle.Complete();
+
+        n_rb_velocity.CopyTo(rb_velocity);
+        n_rb_position.CopyTo(rb_position);
+
+        // The current system is very inefficient for returning data to particles! Otherwise, the job is efficient
+        // perhaps inprove it by getting the custom struct directly, since Nativearray.getitem is the most expensive operation
+        // otherwise, try redoing the data returning system
+        for (int i = 0; i < position_data.Length; i++)
+        {
+            if ((int)position_data[i].s0.x != -1) { position[(int)position_data[i].s0.x] = new Vector2(position_data[i].s0.y, position_data[i].s0.z); } else { continue; }
+            if ((int)position_data[i].s1.x != -1) { position[(int)position_data[i].s1.x] = new Vector2(position_data[i].s1.y, position_data[i].s1.z); } else { continue; }
+            if ((int)position_data[i].s2.x != -1) { position[(int)position_data[i].s2.x] = new Vector2(position_data[i].s2.y, position_data[i].s2.z); } else { continue; }
+            if ((int)position_data[i].s3.x != -1) { position[(int)position_data[i].s3.x] = new Vector2(position_data[i].s3.y, position_data[i].s3.z); } else { continue; }
+            if ((int)position_data[i].s4.x != -1) { position[(int)position_data[i].s4.x] = new Vector2(position_data[i].s4.y, position_data[i].s4.z); } else { continue; }
+            if ((int)position_data[i].s5.x != -1) { position[(int)position_data[i].s5.x] = new Vector2(position_data[i].s5.y, position_data[i].s5.z); } else { continue; }
+            if ((int)position_data[i].s6.x != -1) { position[(int)position_data[i].s6.x] = new Vector2(position_data[i].s6.y, position_data[i].s6.z); } else { continue; }
+            if ((int)position_data[i].s7.x != -1) { position[(int)position_data[i].s7.x] = new Vector2(position_data[i].s7.y, position_data[i].s7.z); } else { continue; }
+            if ((int)position_data[i].s8.x != -1) { position[(int)position_data[i].s8.x] = new Vector2(position_data[i].s8.y, position_data[i].s8.z); } else { continue; }
+            if ((int)position_data[i].s9.x != -1) { position[(int)position_data[i].s9.x] = new Vector2(position_data[i].s9.y, position_data[i].s9.z); } else { continue; }
+            if ((int)position_data[i].s10.x != -1) { position[(int)position_data[i].s10.x] = new Vector2(position_data[i].s10.y, position_data[i].s10.z); } else { continue; }
+            if ((int)position_data[i].s11.x != -1) { position[(int)position_data[i].s11.x] = new Vector2(position_data[i].s11.y, position_data[i].s11.z); } else { continue; }
+            if ((int)position_data[i].s12.x != -1) { position[(int)position_data[i].s12.x] = new Vector2(position_data[i].s12.y, position_data[i].s12.z); } else { continue; }
+            if ((int)position_data[i].s13.x != -1) { position[(int)position_data[i].s13.x] = new Vector2(position_data[i].s13.y, position_data[i].s13.z); } else { continue; }
+            if ((int)position_data[i].s14.x != -1) { position[(int)position_data[i].s14.x] = new Vector2(position_data[i].s14.y, position_data[i].s14.z); } else { continue; }
+            if ((int)position_data[i].s15.x != -1) { position[(int)position_data[i].s15.x] = new Vector2(position_data[i].s15.y, position_data[i].s15.z); } else { continue; }
+            if ((int)position_data[i].s16.x != -1) { position[(int)position_data[i].s16.x] = new Vector2(position_data[i].s16.y, position_data[i].s16.z); } else { continue; }
+            if ((int)position_data[i].s17.x != -1) { position[(int)position_data[i].s17.x] = new Vector2(position_data[i].s17.y, position_data[i].s17.z); } else { continue; }
+            if ((int)position_data[i].s18.x != -1) { position[(int)position_data[i].s18.x] = new Vector2(position_data[i].s18.y, position_data[i].s18.z); } else { continue; }
+            if ((int)position_data[i].s19.x != -1) { position[(int)position_data[i].s19.x] = new Vector2(position_data[i].s19.y, position_data[i].s19.z); }
+        }
+        int[] applied_indices = {};
+        for (int i = 0; i < velocity_delta_data.Length; i++)
+        {
+            if ((int)velocity_delta_data[i].s0.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s0.x)) { velocity[(int)velocity_delta_data[i].s0.x] += new Vector2(velocity_delta_data[i].s0.y, velocity_delta_data[i].s0.z); applied_indices.Append((int)velocity_delta_data[i].s0.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s1.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s1.x)) { velocity[(int)velocity_delta_data[i].s1.x] += new Vector2(velocity_delta_data[i].s1.y, velocity_delta_data[i].s1.z); applied_indices.Append((int)velocity_delta_data[i].s1.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s2.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s2.x)) { velocity[(int)velocity_delta_data[i].s2.x] += new Vector2(velocity_delta_data[i].s2.y, velocity_delta_data[i].s2.z); applied_indices.Append((int)velocity_delta_data[i].s2.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s3.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s3.x)) { velocity[(int)velocity_delta_data[i].s3.x] += new Vector2(velocity_delta_data[i].s3.y, velocity_delta_data[i].s3.z); applied_indices.Append((int)velocity_delta_data[i].s3.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s4.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s4.x)) { velocity[(int)velocity_delta_data[i].s4.x] += new Vector2(velocity_delta_data[i].s4.y, velocity_delta_data[i].s4.z); applied_indices.Append((int)velocity_delta_data[i].s4.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s5.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s5.x)) { velocity[(int)velocity_delta_data[i].s5.x] += new Vector2(velocity_delta_data[i].s5.y, velocity_delta_data[i].s5.z); applied_indices.Append((int)velocity_delta_data[i].s5.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s6.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s6.x)) { velocity[(int)velocity_delta_data[i].s6.x] += new Vector2(velocity_delta_data[i].s6.y, velocity_delta_data[i].s6.z); applied_indices.Append((int)velocity_delta_data[i].s6.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s7.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s7.x)) { velocity[(int)velocity_delta_data[i].s7.x] += new Vector2(velocity_delta_data[i].s7.y, velocity_delta_data[i].s7.z); applied_indices.Append((int)velocity_delta_data[i].s7.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s8.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s8.x)) { velocity[(int)velocity_delta_data[i].s8.x] += new Vector2(velocity_delta_data[i].s8.y, velocity_delta_data[i].s8.z); applied_indices.Append((int)velocity_delta_data[i].s8.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s9.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s9.x)) { velocity[(int)velocity_delta_data[i].s9.x] += new Vector2(velocity_delta_data[i].s9.y, velocity_delta_data[i].s9.z); applied_indices.Append((int)velocity_delta_data[i].s9.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s10.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s10.x)) { velocity[(int)velocity_delta_data[i].s10.x] += new Vector2(velocity_delta_data[i].s10.y, velocity_delta_data[i].s10.z); applied_indices.Append((int)velocity_delta_data[i].s10.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s11.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s11.x)) { velocity[(int)velocity_delta_data[i].s11.x] += new Vector2(velocity_delta_data[i].s11.y, velocity_delta_data[i].s11.z); applied_indices.Append((int)velocity_delta_data[i].s11.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s12.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s12.x)) { velocity[(int)velocity_delta_data[i].s12.x] += new Vector2(velocity_delta_data[i].s12.y, velocity_delta_data[i].s12.z); applied_indices.Append((int)velocity_delta_data[i].s12.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s13.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s13.x)) { velocity[(int)velocity_delta_data[i].s13.x] += new Vector2(velocity_delta_data[i].s13.y, velocity_delta_data[i].s13.z); applied_indices.Append((int)velocity_delta_data[i].s13.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s14.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s14.x)) { velocity[(int)velocity_delta_data[i].s14.x] += new Vector2(velocity_delta_data[i].s14.y, velocity_delta_data[i].s14.z); applied_indices.Append((int)velocity_delta_data[i].s14.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s15.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s15.x)) { velocity[(int)velocity_delta_data[i].s15.x] += new Vector2(velocity_delta_data[i].s15.y, velocity_delta_data[i].s15.z); applied_indices.Append((int)velocity_delta_data[i].s15.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s16.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s16.x)) { velocity[(int)velocity_delta_data[i].s16.x] += new Vector2(velocity_delta_data[i].s16.y, velocity_delta_data[i].s16.z); applied_indices.Append((int)velocity_delta_data[i].s16.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s17.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s17.x)) { velocity[(int)velocity_delta_data[i].s17.x] += new Vector2(velocity_delta_data[i].s17.y, velocity_delta_data[i].s17.z); applied_indices.Append((int)velocity_delta_data[i].s17.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s18.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s18.x)) { velocity[(int)velocity_delta_data[i].s18.x] += new Vector2(velocity_delta_data[i].s18.y, velocity_delta_data[i].s18.z); applied_indices.Append((int)velocity_delta_data[i].s18.x);} else { continue; }
+            if ((int)velocity_delta_data[i].s19.x != -1 && !applied_indices.Contains((int)velocity_delta_data[i].s19.x)) { velocity[(int)velocity_delta_data[i].s19.x] += new Vector2(velocity_delta_data[i].s19.y, velocity_delta_data[i].s19.z); applied_indices.Append((int)velocity_delta_data[i].s19.x);}
+        }
+
+        n_position.Dispose();
+        n_velocity.Dispose();
+        n_rb_velocity.Dispose();
+        n_rb_position.Dispose();
+        n_rb_radii.Dispose();
+        n_rb_mass.Dispose();
+        n_lg_particle_chunks.Dispose();
+        position_data.Dispose();
+        velocity_delta_data.Dispose();
+    }
+
+    void Rb_particle_collisions()
+    {
+        
+        // velocities and positions of particles are currently updated before this function triggers
+
+        for (int rb_i = 0; rb_i < rigid_bodies_num; rb_i++)
+        {
+            // Here goes all forces acting on the rb_sphere ---
+            rb_velocity[rb_i].y -= Gravity_force * delta_time;
+            rb_position[rb_i] += rb_velocity[rb_i] * delta_time;
+            rigid_bodies[rb_i].position = rb_position[rb_i];
+            // Here goes all forces acting on the rb_sphere ---
+
+            int in_chunk_x = (int)Math.Floor(rb_position[rb_i].x / Lg_chunk_dims);
+            int in_chunk_y = (int)Math.Floor(rb_position[rb_i].y / Lg_chunk_dims);
+
+            int particle_search_radius = (int)Math.Ceiling(rb_radii[rb_i]);
+
+            for (int x = -particle_search_radius; x <= particle_search_radius; x++)
             {
-                for (int y = -Chunk_amount_multiplier; y <= Chunk_amount_multiplier; y++)
+                for (int y = -particle_search_radius; y <= particle_search_radius; y++)
                 {
-                    // current chunk
-                    int cur_chunk_x = inChunkX + x;
-                    int cur_chunk_y = inChunkY + y;
-    
-                    if (cur_chunk_x >= 0 && cur_chunk_x < Chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Chunk_amount_y)
+                    int cur_chunk_x = in_chunk_x + x;
+                    int cur_chunk_y = in_chunk_y + y;
+
+                    if (cur_chunk_x >= 0 && cur_chunk_x < Lg_chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Lg_chunk_amount_y)
                     {
-                        if (Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y-relative_position_y)*(y-relative_position_y) ||
-                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y-relative_position_y)*(y-relative_position_y)||
-                            Chunk_amount_multiplier_squared > (x-relative_position_x)*(x-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y) ||
-                            Chunk_amount_multiplier_squared > (x+1-relative_position_x)*(x+1-relative_position_x)+(y+1-relative_position_y)*(y+1-relative_position_y))
+                        int start_i = cur_chunk_x * Lg_chunk_amount_y * Lg_chunk_capacity + cur_chunk_y * Lg_chunk_capacity;
+                        int end_i = start_i + Lg_chunk_capacity;
+
+                        for (int i = start_i; i < end_i; i++)
                         {
-                            // curx * Chunk_amount_x * Chunk_amount_y + cury * Chunk_amount_y + curz
-                            int xy_index = cur_chunk_x * Chunk_amount_y * Chunk_capacity + cur_chunk_y * Chunk_capacity;
-                            int z_index = 0;
-                            while (new_particle_chunks[xy_index + z_index] != -1 && z_index < Chunk_capacity - 1)
-                            {
-                                z_index += 1;
-                            }
-                            // Add to list if space is available
-                            if (z_index < Chunk_capacity)
-                            {
-                                new_particle_chunks[xy_index + z_index] = i;
-                            }
-                        }
+                            int particle_index = lg_particle_chunks[i];
+                            if (particle_index == -1){continue;}
+
+                            Vector2 distance = position[particle_index] - rb_position[rb_i];
+
+                            float abs_distance = distance.magnitude;
+
+                            if (abs_distance >= rb_radii[rb_i]){continue;}
+
+                            Vector2 velocity_diff = velocity[particle_index] - rb_velocity[rb_i];
+
+                            Vector2 norm_distance = distance.normalized;
+
+                            Vector2 relative_collision_position = rb_radii[rb_i] * norm_distance;
+
+                            Vector2 wall_direction = new(norm_distance.y, -norm_distance.x);
+
+                            // v = (a,b)
+                            // u = (c,d) (u is normalized)
+                            // => v':
+                            // v'_x = (2c^2-1)*a + 2cdb
+                            // v'_y = 2cda + (2d^2-1)b
+                            // mirror velocity_diff through norm_distance
+                            float a = velocity_diff.x;
+                            float b = velocity_diff.y;
+                            float c = norm_distance.x;
+                            float d = norm_distance.y;
+
+                            float mirror_velocity_diff_x = (2*c*c-1)*a + 2*c*d*b;
+                            float mirror_velocity_diff_y = 2*c*d*a + (2*d*d-1)*b;
+                            Vector2 mirror_velocity_diff = new(-mirror_velocity_diff_x, -mirror_velocity_diff_y);
+
+                            Vector2 delta_particle_velocity = mirror_velocity_diff - velocity_diff;
+
+                            Vector2 exchanged_momentum = delta_particle_velocity * Rb_Elasticity;
+
+                            // Not currently in use. Also, this is not equal to the energy loss by the collision since temperature_energy is not propertional to velocity_energy;
+                            float overflow_momentum = (delta_particle_velocity * (1-Rb_Elasticity)).magnitude;
+
+                            // v = (a,b)
+                            // u = (c,d) (u is normalized)
+                            // => v_projected:
+                            // v_projected_x = (ac+bd)*c
+                            // v_projected_y = (ac+bd)*d
+                            // Momentum and circular impulses:
+
+                            // Vector2 center_impulse = exchanged_momentum [proj to] norm_distance
+                            // Vector2 rotation_impulse = exchanged_momentum [proj to] wall_direction
+                            // but these methods are not currently used since, for circular objects, center_impulse = exchanged_momentum, and, rotation_impulse = 0.
+                            // thus:
+                            Vector2 center_impulse = exchanged_momentum;
+
+                            // v = I / m
+                            rb_velocity[rb_i] -= center_impulse / rb_mass[rb_i];
+
+                            // place particle outside of circle object
+                            position[particle_index] = rb_position[rb_i] + relative_collision_position;
+                            // position[i] = new(Mathf.Max(Mathf.Min(position[i].x, border_width), 0), Mathf.Max(Mathf.Min(position[i].y, border_height), 0));
+
+
+                            //                               (* mass) but mass = 1
+                            velocity[particle_index] += exchanged_momentum;
+                        };
                     }
                 }
             }
+
+
+            border_thickness = -0.5f;
+
+            if (rb_position[rb_i].y > border_height - border_thickness - rb_radii[rb_i])
+            {
+                rb_velocity[rb_i] = new Vector2(rb_velocity[rb_i].x, -Mathf.Abs(rb_velocity[rb_i].y * Collision_damping_factor));
+                rb_position[rb_i] = new Vector2(rb_position[rb_i].x, border_height - border_thickness - rb_radii[rb_i]);
+            }
+            if (rb_position[rb_i].y < border_thickness + rb_radii[rb_i])
+            {
+                rb_velocity[rb_i] = new Vector2(rb_velocity[rb_i].x, +Mathf.Abs(rb_velocity[rb_i].y * Collision_damping_factor));
+                rb_position[rb_i] = new Vector2(rb_position[rb_i].x, border_thickness + rb_radii[rb_i]);
+            }
+            if (rb_position[rb_i].x > border_width - border_thickness - rb_radii[rb_i])
+            {
+                rb_velocity[rb_i] = new Vector2(-Mathf.Abs(rb_velocity[rb_i].x * Collision_damping_factor), rb_velocity[rb_i].y);
+                rb_position[rb_i] = new Vector2(border_width - border_thickness - rb_radii[rb_i], rb_position[rb_i].y);
+            }
+            if (rb_position[rb_i].x < border_thickness + rb_radii[rb_i])
+            {
+                rb_velocity[rb_i] = new Vector2(+Mathf.Abs(rb_velocity[rb_i].x * Collision_damping_factor), rb_velocity[rb_i].y);
+                rb_position[rb_i] = new Vector2(border_thickness + rb_radii[rb_i], rb_position[rb_i].y);
+            }
+
+            border_thickness = 0.2f;
+            
         }
     }
+
+    float Smooth_rb(float distance, float rigid_body_radii, float rigid_body_Influence_radius)
+    {
+        if (distance > rigid_body_Influence_radius){return 0;}
+
+        float border_offset = Mathf.Max(distance - rigid_body_radii, 0);
+        // Geogebra: https://www.geogebra.org/calculator/bsyseckq
+        return 50 * Mathf.Pow((rigid_body_Influence_radius - border_offset), 0.5f);
+        // return 100 * Mathf.Pow(1 - border_offset/Max_influence_radius, 2);
+    }
+
 }
-
-[BurstCompile]
-public struct Calculate_density_job : IJobParallelFor {
-
-    public int Chunk_amount_multiplier;
-    public int Max_influence_radius;
-    public int flat_particle_chunks_tot_indexes;
-    public float Smooth_Max;
-    public float Smooth_derivative_koefficient;
-    public int Chunk_amount_y;
-    public int Chunk_amount_x;
-    public int Chunk_capacity;
-    [ReadOnly] public NativeArray<Vector2> p_position;
-    [ReadOnly] public NativeArray<Vector2> position;
-    [ReadOnly] public NativeArray<int> new_particle_chunks;
-    public NativeArray<float> density;
-    public NativeArray<float> near_density;
-    public void Execute(int i) {
-
-        (density[i], near_density[i]) = Influence(i);
-    }
-
-    (float, float) Influence(int particle_index)
-    {
-        int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        int end_i = start_i + Chunk_capacity;
-
-        float totInfluence = 0.0f;
-        float totNearInfluence = 0.0f;
-
-        for (int i = start_i; i < end_i; i++)
-        {
-            if (new_particle_chunks[i] == -1){break;}
-
-            float distance = Mathf.Sqrt(Mathf.Pow(p_position[particle_index].x - p_position[new_particle_chunks[i]].x, 2) + Mathf.Pow(p_position[particle_index].y - p_position[new_particle_chunks[i]].y, 2));
-
-            totInfluence += Smooth(distance);
-            totNearInfluence += Smooth_near(distance);
-        }
-
-        return (totInfluence, totNearInfluence);
-    }
-
-    float Smooth(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 2);
-    }
-
-    float Smooth_near(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return Smooth_Max * Mathf.Exp(2 * -Smooth_derivative_koefficient * distance);
-        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 3);
-    }
-}
-
-// Still runs in the main-thread due to the Unity.transform method
-[BurstCompile]
-public struct Transform_particle_position_job : IJobParallelForTransform
-{
-    [ReadOnly] public NativeArray<Vector2> position;
-
-    public void Execute(int i, TransformAccess transform)
-    {
-        // Update particle positions
-        transform.position = new Vector3(position[i].x, position[i].y, 0);
-    }
-}
-
-[BurstCompile]
-public struct Calculate_physics_job : IJobParallelFor {
-
-    public float Gravity_force;
-    public float delta_time;
-    public int border_height;
-    public int border_width;
-    public float border_thickness;
-    public float Collision_damping_factor;
-    public float Smooth_Max;
-    public float Smooth_derivative_koefficient;
-    public float Target_density;
-    public float Pressure_multiplier;
-    public int Chunk_amount_multiplier;
-    public int Max_influence_radius;
-    public float Viscocity;
-    public float Max_interaction_radius;
-    public int Chunk_amount_y;
-    public int Chunk_capacity;
-    public float Interaction_power;
-    public float Max_velocity;
-    public float Near_density_multiplier;
-    public Vector2 mouse_position;
-    public bool left_mouse_button_down;
-    public bool right_mouse_button_down;
-    public NativeArray<Vector2> velocity;
-    public NativeArray<Vector2> position;
-    [ReadOnly] public NativeArray<Vector2> p_position;
-    [ReadOnly] public NativeArray<float> density;
-    [ReadOnly] public NativeArray<float> near_density;
-    [ReadOnly] public NativeArray<Vector2> last_velocity;
-    [ReadOnly] public NativeArray<int> new_particle_chunks;
-
-    public void Execute(int i) {
-
-        velocity[i] = new Vector2(velocity[i].x, velocity[i].y - Gravity_force * delta_time);
-
-        Vector2 pressure_force = Pressure_force(i);
-        Vector2 interaction_force = Interaction_force(i);
-        Vector2 viscocity_force = Viscocity_force(i);
-        //                                                                                   density[i] or ~60???
-        velocity[i] += (pressure_force + interaction_force + viscocity_force) * delta_time / 60;
-
-        // velocity[i] = new(Mathf.Min(velocity[i].x, Max_velocity), Mathf.Min(velocity[i].y, Max_velocity));
-
-        position[i] += velocity[i] * delta_time;
-
-        if (position[i].y > border_height - border_thickness)
-        {
-            velocity[i] = new Vector2(velocity[i].x, -Mathf.Abs(velocity[i].y * Collision_damping_factor));
-            position[i] = new Vector2(position[i].x, border_height - border_thickness);
-        }
-        if (position[i].y < border_thickness)
-        {
-            velocity[i] = new Vector2(velocity[i].x, +Mathf.Abs(velocity[i].y * Collision_damping_factor));
-            position[i] = new Vector2(position[i].x, border_thickness);
-        }
-        if (position[i].x > border_width - border_thickness)
-        {
-            velocity[i] = new Vector2(-Mathf.Abs(velocity[i].x * Collision_damping_factor), velocity[i].y);
-            position[i] = new Vector2(border_width - border_thickness, position[i].y);
-        }
-        if (position[i].x < border_thickness)
-        {
-            velocity[i] = new Vector2(+Mathf.Abs(velocity[i].x * Collision_damping_factor), velocity[i].y);
-            position[i] = new Vector2(border_thickness, position[i].y);
-        }
-    }
-
-    float Density_to_pressure(float density)
-    {
-        float density_error = density - Target_density;
-        float pressure = density_error * Pressure_multiplier;
-        return pressure;
-    }
-
-    float Shared_pressure(float density_A, float density_B)
-    {
-        float pressure_A = Density_to_pressure(density_A);
-        float pressure_B = Density_to_pressure(density_B);
-
-        float Shared_value = (pressure_A + pressure_B) / 2;
-
-        return Shared_value;
-    }
-
-    Vector2 Pressure_force(int particle_index)
-    {
-        Vector2 pressure_force = new(0.0f, 0.0f);
-
-        int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        int end_i = start_i + Chunk_capacity;
-
-        for (int i = start_i; i < end_i; i++)
-        {
-            int other_particle_index = new_particle_chunks[i];
-
-            if (other_particle_index == particle_index || other_particle_index == -1)
-            {
-                continue;
-            }
-
-            Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
-
-            float distance = relative_distance.magnitude;
-
-            float abs_pressure_gradient = Smooth_der(distance);
-            float abs_near_pressure_gradient = Smooth_near_der(distance);
-
-            Vector2 pressure_gradient = new(0.0f, 0.0f);
-            Vector2 near_pressure_gradient = new(0.0f, 0.0f);
-
-            if (distance == 0)
-            {
-                Vector2 randomNormalizedVector = new(particle_index % 0.2842f, particle_index % 0.1827f);
-
-                pressure_gradient = 0.05f * abs_pressure_gradient * randomNormalizedVector;
-                near_pressure_gradient = 0.05f * abs_near_pressure_gradient * randomNormalizedVector;
-            }
-            else
-            {
-                pressure_gradient = relative_distance.normalized * abs_pressure_gradient;
-                near_pressure_gradient = relative_distance.normalized * abs_near_pressure_gradient;
-            }
-
-            float density_A = density[particle_index];
-            float density_B = density[other_particle_index];
-
-            float avg_pressure = Shared_pressure(density_A, density_B);
-
-            float near_pressure_A = near_density[particle_index] * Near_density_multiplier;
-            float near_pressure_B = near_density[other_particle_index] * Near_density_multiplier;
-
-            float avg_near_pressure = (near_pressure_A + near_pressure_B) / 2;
-
-            // p(pos) = ∑_i (p_i * m / ρ_avg * Smooth(pos - pos_i))
-            pressure_force += (avg_pressure * pressure_gradient + avg_near_pressure * near_pressure_gradient) / ((density_A + density_B) / 2);
-
-        }
-
-        return -pressure_force;
-    }
-
-    Vector2 Viscocity_force(int particle_index)
-    {
-        Vector2 velocity_force = new(0.0f, 0.0f);
-
-        int in_chunk_x = (int)Math.Floor(position[particle_index].x * Chunk_amount_multiplier / Max_influence_radius);
-        int in_chunk_y = (int)Math.Floor(position[particle_index].y * Chunk_amount_multiplier / Max_influence_radius);
-
-        int start_i = in_chunk_x * Chunk_amount_y * Chunk_capacity + in_chunk_y * Chunk_capacity;
-        int end_i = start_i + Chunk_capacity;
-
-        for (int i = start_i; i < end_i; i++)
-        {
-            int other_particle_index = new_particle_chunks[i];
-
-            if (other_particle_index == particle_index || other_particle_index == -1)
-            {
-                continue;
-            }
-
-            Vector2 relative_distance = p_position[particle_index] - p_position[other_particle_index];
-
-            float distance = relative_distance.magnitude;
-
-            float abs_viscocity_gradient = Smooth_viscocity_laplacian(distance);
-
-            Vector2 viscocity_gradient = new(0.0f, 0.0f);
-
-            if (distance == 0)
-            {
-                viscocity_gradient = new(0.0f, 0.0f);
-            }
-            else
-            {
-                viscocity_gradient = relative_distance.normalized * abs_viscocity_gradient;
-            }
-
-            Vector2 velocity_A = last_velocity[particle_index];
-            Vector2 velocity_B = last_velocity[other_particle_index];
-
-            float diff_velocity = velocity_A.magnitude - velocity_B.magnitude;
-
-            float density_A = density[particle_index];
-            float density_B = density[other_particle_index];
-
-            // p(pos) = ∑_i (m * v_diff / ρ_avg * Smooth_viscocity(pos - pos_i))
-            velocity_force += (diff_velocity * viscocity_gradient) / ((density_A + density_B) / 2);
-
-        }
-        // Viscocity_multiplier*
-        return Viscocity * velocity_force;
-    }
-
-    Vector2 Interaction_force(int particle_index)
-    {
-        if (!left_mouse_button_down && !right_mouse_button_down){return new(0.0f,0.0f);}
-        int left_right_direction = 0;
-        if (left_mouse_button_down){left_right_direction = -1;}
-        else{if (right_mouse_button_down){left_right_direction = 1;}}
-
-        Vector2 relative_distance = p_position[particle_index] - mouse_position;
-
-        float distance = relative_distance.magnitude;
-
-        float abs_interaction_gradient = Interaction_influence(distance);
-
-        if (distance > Max_interaction_radius){return new(0.0f, 0.0f);}
-        else
-        {
-            if (distance == 0){return new(0.0f, 0.0f);}
-
-            Vector2 interaction_gradient = relative_distance.normalized * abs_interaction_gradient ;
-
-            return interaction_gradient * Interaction_power * left_right_direction;
-        }
-    }
-
-    float Interaction_influence(float distance)
-    {
-        float flatness = 1;
-        if (distance == Max_interaction_radius){return 0.01f;}
-        // Geogebra: https://www.geogebra.org/calculator/uneb7zw9
-        return Mathf.Pow((Max_interaction_radius - distance) / flatness, 0.7f);
-    }
-
-    float Smooth(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return Smooth_Max * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 2);
-    }
-
-    float Smooth_der(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-        return -50 * (1 - distance/Max_influence_radius) / Max_influence_radius;
-    }
-
-    float Smooth_near(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return Smooth_Max * Mathf.Exp(2 * -Smooth_derivative_koefficient * distance);
-        return 25 * Mathf.Pow(1 - distance/Max_influence_radius, 3);
-    }
-
-    float Smooth_near_der(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-        return -75 * Mathf.Pow(1 - distance/Max_influence_radius, 2) / Max_influence_radius;
-    }
-
-    float Smooth_viscocity_laplacian(float distance)
-    {
-        // Geogebra: https://www.geogebra.org/calculator/vwapudgf
-        if (distance > Max_influence_radius){return 0;}
-        // return -Smooth_Max * Smooth_derivative_koefficient * Mathf.Exp(-Smooth_derivative_koefficient * distance);
-        return 45 / (3.14f * Mathf.Pow(Max_influence_radius, 6)) * (Max_influence_radius - distance);
-    }
-}
-
