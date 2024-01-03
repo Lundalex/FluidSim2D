@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 626445105}
   - component: {fileID: 626445104}
   - component: {fileID: 626445103}
+  - component: {fileID: 626445106}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -215,6 +216,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &626445106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 626445102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b11a9573ae027d4486315136f4ccac4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Sim: {fileID: 1319905411}
+  MainScript: {fileID: 0}
+  computeShader: {fileID: 7200000, guid: e370f7c2ec3f79b4499826ad8a5eaa23, type: 3}
+  renderTexture: {fileID: 0}
 --- !u!1 &1319905411
 GameObject:
   m_ObjectHideFlags: 0
@@ -260,7 +277,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particles_num: 1500
-  rigid_bodies_num: 1
+  rigid_bodies_num: 0
   Gravity_force: 4
   Max_influence_radius: 2
   Lg_chunk_dims: 2
@@ -280,6 +297,7 @@ MonoBehaviour:
   Time_step: 0.02
   Particle_visual_size: 1.5
   velocity_visuals: 0
+  Render_with_shader: 1
   Max_interaction_radius: 7
   Interaction_power: 25
   Smooth_Max: 0
@@ -288,6 +306,10 @@ MonoBehaviour:
   Look_ahead_factor: 0.035
   particle_prefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   rigid_body_prefab: {fileID: 0}
+  lg_particle_chunks: 
+  Lg_chunk_amount_x: 0
+  Lg_chunk_amount_y: 0
+  position: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
