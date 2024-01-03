@@ -43,6 +43,7 @@ public class Simulation_w_jobs : MonoBehaviour
     public float Time_step = -1;
     public float Particle_visual_size = 1.5f;
     public bool velocity_visuals;
+    public bool Render_with_shader;
 
     [Header("Interaction settings")]
     public float Max_interaction_radius = 7;
@@ -70,10 +71,10 @@ public class Simulation_w_jobs : MonoBehaviour
     private float[] rb_radii;
     private float[] rb_mass;
     private float[] rb_influence_radii;
-    private int[] lg_particle_chunks;
+    public int[] lg_particle_chunks;
     private int[] lg_particle_chunks_template;
-    private int  Lg_chunk_amount_x;
-    private int  Lg_chunk_amount_y;
+    public int Lg_chunk_amount_x;
+    public int Lg_chunk_amount_y;
     private int  Lg_particle_chunks_tot_num;
     // rigid bodies ---
 
@@ -86,10 +87,9 @@ public class Simulation_w_jobs : MonoBehaviour
     private Vector2 mouse_position;
     private bool left_mouse_button_down;
     private bool right_mouse_button_down;
-    private Vector2[] position;
+    public Vector2[] position;
     private Vector2[] velocity;
     private Vector2[] last_velocity;
-    // Predicted_velocities
     private Vector2[] p_position;
     private float[] density;
     private float[] near_density;
@@ -235,7 +235,10 @@ public class Simulation_w_jobs : MonoBehaviour
         Job_physics();
 
         // 7ms (with velocity_visuals on)
-        Render();
+        if (Render_with_shader == false)
+        {
+            Render();
+        }
     }
 
     void Render()
