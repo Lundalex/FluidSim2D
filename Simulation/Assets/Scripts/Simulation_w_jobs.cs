@@ -44,6 +44,7 @@ public class Simulation_w_jobs : MonoBehaviour
     public float Particle_visual_size = 1.5f;
     public bool velocity_visuals;
     public bool Render_with_shader;
+    public bool RenderMarchingSquares;
 
     [Header("Interaction settings")]
     public float Max_interaction_radius = 7;
@@ -97,6 +98,14 @@ public class Simulation_w_jobs : MonoBehaviour
     private int[] particle_chunks_template;
     private int[] chunk_data_template;
     private float delta_time;
+
+    Mesh mesh;
+    private Vector3[] vertices = new Vector3[900];
+    private int[] triangles = new int[900];
+    private int tri_len = 0;
+    public float PointMin;
+    public Material MarchingSquaresMaterial;
+    private int framecounter;
 
     void Start()
     {
@@ -180,6 +189,9 @@ public class Simulation_w_jobs : MonoBehaviour
         {
             position[i] = Particle_spawn_position(i, particles_num);
         }
+
+        mesh = new Mesh();
+        GetComponent<MeshFilter>().mesh = mesh;
     }
 
     void Update()
@@ -190,7 +202,7 @@ public class Simulation_w_jobs : MonoBehaviour
         }
         else
         {
-            delta_time = Time_step;
+            delta_time = Time_step * Program_speed;
         }
         Vector3 xyz_mouse_pos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -Camera.main.transform.position.z));
         mouse_position = new(xyz_mouse_pos.x, xyz_mouse_pos.y);
@@ -235,9 +247,382 @@ public class Simulation_w_jobs : MonoBehaviour
         Job_physics();
 
         // 7ms (with velocity_visuals on)
-        if (Render_with_shader == false)
+        Render();
+
+        framecounter++;
+        if (RenderMarchingSquares == true && framecounter == 300)
         {
-            Render();
+            framecounter = 0;
+            // marching squares
+
+            // vertices = new Vector3[]{
+            //     new Vector3(10,0,0),
+            //     new Vector3(0,0,0),
+            //     new Vector3(0,10,0)
+            // };
+            // triangles = new int[]{
+            //     0, 1, 2
+            // };
+
+            float MarchScale = 0.5f;
+            int MarchW = (int)(border_width / MarchScale);
+            int MarchH = (int)(border_height / MarchScale);
+            int TotIndices = MarchW * MarchH*9000;
+
+            vertices = new Vector3[TotIndices];
+            triangles = new int[TotIndices];
+
+            Array.Clear(vertices, 0, vertices.Length);
+            Array.Clear(triangles, 0, triangles.Length);
+            tri_len = 0;
+
+            int[] Points = new int[TotIndices];
+
+            for (int x = 0; x < MarchW; x++)
+            {
+                for (int y = 0; y < MarchH; y++)
+                {
+                    Vector2 pos = new(MarchScale*x, MarchScale*y);
+                    int Point = InfluenceMarchingCubes(pos, PointMin);
+                    Points[x + y*MarchW] = Point;
+                }
+            }
+            for (int x = 0; x < MarchW-1; x++)
+            {
+                for (int y = 0; y < MarchH-1; y++)
+                {
+                    // a = x, y
+                    // b = x+1, y
+                    // c = x, y+1
+                    // d = x+1, y+1
+                    int a = Points[x + y*MarchW];
+                    int b = Points[x+1 + y*MarchW];
+                    int c = Points[x+1 + y*MarchW+MarchW];
+                    int d = Points[x + y*MarchW+MarchW];
+                    int binaryTot = 1*a + 2*b + 4*c + 8*d;
+                    // also add "parent" position
+                    TriangleHash(binaryTot, MarchScale*2*x, MarchScale*2*y, MarchScale*2);
+                }
+            }
+
+            MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+            meshRenderer.material = MarchingSquaresMaterial;
+
+            mesh.Clear();
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+        }
+    }
+    void TriangleHash(int TriangleID, float BaseX, float BaseY, float Scale)
+    {
+        switch (TriangleID)
+        {
+            case 0: break;
+            case 1:
+                vertices[tri_len] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 2:
+                vertices[tri_len] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 3:
+                vertices[tri_len] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 4:
+                vertices[tri_len] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 5:
+                vertices[tri_len] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 6:
+                vertices[tri_len] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 7:
+                vertices[tri_len] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY + Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 8:
+                vertices[tri_len] = new Vector3(BaseX, BaseY + Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 9:
+                vertices[tri_len] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 10:
+                vertices[tri_len] = new Vector3(BaseX, BaseY + 0.5f * Scale, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX + 0.5f * Scale, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX + Scale, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new Vector3(BaseX + Scale, BaseY, 0);
+                vertices[tri_len + 1] = new Vector3(BaseX + 0.5f * Scale, BaseY + Scale, 0);
+                vertices[tri_len + 2] = new Vector3(BaseX + Scale, BaseY + 0.5f * Scale, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 11:
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX + Scale, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + 0.5f * Scale, Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX + 0.5f * Scale, Scale + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, 0.5f * Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 12:
+                vertices[tri_len] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX, 0.5f * Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX, 0.5f * Scale + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0.5f * Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 13:
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0.5f * Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, 0.5f * Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + 0.5f * Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 14:
+                vertices[tri_len] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX, 0.5f * Scale + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + 0.5f * Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX + 0.5f * Scale, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            case 15:
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX + Scale, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, 0 + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+
+                vertices[tri_len] = new(BaseX, 0 + BaseY, 0);
+                vertices[tri_len + 1] = new(BaseX, Scale + BaseY, 0);
+                vertices[tri_len + 2] = new(BaseX + Scale, Scale + BaseY, 0);
+                triangles[tri_len] = tri_len;
+                triangles[tri_len + 1] = tri_len + 1;
+                triangles[tri_len + 2] = tri_len + 2;
+                tri_len += 3;
+                break;
+
+            default:
+                Debug.Log("triangleID invalid");
+                break;
         }
     }
 
@@ -265,6 +650,51 @@ public class Simulation_w_jobs : MonoBehaviour
         {
             rigid_bodies[i].position = rb_position[i];
         }
+    }
+
+    int InfluenceMarchingCubes(Vector2 Pos, float Min)
+    {
+        int in_chunk_x = (int)Mathf.Max((float)Math.Floor(Pos.x-0.01f / Lg_chunk_dims), 0);
+        int in_chunk_y = (int)Mathf.Max((float)Math.Floor(Pos.y-0.01f / Lg_chunk_dims), 0);
+
+        for (int x = -0; x <= 0; x++)
+        {
+            for (int y = -0; y <= 0; y++)
+            {
+                int cur_chunk_x = in_chunk_x + x;
+                int cur_chunk_y = in_chunk_y + y;
+
+                if (cur_chunk_x >= 0 && cur_chunk_x < Lg_chunk_amount_x && cur_chunk_y >= 0 && cur_chunk_y < Lg_chunk_amount_y)
+                {
+                    int start_i = cur_chunk_x * Lg_chunk_amount_y * Lg_chunk_capacity + cur_chunk_y * Lg_chunk_capacity;
+                    int end_i = start_i + Lg_chunk_capacity;
+
+                    for (int i = start_i; i < end_i; i++)
+                    {
+                        int particle_index = lg_particle_chunks[i];
+                        if (particle_index == -1){continue;}
+
+                        Vector2 distance = position[particle_index] - Pos;
+
+                        float abs_distance = distance.magnitude;
+
+                        if (abs_distance > Min){return 1;}
+                    }
+                }
+            }
+        }
+        return 0;
+
+        // float randomValue = Random.Range(0f, 1f);
+        // if (randomValue < 0.6f) {return 1;}
+        // return 0;
+    }
+
+    float SmoothMarchingCubes(float distance)
+    {
+        // Geogebra: https://www.geogebra.org/calculator/bsyseckq
+        if (distance > Max_influence_radius){return 0;}
+        return Mathf.Pow(1 - distance/Max_influence_radius, 2);
     }
 
     void Populate_lg_particle_chunks()
