@@ -298,8 +298,8 @@ MonoBehaviour:
   Program_speed: 1
   Time_step: 0.02
   Particle_visual_size: 1.5
-  velocity_visuals: 0
-  Render_with_shader: 1
+  velocity_visuals: 1
+  Render_with_shader: 0
   RenderMarchingSquares: 0
   Max_interaction_radius: 12
   Interaction_power: 25

@@ -10,32 +10,6 @@ import time
 import multiprocessing
 import cProfile
 
-# --- Todo list ---
-
-# 1. Optimise code:
-#   - 13 FPS w/o Devtools
-#   - 1 FPS w Devtools
-
-# 2. Fix increase in system energy
-
-# SETTINGS COPY with 15 / 1 FPS:
-# GravityForce = 0
-# Circle_radii = 5
-# Max_influence_radius = 250
-# Framerate_max = 1000
-# Program_speed = 2
-# Particle_amount = 200
-# Target_density = 100
-# Pressure_multiplier = 5
-# Wall_collision_damping_factor = 0.8
-# Smooth_Max = 150
-# Smooth_derivative_koefficient = 0.02
-
-# # --- Pygame settings ---
-# w, h = 1000, 500
-# resolution_x, resolution_y = 100, 50
-# Dev_tools_density = "(True/False)"
-
 # --- Simulation Parameters ---
 GravityForce = 20
 Circle_radii = 5

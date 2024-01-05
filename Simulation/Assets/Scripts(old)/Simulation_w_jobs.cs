@@ -106,6 +106,7 @@ public class Simulation_w_jobs : MonoBehaviour
     public float PointMin;
     public Material MarchingSquaresMaterial;
     private int framecounter;
+    private (uint, uint)[] particles_w_chunks;
 
     void Start()
     {
@@ -133,6 +134,8 @@ public class Simulation_w_jobs : MonoBehaviour
         rb_radii = new float[rigid_bodies_num];
         rb_mass = new float[rigid_bodies_num];
         rb_influence_radii = new float[rigid_bodies_num];
+
+        particles_w_chunks = new (uint, uint)[particles_num];
 
         if (velocity_visuals)
         {
@@ -184,7 +187,7 @@ public class Simulation_w_jobs : MonoBehaviour
             Create_rigid_body_sphere(i);
         }
         
-        // Assign random positions to particles
+        // Assign positions to particles
         for (int i = 0; i < particles_num; i++)
         {
             position[i] = Particle_spawn_position(i, particles_num);
@@ -192,6 +195,8 @@ public class Simulation_w_jobs : MonoBehaviour
 
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
+
+        SortParticleIndices();
     }
 
     void Update()
@@ -283,7 +288,7 @@ public class Simulation_w_jobs : MonoBehaviour
                 for (int y = 0; y < MarchH; y++)
                 {
                     Vector2 pos = new(MarchScale*x, MarchScale*y);
-                    int Point = InfluenceMarchingCubes(pos, PointMin);
+                    int Point = 1;
                     Points[x + y*MarchW] = Point;
                 }
             }
@@ -311,6 +316,30 @@ public class Simulation_w_jobs : MonoBehaviour
             mesh.Clear();
             mesh.vertices = vertices;
             mesh.triangles = triangles;
+        }
+    }
+
+    void SortParticleIndices()
+    {
+        for (int i = 0; i < particles_num; i++)
+        {
+            particles_w_chunks[i].Item1 = (uint)i;
+            uint particle_index = particles_w_chunks[i].Item1;
+            Vector2 pos = position[particle_index];
+
+            (uint, uint) chunk = ((uint)Math.Floor(pos.x / Max_influence_radius), (uint)Math.Floor(pos.y / Max_influence_radius));
+
+            uint key = chunk.Item1 + chunk.Item2 * (uint)Chunk_amount_x;
+            particles_w_chunks[i].Item2 = key;
+        }
+        Array.Sort(particles_w_chunks, (a, b) => a.Item2.CompareTo(b.Item2));
+        for (int i = 0; i < particles_w_chunks.Length; i++)
+        {
+            Debug.Log(particles_w_chunks[i].Item2);
+        }
+        for (int i = 0; i < particles_w_chunks.Length; i++)
+        {
+            Debug.Log(particles_w_chunks[i].Item1);
         }
     }
     void TriangleHash(int TriangleID, float BaseX, float BaseY, float Scale)
@@ -952,7 +981,6 @@ public class Simulation_w_jobs : MonoBehaviour
     }
 
     void Create_particle(int particle_index)
-
     {
         GameObject particle = Instantiate(particle_prefab, new(0,0,0), Quaternion.identity);
         particle.transform.localScale = new Vector3(0.2f * Particle_visual_size, 0.2f * Particle_visual_size, 0.2f * Particle_visual_size);
@@ -1002,7 +1030,7 @@ public class Simulation_w_jobs : MonoBehaviour
         lineRenderer.startWidth = 0.1f;
         lineRenderer.endWidth = 0.1f;
     }
-    
+
     Vector2 Particle_spawn_position(int particle_index, int max_index)
     {
         float x = (border_width - particle_spawner_dimensions) / 2 + Mathf.Floor(particle_index % Mathf.Sqrt(max_index)) * (particle_spawner_dimensions / Mathf.Sqrt(max_index));
@@ -1323,5 +1351,4 @@ public class Simulation_w_jobs : MonoBehaviour
         return 50 * Mathf.Pow((rigid_body_Influence_radius - border_offset), 0.5f);
         // return 100 * Mathf.Pow(1 - border_offset/Max_influence_radius, 2);
     }
-
 }

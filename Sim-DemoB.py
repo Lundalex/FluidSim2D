@@ -13,7 +13,7 @@ Circle_radii = 10
 Max_influence_radius = 50
 Framerate_max = 1000
 Program_speed = 6
-Particle_amount = 500
+Particle_amount = 300
 Target_density = 200
 Pressure_multiplier = 50000
 Wall_collision_damping_factor = 0.8
@@ -21,7 +21,7 @@ Smooth_Max = 150
 Smooth_derivative_koefficient = 0.1
 Look_ahead_factor = 1 / 120
 Chunk_amount_multiplier = 2
-Viscocity = 0.02
+Viscocity = 0.01
 Interaction_force_factor = 300
 
 # Min_distance is the threshhold for the sort function to not include a particle in a edge chunk
@@ -29,7 +29,7 @@ Min_distance = math.sqrt(2)
 Min_distance_optimisations = False
 
 # --- Pygame settings ---
-w, h = 1000, 600
+w, h = 800, 600
 resolution_x, resolution_y = 50, 25
 
 Dev_density = False
