@@ -43,6 +43,7 @@ public class Simulation : MonoBehaviour
     private Vector2[] p_position;
     private List<float> density;
     private float delta_time;
+    private (uint, uint)[] particles_w_chunks;
 
     void Start()
     {
@@ -54,6 +55,8 @@ public class Simulation : MonoBehaviour
         velocity = new Vector2[particles_num];
         p_position = new Vector2[particles_num];
         density = new List<float>(particles_num);
+
+        particles_w_chunks = new (uint, uint)[particles_num];
 
 
         Chunk_amount_x = (int)(border_width * Chunk_amount_multiplier / Max_influence_radius);
@@ -92,6 +95,8 @@ public class Simulation : MonoBehaviour
         {
             position[i] = Random_particle_position();
         }
+
+        SortParticleIndices();
     }
 
     void Update()
@@ -109,6 +114,33 @@ public class Simulation : MonoBehaviour
         {
             particles[i].transform.position = new Vector3(position[i].x, position[i].y, 0);
         }
+    }
+
+    void SortParticleIndices()
+    {
+        for (int i = 0; i < particles_num; i++)
+        {
+            uint particle_index = particles_w_chunks[i].Item1;
+            Vector2 pos = position[particle_index];
+
+            (uint, uint) chunk = ((uint)(pos.x * Chunk_amount_multiplier / Max_influence_radius), (uint)(pos.y * Chunk_amount_multiplier / Max_influence_radius));
+
+            uint key = chunk.Item1 + chunk.Item2 * (uint)Chunk_amount_x;
+            particles_w_chunks[i].Item2 = key;
+        }
+        Array.Sort(particles_w_chunks, (a, b) => a.Item2.CompareTo(b.Item2));
+        for (int i = 0; i < particles_w_chunks.Length; i++)
+        {
+            Debug.Log(particles_w_chunks[i].Item2);
+        }
+        for (int i = 0; i < particles_w_chunks.Length; i++)
+        {
+            Debug.Log(particles_w_chunks[i].Item1);
+        }
+
+
+
+
     }
 
     void Sort_particles()
