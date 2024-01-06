@@ -51,12 +51,12 @@ public class Simulation_w_jobs : MonoBehaviour
     public float Interaction_power = 130;
 
     [Header("Advanced settings")]
-    private int Particle_sort_frequency = 1;
 
     // Not in use ---
     public float Smooth_Max = 5f;
     public float Smooth_derivative_koefficient = 2.5f;
     public float Max_velocity = 5;
+    private int Particle_sort_frequency = 1;
     // Not in use ---
     public float Look_ahead_factor = 0.035f;
 
