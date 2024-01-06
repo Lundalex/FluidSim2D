@@ -311,29 +311,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 0
+  ParticlesNum: 2000
   RBodiesNum: 0
-  MaxInfluenceRadius: 0
-  TargetDensity: 0
-  PressureMultiplier: 0
-  NearDensityMultiplier: 0
-  Damping: 0
-  Viscocity: 0
-  Gravity: 0
-  RBodyElasticity: 0
-  Width: 0
-  Height: 0
-  SpawnDims: 0
-  BorderThickness: 0
-  FixedTimeStep: 0
-  TimeStep: 0
-  VisualParticleRadii: 0
-  RenderFrequency: 0
-  MaxInteractionRadius: 0
-  InteractionPower: 0
+  MaxInfluenceRadius: 2
+  TargetDensity: 3
+  PressureMultiplier: 1000
+  NearDensityMultiplier: 25
+  Damping: 0.25
+  Viscocity: 0.1
+  RBodyElasticity: 0.6
+  Gravity: 4
+  Width: 80
+  Height: 60
+  SpawnDims: 50
+  BorderThickness: 0.2
+  FixedTimeStep: 1
+  TimeStep: 0.02
+  ProgramSpeed: 1
+  VisualParticleRadii: 1.5
+  RenderFrequency: 1
+  MaxInteractionRadius: 12
+  InteractionPower: 25
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
   SimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
+  PredPositions: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
