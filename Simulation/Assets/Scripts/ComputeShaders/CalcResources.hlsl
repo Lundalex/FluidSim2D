@@ -1,1 +1,0 @@
-// include potential general calculation recources

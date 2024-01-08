@@ -1,14 +1,10 @@
-#pragma kernel CalculatePredictedPosistions
-#pragma kernel CalculateDensities
+#pragma kernel PreCalculations
 #pragma kernel RbRbCollisions
 #pragma kernel RbParticleCollisions
-#pragma kernel ParticlePhysics
-#pragma kernel ExternalParticleForces
-#pragma kernel CalculateNewParticlePositions
+#pragma kernel ParticleForces
 // sort and render kernels respectively will be located in different compute shaders
 
 #include "MathResources.hlsl"
-#include "CalcResources.hlsl"
 
 static const int ThreadsNum = 32;
 
@@ -23,7 +19,7 @@ const int RBodiesNum;
 const int MaxInfluenceRadius;
 const int SpawnDims;
 const int RenderFrequency;
-const int ImpulseStorageLength;
+const int PStorageLength;
 
 const float TargetDensity;
 const float PressureMultiplier;
@@ -34,11 +30,17 @@ const float Gravity;
 const float RBodyElasticity;
 const float BorderPadding;
 const float TimeStep;
-const float VisualParticleRadii;
 const float MaxInteractionRadius;
 const float InteractionPower;
 
 const bool FixedTimeStep;
+
+// Per-timestep-set constants
+const float DeltaTime;
+const float MouseX;
+const float MouseY;
+const bool RMousePressed;
+const bool LMousePressed;
 
 // Particles - Buffers
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
@@ -47,23 +49,17 @@ RWStructuredBuffer<int> StartIndices;
 RWStructuredBuffer<float2> PredPositions;
 RWStructuredBuffer<float2> Positions;
 RWStructuredBuffer<float2> Velocities;
+RWStructuredBuffer<float2> LastVelocities;
 RWStructuredBuffer<float> Densities;
 RWStructuredBuffer<float> NearDensities;
-
 // Rigid bodies - Buffers
 RWStructuredBuffer<float2> RBPositions;
 RWStructuredBuffer<float2> RBVelocities;
 RWStructuredBuffer<float> RBRadii;
 RWStructuredBuffer<float> RBMass;
 
-RWStructuredBuffer<float4> RBImpulseStorage; // RBodiesNum[ImpulseStorageLength](particleIndex, ImpulseAmount, posX, posY)
-
-// Per-timestep-set constants
-const float DeltaTime;
-const float MouseX;
-const float MouseY;
-const bool RMousePressed;
-const bool LMousePressed;
+RWStructuredBuffer<float3> ParticleImpulseStorage; // RBodiesNum[ParticleImpulseStorageLength](particleIndex, ImpulseX, ImpulseY)
+RWStructuredBuffer<float3> ParticleTeleportStorage; // RBodiesNum[ParticleTeleportStorageLength](particleIndex, PositionX, PositionY)
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -73,12 +69,12 @@ bool ValidChunk(int ChunkX, int ChunkY)
 
 float2 CalcDensity(int i) // (density, nearDensity)
 {
-    // int type conversion removes decimals, effectively doing a Floor() operation
+    // Int type conversion removes decimals, effectively doing a Floor() operation
     int ChunkX = (int)(Positions[i].x / MaxInfluenceRadius);
     int ChunkY = (int)(Positions[i].y / MaxInfluenceRadius);
 
-    float totDensity = 0;
-    float totNearDensity = 0;
+    float totDensity = 0.0;
+    float totNearDensity = 0.0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -92,18 +88,16 @@ float2 CalcDensity(int i) // (density, nearDensity)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                if (ChunkKey != SpatialLookup[Index].y) {break;}
-                int OtherParticleIndex = SpatialLookup[Index].x;
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
+                int otherPIndex = SpatialLookup[Index].x;
 
-                float dst = Positions[i] - Positions[OtherParticleIndex];
+                float dst = length(Positions[i] - Positions[otherPIndex]);
 
                 totDensity += SmoothLiquid(dst, MaxInfluenceRadius);
                 totNearDensity += SmoothLiquidNear(dst, MaxInfluenceRadius);
-
-                // increment Index each iteration
-                Index += 1;
             }
         }
     }
@@ -139,29 +133,203 @@ float4 BoundraryCheck(float2 pos, float2 vel, float extraPadding)
     return float4(pos.x, pos.y, vel.x, vel.y);
 }
 
+float DensityToPressure(float density)
+{
+    float densityError = density - TargetDensity;
+    float pressure = densityError * PressureMultiplier;
+    return pressure;
+}
+
+float SharedPressure(float densityA, float densityB)
+{
+    float pressureA = DensityToPressure(densityA);
+    float pressureB = DensityToPressure(densityB);
+
+    float sharedPressure = (pressureA + pressureB) / 2;
+
+    return sharedPressure;
+}
+
+float SharedNearPressure(float nearDensityA, float nearDensityB)
+{
+    float nearPressureA = nearDensityA * NearDensityMultiplier;
+    float nearPressureB = nearDensityB * NearDensityMultiplier;
+
+    float sharedNearPressure = (nearPressureA + nearPressureB) / 2;
+
+    return sharedNearPressure;
+}
+
+float2 PressureForce(int pIndex)
+{
+    // Int type conversion removes decimals, effectively doing a Floor() operation
+    int ChunkX = (int)(Positions[pIndex].x / MaxInfluenceRadius);
+    int ChunkY = (int)(Positions[pIndex].y / MaxInfluenceRadius);
+
+    float2 totPressureForce = float2(0.0, 0.0);
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            int CurChunkX = ChunkX + x;
+            int CurChunkY = ChunkY + y;
+            
+            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[ChunkKey];
+
+            int Index = startIndex; 
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            {
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
+                int otherPIndex = SpatialLookup[Index].x;
+                if (pIndex == otherPIndex) {continue;}
+
+                float2 dst = Positions[pIndex] - Positions[otherPIndex];
+                float absDst = length(dst);
+
+                if (absDst > MaxInfluenceRadius){continue;}
+                float absPressureGradient = SmoothLiquidDer(absDst, MaxInfluenceRadius);
+                float absNearPressureGradient = SmoothLiquidNearDer(absDst, MaxInfluenceRadius);
+
+                float2 pressureGradient = float2(0.0, 0.0);
+                float2 nearPressureGradient = float2(0.0, 0.0);
+
+                if (absDst == 0) {
+                    // semirandom direction
+                    float2 randomNormalizedVector = normalize(float2(pIndex % 0.2842, pIndex % 0.1827));
+
+                    pressureGradient = 0.01 * randomNormalizedVector;
+                    nearPressureGradient = 0.01 * randomNormalizedVector;
+                }
+                else {
+                    pressureGradient = normalize(dst) * absPressureGradient;
+                    nearPressureGradient = normalize(dst) * absNearPressureGradient;
+                }
+
+                float densityA = Densities[pIndex];
+                float densityB = Densities[otherPIndex];
+                float avgPressure = SharedPressure(densityA, densityB);
+
+                float nearDensityA = NearDensities[pIndex];
+                float nearDensityB = NearDensities[otherPIndex];
+                float avgNearPressure = SharedNearPressure(nearDensityA, nearDensityB);
+
+                if (densityA + densityB == 0) {continue;}
+                totPressureForce += (avgPressure * pressureGradient + avgNearPressure * nearPressureGradient) / ((densityA + densityB) / 2);
+
+                // Increment Index each iteration - Chunk particle search algorithm
+            }
+        }
+    }
+
+    return -totPressureForce;
+}
+
+float2 ViscocityForce(int pIndex)
+{
+    // Int type conversion removes decimals, effectively doing a Floor() operation
+    int ChunkX = (int)(Positions[pIndex].x / MaxInfluenceRadius);
+    int ChunkY = (int)(Positions[pIndex].y / MaxInfluenceRadius);
+
+    float2 totViscosityForce = float2(0.0, 0.0);
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            int CurChunkX = ChunkX + x;
+            int CurChunkY = ChunkY + y;
+            
+            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[ChunkKey];
+
+            int Index = startIndex; 
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            {
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
+                int otherPIndex = SpatialLookup[Index].x;
+                if (pIndex == otherPIndex) {continue;}
+
+                float2 dst = PredPositions[pIndex] - PredPositions[otherPIndex];
+                float absDst = length(dst);
+
+                if (absDst > MaxInfluenceRadius) {continue;}
+
+                float absViscosityGradient = SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
+
+                float2 viscosityGradient = float2(0.0, 0.0);
+
+                if (absDst != 0)
+                {
+                    viscosityGradient = normalize(dst) * absViscosityGradient;
+                }
+
+                float2 velA = LastVelocities[pIndex];
+                float2 velB = LastVelocities[otherPIndex];
+
+                // (float diff_velocity = velocity_A.magnitude - velocity_B.magnitude;) in job script
+                float diffVel = length(velA - velB);
+
+                float densityA = Densities[pIndex];
+                float densityB = Densities[otherPIndex];
+
+                // p(pos) = ∑_i (m * v_diff / ρ_avg * Smooth_viscocity(pos - pos_i))
+                if (densityA + densityB == 0) {continue;}
+                totViscosityForce += (diffVel * viscosityGradient) / ((densityA + densityB) / 2);
+            }
+        }
+    }
+
+    return totViscosityForce * Viscocity;
+}
+
+float2 InteractionForce(int pIndex)
+{
+    if (!LMousePressed && !RMousePressed) {return float2(0.0, 0.0);}
+    int dir = 0;
+    if (LMousePressed) {dir = -1;}
+    else if (RMousePressed) {dir = 1;}
+
+    float2 dst = PredPositions[pIndex] - float2(MouseX, MouseY);
+
+    float absDst = length(dst);
+
+    if (absDst > MaxInfluenceRadius) {return float2(0.0, 0.0);}
+
+    float absInteractionGradient = InteractionInfluence(absDst, MaxInfluenceRadius);
+
+    if (absDst == 0) {return float2(0.0, 0.0);}
+
+    float2 interactionGradient = normalize(dst) * absInteractionGradient;
+
+    return interactionGradient * InteractionPower * dir;
+}
+
 [numthreads(ThreadsNum,1,1)]
-void CalculatePredictedPosistions (uint3 id : SV_DispatchThreadID)
+void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    PredPositions[i] = Positions[i] + Velocities[i] * DeltaTime;
+    // Density
+    float2 Dns = CalcDensity(i);
+    Densities[i] = Dns.x;
+    NearDensities[i] = Dns.y;
 
+    // LastVelocities
+    LastVelocities[i] = Velocities[i];
+
+    // Predicted positions
+    PredPositions[i] = Positions[i] + Velocities[i] * DeltaTime;
     // Make sure PredPositions[i] is within the world boundrary
     PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.01), 0);
     PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.01), 0);
 }
 
-[numthreads(ThreadsNum,1,1)]
-void CalculateDensities (uint3 id : SV_DispatchThreadID)
-{
-    int i = id.x;
-
-    float2 Dns = CalcDensity(i);
-    Densities[i] = Dns.x;
-    NearDensities[i] = Dns.y;
-}
-
-// SHOULD ONLY ITERATE RBodiesNum TIMES!!!
 [numthreads(ThreadsNum,1,1)]
 void RbRbCollisions (uint3 id : SV_DispatchThreadID)
 {
@@ -173,7 +341,7 @@ void RbRbCollisions (uint3 id : SV_DispatchThreadID)
         if (OtherRBIndex == i) {continue;}
 
         float2 dst = RBPositions[i] - RBPositions[OtherRBIndex];
-        float absDst = sqrt(dot(dst, dst));
+        float absDst = length(dst);
 
         if (absDst >= RBRadii[i] + RBRadii[OtherRBIndex]) {continue;}
 
@@ -187,7 +355,7 @@ void RbRbCollisions (uint3 id : SV_DispatchThreadID)
         // => v':
         // v'_x = (2c^2-1)*a + 2cdb
         // v'_y = 2cda + (2d^2-1)b
-        // mirror vel_diff through normDst
+        // Mirror vel_diff through normDst
         float a = diffVel.x;
         float b = diffVel.y;
         float c = normDst.x;
@@ -213,9 +381,9 @@ void RbRbCollisions (uint3 id : SV_DispatchThreadID)
 
         // Vector2 centerImpulse = exchangedMomentum [proj to] normDst
         // Vector2 rotation_impulse = exchangedMomentum [proj to] wallDir
-        // but these methods are not currently used since, for circular objects, centerImpulse = exchangedMomentum, and, rotation_impulse = 0.
-        // thus:
-        float2 centerImpulse = dot(exchangedMomentum, normDst) * normDst;
+        // But these methods are not currently used since, for circular objects, centerImpulse = exchangedMomentum, and, rotation_impulse = 0.
+        // Thus:
+        float2 centerImpulse = exchangedMomentum;
 
         RBVelocities[i] -= centerImpulse / (2 * RBMass[i]);
 
@@ -225,7 +393,7 @@ void RbRbCollisions (uint3 id : SV_DispatchThreadID)
     }
 }
 
-// SHOULD ONLY ITERATE RBodiesNum TIMES!!!
+// 10/8 used buffers???
 [numthreads(ThreadsNum,1,1)]
 void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 {
@@ -238,7 +406,7 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
     RBPositions[i] = float2(PosVelData.x, PosVelData.y);
     RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
     
-    // int type conversion removes decimals, effectively doing a Floor() operation
+    // Int type conversion removes decimals, effectively doing a Floor() operation
     int ChunkX = (int)(RBPositions[i].x / MaxInfluenceRadius);
     int ChunkY = (int)(RBPositions[i].y / MaxInfluenceRadius);
 
@@ -257,19 +425,76 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                if (ChunkKey != SpatialLookup[Index].y) {break;}
-                int OtherParticleIndex = SpatialLookup[Index].x;
-
-
-
-                // increment Index each iteration
+                // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
+                int particleIndex = SpatialLookup[Index].x;
+
+                float2 dst = Positions[particleIndex] - RBPositions[i];
+                float absDst = length(dst);
+
+                if (absDst >= RBRadii[i]) {continue;}
+
+                float2 diffVel = Velocities[particleIndex] - RBVelocities[i];
+
+                float2 normDst = normalize(dst);
+                float2 wallDir = float2(normDst.y, -normDst.x);
+
+                // v = (a,b)
+                // u = (c,d) (u is normalized)
+                // => v':
+                // v'_x = (2c^2-1)*a + 2cdb
+                // v'_y = 2cda + (2d^2-1)b
+                // Mirror vel_diff through normDst
+                float a = diffVel.x;
+                float b = diffVel.y;
+                float c = normDst.x;
+                float d = normDst.y;
+
+                float mirrorDiffVelX = (2*c*c-1)*a + 2*c*d*b;
+                float mirrorDiffVelY = 2*c*d*a + (2*d*d-1)*b;
+                float2 MirrorDiffVel = float2(-mirrorDiffVelX, -mirrorDiffVelY);
+
+                float2 deltaParticleVel = MirrorDiffVel - diffVel;
+
+                float2 exchangedMomentum = deltaParticleVel * RBodyElasticity;
+
+                // Not currently in use. Also, this is not equal to the energy loss by the collision since temperature_energy is not proportional to vel_energy;
+                float overflowMomentum = length(deltaParticleVel * (1 - RBodyElasticity));
+
+                // v = (a,b)
+                // u = (c,d) (u is normalized)
+                // => v_projected:
+                // v_projected_x = (ac+bd)*c
+                // v_projected_y = (ac+bd)*d
+                // Momentum and circular impulses:
+
+                // Vector2 centerImpulse = exchangedMomentum [proj to] normDst
+                // Vector2 rotation_impulse = exchangedMomentum [proj to] wallDir
+                // But these methods are not currently used since, for circular objects, centerImpulse = exchangedMomentum, and, rotation_impulse = 0.
+                // Thus:
+                float2 centerImpulse = exchangedMomentum;
+
+                RBVelocities[i] -= centerImpulse / (2 * RBMass[i]);
+
+                float2 relCollisionPos = RBRadii[i] * normDst;
+                float2 TPParticlePos = RBPositions[i] + relCollisionPos;
+
+                int RBDataStartIndex = PStorageLength * i;
+                int freeIndex = 0;
+                while ((int)ParticleTeleportStorage[RBDataStartIndex + freeIndex].x == -1 && freeIndex < PStorageLength)
+                {
+                    freeIndex++;
+                }
+                if (freeIndex < PStorageLength)
+                {
+                    ParticleTeleportStorage[RBDataStartIndex + freeIndex] = float3(particleIndex, TPParticlePos.x, TPParticlePos.y);
+                    ParticleImpulseStorage[RBDataStartIndex + freeIndex] = float3(particleIndex, exchangedMomentum.x, exchangedMomentum.y);
+                }
             }
         }
     }
-
 
     PosVelData = BoundraryCheck(RBPositions[i], RBVelocities[i], RBRadii[i] - 0.5);
     RBPositions[i] = float2(PosVelData.x, PosVelData.y);
@@ -277,19 +502,25 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(ThreadsNum,1,1)]
-void ParticlePhysics (uint3 id : SV_DispatchThreadID)
+void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
+    int i = id.x;
 
-}
+    float4 PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
+    Positions[i] = float2(PosVelData.x, PosVelData.y);
 
-[numthreads(ThreadsNum,1,1)]
-void ExternalParticleForces (uint3 id : SV_DispatchThreadID)
-{
+    Velocities[i].y -= Gravity * DeltaTime;
 
-}
+    float2 presureForce = PressureForce(i);
+    float2 interactionForce = InteractionForce(i);
+    float2 viscocityForce = ViscocityForce(i);
+    //                                                                   / (constant) or density[i]???
+    float2 totForce = (interactionForce + presureForce + viscocityForce) / 3;
 
-[numthreads(ThreadsNum,1,1)]
-void CalculateNewParticlePositions (uint3 id : SV_DispatchThreadID)
-{
+    Velocities[i] += totForce * DeltaTime / 3;
+    Positions[i] += Velocities[i] * DeltaTime;
 
+    PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
+    Positions[i] = float2(PosVelData.x, PosVelData.y);
+    Velocities[i] = float2(PosVelData.z, PosVelData.w);
 }

@@ -320,7 +320,7 @@ public struct Calculate_physics_job : IJobParallelFor {
 
     Vector2 Viscocity_force(int particle_index)
     {
-        Vector2 velocity_force = new(0.0f, 0.0f);
+        Vector2 viscosityForce = new(0.0f, 0.0f);
 
         int in_chunk_x = (int)Math.Floor(position[particle_index].x / Max_influence_radius);
         int in_chunk_y = (int)Math.Floor(position[particle_index].y / Max_influence_radius);
@@ -365,11 +365,11 @@ public struct Calculate_physics_job : IJobParallelFor {
             float density_B = density[other_particle_index];
 
             // p(pos) = ∑_i (m * v_diff / ρ_avg * Smooth_viscocity(pos - pos_i))
-            velocity_force += (diff_velocity * viscocity_gradient) / ((density_A + density_B) / 2);
+            viscosityForce += (diff_velocity * viscocity_gradient) / ((density_A + density_B) / 2);
 
         }
         // Viscocity_multiplier*
-        return Viscocity * velocity_force;
+        return Viscocity * viscosityForce;
     }
 
     Vector2 Interaction_force(int particle_index)
@@ -392,7 +392,7 @@ public struct Calculate_physics_job : IJobParallelFor {
         {
             if (distance == 0){return new(0.0f, 0.0f);}
 
-            Vector2 interaction_gradient = relative_distance.normalized * abs_interaction_gradient ;
+            Vector2 interaction_gradient = relative_distance.normalized * abs_interaction_gradient;
 
             return interaction_gradient * Interaction_power * left_right_direction;
         }
@@ -400,10 +400,9 @@ public struct Calculate_physics_job : IJobParallelFor {
 
     float Interaction_influence(float distance)
     {
-        float flatness = 1;
         if (distance == Max_interaction_radius){return 0.01f;}
         // Geogebra: https://www.geogebra.org/calculator/bsyseckq
-        return Mathf.Pow((Max_interaction_radius - distance) / flatness, 0.7f);
+        return Mathf.Pow(Max_interaction_radius - distance, 0.7f);
     }
 
     float Smooth(float distance)

@@ -54,7 +54,11 @@
         "ProjectSettings/": true,
         "UserSettings/": true,
         "temp/": true,
-        "Temp/": true
+        "Temp/": true,
+        "files.associations": {
+            "*.shader" : "hlsl",
+            "*.compute" : "hlsl"
+          }
     },
     "dotnet.defaultSolution": "Simulation.sln",
     "cmake.configureOnOpen": true,
