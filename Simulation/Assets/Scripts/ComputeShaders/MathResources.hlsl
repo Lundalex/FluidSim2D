@@ -12,7 +12,7 @@ float InteractionInfluence(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return dst * InteractionInfluenceFactor;
+		return sqrt(radius - dst);
 	}
 	return 0;
 }
@@ -30,7 +30,7 @@ float SmoothLiquidDer(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return dst * SmoothLiquidDerFactor;
+		return -2 * (1 - dst / radius) / radius;
 	}
 	return 0;
 }
@@ -48,7 +48,7 @@ float SmoothLiquidNearDer(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return -dst * SmoothLiquidNearDerFactor;
+		return -3 * (1 - dst/radius)*(1 - dst/radius) / radius;
 	}
 	return 0;
 }
@@ -57,7 +57,13 @@ float SmoothViscosityLaplacian(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return -dst * SmoothViscosityLaplacianFactor;
+	    float radius6 = radius*radius*radius*radius*radius*radius;
+		return 45 / (3.14 * radius6 * (radius - dst));
 	}
 	return 0;
+}
+
+float avg(float a, float b)
+{
+    return (a + b) / 2;
 }
