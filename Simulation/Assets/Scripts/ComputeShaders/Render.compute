@@ -25,7 +25,7 @@ RWStructuredBuffer<int> StartIndices;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
+    if (ChunkX >= 0 && ChunkX <= ChunkNumW && ChunkY >= 0 && ChunkY <= ChunkNumH) {return true;}
     return false;
 }
 
@@ -38,8 +38,8 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     float2 pixelPos = float2(pixelPosX, pixelPosY);
 
     // Int type conversion removes decimals, effectively doing a Floor() operation
-    int ChunkX = (int)(pixelPos.x / MaxInfluenceRadius);
-    int ChunkY = (int)(pixelPos.y / MaxInfluenceRadius);
+    int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
+    int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
 
     for (int x = -1; x <= 1; x++)
     {
@@ -58,14 +58,15 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
             {
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
-
                 int otherPIndex = SpatialLookup[Index].x;
 
                 float dst = length(pixelPos - Positions[otherPIndex]);
 
                 if (dst < VisualParticleRadii)
                 {
-                    Result[id.xy] = float4(1.0, 1.0, 1.0, 0.0);
+                    float r = min(1.0, length(Velocities[otherPIndex])/3);
+                    float b = max(0.0, 1-length(Velocities[otherPIndex])/3);
+                    Result[id.xy] = float4(r, 0.0, b, 0.0);
                     return;
                 }
             }
