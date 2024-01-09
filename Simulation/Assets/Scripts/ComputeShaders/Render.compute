@@ -65,7 +65,7 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
 
                 if (dst < VisualParticleRadii)
                 {
-                    Result[id.xy] = float4(1.0, 1.0, 0.0, 0.0);
+                    Result[id.xy] = float4(1.0, 1.0, 1.0, 0.0);
                     return;
                 }
             }

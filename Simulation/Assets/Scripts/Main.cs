@@ -275,41 +275,47 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0) {
             SimShader.SetBuffer(0, "Positions", PositionsBuffer);
             SimShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(0, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(0, "NearDensities", NearDensitiesBuffer);
             SimShader.SetBuffer(0, "LastVelocities", LastVelocitiesBuffer);
             SimShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
         }
-
-        // Kernel RbRbCollisions
-        if (RBodiesNum != 0) {
-            SimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
-            SimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
-            SimShader.SetBuffer(1, "RBRadii", RBRadiiBuffer);
-            SimShader.SetBuffer(1, "RBMass", NearDensitiesBuffer);
+        // Kernel PreCalculations
+        if (ParticlesNum != 0) {
+            SimShader.SetBuffer(1, "Positions", PositionsBuffer);
+            SimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
+            SimShader.SetBuffer(1, "Densities", DensitiesBuffer);
+            SimShader.SetBuffer(1, "NearDensities", NearDensitiesBuffer);
+            SimShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
         }
 
-        // Kernel RbParticleCollisions
+        // Kernel RbRbCollisions
         if (RBodiesNum != 0) {
             SimShader.SetBuffer(2, "RBPositions", RBPositionsBuffer);
             SimShader.SetBuffer(2, "RBVelocities", RBVelocitiesBuffer);
             SimShader.SetBuffer(2, "RBRadii", RBRadiiBuffer);
             SimShader.SetBuffer(2, "RBMass", NearDensitiesBuffer);
-            SimShader.SetBuffer(2, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(2, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(2, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(2, "ParticleImpulseStorage", ParticleImpulseStorageBuffer);
-            SimShader.SetBuffer(2, "ParticleTeleportStorage", ParticleTeleportStorageBuffer);
+        }
+
+        // Kernel RbParticleCollisions
+        if (RBodiesNum != 0) {
+            SimShader.SetBuffer(3, "RBPositions", RBPositionsBuffer);
+            SimShader.SetBuffer(3, "RBVelocities", RBVelocitiesBuffer);
+            SimShader.SetBuffer(3, "RBRadii", RBRadiiBuffer);
+            SimShader.SetBuffer(3, "RBMass", NearDensitiesBuffer);
+            SimShader.SetBuffer(3, "Positions", PositionsBuffer);
+            SimShader.SetBuffer(3, "Velocities", VelocitiesBuffer);
+            SimShader.SetBuffer(3, "Densities", DensitiesBuffer);
+            SimShader.SetBuffer(3, "ParticleImpulseStorage", ParticleImpulseStorageBuffer);
+            SimShader.SetBuffer(3, "ParticleTeleportStorage", ParticleTeleportStorageBuffer);
         }
 
         // Kernel ParticleForces
         if (ParticlesNum != 0) {
-            SimShader.SetBuffer(3, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(3, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(3, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(3, "NearDensities", NearDensitiesBuffer);
-            SimShader.SetBuffer(3, "LastVelocities", LastVelocitiesBuffer);
-            SimShader.SetBuffer(3, "PredPositions", PredPositionsBuffer);
+            SimShader.SetBuffer(4, "Positions", PositionsBuffer);
+            SimShader.SetBuffer(4, "Velocities", VelocitiesBuffer);
+            SimShader.SetBuffer(4, "Densities", DensitiesBuffer);
+            SimShader.SetBuffer(4, "NearDensities", NearDensitiesBuffer);
+            SimShader.SetBuffer(4, "LastVelocities", LastVelocitiesBuffer);
+            SimShader.SetBuffer(4, "PredPositions", PredPositionsBuffer);
         }
     }
 
@@ -429,18 +435,16 @@ public class Main : MonoBehaviour
         StartIndicesBuffer.SetData(StartIndices);
 
         if (ParticlesNum != 0) {
-            SimShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
         }
-
         if (RBodiesNum != 0) {
-            SimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
-        }
-
-        if (ParticlesNum != 0) {
             SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
             SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+        }
+        if (ParticlesNum != 0) {
+            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
         }
 
         if (ParticlesNum != 0) {
@@ -455,9 +459,10 @@ public class Main : MonoBehaviour
 
         // Dispatch compute shader kernels
         if (ParticlesNum != 0) {SimShader.Dispatch(0, ParticlesNum, 1, 1);}
-        if (RBodiesNum != 0) {SimShader.Dispatch(1, RBodiesNum, 1, 1);}
+        if (ParticlesNum != 0) {SimShader.Dispatch(1, ParticlesNum, 1, 1);}
         if (RBodiesNum != 0) {SimShader.Dispatch(2, RBodiesNum, 1, 1);}
-        if (ParticlesNum != 0) {SimShader.Dispatch(3, ParticlesNum, 1, 1);}
+        if (RBodiesNum != 0) {SimShader.Dispatch(3, RBodiesNum, 1, 1);}
+        if (ParticlesNum != 0) {SimShader.Dispatch(4, ParticlesNum, 1, 1);}
 
         // Example use: Retrieve PositionsBuffer to Positions
         // DensitiesBuffer.GetData(Densities);

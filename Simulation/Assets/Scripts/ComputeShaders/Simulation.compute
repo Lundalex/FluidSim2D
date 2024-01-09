@@ -1,4 +1,5 @@
 #pragma kernel PreCalculations
+#pragma kernel CalculateDensities
 #pragma kernel RbRbCollisions
 #pragma kernel RbParticleCollisions
 #pragma kernel ParticleForces
@@ -67,11 +68,11 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return false;
 }
 
-float2 CalcDensity(int i) // (density, nearDensity)
+float2 CalcDensity(int pIndex) // (density, nearDensity)
 {
     // Int type conversion removes decimals, effectively doing a Floor() operation
-    int ChunkX = (int)(Positions[i].x / MaxInfluenceRadius);
-    int ChunkY = (int)(Positions[i].y / MaxInfluenceRadius);
+    int ChunkX = (int)(PredPositions[pIndex].x / MaxInfluenceRadius);
+    int ChunkY = (int)(PredPositions[pIndex].y / MaxInfluenceRadius);
 
     float totDensity = 0.0;
     float totNearDensity = 0.0;
@@ -94,7 +95,7 @@ float2 CalcDensity(int i) // (density, nearDensity)
                 Index += 1;
                 int otherPIndex = SpatialLookup[Index].x;
 
-                float dst = length(Positions[i] - Positions[otherPIndex]);
+                float dst = length(PredPositions[pIndex] - PredPositions[otherPIndex]);
 
                 totDensity += SmoothLiquid(dst, MaxInfluenceRadius);
                 totNearDensity += SmoothLiquidNear(dst, MaxInfluenceRadius);
@@ -188,7 +189,7 @@ float2 PressureForce(int pIndex)
                 int otherPIndex = SpatialLookup[Index].x;
                 if (pIndex == otherPIndex) {continue;}
 
-                float2 dst = PredPositions[pIndex] -  [otherPIndex];
+                float2 dst = PredPositions[pIndex] -  PredPositions[otherPIndex];
                 float absDst = length(dst);
 
                 if (absDst > MaxInfluenceRadius){continue;}
@@ -316,19 +317,24 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    // Density
-    float2 Dns = CalcDensity(i);
-    Densities[i] = Dns.x;
-    NearDensities[i] = Dns.y;
-
-    // LastVelocities
-    LastVelocities[i] = Velocities[i];
-
-    // Predicted positions
+    // Predicted positions                            (LookAheadFactor)
     PredPositions[i] = Positions[i] + Velocities[i] * 0.03;
     // Make sure PredPositions[i] is within the world boundrary
     PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.01), 0);
     PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.01), 0);
+
+    // LastVelocities
+    LastVelocities[i] = Velocities[i];
+}
+
+[numthreads(ThreadsNum,1,1)]
+void CalculateDensities (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+    // Density
+    float2 Dns = CalcDensity(i);
+    Densities[i] = Dns.x;
+    NearDensities[i] = Dns.y;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -521,7 +527,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     Velocities[i] += totForce * DeltaTime / 3;
     Positions[i] += Velocities[i] * DeltaTime;
 
-    float4 PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
+    PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
     Positions[i] = float2(PosVelData.x, PosVelData.y);
     Velocities[i] = float2(PosVelData.z, PosVelData.w);
 }
