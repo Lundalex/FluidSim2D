@@ -25,7 +25,7 @@ public class Main : MonoBehaviour
     public int MaxInfluenceRadius;
     public float TargetDensity;
     public float PressureMultiplier;
-    public float NearDensityMultiplier;
+    public float NearPressureMultiplier;
     [Range(0, 1)] public float Damping;
     [Range(0, 1)] public float Viscocity;
     [Range(0, 1)] public float RBodyElasticity;
@@ -43,7 +43,7 @@ public class Main : MonoBehaviour
     public float TimeStep;
     public float ProgramSpeed;
     public float VisualParticleRadii;
-    public int RenderFrequency;
+    public int TimeStepsPerRender;
     public int ResolutionX;
     public int ResolutionY;
 
@@ -222,11 +222,11 @@ public class Main : MonoBehaviour
 
     void Update()
     {
-        CPUSortChunkdata();
-
-        RunSimShader();
-
-        // RunRenderShader();
+        for (int i = 0; i < TimeStepsPerRender; i++)
+        {
+            CPUSortChunkdata();
+            RunSimShader();
+        }
     }
 
     void InitializeBuffers()
@@ -324,11 +324,11 @@ public class Main : MonoBehaviour
         // Delta time
         if (FixedTimeStep)
         {
-            DeltaTime = TimeStep;
+            DeltaTime = TimeStep / TimeStepsPerRender;
         }
         else
         {
-            DeltaTime = Time.deltaTime * ProgramSpeed;
+            DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
         }
 
         // Mouse variables
@@ -354,11 +354,11 @@ public class Main : MonoBehaviour
         SimShader.SetInt("RBodiesNum", RBodiesNum);
         SimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
         SimShader.SetInt("SpawnDims", SpawnDims);
-        SimShader.SetInt("RenderFrequency", RenderFrequency);
+        SimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
         SimShader.SetInt("PStorageLength", PStorageLength);
         SimShader.SetFloat("TargetDensity", TargetDensity);
         SimShader.SetFloat("PressureMultiplier", PressureMultiplier);
-        SimShader.SetFloat("NearDensityMultiplier", NearDensityMultiplier);
+        SimShader.SetFloat("NearPressureMultiplier", NearPressureMultiplier);
         SimShader.SetFloat("Damping", Damping);
         SimShader.SetFloat("Viscocity", Viscocity);
         SimShader.SetFloat("Gravity", Gravity);
