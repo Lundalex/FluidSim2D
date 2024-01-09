@@ -483,7 +483,7 @@ public class Main : MonoBehaviour
         }
 
         RenderShader.SetTexture(0, "Result", renderTexture);
-        if (ParticlesNum != 0) {RenderShader.Dispatch(0, ResolutionX / ThreadSize, ResolutionY / ThreadSize, 1);}
+        if (ParticlesNum != 0) {RenderShader.Dispatch(0, renderTexture.width / ThreadSize, renderTexture.height / ThreadSize, 1);}
         // Render rigid bodies - not implemented
         // if (RBodiesNum != 0) {SimShader.Dispatch(1, RBodiesNum, 1, 1);}
     }

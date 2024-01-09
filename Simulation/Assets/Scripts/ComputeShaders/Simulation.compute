@@ -130,6 +130,7 @@ float4 BoundraryCheck(float2 pos, float2 vel, float extraPadding)
         vel.x = abs(vel.x) * velFactor;
         pos.x = totPadding;
     }
+    
     return float4(pos.x, pos.y, vel.x, vel.y);
 }
 
@@ -187,7 +188,7 @@ float2 PressureForce(int pIndex)
                 int otherPIndex = SpatialLookup[Index].x;
                 if (pIndex == otherPIndex) {continue;}
 
-                float2 dst = Positions[pIndex] - Positions[otherPIndex];
+                float2 dst = PredPositions[pIndex] -  [otherPIndex];
                 float absDst = length(dst);
 
                 if (absDst > MaxInfluenceRadius){continue;}
@@ -324,7 +325,7 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
     LastVelocities[i] = Velocities[i];
 
     // Predicted positions
-    PredPositions[i] = Positions[i] + Velocities[i] * DeltaTime;
+    PredPositions[i] = Positions[i] + Velocities[i] * 0.03;
     // Make sure PredPositions[i] is within the world boundrary
     PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.01), 0);
     PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.01), 0);
@@ -512,15 +513,15 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     Velocities[i].y -= Gravity * DeltaTime;
 
     float2 presureForce = PressureForce(i);
-    float2 interactionForce = InteractionForce(i);
+    //float2 interactionForce = InteractionForce(i);
     float2 viscocityForce = ViscocityForce(i);
     //                                                                   / (constant) or density[i]???
-    float2 totForce = (interactionForce + presureForce + viscocityForce) / 3;
+    float2 totForce = (presureForce + viscocityForce) / 3;
 
     Velocities[i] += totForce * DeltaTime / 3;
     Positions[i] += Velocities[i] * DeltaTime;
 
-    PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
+    float4 PosVelData = BoundraryCheck(Positions[i], Velocities[i], 0);
     Positions[i] = float2(PosVelData.x, PosVelData.y);
     Velocities[i] = float2(PosVelData.z, PosVelData.w);
 }
