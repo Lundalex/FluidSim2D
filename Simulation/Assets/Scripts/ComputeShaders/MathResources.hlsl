@@ -10,7 +10,7 @@ const float SmoothViscosityLaplacianFactor;
 // Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
 float InteractionInfluence(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 		return sqrt(radius - dst);
 	}
@@ -19,7 +19,7 @@ float InteractionInfluence(float dst, float radius)
 
 float SmoothLiquid(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 		return (1 - dst/radius)*(1-dst/radius);
 	}
@@ -28,7 +28,7 @@ float SmoothLiquid(float dst, float radius)
 
 float SmoothLiquidDer(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 		return -2 * (1 - dst / radius) / radius;
 	}
@@ -37,7 +37,7 @@ float SmoothLiquidDer(float dst, float radius)
 
 float SmoothLiquidNear(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 		return (1 - dst/radius)*(1 - dst/radius)*(1 - dst/radius);
 	}
@@ -46,7 +46,7 @@ float SmoothLiquidNear(float dst, float radius)
 
 float SmoothLiquidNearDer(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 		return -3 * (1 - dst/radius)*(1 - dst/radius) / radius;
 	}
@@ -55,7 +55,7 @@ float SmoothLiquidNearDer(float dst, float radius)
 
 float SmoothViscosityLaplacian(float dst, float radius)
 {
-	if (dst <= radius)
+	if (dst < radius)
 	{
 	    float radius6 = radius*radius*radius*radius*radius*radius;
 		return 45 / (3.14 * radius6) * (radius - dst);

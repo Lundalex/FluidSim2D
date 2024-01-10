@@ -22,6 +22,7 @@ const int SpawnDims;
 const int TimeStepsPerRender;
 const int PStorageLength;
 
+const float LookAheadFactor;
 const float TargetDensity;
 const float PressureMultiplier;
 const float NearPressureMultiplier;
@@ -64,7 +65,7 @@ RWStructuredBuffer<float3> ParticleTeleportStorage; // RBodiesNum[ParticleTelepo
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX <= ChunkNumW && ChunkY >= 0 && ChunkY <= ChunkNumH) {return true;}
+    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
     return false;
 }
 
@@ -89,16 +90,17 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
                 int otherPIndex = SpatialLookup[Index].x;
 
                 float dst = length(PredPositions[pIndex] - PredPositions[otherPIndex]);
 
                 totDensity += SmoothLiquid(dst, MaxInfluenceRadius);
                 totNearDensity += SmoothLiquidNear(dst, MaxInfluenceRadius);
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
             }
         }
     }
@@ -147,7 +149,7 @@ float SharedPressure(float densityA, float densityB)
     float pressureA = DensityToPressure(densityA);
     float pressureB = DensityToPressure(densityB);
 
-    float sharedPressure = (pressureA + pressureB) / 2;
+    float sharedPressure = avg(pressureA, pressureB);
 
     return sharedPressure;
 }
@@ -157,7 +159,7 @@ float SharedNearPressure(float nearDensityA, float nearDensityB)
     float nearPressureA = nearDensityA * NearPressureMultiplier;
     float nearPressureB = nearDensityB * NearPressureMultiplier;
 
-    float sharedNearPressure = (nearPressureA + nearPressureB) / 2;
+    float sharedNearPressure = avg(nearPressureA, nearPressureB);
 
     return sharedNearPressure;
 }
@@ -182,17 +184,15 @@ float2 PressureForce(int pIndex)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
                 int otherPIndex = SpatialLookup[Index].x;
-                if (pIndex == otherPIndex) {continue;}
+                if (pIndex == otherPIndex) {Index += 1; continue;}
 
                 float2 dst = PredPositions[pIndex] - PredPositions[otherPIndex];
                 float absDst = length(dst);
 
-                if (absDst >= MaxInfluenceRadius){continue;}
+                if (absDst >= MaxInfluenceRadius){Index += 1; continue;}
                 float absPressureGradient = SmoothLiquidDer(absDst, MaxInfluenceRadius);
                 float absNearPressureGradient = SmoothLiquidNearDer(absDst, MaxInfluenceRadius);
 
@@ -219,11 +219,12 @@ float2 PressureForce(int pIndex)
                 float nearDensityB = NearDensities[otherPIndex];
                 float avgNearPressure = SharedNearPressure(nearDensityA, nearDensityB);
 
-                if (densityA + densityB == 0) {continue;}
+                if (densityA + densityB == 0) {Index += 1; continue;}
                 //                                                  + or - ????
-                totPressureForce += (avgPressure * pressureGradient + avgNearPressure * nearPressureGradient) / ((densityA + densityB) / 2);
+                totPressureForce += (avgPressure * pressureGradient + avgNearPressure * nearPressureGradient) / avg(densityA, densityB);
 
                 // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
             }
         }
     }
@@ -251,17 +252,15 @@ float2 ViscocityForce(int pIndex)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
                 int otherPIndex = SpatialLookup[Index].x;
-                if (pIndex == otherPIndex) {continue;}
+                if (pIndex == otherPIndex) {Index += 1; continue;}
 
                 float2 dst = PredPositions[pIndex] - PredPositions[otherPIndex];
                 float absDst = length(dst);
 
-                if (absDst > MaxInfluenceRadius) {continue;}
+                if (absDst > MaxInfluenceRadius) {Index += 1; continue;}
 
                 float absViscosityGradient = SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
 
@@ -282,8 +281,11 @@ float2 ViscocityForce(int pIndex)
                 float densityB = Densities[otherPIndex];
 
                 // p(pos) = ∑_i (m * v_diff / ρ_avg * Smooth_viscocity(pos - pos_i))
-                if (densityA + densityB == 0) {continue;}
-                totViscosityForce += (diffVel * viscosityGradient) / ((densityA + densityB) / 2);
+                if (densityA + densityB == 0) {Index += 1; continue;}
+                totViscosityForce += (diffVel * viscosityGradient) / avg(densityA, densityB);
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
             }
         }
     }
@@ -318,8 +320,7 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    // Predicted positions                            (LookAheadFactor)
-    PredPositions[i] = Positions[i] + Velocities[i] * 0.02;
+    PredPositions[i] = Positions[i] + Velocities[i] * LookAheadFactor;
     // Make sure PredPositions[i] is within the world boundrary
     PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.001), 0);
     PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.001), 0);
@@ -433,16 +434,14 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
                 int particleIndex = SpatialLookup[Index].x;
 
                 float2 dst = Positions[particleIndex] - RBPositions[i];
                 float absDst = length(dst);
 
-                if (absDst >= RBRadii[i]) {continue;}
+                if (absDst >= RBRadii[i]) {Index += 1; continue;}
 
                 float2 diffVel = Velocities[particleIndex] - RBVelocities[i];
 
@@ -500,6 +499,9 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
                     ParticleTeleportStorage[RBDataStartIndex + freeIndex] = float3(particleIndex, TPParticlePos.x, TPParticlePos.y);
                     ParticleImpulseStorage[RBDataStartIndex + freeIndex] = float3(particleIndex, exchangedMomentum.x, exchangedMomentum.y);
                 }
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
             }
         }
     }

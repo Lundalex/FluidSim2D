@@ -29,6 +29,7 @@ public class Main : MonoBehaviour
     [Range(0, 1)] public float Damping;
     [Range(0, 1)] public float Viscocity;
     [Range(0, 1)] public float RBodyElasticity;
+    [Range(0, 0.1f)] public float LookAheadFactor;
     public float Gravity;
     public int PStorageLength;
 
@@ -55,6 +56,7 @@ public class Main : MonoBehaviour
     public GameObject ParticlePrefab;
     public ComputeShader RenderShader;
     public ComputeShader SimShader;
+    public ComputeShader SortShader;
 
     // Private references
     private RenderTexture renderTexture;
@@ -102,6 +104,7 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBMassBuffer;
     private ComputeBuffer ParticleImpulseStorageBuffer;
     private ComputeBuffer ParticleTeleportStorageBuffer;
+    private int framecounter;
 
     // Other
     private float DeltaTime;
@@ -222,9 +225,14 @@ public class Main : MonoBehaviour
 
     void Update()
     {
-        for (int i = 0; i < TimeStepsPerRender; i++)
+        if (framecounter == 1)
         {
             CPUSortChunkdata();
+            framecounter = 0;
+        }
+        framecounter++;
+        for (int i = 0; i < TimeStepsPerRender; i++)
+        {
             RunSimShader();
         }
     }
@@ -356,6 +364,7 @@ public class Main : MonoBehaviour
         SimShader.SetInt("SpawnDims", SpawnDims);
         SimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
         SimShader.SetInt("PStorageLength", PStorageLength);
+        SimShader.SetFloat("LookAheadFactor", LookAheadFactor);
         SimShader.SetFloat("TargetDensity", TargetDensity);
         SimShader.SetFloat("PressureMultiplier", PressureMultiplier);
         SimShader.SetFloat("NearPressureMultiplier", NearPressureMultiplier);
@@ -399,14 +408,21 @@ public class Main : MonoBehaviour
         // }
         
     }
+    void GPUSortChunkData()
+    {
+        PredPositionsBuffer.GetData(PredPositions);
+
+        // kernel to init SpatialLookup keypairs
+    }
+
     void CPUSortChunkdata()
     {
-        PositionsBuffer.GetData(Positions);
+        PredPositionsBuffer.GetData(PredPositions);
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            int ChunkX = (int)Math.Floor(Positions[i].x / MaxInfluenceRadius);
-            int ChunkY = (int)Math.Floor(Positions[i].y / MaxInfluenceRadius);
+            int ChunkX = (int)Math.Floor(PredPositions[i].x / MaxInfluenceRadius);
+            int ChunkY = (int)Math.Floor(PredPositions[i].y / MaxInfluenceRadius);
             int ChunkKey = ChunkY * ChunkNumW + ChunkX;
 
             SpatialLookup[i] = new int2(i, ChunkKey);
@@ -422,54 +438,14 @@ public class Main : MonoBehaviour
         int lastChunkKey = -1;
         for (int i = 0; i < ParticlesNum; i++)
         {
-            int ParticleIndex = SpatialLookup[i].x;
-            int a = i;
-            int b = SpatialLookup[i].x;
             int ChunkKey = SpatialLookup[i].y;
+            // This can probably be optimised by sending to a compute shader [i->ParticlesNum] and have it check whether the ChunkKey[i-1] == ChunkKey[i], and if so, set StartIndices[ChunkKey] = i;
             if (ChunkKey != lastChunkKey)
             {
                 StartIndices[ChunkKey] = i;
                 lastChunkKey = ChunkKey;
             }
         }
-
-
-        // // Int type conversion removes decimals, effectively doing a Floor() operation
-        // int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
-        // int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
-
-        // for (int x = -1; x <= 1; x++)
-        // {
-        //     for (int y = -1; y <= 1; y++)
-        //     {
-        //         int CurChunkX = ChunkX + x;
-        //         int CurChunkY = ChunkY + y;
-                
-        //         if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
-
-        //         int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
-        //         int startIndex = StartIndices[ChunkKey];
-
-        //         int Index = startIndex; 
-        //         while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
-        //         {
-        //             // Increment Index each iteration - Chunk particle search algorithm
-        //             Index += 1;
-        //             int otherPIndex = SpatialLookup[Index].x;
-
-        //             float dst = length(pixelPos - Positions[otherPIndex]);
-
-        //             if (dst < VisualParticleRadii)
-        //             {
-        //                 float r = min(1.0, length(Velocities[otherPIndex])/3);
-        //                 float b = max(0.0, 1-length(Velocities[otherPIndex])/3);
-        //                 Result[id.xy] = float4(r, 0.0, b, 0.0);
-        //                 return;
-        //             }
-        //         }
-        //     }
-        // }
-
 
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);

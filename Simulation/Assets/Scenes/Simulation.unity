@@ -228,33 +228,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 2000
+  ParticlesNum: 30000
   RBodiesNum: 0
   MaxInfluenceRadius: 3
   TargetDensity: 3
-  PressureMultiplier: 2000
-  NearPressureMultiplier: 70
+  PressureMultiplier: 5000
+  NearPressureMultiplier: 500
   Damping: 0.7
-  Viscocity: 0.3
+  Viscocity: 0.1
   RBodyElasticity: 0.6
+  LookAheadFactor: 0.02
   Gravity: 4
   PStorageLength: 1
-  Width: 100
-  Height: 70
-  SpawnDims: 50
+  Width: 400
+  Height: 300
+  SpawnDims: 200
   BorderPadding: 1.18
   FixedTimeStep: 1
-  TimeStep: 0.02
-  ProgramSpeed: 2
+  TimeStep: 0.015
+  ProgramSpeed: 1
   VisualParticleRadii: 0.4
-  TimeStepsPerRender: 1
-  ResolutionX: 2048
-  ResolutionY: 1536
+  TimeStepsPerRender: 3
+  ResolutionX: 1920
+  ResolutionY: 1280
   MaxInteractionRadius: 15
-  InteractionPower: 200
+  InteractionPower: 100
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
   SimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
+  SortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
 --- !u!1 &1828815362
 GameObject:
   m_ObjectHideFlags: 0
