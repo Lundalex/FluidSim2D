@@ -228,22 +228,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 35000
+  ParticlesNum: 2000
   RBodiesNum: 0
   MaxInfluenceRadius: 3
   TargetDensity: 3
   PressureMultiplier: 2000
   NearPressureMultiplier: 70
-  Damping: 0.8
-  Viscocity: 0.717
+  Damping: 0.7
+  Viscocity: 0.3
   RBodyElasticity: 0.6
   Gravity: 4
   PStorageLength: 1
-  Width: 320
-  Height: 260
-  SpawnDims: 200
+  Width: 100
+  Height: 70
+  SpawnDims: 50
   BorderPadding: 1.18
-  FixedTimeStep: 0
+  FixedTimeStep: 1
   TimeStep: 0.02
   ProgramSpeed: 2
   VisualParticleRadii: 0.4

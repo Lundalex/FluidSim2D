@@ -423,13 +423,53 @@ public class Main : MonoBehaviour
         for (int i = 0; i < ParticlesNum; i++)
         {
             int ParticleIndex = SpatialLookup[i].x;
+            int a = i;
+            int b = SpatialLookup[i].x;
             int ChunkKey = SpatialLookup[i].y;
-            if (SpatialLookup[i].y != lastChunkKey)
+            if (ChunkKey != lastChunkKey)
             {
-                StartIndices[SpatialLookup[i].y] = i;
-                lastChunkKey = SpatialLookup[i].y;
+                StartIndices[ChunkKey] = i;
+                lastChunkKey = ChunkKey;
             }
         }
+
+
+        // // Int type conversion removes decimals, effectively doing a Floor() operation
+        // int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
+        // int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
+
+        // for (int x = -1; x <= 1; x++)
+        // {
+        //     for (int y = -1; y <= 1; y++)
+        //     {
+        //         int CurChunkX = ChunkX + x;
+        //         int CurChunkY = ChunkY + y;
+                
+        //         if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+        //         int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+        //         int startIndex = StartIndices[ChunkKey];
+
+        //         int Index = startIndex; 
+        //         while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+        //         {
+        //             // Increment Index each iteration - Chunk particle search algorithm
+        //             Index += 1;
+        //             int otherPIndex = SpatialLookup[Index].x;
+
+        //             float dst = length(pixelPos - Positions[otherPIndex]);
+
+        //             if (dst < VisualParticleRadii)
+        //             {
+        //                 float r = min(1.0, length(Velocities[otherPIndex])/3);
+        //                 float b = max(0.0, 1-length(Velocities[otherPIndex])/3);
+        //                 Result[id.xy] = float4(r, 0.0, b, 0.0);
+        //                 return;
+        //             }
+        //         }
+        //     }
+        // }
+
 
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
