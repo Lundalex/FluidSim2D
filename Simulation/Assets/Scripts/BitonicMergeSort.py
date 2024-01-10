@@ -1,23 +1,38 @@
-def bitonic_sort(arr, low, count, dir):
-    if count > 1:
-        k = count // 2
-        bitonic_sort(arr, low, k, 1)
-        bitonic_sort(arr, low + k, k, 0)
-        bitonic_merge(arr, low, count, dir)
+from math import log2
+from math import ceil
+from math import pow
 
-def bitonic_merge(arr, low, count, dir):
-    if count > 1:
-        k = count // 2
-        for i in range(low, low + k):
-            if (arr[i] > arr[i + k] and dir == 1) or (arr[i] < arr[i + k] and dir == 0):
-                arr[i], arr[i + k] = arr[i + k], arr[i]
-        bitonic_merge(arr, low, k, dir)
-        bitonic_merge(arr, low + k, k)
+# https://en.wikipedia.org/wiki/Bitonic_sorter
 
-def sort_bitonic(arr):
-    bitonic_sort(arr, 0, len(arr))
+def SortPair(a, b):
+    if a > b:
+        high = a
+        low = b
+    else:
+        high = b
+        low = a
+    return low, high
 
-# Example usage:
-arr = [3, 7, 4, 8, 6, 2, 1, 5, 15, 14, 13, 12, 11, 10, 9, 0, 3, 7, 4, 8, 6, 2, 1, 5, 15, 14, 13, 12, 11, 10, 9, 0]
-sort_bitonic(arr)
-print(arr)
+def StartSort(nums):
+    depth = ceil(log2(len(nums)))
+    
+    return BitonicSort(depth, nums)
+
+# This will be the equivelant to a BLUE box from the alternative visual representation of the bitonic mergesort algorithm
+def BitonicSort(depth, nums):
+    if depth > 1:
+        len = int(pow(2, depth))
+        sortedTop = BitonicSort(depth-1, nums[0:int(len/2)])      # Pass on to inner top sort
+        sortedBottom = BitonicSort(depth-1, nums[int(len/2):len]) # Pass on to inner bottom sort
+        return BitonicMerge(sortedBottom, sortedTop)
+    
+    # depth == 0 -> We will now sort the most inner pairs
+    return SortPair(nums[0], nums[1])
+
+def BitonicMerge(numsA, numsB):
+    
+    
+    pass
+
+# print(Sort4([9,3,5,3]))
+print(StartSort([9,3,5,7]))

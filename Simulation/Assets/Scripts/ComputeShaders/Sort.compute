@@ -1,0 +1,36 @@
+#pragma kernel CalculateChunkKeys
+#pragma kernel Sort
+
+#include "MathResources.hlsl"
+
+static const int ThreadsNum = 32;
+
+const int MaxInfluenceRadius;
+const int ChunkNumW;
+
+RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
+RWStructuredBuffer<int> StartIndices;
+RWStructuredBuffer<float2> PredPositions;
+
+int GetChunkKey(int pIndex, float2 pos)
+{
+    int chunkX = (int)((float)PredPositions[pIndex].x / (float)MaxInfluenceRadius);
+    int chunkY = (int)((float)PredPositions[pIndex].y / (float)MaxInfluenceRadius);
+    int chunkKey = chunkY * ChunkNumW + chunkX;
+    return chunkKey;
+}
+
+[numthreads(ThreadsNum,1,1)]
+void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+    int chunkKey = GetChunkKey(i, PredPositions[i]);
+    SpatialLookup[i] = int2(i, chunkKey);
+}
+
+[numthreads(ThreadsNum,1,1)]
+void Sort (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+}

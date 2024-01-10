@@ -25,7 +25,7 @@ RWStructuredBuffer<int> StartIndices;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX <= ChunkNumW && ChunkY >= 0 && ChunkY <= ChunkNumH) {return true;}
+    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
     return false;
 }
 
@@ -54,21 +54,22 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
             {
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
                 int otherPIndex = SpatialLookup[Index].x;
 
                 float dst = length(pixelPos - Positions[otherPIndex]);
 
                 if (dst < VisualParticleRadii)
                 {
-                    float r = min(1.0, length(Velocities[otherPIndex])/3);
-                    float b = max(0.0, 1-length(Velocities[otherPIndex])/3);
+                    float r = min(1.0, length(Velocities[otherPIndex])/6);
+                    float b = max(0.0, 1-length(Velocities[otherPIndex])/6);
                     Result[id.xy] = float4(r, 0.0, b, 0.0);
                     return;
                 }
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
             }
         }
     }
