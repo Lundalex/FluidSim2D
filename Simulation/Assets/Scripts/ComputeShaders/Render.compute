@@ -54,7 +54,7 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index+1].y)
             {
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
