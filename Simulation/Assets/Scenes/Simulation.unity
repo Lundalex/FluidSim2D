@@ -228,7 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 30000
+  ParticlesNum: 8192
   RBodiesNum: 0
   MaxInfluenceRadius: 3
   TargetDensity: 3
@@ -240,15 +240,15 @@ MonoBehaviour:
   LookAheadFactor: 0.02
   Gravity: 4
   PStorageLength: 1
-  Width: 400
-  Height: 300
-  SpawnDims: 200
+  Width: 201
+  Height: 150
+  SpawnDims: 100
   BorderPadding: 1.18
   FixedTimeStep: 1
-  TimeStep: 0.015
+  TimeStep: 0.001
   ProgramSpeed: 1
   VisualParticleRadii: 0.4
-  TimeStepsPerRender: 3
+  TimeStepsPerRender: 1
   ResolutionX: 1920
   ResolutionY: 1280
   MaxInteractionRadius: 15

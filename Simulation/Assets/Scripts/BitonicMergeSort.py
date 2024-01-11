@@ -1,9 +1,13 @@
-from math import log2
-from math import ceil
-from math import pow
+from math import log2, ceil
 
+# This originates from the visual representation of the alternative bitonic mergesort algorithm
 # https://en.wikipedia.org/wiki/Bitonic_sorter
 
+# In implementation, all sorting of individual pairs will be processed by a GPU kernel.
+# Also, "nums" will be a buffer and the kernels will use variables such as lengths or depths. CPU indexing should be avoided.
+# The CPU side will only be responsible for setting variables such as lengths or depths
+
+# func used by GPU kernels
 def SortPair(a, b):
     if a > b:
         high = a
@@ -13,26 +17,52 @@ def SortPair(a, b):
         low = a
     return low, high
 
-def StartSort(nums):
-    depth = ceil(log2(len(nums)))
-    
-    return BitonicSort(depth, nums)
+# GPU kernel
+def BrownSort(nums, length):
+    for i in range(int(length/2)):
+        nums[i], nums[length-i-1] = SortPair(nums[i], nums[length-i-1])
+    return nums
 
-# This will be the equivelant to a BLUE box from the alternative visual representation of the bitonic mergesort algorithm
-def BitonicSort(depth, nums):
-    if depth > 1:
-        len = int(pow(2, depth))
-        sortedTop = BitonicSort(depth-1, nums[0:int(len/2)])      # Pass on to inner top sort
-        sortedBottom = BitonicSort(depth-1, nums[int(len/2):len]) # Pass on to inner bottom sort
-        return BitonicMerge(sortedBottom, sortedTop)
-    
-    # depth == 0 -> We will now sort the most inner pairs
-    return SortPair(nums[0], nums[1])
+# GPU kernel
+def PinkSort(nums, length):
+    hLen = int(length / 2)
+    for i in range(hLen):
+        nums[i], nums[i+hLen] = SortPair(nums[i], nums[i+hLen])
+    return nums
 
-def BitonicMerge(numsA, numsB):
-    
-    
-    pass
+# CPU?
+def BlueSort(nums):
+    length = len(nums)
+    nums = BrownSort(nums, length)
+    depth = int(log2(length))
+    for i in range(1, depth):
+        PinkBoxesNum = pow(2, i)
+        PinkLen = length // PinkBoxesNum
+        for j in range(PinkBoxesNum):
+            start = j * PinkLen
+            end = start + PinkLen
+            nums[start:end] = PinkSort(nums[start:end], PinkLen)
+    return nums
 
-# print(Sort4([9,3,5,3]))
-print(StartSort([9,3,5,7]))
+# CPU?
+def BitonicSort(nums):
+    global ioor
+    length = len(nums)
+    fullDepth = int(ceil(log2(length)))
+    
+    if fullDepth != log2(len(nums)):
+        extraValuesNum = pow(2, fullDepth) - len(nums)
+        nums += [ioor] * extraValuesNum
+        length = len(nums)
+        
+    for i in range(fullDepth):
+        BlueBoxesNum = 2 ** (fullDepth - i)
+        BlueLen = length // BlueBoxesNum
+        for j in range(BlueBoxesNum):
+            start = j * BlueLen
+            end = start + BlueLen
+            nums[start:end] = BlueSort(nums[start:end])
+    return nums
+
+ioor = 2000
+print(BitonicSort([9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 5, 7]))

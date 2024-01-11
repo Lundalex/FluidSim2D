@@ -112,6 +112,13 @@ public class Main : MonoBehaviour
     // Perhaps should create a seperate class for SimShader functions/methods
     void Start()
     {
+        while (Height % MaxInfluenceRadius != 0) {
+            Height += 1;
+        }
+        while (Width % MaxInfluenceRadius != 0) {
+            Width += 1;
+        }
+
         CreateVisualBoundrary();
 
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
@@ -121,14 +128,14 @@ public class Main : MonoBehaviour
 
         InitializeArrays();
 
-        for (int i = 0; i < ParticlesNum; i++)
-        {
+        for (int i = 0; i < ParticlesNum; i++) {
             Positions[i] = ParticleSpawnPosition(i, ParticlesNum);
         }
 
         InitializeBuffers();
         SetSimShaderBuffers();
         SetRenderShaderBuffers();
+        SetSortShaderBuffers();
     }
 
     void SetConstants()
@@ -227,7 +234,8 @@ public class Main : MonoBehaviour
     {
         if (framecounter == 1)
         {
-            CPUSortChunkdata();
+            // GPUSortChunkData();
+            CPUSortChunkData();
             framecounter = 0;
         }
         framecounter++;
@@ -327,6 +335,37 @@ public class Main : MonoBehaviour
         }
     }
 
+    void SetRenderShaderBuffers()
+    {
+        if (ParticlesNum != 0) {
+            RenderShader.SetBuffer(0, "Positions", PositionsBuffer);
+            RenderShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
+        }
+
+        // // Rigid bodies buffers - not implemented
+        // if (RBodiesNum != 0) {
+        //     SimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
+        //     SimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
+        // }
+    }
+
+    void SetSortShaderBuffers()
+    {
+        SpatialLookupBuffer.SetData(SpatialLookup);
+        StartIndicesBuffer.SetData(StartIndices);
+        
+        SortShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
+        SortShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+
+        SortShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
+        SortShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+
+        SortShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
+
+        SortShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
+        SortShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+    }
+
     void UpdateSimShaderVariables()
     {
         // Delta time
@@ -394,35 +433,87 @@ public class Main : MonoBehaviour
         RenderShader.SetFloat("ParticlesNum", ParticlesNum);
     }
 
-    void SetRenderShaderBuffers()
+    void UpdateSortShaderVariables()
     {
-        if (ParticlesNum != 0) {
-            RenderShader.SetBuffer(0, "Positions", PositionsBuffer);
-            RenderShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
-        }
-
-        // // Rigid bodies buffers - not implemented
-        // if (RBodiesNum != 0) {
-        //     SimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
-        //     SimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
-        // }
-        
+        SortShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
+        SortShader.SetInt("ChunkNumW", ChunkNumW);
+        SortShader.SetInt("IOOR", IOOR);
     }
+
     void GPUSortChunkData()
     {
-        PredPositionsBuffer.GetData(PredPositions);
+        if (ParticlesNum == 0) {return;}
+        UpdateSortShaderVariables();
+        // set SpatialLookupBuffer for both kernels, and check that the transfer between kernels is working
 
-        // kernel to init SpatialLookup keypairs
+        // Not tested
+        SortShader.Dispatch(0, ParticlesNum, 1, 1);
+
+        int len = ParticlesNum; // = SpatialLookup.Length
+        int lenLog2Ceil = (int)Math.Ceiling(Math.Log(len, 2));
+
+        if (lenLog2Ceil != Math.Log(ParticlesNum, 2))
+        {
+            Debug.Log("ParticlesNum not accepted");
+            return;
+        }
+
+        int lenLog2 = (int)Math.Log(len, 2);
+        SortShader.SetInt("SortedSpatialLookupLength", len);
+        SortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
+
+        int basebBlockLen = 2;
+        while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
+        {
+            int blockLen = basebBlockLen;
+            while (blockLen != 1) // BlockLen = 2 is the last inner iteration
+            {
+                int blocksNum = len / blockLen;
+                bool BrownPinkSort = blockLen == basebBlockLen;
+
+                SortShader.SetInt("BlockLen", blockLen);
+                SortShader.SetInt("blocksNum", blocksNum);
+                SortShader.SetBool("BrownPinkSort", BrownPinkSort);
+
+                int hLen = ParticlesNum / 2;
+                SortShader.Dispatch(1, hLen, 1, 1);
+
+                blockLen /= 2;
+            }
+            basebBlockLen *= 2;
+        }
+
+        SortShader.Dispatch(2, ParticlesNum, 1, 1);
+
+        SortShader.Dispatch(3, ParticlesNum, 1, 1);
+
+        if (ParticlesNum != 0) {
+            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
+        }
+        if (RBodiesNum != 0) {
+            SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+        }
+        if (ParticlesNum != 0) {
+            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
+        }
+
+        if (ParticlesNum != 0) {
+            RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+            RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+        }
     }
 
-    void CPUSortChunkdata()
+    void CPUSortChunkData()
     {
         PredPositionsBuffer.GetData(PredPositions);
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            int ChunkX = (int)Math.Floor(PredPositions[i].x / MaxInfluenceRadius);
-            int ChunkY = (int)Math.Floor(PredPositions[i].y / MaxInfluenceRadius);
+            int ChunkX = (int)(PredPositions[i].x / MaxInfluenceRadius);
+            int ChunkY = (int)(PredPositions[i].y / MaxInfluenceRadius);
             int ChunkKey = ChunkY * ChunkNumW + ChunkX;
 
             SpatialLookup[i] = new int2(i, ChunkKey);
@@ -477,7 +568,7 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0) {SimShader.Dispatch(0, ParticlesNum, 1, 1);}
         if (ParticlesNum != 0) {SimShader.Dispatch(1, ParticlesNum, 1, 1);}
         if (RBodiesNum != 0) {SimShader.Dispatch(2, RBodiesNum, 1, 1);}
-        if (RBodiesNum != 0) {SimShader.Dispatch(3, RBodiesNum, 1, 1);}
+        if (RBodiesNum != 0 && ParticlesNum != 0) {SimShader.Dispatch(3, RBodiesNum, 1, 1);}
         if (ParticlesNum != 0) {SimShader.Dispatch(4, ParticlesNum, 1, 1);}
 
         // Example use: Retrieve PositionsBuffer to Positions
