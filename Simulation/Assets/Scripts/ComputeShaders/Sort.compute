@@ -1,23 +1,68 @@
 #pragma kernel CalculateChunkKeys
-#pragma kernel Sort
+#pragma kernel SortIteration
+#pragma kernel PrepStartIndices
+#pragma kernel PopulateStartIndices
 
 #include "MathResources.hlsl"
+
+// https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
 static const int ThreadsNum = 32;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
 
+// Per-iteration-set constants
+const bool BrownPinkSort; // True -> BrownSort, False -> PinkSort
+const int SpatialLookupLog2Length;
+const int BlockLen;
+const int BlocksNum;
+const int IOOR;
+
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
-RWStructuredBuffer<int> StartIndices;
 RWStructuredBuffer<float2> PredPositions;
+RWStructuredBuffer<int> StartIndices;
 
 int GetChunkKey(int pIndex, float2 pos)
 {
-    int chunkX = (int)((float)PredPositions[pIndex].x / (float)MaxInfluenceRadius);
-    int chunkY = (int)((float)PredPositions[pIndex].y / (float)MaxInfluenceRadius);
+    int chunkX = (int)(pos.x / MaxInfluenceRadius);
+    int chunkY = (int)(pos.y / MaxInfluenceRadius);
     int chunkKey = chunkY * ChunkNumW + chunkX;
     return chunkKey;
+}
+
+void BrownSort(int lowRef)
+{
+    int relBlock = (int)(2 * lowRef / (uint)BlockLen);
+    int relPos = lowRef % (0.5 * BlockLen);
+
+    int lowIndex = relBlock * BlockLen + relPos;
+    int highIndex = relBlock * BlockLen + BlockLen - 1 - relPos;
+
+    if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
+    {
+        int highIndexValue = SpatialLookup[highIndex].y;
+        int lowIndexValue = SpatialLookup[lowIndex].y;
+        SpatialLookup[highIndex].y = lowIndexValue;
+        SpatialLookup[lowIndex].y = highIndexValue;
+    }
+}
+
+void PinkSort(int lowRef)
+{
+    int relBlock = (int)(2 * lowRef / (uint)BlockLen);
+    int relPos = lowRef % (0.5 * BlockLen);
+
+    int lowIndex = relBlock * BlockLen + relPos;
+    int highIndex = relBlock * BlockLen + relPos + (int)(BlockLen * 0.5);
+
+    if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
+    {
+        int highIndexValue = SpatialLookup[highIndex].y;
+        int lowIndexValue = SpatialLookup[lowIndex].y;
+        SpatialLookup[highIndex].y = lowIndexValue;
+        SpatialLookup[lowIndex].y = highIndexValue;
+    }
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -30,7 +75,42 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(ThreadsNum,1,1)]
-void Sort (uint3 id : SV_DispatchThreadID)
+void SortIteration (uint3 id : SV_DispatchThreadID)
+{
+    int lowRef = id.x;
+    if (BrownPinkSort)
+    {
+        BrownSort(lowRef);
+    }
+    else
+    {
+        PinkSort(lowRef);
+    }
+}
+
+[numthreads(ThreadsNum,1,1)]
+void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
+
+    StartIndices[i] = IOOR;
+}
+
+[numthreads(ThreadsNum,1,1)]
+void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+    
+    int ChunkKey = SpatialLookup[i].y;
+    int LastChunkKey = IOOR;
+
+    if (i != 0)
+    {
+        LastChunkKey = SpatialLookup[i-1].y;
+    }
+
+    if (ChunkKey != LastChunkKey)
+    {
+        StartIndices[ChunkKey] = i;
+    }
 }
