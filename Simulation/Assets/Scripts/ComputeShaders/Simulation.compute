@@ -90,7 +90,7 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; // -1 ??????????????????????????????????????????????????????????
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
 
@@ -184,7 +184,7 @@ float2 PressureForce(int pIndex)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
                 if (pIndex == otherPIndex) {Index += 1; continue;}
@@ -252,7 +252,7 @@ float2 ViscocityForce(int pIndex)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
                 if (pIndex == otherPIndex) {Index += 1; continue;}
@@ -322,8 +322,8 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 
     PredPositions[i] = Positions[i] + Velocities[i] * LookAheadFactor;
     // Make sure PredPositions[i] is within the world boundrary
-    PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.001), 0);
-    PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.001), 0);
+    PredPositions[i].x = max(min(PredPositions[i].x, Width - 0.1), 0.1);
+    PredPositions[i].y = max(min(PredPositions[i].y, Height - 0.1), 0.1);
 
     // LastVelocities
     LastVelocities[i] = Velocities[i];
@@ -434,7 +434,7 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int particleIndex = SpatialLookup[Index].x;
 

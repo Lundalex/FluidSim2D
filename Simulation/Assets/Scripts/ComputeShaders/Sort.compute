@@ -41,10 +41,10 @@ void BrownSort(int lowRef)
 
     if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
     {
-        int highIndexValue = SpatialLookup[highIndex].y;
-        int lowIndexValue = SpatialLookup[lowIndex].y;
-        SpatialLookup[highIndex].y = lowIndexValue;
-        SpatialLookup[lowIndex].y = highIndexValue;
+        int2 highIndexValue = SpatialLookup[highIndex];
+        int2 lowIndexValue = SpatialLookup[lowIndex];
+        SpatialLookup[highIndex] = lowIndexValue;
+        SpatialLookup[lowIndex] = highIndexValue;
     }
 }
 
@@ -58,10 +58,10 @@ void PinkSort(int lowRef)
 
     if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
     {
-        int highIndexValue = SpatialLookup[highIndex].y;
-        int lowIndexValue = SpatialLookup[lowIndex].y;
-        SpatialLookup[highIndex].y = lowIndexValue;
-        SpatialLookup[lowIndex].y = highIndexValue;
+        int2 highIndexValue = SpatialLookup[highIndex];
+        int2 lowIndexValue = SpatialLookup[lowIndex];
+        SpatialLookup[highIndex] = lowIndexValue;
+        SpatialLookup[lowIndex] = highIndexValue;
     }
 }
 
