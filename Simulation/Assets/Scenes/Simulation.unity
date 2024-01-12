@@ -243,10 +243,10 @@ MonoBehaviour:
   Width: 240
   Height: 180
   SpawnDims: 130
-  BorderPadding: 1.18
+  BorderPadding: 4
   FixedTimeStep: 1
   TimeStep: 0.02
-  ProgramSpeed: 0.85
+  ProgramSpeed: 1
   VisualParticleRadii: 0.4
   TimeStepsPerRender: 1
   ResolutionX: 1920
