@@ -240,13 +240,13 @@ MonoBehaviour:
   LookAheadFactor: 0.02
   Gravity: 4
   PStorageLength: 1
-  Width: 201
-  Height: 150
-  SpawnDims: 100
+  Width: 240
+  Height: 180
+  SpawnDims: 130
   BorderPadding: 1.18
   FixedTimeStep: 1
-  TimeStep: 0.001
-  ProgramSpeed: 1
+  TimeStep: 0.02
+  ProgramSpeed: 0.85
   VisualParticleRadii: 0.4
   TimeStepsPerRender: 1
   ResolutionX: 1920

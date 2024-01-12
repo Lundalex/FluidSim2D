@@ -234,8 +234,8 @@ public class Main : MonoBehaviour
     {
         if (framecounter == 1)
         {
-            // GPUSortChunkData();
-            CPUSortChunkData();
+            GPUSortChunkData();
+            // CPUSortChunkData();
             framecounter = 0;
         }
         framecounter++;
@@ -301,6 +301,8 @@ public class Main : MonoBehaviour
             SimShader.SetBuffer(1, "Densities", DensitiesBuffer);
             SimShader.SetBuffer(1, "NearDensities", NearDensitiesBuffer);
             SimShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
+            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
         }
 
         // Kernel RbRbCollisions
@@ -322,6 +324,8 @@ public class Main : MonoBehaviour
             SimShader.SetBuffer(3, "Densities", DensitiesBuffer);
             SimShader.SetBuffer(3, "ParticleImpulseStorage", ParticleImpulseStorageBuffer);
             SimShader.SetBuffer(3, "ParticleTeleportStorage", ParticleTeleportStorageBuffer);
+            SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
         }
 
         // Kernel ParticleForces
@@ -332,6 +336,8 @@ public class Main : MonoBehaviour
             SimShader.SetBuffer(4, "NearDensities", NearDensitiesBuffer);
             SimShader.SetBuffer(4, "LastVelocities", LastVelocitiesBuffer);
             SimShader.SetBuffer(4, "PredPositions", PredPositionsBuffer);
+            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
+            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
         }
     }
 
@@ -340,6 +346,8 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0) {
             RenderShader.SetBuffer(0, "Positions", PositionsBuffer);
             RenderShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
+            RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+            RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
         }
 
         // // Rigid bodies buffers - not implemented
@@ -486,24 +494,6 @@ public class Main : MonoBehaviour
         SortShader.Dispatch(2, ParticlesNum, 1, 1);
 
         SortShader.Dispatch(3, ParticlesNum, 1, 1);
-
-        if (ParticlesNum != 0) {
-            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
-        }
-        if (RBodiesNum != 0) {
-            SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
-        }
-        if (ParticlesNum != 0) {
-            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
-        }
-
-        if (ParticlesNum != 0) {
-            RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-            RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
-        }
     }
 
     void CPUSortChunkData()
@@ -538,8 +528,8 @@ public class Main : MonoBehaviour
             }
         }
 
-        SpatialLookupBuffer.SetData(SpatialLookup);
-        StartIndicesBuffer.SetData(StartIndices);
+        // SpatialLookupBuffer.SetData(SpatialLookup);
+        // StartIndicesBuffer.SetData(StartIndices);
 
         if (ParticlesNum != 0) {
             SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
