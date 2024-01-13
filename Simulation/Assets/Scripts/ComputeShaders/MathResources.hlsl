@@ -67,3 +67,14 @@ float avg(float a, float b)
 {
     return (a + b) / 2;
 }
+
+float rand(float n)
+{
+    return frac(sin(n) * 43758.5453);
+}
+
+float lerp1D(float posA, float posB, float valA, float valB, float targetVal)
+{
+    float t = float(targetVal - valA) / float(valB - valA);
+    return posA + t * (posB - posA);
+}
