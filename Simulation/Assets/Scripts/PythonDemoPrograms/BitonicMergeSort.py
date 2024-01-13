@@ -5,9 +5,10 @@ from math import log2, ceil
 
 # In implementation, all sorting of individual pairs will be processed by a GPU kernel.
 # Also, "nums" will be a buffer and the kernels will use variables such as lengths or depths. CPU indexing should be avoided.
-# The CPU side will only be responsible for setting variables such as lengths or depths
+# The CPU will only be responsible for setting broad compute shader instructions.
 
 # func used by GPU kernels
+# Will use tuples instead though
 def SortPair(a, b):
     if a > b:
         high = a
@@ -64,5 +65,6 @@ def BitonicSort(nums):
             nums[start:end] = BlueSort(nums[start:end])
     return nums
 
+# Test
 ioor = 2000
 print(BitonicSort([9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 9, 3, 5, 7, 5, 7]))

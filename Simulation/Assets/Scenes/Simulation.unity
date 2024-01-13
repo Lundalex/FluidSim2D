@@ -135,6 +135,8 @@ GameObject:
   - component: {fileID: 486541}
   - component: {fileID: 486539}
   - component: {fileID: 486538}
+  - component: {fileID: 486542}
+  - component: {fileID: 486543}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -211,7 +213,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 75, y: 50, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -228,35 +230,93 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 8192
+  ParticlesNum: 32768
   RBodiesNum: 0
-  MaxInfluenceRadius: 3
+  MaxInfluenceRadius: 2
   TargetDensity: 3
   PressureMultiplier: 5000
-  NearPressureMultiplier: 500
+  NearPressureMultiplier: 150
   Damping: 0.7
-  Viscocity: 0.1
   RBodyElasticity: 0.6
   LookAheadFactor: 0.02
-  Gravity: 4
+  Viscocity: 25.91
+  Gravity: 5
   PStorageLength: 1
-  Width: 240
-  Height: 180
-  SpawnDims: 130
+  TriStorageLength: 4
+  Width: 300
+  Height: 200
+  SpawnDims: 160
   BorderPadding: 4
-  FixedTimeStep: 1
-  TimeStep: 0.02
-  ProgramSpeed: 1
+  FixedTimeStep: 0
+  RenderMarchingSquares: 0
+  TimeStep: 0.01
+  ProgramSpeed: 3
   VisualParticleRadii: 0.4
-  TimeStepsPerRender: 1
-  ResolutionX: 1920
-  ResolutionY: 1280
-  MaxInteractionRadius: 15
-  InteractionPower: 100
+  TimeStepsPerRender: 3
+  MSvalMin: 0.41
+  ResolutionX: 3840
+  ResolutionY: 2560
+  MSResolution: 3
+  MarchW: 75
+  MarchH: 50
+  MaxInteractionRadius: 70
+  InteractionAttractionPower: 150
+  InteractionFountainPower: 0.5
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
   SimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
   SortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
+  MarchingSquaresShader: {fileID: 7200000, guid: c01a42ec308252949bb8f27d6fd9617e, type: 3}
+--- !u!33 &486542
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486536}
+  m_Mesh: {fileID: 0}
+--- !u!23 &486543
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486536}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a0c946359134cf64ebb6ea0f0b504cee, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1828815362
 GameObject:
   m_ObjectHideFlags: 0

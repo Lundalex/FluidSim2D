@@ -27,11 +27,12 @@ public class Main : MonoBehaviour
     public float PressureMultiplier;
     public float NearPressureMultiplier;
     [Range(0, 1)] public float Damping;
-    [Range(0, 1)] public float Viscocity;
     [Range(0, 1)] public float RBodyElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
+    public float Viscocity;
     public float Gravity;
     public int PStorageLength;
+    public int TriStorageLength;
 
     [Header("Boundrary settings")]
     public int Width;
@@ -41,34 +42,44 @@ public class Main : MonoBehaviour
 
     [Header("Rendering settings")]
     public bool FixedTimeStep;
+    public bool RenderMarchingSquares;
     public float TimeStep;
     public float ProgramSpeed;
     public float VisualParticleRadii;
     public int TimeStepsPerRender;
+    public float MSvalMin;
     public int ResolutionX;
     public int ResolutionY;
+    public int MSResolution;
+    public int MarchW = 150;
+    public int MarchH = 75;
 
     [Header("Interaction settings")]
     public float MaxInteractionRadius;
-    public float InteractionPower;
+    public float InteractionAttractionPower;
+    public float InteractionFountainPower;
 
     [Header("References")]
     public GameObject ParticlePrefab;
     public ComputeShader RenderShader;
     public ComputeShader SimShader;
     public ComputeShader SortShader;
+    public ComputeShader MarchingSquaresShader;
 
     // Private references
     private RenderTexture renderTexture;
     private GameObject simulationBoundrary;
+    private Mesh marchingSquaresMesh;
 
     // Constants
     private int ChunkNumW;
     private int ChunkNumH;
     private int IOOR; // Index Out Of Range
+    private int MSLen;
+    private float MarchScale;
 
     // Particles - Properties
-    private int2[] SpatialLookup; // (particleIndex, chunkKey)
+    private int2[] SpatialLookup; // [](particleIndex, chunkKey)
     private int[] StartIndices;
     private float2[] PredPositions;
     private float2[] Positions;
@@ -78,17 +89,6 @@ public class Main : MonoBehaviour
     private float[] NearDensities;
     private int2[] TemplateSpatialLookup;
 
-    // Particles - Buffers
-    private ComputeBuffer SpatialLookupBuffer;
-    private ComputeBuffer StartIndicesBuffer;
-    private ComputeBuffer PredPositionsBuffer;
-    private ComputeBuffer PositionsBuffer;
-    private ComputeBuffer VelocitiesBuffer;
-    private ComputeBuffer LastVelocitiesBuffer;
-    private ComputeBuffer DensitiesBuffer;
-    private ComputeBuffer NearDensitiesBuffer;
-
-
     // Rigid Bodies - Properties
     private float2[] RBPositions;
     private float2[] RBVelocities;
@@ -97,6 +97,30 @@ public class Main : MonoBehaviour
     private float3[] ParticleImpulseStorage;
     private float3[] ParticleTeleportStorage;
 
+    // Marching Squares - Buffer retrieval
+    private Vector3[] vertices;
+    private int[] triangles;
+    private Color[] colors;
+    private float[] MSPoints;
+
+    // Marching Squares - Buffers
+    private ComputeBuffer VerticesBuffer;
+    private ComputeBuffer TrianglesBuffer;
+    private ComputeBuffer ColorsBuffer;
+    private ComputeBuffer MSPointsBuffer;
+
+    // Bitonic Mergesort - Buffers
+    private ComputeBuffer SpatialLookupBuffer;
+    private ComputeBuffer StartIndicesBuffer;
+
+    // Particles - Buffers
+    private ComputeBuffer PredPositionsBuffer;
+    private ComputeBuffer PositionsBuffer;
+    private ComputeBuffer VelocitiesBuffer;
+    private ComputeBuffer LastVelocitiesBuffer;
+    private ComputeBuffer DensitiesBuffer;
+    private ComputeBuffer NearDensitiesBuffer;
+
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
     private ComputeBuffer RBVelocitiesBuffer;
@@ -104,7 +128,6 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBMassBuffer;
     private ComputeBuffer ParticleImpulseStorageBuffer;
     private ComputeBuffer ParticleTeleportStorageBuffer;
-    private int framecounter;
 
     // Other
     private float DeltaTime;
@@ -124,6 +147,8 @@ public class Main : MonoBehaviour
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
 
+        marchingSquaresMesh = GetComponent<MeshFilter>().mesh;
+
         SetConstants();
 
         InitializeArrays();
@@ -136,6 +161,7 @@ public class Main : MonoBehaviour
         SetSimShaderBuffers();
         SetRenderShaderBuffers();
         SetSortShaderBuffers();
+        SetMarchingSquaresShaderBuffers();
     }
 
     void SetConstants()
@@ -143,12 +169,20 @@ public class Main : MonoBehaviour
         ChunkNumW = Width / MaxInfluenceRadius;
         ChunkNumH = Height / MaxInfluenceRadius;
         IOOR = ParticlesNum;
+        MarchW = (int)(Width / MSResolution);
+        MarchH = (int)(Height / MSResolution);
+        MSLen = MarchW * MarchH * TriStorageLength * 3;
     }
 
     void InitializeArrays()
     {
         SpatialLookup = new int2[ParticlesNum];
         StartIndices = new int[ParticlesNum];
+        vertices = new Vector3[MSLen];
+        triangles = new int[MSLen];
+        colors = new Color[MSLen];
+        MSPoints = new float[MSLen];
+
         PredPositions = new float2[ParticlesNum];
         Positions = new float2[ParticlesNum];
         Velocities = new float2[ParticlesNum];
@@ -189,6 +223,18 @@ public class Main : MonoBehaviour
         {
             ParticleImpulseStorage[i] = new float3(0.0f, 0.0f, 0.0f);
             ParticleTeleportStorage[i] = new float3(0.0f, 0.0f, 0.0f);
+        }
+
+        for (int i = 0; i < MSLen; i++)
+        {
+            vertices[i] = new Vector3(0.0f, 0.0f, 0.0f);
+            triangles[i] = 0;
+            colors[i] = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        for (int i = 0; i < MSLen; i++)
+        {
+            MSPoints[i] = 0.0f;
         }
     }
 
@@ -232,17 +278,20 @@ public class Main : MonoBehaviour
 
     void Update()
     {
-        if (framecounter == 1)
-        {
-            GPUSortChunkData();
-            // CPUSortChunkData();
-            framecounter = 0;
-        }
-        framecounter++;
+        GPUSortChunkData();
+        // CPUSortChunkData();
+
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
             RunSimShader();
         }
+
+        if (RenderMarchingSquares)
+        {
+            RunMarchingSquaresShader();
+        }
+
+        // RunRenderShader() is called by OnRenderImage()
     }
 
     void InitializeBuffers()
@@ -279,10 +328,20 @@ public class Main : MonoBehaviour
             ParticleImpulseStorageBuffer.SetData(ParticleImpulseStorage);
             ParticleTeleportStorageBuffer.SetData(ParticleTeleportStorage);
         }
+
         SpatialLookupBuffer = new ComputeBuffer(ParticlesNum, sizeof(int) * 2);
+
         StartIndicesBuffer = new ComputeBuffer(ParticlesNum, sizeof(int));
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
+
+        VerticesBuffer = new ComputeBuffer(MSLen, sizeof(float) * 3);
+        TrianglesBuffer = new ComputeBuffer(MSLen, sizeof(int));
+        MSPointsBuffer = new ComputeBuffer(MSLen, sizeof(float));
+        ColorsBuffer = new ComputeBuffer(MSLen, sizeof(float) * 4); // 4 floats for RGBA
+        VerticesBuffer.SetData(vertices);
+        TrianglesBuffer.SetData(triangles);
+        MSPointsBuffer.SetData(MSPoints);
     }
 
     void SetSimShaderBuffers()
@@ -374,6 +433,20 @@ public class Main : MonoBehaviour
         SortShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
     }
 
+    void SetMarchingSquaresShaderBuffers()
+    {
+        MarchingSquaresShader.SetBuffer(0, "MSPoints", MSPointsBuffer);
+        MarchingSquaresShader.SetBuffer(0, "Positions", PositionsBuffer);
+        MarchingSquaresShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
+        MarchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+        MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+
+        MarchingSquaresShader.SetBuffer(1, "Vertices", VerticesBuffer);
+        MarchingSquaresShader.SetBuffer(1, "Triangles", TrianglesBuffer);
+        MarchingSquaresShader.SetBuffer(1, "Colors", ColorsBuffer);
+        MarchingSquaresShader.SetBuffer(1, "MSPoints", MSPointsBuffer);
+    }
+    
     void UpdateSimShaderVariables()
     {
         // Delta time
@@ -385,10 +458,15 @@ public class Main : MonoBehaviour
         {
             DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
         }
+        // cap DeltaTime to avoid instabilities caused by sudden lag spikes
+        if (DeltaTime > 0.03f)
+        {
+            DeltaTime = 0.03f;
+        }
 
         // Mouse variables
-        Vector3 MousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -Camera.main.transform.position.z));
-        Vector2 MouseWorldPos = new(MousePos.x, MousePos.y);
+        Vector3 MousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x , Input.mousePosition.y , -Camera.main.transform.position.z));
+        Vector2 MouseWorldPos = new(((MousePos.x - Width/2) * 0.55f + Width) / 2, ((MousePos.y - Height/2) * 0.55f + Height) / 2);
         bool LMousePressed = Input.GetMouseButton(0);
         bool RMousePressed = Input.GetMouseButton(1);
 
@@ -422,7 +500,8 @@ public class Main : MonoBehaviour
         SimShader.SetFloat("BorderPadding", BorderPadding);
         SimShader.SetFloat("TimeStep", TimeStep);
         SimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
-        SimShader.SetFloat("InteractionPower", InteractionPower);
+        SimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
+        SimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
         SimShader.SetBool("FixedTimeStep", FixedTimeStep);
 
         // Set math resources constants
@@ -448,24 +527,33 @@ public class Main : MonoBehaviour
         SortShader.SetInt("IOOR", IOOR);
     }
 
+    void UpdateMarchingSquaresShaderVariables()
+    {
+        MarchW = (int)(Width / MSResolution);
+        MarchH = (int)(Height / MSResolution);
+        MSLen = MarchW * MarchH * TriStorageLength * 3;
+        
+        MarchingSquaresShader.SetInt("MarchW", MarchW);
+        MarchingSquaresShader.SetInt("MarchH", MarchH);
+        MarchingSquaresShader.SetFloat("MSResolution", MSResolution);
+        MarchingSquaresShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
+        MarchingSquaresShader.SetInt("ChunkNumW", ChunkNumW);
+        MarchingSquaresShader.SetInt("ChunkNumH", ChunkNumH);
+        MarchingSquaresShader.SetInt("Width", Width);
+        MarchingSquaresShader.SetInt("Height", Height);
+        MarchingSquaresShader.SetInt("ParticlesNum", ParticlesNum);
+        MarchingSquaresShader.SetFloat("MSvalMin", MSvalMin);
+        MarchingSquaresShader.SetFloat("TriStorageLength", TriStorageLength);
+    }
+
     void GPUSortChunkData()
     {
         if (ParticlesNum == 0) {return;}
         UpdateSortShaderVariables();
-        // set SpatialLookupBuffer for both kernels, and check that the transfer between kernels is working
 
-        // Not tested
         SortShader.Dispatch(0, ParticlesNum, 1, 1);
 
-        int len = ParticlesNum; // = SpatialLookup.Length
-        int lenLog2Ceil = (int)Math.Ceiling(Math.Log(len, 2));
-
-        if (lenLog2Ceil != Math.Log(ParticlesNum, 2))
-        {
-            Debug.Log("ParticlesNum not accepted");
-            return;
-        }
-
+        int len = ParticlesNum;
         int lenLog2 = (int)Math.Log(len, 2);
         SortShader.SetInt("SortedSpatialLookupLength", len);
         SortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
@@ -548,6 +636,11 @@ public class Main : MonoBehaviour
             RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
             RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
         }
+
+        if (ParticlesNum != 0) {
+            MarchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+            MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+        }
     }
 
     void RunSimShader()
@@ -568,11 +661,30 @@ public class Main : MonoBehaviour
         // LastVelocitiesBuffer.GetData(LastVelocities);
     }
 
+    void RunMarchingSquaresShader()
+    {
+        UpdateMarchingSquaresShaderVariables();
+
+        VerticesBuffer.SetData(vertices);
+        TrianglesBuffer.SetData(triangles);
+
+        MarchingSquaresShader.Dispatch(0, MarchW, MarchH, 1);
+        MarchingSquaresShader.Dispatch(1, MarchW-1, MarchH-1, 1);
+
+        VerticesBuffer.GetData(vertices);
+        TrianglesBuffer.GetData(triangles);
+        // ColorsBuffer.GetData(colors);
+
+        marchingSquaresMesh.vertices = vertices;
+        marchingSquaresMesh.triangles = triangles;
+        // marchingSquaresMesh.colors = colors;
+    }
+
     void RunRenderShader()
     {
         UpdateRenderShaderVariables();
 
-        // ThreadSize has to be the same in her as in RenderShader for correct rendering
+        // ThreadSize has to be the same here as in RenderShader for correct rendering
         int ThreadSize = 32;
 
         if (renderTexture == null)
@@ -592,15 +704,27 @@ public class Main : MonoBehaviour
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        RunRenderShader();
+        if (!RenderMarchingSquares)
+        {
+            RunRenderShader();
 
-        Graphics.Blit(renderTexture, dest);
+            Graphics.Blit(renderTexture, dest);
+        }
+        else
+        {
+            Graphics.Blit(src, dest);
+        }
     }
 
     void OnDestroy()
     {
         SpatialLookupBuffer?.Release();
         StartIndicesBuffer?.Release();
+        VerticesBuffer?.Release();
+        TrianglesBuffer?.Release();
+        ColorsBuffer?.Release();
+        MSPointsBuffer?.Release();
+
         PredPositionsBuffer?.Release();
         PositionsBuffer?.Release();
         VelocitiesBuffer?.Release();
@@ -612,7 +736,6 @@ public class Main : MonoBehaviour
         RBVelocitiesBuffer?.Release();
         RBRadiiBuffer?.Release();
         RBMassBuffer?.Release();
-
         ParticleImpulseStorageBuffer?.Release();
         ParticleTeleportStorageBuffer?.Release();
     }
