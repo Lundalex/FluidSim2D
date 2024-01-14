@@ -18,6 +18,8 @@ const float Damping;
 // const float Viscocity;
 const float Gravity;
 const float RbElasticity;
+const float RbPStickyRadius;
+const float RbPStickyness;
 const float BorderPadding;
 
 // Per-timestep-set constants
@@ -178,6 +180,12 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 
                 float2 dst = PData[particleIndex].Position - RBPositions[i];
                 float absDst = length(dst);
+
+                if (absDst < RBProperties[i].x + RbPStickyRadius) 
+                {
+                    // forces pointing against the rb should be avoided. Instead, only opposing forces should be affected by being lessened
+                    PData[particleIndex].Velocity += -normalize(dst) * RbPStickyness * DeltaTime;
+                }
 
                 if (absDst >= RBProperties[i].x) {Index += 1; continue;}
 
