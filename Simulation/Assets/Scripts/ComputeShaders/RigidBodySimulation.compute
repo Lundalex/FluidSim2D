@@ -1,0 +1,241 @@
+#pragma kernel RbRbCollisions
+#pragma kernel RbParticleCollisions
+
+#include "MathResources.hlsl"
+
+static const int ThreadsNum = 32;
+
+// Constants
+const int ChunkNumW;
+const int ChunkNumH;
+const int Width;
+const int Height;
+const int ParticlesNum;
+const int RBodiesNum;
+const int MaxInfluenceRadius;
+
+const float Damping;
+// const float Viscocity;
+const float Gravity;
+const float RbElasticity;
+const float BorderPadding;
+
+// Per-timestep-set constants
+const float DeltaTime;
+
+// Particles - Buffers
+RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
+RWStructuredBuffer<int> StartIndices;
+
+// Particles - Buffers
+RWStructuredBuffer<float2> Positions;
+RWStructuredBuffer<float2> Velocities;
+
+// Rigid bodies - Buffers
+RWStructuredBuffer<float2> RBPositions;
+RWStructuredBuffer<float2> RBVelocities;
+RWStructuredBuffer<float2> RBProperties; // RBRadii, RBMass
+
+bool ValidChunk(int ChunkX, int ChunkY)
+{
+    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
+    return false;
+}
+
+float4 BoundraryCheck(float2 pos, float2 vel, float extraPadding)
+{
+    float totPadding = BorderPadding + extraPadding;
+    float velFactor = 1 - Damping;
+
+    if (pos.y > Height - totPadding)
+    {
+        vel.y = -abs(vel.y) * velFactor;
+        pos.y = Height - totPadding;
+    }
+    else if (pos.y < totPadding)
+    {
+        vel.y = abs(vel.y) * velFactor;
+        pos.y = totPadding;
+    }
+    if (pos.x > Width - totPadding)
+    {
+        vel.x = -abs(vel.x) * velFactor;
+        pos.x = Width - totPadding;
+    }
+    else if (pos.x < totPadding)
+    {
+        vel.x = abs(vel.x) * velFactor;
+        pos.x = totPadding;
+    }
+    
+    return float4(pos.x, pos.y, vel.x, vel.y);
+}
+
+[numthreads(ThreadsNum,1,1)]
+void RbRbCollisions (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+    // There may be problems with equal forces, but this code will be revamped when general RB shapes are implemented
+    for (int OtherRBIndex = 0; OtherRBIndex < RBodiesNum; OtherRBIndex++)
+    {
+        if (OtherRBIndex == i) {continue;}
+
+        float2 dst = RBPositions[i] - RBPositions[OtherRBIndex];
+        float absDst = length(dst);
+
+        if (absDst >= RBProperties[i].x + RBProperties[OtherRBIndex].x) {continue;}
+
+        float2 diffVel = RBVelocities[OtherRBIndex] - RBVelocities[i];
+        float2 normDst = normalize(dst);
+
+        float2 wallDir = float2(normDst.y, -normDst.x);
+
+        // v = (a,b)
+        // u = (c,d) (u is normalized)
+        // => v':
+        // v'_x = (2c^2-1)*a + 2cdb
+        // v'_y = 2cda + (2d^2-1)b
+        // Mirror vel_diff through normDst
+        float a = diffVel.x;
+        float b = diffVel.y;
+        float c = normDst.x;
+        float d = normDst.y;
+
+        float mirrorDiffVelX = (2*c*c-1)*a + 2*c*d*b;
+        float mirrorDiffVelY = 2*c*d*a + (2*d*d-1)*b;
+        float2 MirrorDiffVel = float2(-mirrorDiffVelX, -mirrorDiffVelY);
+
+        float2 deltaParticleVel = MirrorDiffVel - diffVel;
+
+        float2 exchangedMomentum = deltaParticleVel * RbElasticity;
+
+        // Not currently in use. Also, this is not equal to the energy loss by the collision since temperature_energy is not proportional to vel_energy;
+        float overflowMomentum = length(deltaParticleVel * (1 - RbElasticity));
+
+        // v = (a,b)
+        // u = (c,d) (u is normalized)
+        // => v_projected:
+        // v_projected_x = (ac+bd)*c
+        // v_projected_y = (ac+bd)*d
+        // Momentum and circular impulses:
+
+        // Vector2 centerImpulse = exchangedMomentum [proj to] normDst
+        // Vector2 rotation_impulse = exchangedMomentum [proj to] wallDir
+        // But these methods are not currently used since, for circular objects, centerImpulse = exchangedMomentum, and, rotation_impulse = 0.
+        // Thus:
+        float2 centerImpulse = exchangedMomentum;
+
+        RBVelocities[i] -= centerImpulse / (RBProperties[i].y);
+
+        float overlapDst = RBProperties[OtherRBIndex].x + RBProperties[i].x - length(dst);
+
+        RBPositions[i] += overlapDst * normDst / 2;
+    }
+}
+
+[numthreads(ThreadsNum,1,1)]
+void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+    RBVelocities[i].y -= Gravity * DeltaTime;
+    RBPositions[i] += RBVelocities[i] * DeltaTime;
+
+    float4 PosVelData = BoundraryCheck(RBPositions[i], RBVelocities[i], RBProperties[i].x - 0.5);
+    RBPositions[i] = float2(PosVelData.x, PosVelData.y);
+    RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
+    
+    // Int type conversion removes decimals, effectively doing a Floor() operation
+    int ChunkX = (int)(RBPositions[i].x / MaxInfluenceRadius);
+    int ChunkY = (int)(RBPositions[i].y / MaxInfluenceRadius);
+
+    int searchRadius = (int)(ceil(RBProperties[i].x));
+
+    for (int x = -searchRadius; x <= searchRadius; x++)
+    {
+        for (int y = -searchRadius; y <= searchRadius; y++)
+        {
+            int CurChunkX = ChunkX + x;
+            int CurChunkY = ChunkY + y;
+            
+            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[ChunkKey];
+
+            int Index = startIndex; 
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+            {
+                int particleIndex = SpatialLookup[Index].x;
+
+                float2 dst = Positions[particleIndex] - RBPositions[i];
+                float absDst = length(dst);
+
+                if (absDst >= RBProperties[i].x) {Index += 1; continue;}
+
+                float2 diffVel = Velocities[particleIndex] - RBVelocities[i];
+
+                float2 normDst = normalize(dst);
+                float2 wallDir = float2(normDst.y, -normDst.x);
+
+                // v = (a,b)
+                // u = (c,d) (u is normalized)
+                // => v':
+                // v'_x = (2c^2-1)*a + 2cdb
+                // v'_y = 2cda + (2d^2-1)b
+                // Mirror vel_diff through normDst
+                float a = diffVel.x;
+                float b = diffVel.y;
+                float c = normDst.x;
+                float d = normDst.y;
+
+                float mirrorDiffVelX = (2*c*c-1)*a + 2*c*d*b;
+                float mirrorDiffVelY = 2*c*d*a + (2*d*d-1)*b;
+                float2 mirrorDiffVel = float2(-mirrorDiffVelX, -mirrorDiffVelY);
+
+                float2 deltaParticleVel = mirrorDiffVel - diffVel;
+
+                float2 exchangedMomentum = deltaParticleVel * RbElasticity;
+
+                // Not currently in use. Also, this is not equal to the energy loss by the collision since temperature_energy is not proportional to vel_energy;
+                float overflowMomentum = length(deltaParticleVel * (1 - RbElasticity));
+
+                // v = (a,b)
+                // u = (c,d) (u is normalized)
+                // => v_projected:
+                // v_projected_x = (ac+bd)*c
+                // v_projected_y = (ac+bd)*d
+                // Momentum and circular impulses:
+
+                // Vector2 centerImpulse = exchangedMomentum [proj to] normDst
+                // Vector2 rotation_impulse = exchangedMomentum [proj to] wallDir
+                // But these methods are not currently used since, for circular objects, centerImpulse = exchangedMomentum, and, rotation_impulse = 0.
+                // Thus:
+                float2 centerImpulse = exchangedMomentum;
+
+                RBVelocities[i] -= centerImpulse / (2 * RBProperties[i].y);
+
+                float2 relCollisionPos = RBProperties[i].x * normDst;
+                float2 newParticlePos = RBPositions[i] + relCollisionPos;
+
+                Positions[particleIndex] = newParticlePos;
+                Velocities[particleIndex] += exchangedMomentum;
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
+            }
+        }
+    }
+
+    PosVelData = BoundraryCheck(RBPositions[i], RBVelocities[i], RBProperties[i].x - 0.5);
+    RBPositions[i] = float2(PosVelData.x, PosVelData.y);
+    RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
+}
+
+[numthreads(ThreadsNum,1,1)]
+void RBodiesForces (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+}

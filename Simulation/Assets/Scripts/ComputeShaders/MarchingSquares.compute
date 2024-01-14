@@ -397,19 +397,6 @@ float CalcPointValue(float2 pos)
     return totValue;
 }
 
-float simpleNoise(float x) {
-    float x_floor = floor(x);
-    float t = frac(x);
-    float t_smooth = t * t * (3 - 2 * t); // Smoother step interpolation
-
-    // Inline hash function for two points
-    float n0 = frac(sin(x_floor * 12.9898) * 43758.5453);
-    float n1 = frac(sin((x_floor + 1.0) * 12.9898) * 43758.5453);
-
-    // Inline linear interpolation between hashed values
-    return n0 + t_smooth * (n1 - n0);
-}
-
 [numthreads(1,1,1)]
 void CalculateGridValues (uint3 id : SV_DispatchThreadID)
 {
