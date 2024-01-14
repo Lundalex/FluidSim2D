@@ -23,10 +23,19 @@ RWStructuredBuffer<int> Triangles;
 RWStructuredBuffer<float4> Colors;
 RWStructuredBuffer<float> MSPoints;
 
-RWStructuredBuffer<float2> Positions;
-RWStructuredBuffer<float2> Velocities;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
+
+struct PDataStruct
+{
+    float2 PredPosition;
+    float2 Position;
+    float2 Velocity;
+    float2 LastVelocity;
+    float Density;
+    float NearDensity;
+};
+RWStructuredBuffer<PDataStruct> PData;
 
 float LerpNorm(float a, float b)
 {
@@ -384,7 +393,7 @@ float CalcPointValue(float2 pos)
             {
                 int PIndex = SpatialLookup[Index].x;
 
-                float dst = length(pos - Positions[PIndex]);
+                float dst = length(pos - PData[PIndex].Position);
 
                 totValue += SmoothLiquid(dst / 2, MaxInfluenceRadius);
 

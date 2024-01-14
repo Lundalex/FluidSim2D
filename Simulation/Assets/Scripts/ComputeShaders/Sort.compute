@@ -20,8 +20,18 @@ const int BlocksNum;
 const int IOOR;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
-RWStructuredBuffer<float2> PredPositions;
 RWStructuredBuffer<int> StartIndices;
+
+struct PDataStruct
+{
+    float2 PredPosition;
+    float2 Position;
+    float2 Velocity;
+    float2 LastVelocity;
+    float Density;
+    float NearDensity;
+};
+RWStructuredBuffer<PDataStruct> PData;
 
 int GetChunkKey(int pIndex, float2 pos)
 {
@@ -70,7 +80,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    int chunkKey = GetChunkKey(i, PredPositions[i]);
+    int chunkKey = GetChunkKey(i, PData[i].PredPosition);
     SpatialLookup[i] = int2(i, chunkKey);
 }
 

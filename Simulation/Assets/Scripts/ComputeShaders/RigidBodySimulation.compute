@@ -27,9 +27,16 @@ const float DeltaTime;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
-// Particles - Buffers
-RWStructuredBuffer<float2> Positions;
-RWStructuredBuffer<float2> Velocities;
+struct PDataStruct
+{
+    float2 PredPosition;
+    float2 Position;
+    float2 Velocity;
+    float2 LastVelocity;
+    float Density;
+    float NearDensity;
+};
+RWStructuredBuffer<PDataStruct> PData;
 
 // Rigid bodies - Buffers
 RWStructuredBuffer<float2> RBPositions;
@@ -169,12 +176,12 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
             {
                 int particleIndex = SpatialLookup[Index].x;
 
-                float2 dst = Positions[particleIndex] - RBPositions[i];
+                float2 dst = PData[particleIndex].Position - RBPositions[i];
                 float absDst = length(dst);
 
                 if (absDst >= RBProperties[i].x) {Index += 1; continue;}
 
-                float2 diffVel = Velocities[particleIndex] - RBVelocities[i];
+                float2 diffVel = PData[particleIndex].Velocity - RBVelocities[i];
 
                 float2 normDst = normalize(dst);
                 float2 wallDir = float2(normDst.y, -normDst.x);
@@ -219,8 +226,8 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
                 float2 relCollisionPos = RBProperties[i].x * normDst;
                 float2 newParticlePos = RBPositions[i] + relCollisionPos;
 
-                Positions[particleIndex] = newParticlePos;
-                Velocities[particleIndex] += exchangedMomentum;
+                PData[particleIndex].Position = newParticlePos;
+                PData[particleIndex].Velocity += exchangedMomentum;
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
@@ -237,5 +244,6 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 void RBodiesForces (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-
+    
+    // no forces implemented yet
 }

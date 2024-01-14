@@ -231,7 +231,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ParticlesNum: 32768
-  RBodiesNum: 0
+  RBodiesNum: 1
   MaxInfluenceRadius: 2
   TargetDensity: 3
   PressureMultiplier: 5000
@@ -239,11 +239,11 @@ MonoBehaviour:
   Damping: 0.7
   RbElasticity: 0.2
   LookAheadFactor: 0.02
-  Viscocity: 2
+  Viscocity: 3
   Gravity: 5
   PStorageLength: 1
   TriStorageLength: 4
-  radii: 10
+  radii: 5
   Width: 300
   Height: 200
   SpawnDims: 160
@@ -255,8 +255,8 @@ MonoBehaviour:
   VisualParticleRadii: 0.4
   TimeStepsPerRender: 3
   MSvalMin: 0.41
-  ResolutionX: 3840
-  ResolutionY: 2560
+  ResolutionX: 1920
+  ResolutionY: 1280
   MSResolution: 3
   MarchW: 75
   MarchH: 50
