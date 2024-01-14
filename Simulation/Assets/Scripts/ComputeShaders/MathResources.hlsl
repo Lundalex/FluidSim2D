@@ -78,3 +78,8 @@ float lerp1D(float posA, float posB, float valA, float valB, float targetVal)
     float t = float(targetVal - valA) / float(valB - valA);
     return posA + t * (posB - posA);
 }
+
+float LiquidSpringForceModel(float springStiffness, float restLen, float maxInfluenceRadius, float Len)
+{
+    return springStiffness * (1 - restLen/maxInfluenceRadius) * (restLen - Len);
+}

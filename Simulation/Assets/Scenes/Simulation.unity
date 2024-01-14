@@ -241,8 +241,9 @@ MonoBehaviour:
   LookAheadFactor: 0.02
   Viscocity: 3
   Gravity: 5
-  PStorageLength: 1
+  SpringCapacity: 120
   TriStorageLength: 4
+  LiquidElasticity: 2000
   radii: 5
   Width: 300
   Height: 200
