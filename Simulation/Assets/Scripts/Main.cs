@@ -27,12 +27,13 @@ public class Main : MonoBehaviour
     public float PressureMultiplier;
     public float NearPressureMultiplier;
     [Range(0, 1)] public float Damping;
-    [Range(0, 1)] public float RBodyElasticity;
+    [Range(0, 1)] public float RbElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
     public float Viscocity;
     public float Gravity;
     public int PStorageLength;
     public int TriStorageLength;
+    public float radii;
 
     [Header("Boundrary settings")]
     public int Width;
@@ -62,7 +63,8 @@ public class Main : MonoBehaviour
     [Header("References")]
     public GameObject ParticlePrefab;
     public ComputeShader RenderShader;
-    public ComputeShader SimShader;
+    public ComputeShader PSimShader;
+    public ComputeShader RbSimShader;
     public ComputeShader SortShader;
     public ComputeShader MarchingSquaresShader;
 
@@ -92,8 +94,7 @@ public class Main : MonoBehaviour
     // Rigid Bodies - Properties
     private float2[] RBPositions;
     private float2[] RBVelocities;
-    private float[] RBRadii;
-    private float[] RBMass;
+    private float2[] RBProperties; // RBRadii, RBMass
     private float3[] ParticleImpulseStorage;
     private float3[] ParticleTeleportStorage;
 
@@ -124,15 +125,12 @@ public class Main : MonoBehaviour
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
     private ComputeBuffer RBVelocitiesBuffer;
-    private ComputeBuffer RBRadiiBuffer;
-    private ComputeBuffer RBMassBuffer;
-    private ComputeBuffer ParticleImpulseStorageBuffer;
-    private ComputeBuffer ParticleTeleportStorageBuffer;
+    private ComputeBuffer RBPropertiesBuffer;
 
     // Other
     private float DeltaTime;
 
-    // Perhaps should create a seperate class for SimShader functions/methods
+    // Perhaps should create a seperate class for PSimShader functions/methods
     void Start()
     {
         while (Height % MaxInfluenceRadius != 0) {
@@ -157,8 +155,13 @@ public class Main : MonoBehaviour
             Positions[i] = ParticleSpawnPosition(i, ParticlesNum);
         }
 
+        for (int i = 0; i < RBodiesNum; i++) {
+            RBPositions[i] = RBodySpawnPosition(i, RBodiesNum);
+        }
+
         InitializeBuffers();
-        SetSimShaderBuffers();
+        SetPSimShaderBuffers();
+        SetRbSimShaderBuffers();
         SetRenderShaderBuffers();
         SetSortShaderBuffers();
         SetMarchingSquaresShaderBuffers();
@@ -193,8 +196,7 @@ public class Main : MonoBehaviour
 
         RBPositions = new float2[RBodiesNum];
         RBVelocities = new float2[RBodiesNum];
-        RBRadii = new float[RBodiesNum];
-        RBMass = new float[RBodiesNum];
+        RBProperties = new float2[RBodiesNum];
         ParticleImpulseStorage = new float3[RBodiesNum * PStorageLength];
         ParticleTeleportStorage = new float3[RBodiesNum * PStorageLength];
 
@@ -215,8 +217,7 @@ public class Main : MonoBehaviour
         {
             RBPositions[i] = new float2(0.0f, 0.0f);
             RBVelocities[i] = new float2(0.0f, 0.0f);
-            RBRadii[i] = 3f;
-            RBMass[i] = 10f;
+            RBProperties[i] = new float2(radii, 14f);
         }
 
         for (int i = 0; i < RBodiesNum * PStorageLength; i++)
@@ -238,14 +239,22 @@ public class Main : MonoBehaviour
         }
     }
 
-    float2 ParticleSpawnPosition(int particle_index, int max_index)
+    float2 ParticleSpawnPosition(int pIndex, int maxIndex)
     {
-        float x = (Width - SpawnDims) / 2 + Mathf.Floor(particle_index % Mathf.Sqrt(max_index)) * (SpawnDims / Mathf.Sqrt(max_index));
-        float y = (Height - SpawnDims) / 2 + Mathf.Floor(particle_index / Mathf.Sqrt(max_index)) * (SpawnDims / Mathf.Sqrt(max_index));
+        float x = (Width - SpawnDims) / 2 + Mathf.Floor(pIndex % Mathf.Sqrt(maxIndex)) * (SpawnDims / Mathf.Sqrt(maxIndex));
+        float y = (Height - SpawnDims) / 2 + Mathf.Floor(pIndex / Mathf.Sqrt(maxIndex)) * (SpawnDims / Mathf.Sqrt(maxIndex));
         if (SpawnDims > Width || SpawnDims > Height)
         {
             throw new ArgumentException("Particle spawn dimensions larger than either border_width or border_height");
         }
+        return new float2(x, y);
+    }
+
+    float2 RBodySpawnPosition(int rbIndex, int maxIndex)
+    {
+        float ctrDst = radii * 2;
+        float x = Width / 2 + ctrDst * rbIndex - maxIndex * ctrDst / 2;
+        float y = 0.7f * Height;
         return new float2(x, y);
     }
 
@@ -280,17 +289,15 @@ public class Main : MonoBehaviour
     {
         GPUSortChunkData();
         // CPUSortChunkData();
-
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
-            RunSimShader();
+            RunPSimShader();
+            RunRbSimShader();
         }
-
         if (RenderMarchingSquares)
         {
             RunMarchingSquaresShader();
         }
-
         // RunRenderShader() is called by OnRenderImage()
     }
 
@@ -316,17 +323,11 @@ public class Main : MonoBehaviour
         {
             RBPositionsBuffer = new ComputeBuffer(RBodiesNum, sizeof(float) * 2);
             RBVelocitiesBuffer = new ComputeBuffer(RBodiesNum, sizeof(float) * 2);
-            RBRadiiBuffer = new ComputeBuffer(RBodiesNum, sizeof(float));
-            RBMassBuffer = new ComputeBuffer(RBodiesNum, sizeof(float));
-            ParticleImpulseStorageBuffer = new ComputeBuffer(RBodiesNum, sizeof(float) * 3);
-            ParticleTeleportStorageBuffer = new ComputeBuffer(RBodiesNum, sizeof(float) * 3);
+            RBPropertiesBuffer = new ComputeBuffer(RBodiesNum, sizeof(float) * 2);
 
             RBPositionsBuffer.SetData(RBPositions);
             RBVelocitiesBuffer.SetData(RBVelocities);
-            RBRadiiBuffer.SetData(RBRadii);
-            RBMassBuffer.SetData(RBMass);
-            ParticleImpulseStorageBuffer.SetData(ParticleImpulseStorage);
-            ParticleTeleportStorageBuffer.SetData(ParticleTeleportStorage);
+            RBPropertiesBuffer.SetData(RBProperties);
         }
 
         SpatialLookupBuffer = new ComputeBuffer(ParticlesNum, sizeof(int) * 2);
@@ -344,59 +345,52 @@ public class Main : MonoBehaviour
         MSPointsBuffer.SetData(MSPoints);
     }
 
-    void SetSimShaderBuffers()
+    void SetPSimShaderBuffers()
     {
-        // Kernel PreCalculations
         if (ParticlesNum != 0) {
-            SimShader.SetBuffer(0, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(0, "LastVelocities", LastVelocitiesBuffer);
-            SimShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
-        }
-        // Kernel PreCalculations
-        if (ParticlesNum != 0) {
-            SimShader.SetBuffer(1, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(1, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(1, "NearDensities", NearDensitiesBuffer);
-            SimShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
-            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
-        }
+            // Kernel PreCalculations
+            PSimShader.SetBuffer(0, "Positions", PositionsBuffer);
+            PSimShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
+            PSimShader.SetBuffer(0, "LastVelocities", LastVelocitiesBuffer);
+            PSimShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
+        
+            // Kernel PreCalculations   
+            PSimShader.SetBuffer(1, "Positions", PositionsBuffer);
+            PSimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
+            PSimShader.SetBuffer(1, "Densities", DensitiesBuffer);
+            PSimShader.SetBuffer(1, "NearDensities", NearDensitiesBuffer);
+            PSimShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
+            PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
 
-        // Kernel RbRbCollisions
+            // Kernel ParticleForces    
+            PSimShader.SetBuffer(2, "Positions", PositionsBuffer);
+            PSimShader.SetBuffer(2, "Velocities", VelocitiesBuffer);
+            PSimShader.SetBuffer(2, "Densities", DensitiesBuffer);
+            PSimShader.SetBuffer(2, "NearDensities", NearDensitiesBuffer);
+            PSimShader.SetBuffer(2, "LastVelocities", LastVelocitiesBuffer);
+            PSimShader.SetBuffer(2, "PredPositions", PredPositionsBuffer);
+            PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
+            PSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
+        }
+    }
+
+    void SetRbSimShaderBuffers()
+    {
         if (RBodiesNum != 0) {
-            SimShader.SetBuffer(2, "RBPositions", RBPositionsBuffer);
-            SimShader.SetBuffer(2, "RBVelocities", RBVelocitiesBuffer);
-            SimShader.SetBuffer(2, "RBRadii", RBRadiiBuffer);
-            SimShader.SetBuffer(2, "RBMass", NearDensitiesBuffer);
-        }
+            // Kernel RbRbCollisions
+            RbSimShader.SetBuffer(0, "RBPositions", RBPositionsBuffer);
+            RbSimShader.SetBuffer(0, "RBVelocities", RBVelocitiesBuffer);
+            RbSimShader.SetBuffer(0, "RBProperties", RBPropertiesBuffer);
 
-        // Kernel RbParticleCollisions
-        if (RBodiesNum != 0) {
-            SimShader.SetBuffer(3, "RBPositions", RBPositionsBuffer);
-            SimShader.SetBuffer(3, "RBVelocities", RBVelocitiesBuffer);
-            SimShader.SetBuffer(3, "RBRadii", RBRadiiBuffer);
-            SimShader.SetBuffer(3, "RBMass", NearDensitiesBuffer);
-            SimShader.SetBuffer(3, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(3, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(3, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(3, "ParticleImpulseStorage", ParticleImpulseStorageBuffer);
-            SimShader.SetBuffer(3, "ParticleTeleportStorage", ParticleTeleportStorageBuffer);
-            SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
-        }
-
-        // Kernel ParticleForces
-        if (ParticlesNum != 0) {
-            SimShader.SetBuffer(4, "Positions", PositionsBuffer);
-            SimShader.SetBuffer(4, "Velocities", VelocitiesBuffer);
-            SimShader.SetBuffer(4, "Densities", DensitiesBuffer);
-            SimShader.SetBuffer(4, "NearDensities", NearDensitiesBuffer);
-            SimShader.SetBuffer(4, "LastVelocities", LastVelocitiesBuffer);
-            SimShader.SetBuffer(4, "PredPositions", PredPositionsBuffer);
-            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
+            // Kernel RbParticleCollisions
+            RbSimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
+            RbSimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
+            RbSimShader.SetBuffer(1, "RBProperties", RBPropertiesBuffer);
+            RbSimShader.SetBuffer(1, "Positions", PositionsBuffer);
+            RbSimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
+            RbSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            RbSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
         }
     }
 
@@ -409,11 +403,11 @@ public class Main : MonoBehaviour
             RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
         }
 
-        // // Rigid bodies buffers - not implemented
-        // if (RBodiesNum != 0) {
-        //     SimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
-        //     SimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
-        // }
+        if (RBodiesNum != 0) {
+            RenderShader.SetBuffer(0, "RBPositions", RBPositionsBuffer);
+            RenderShader.SetBuffer(0, "RBVelocities", RBVelocitiesBuffer);
+            RenderShader.SetBuffer(0, "RBProperties", RBPropertiesBuffer);
+        }
     }
 
     void SetSortShaderBuffers()
@@ -447,7 +441,7 @@ public class Main : MonoBehaviour
         MarchingSquaresShader.SetBuffer(1, "MSPoints", MSPointsBuffer);
     }
     
-    void UpdateSimShaderVariables()
+    void UpdatePSimShaderVariables()
     {
         // Delta time
         if (FixedTimeStep)
@@ -471,53 +465,68 @@ public class Main : MonoBehaviour
         bool RMousePressed = Input.GetMouseButton(1);
 
         // Set sim shader variables
-        SimShader.SetFloat("DeltaTime", DeltaTime);
-        SimShader.SetFloat("MouseX", MouseWorldPos.x);
-        SimShader.SetFloat("MouseY", MouseWorldPos.y);
-        SimShader.SetBool("RMousePressed", RMousePressed);
-        SimShader.SetBool("LMousePressed", LMousePressed);
+        PSimShader.SetFloat("DeltaTime", DeltaTime);
+        PSimShader.SetFloat("MouseX", MouseWorldPos.x);
+        PSimShader.SetFloat("MouseY", MouseWorldPos.y);
+        PSimShader.SetBool("RMousePressed", RMousePressed);
+        PSimShader.SetBool("LMousePressed", LMousePressed);
 
-        // Set SimShader constants
-        SimShader.SetInt("ChunkNumW", ChunkNumW);
-        SimShader.SetInt("ChunkNumH", ChunkNumH);
-        SimShader.SetInt("IOOR", IOOR);
-        SimShader.SetInt("Width", Width);
-        SimShader.SetInt("Height", Height);
-        SimShader.SetInt("ParticlesNum", ParticlesNum);
-        SimShader.SetInt("RBodiesNum", RBodiesNum);
-        SimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        SimShader.SetInt("SpawnDims", SpawnDims);
-        SimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
-        SimShader.SetInt("PStorageLength", PStorageLength);
-        SimShader.SetFloat("LookAheadFactor", LookAheadFactor);
-        SimShader.SetFloat("TargetDensity", TargetDensity);
-        SimShader.SetFloat("PressureMultiplier", PressureMultiplier);
-        SimShader.SetFloat("NearPressureMultiplier", NearPressureMultiplier);
-        SimShader.SetFloat("Damping", Damping);
-        SimShader.SetFloat("Viscocity", Viscocity);
-        SimShader.SetFloat("Gravity", Gravity);
-        SimShader.SetFloat("RBodyElasticity", RBodyElasticity);
-        SimShader.SetFloat("BorderPadding", BorderPadding);
-        SimShader.SetFloat("TimeStep", TimeStep);
-        SimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
-        SimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
-        SimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
-        SimShader.SetBool("FixedTimeStep", FixedTimeStep);
+        // Set PSimShader constants
+        PSimShader.SetInt("ChunkNumW", ChunkNumW);
+        PSimShader.SetInt("ChunkNumH", ChunkNumH);
+        PSimShader.SetInt("IOOR", IOOR);
+        PSimShader.SetInt("Width", Width);
+        PSimShader.SetInt("Height", Height);
+        PSimShader.SetInt("ParticlesNum", ParticlesNum);
+        PSimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
+        PSimShader.SetInt("SpawnDims", SpawnDims);
+        PSimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
+        PSimShader.SetInt("PStorageLength", PStorageLength);
+        PSimShader.SetFloat("LookAheadFactor", LookAheadFactor);
+        PSimShader.SetFloat("TargetDensity", TargetDensity);
+        PSimShader.SetFloat("PressureMultiplier", PressureMultiplier);
+        PSimShader.SetFloat("NearPressureMultiplier", NearPressureMultiplier);
+        PSimShader.SetFloat("Damping", Damping);
+        PSimShader.SetFloat("Viscocity", Viscocity);
+        PSimShader.SetFloat("Gravity", Gravity);
+        PSimShader.SetFloat("BorderPadding", BorderPadding);
+        PSimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
+        PSimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
+        PSimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
 
         // Set math resources constants
+    }
+
+    void UpdateRbSimShaderVariables()
+    {
+        RbSimShader.SetInt("ChunkNumW", ChunkNumW);
+        RbSimShader.SetInt("ChunkNumH", ChunkNumH);
+        RbSimShader.SetInt("Width", Width);
+        RbSimShader.SetInt("Height", Height);
+        RbSimShader.SetInt("ParticlesNum", ParticlesNum);
+        RbSimShader.SetInt("RBodiesNum", RBodiesNum);
+        RbSimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
+
+        RbSimShader.SetFloat("Damping", Damping);
+        RbSimShader.SetFloat("Gravity", Gravity);
+        RbSimShader.SetFloat("RbElasticity", RbElasticity);
+        RbSimShader.SetFloat("BorderPadding", BorderPadding);
+        RbSimShader.SetFloat("DeltaTime", DeltaTime);
     }
 
     void UpdateRenderShaderVariables()
     {
         RenderShader.SetFloat("VisualParticleRadii", VisualParticleRadii);
-        RenderShader.SetFloat("ResolutionX", ResolutionX);
-        RenderShader.SetFloat("ResolutionY", ResolutionY);
-        RenderShader.SetFloat("Width", Width);
-        RenderShader.SetFloat("Height", Height);
-        RenderShader.SetFloat("MaxInfluenceRadius", MaxInfluenceRadius);
-        RenderShader.SetFloat("ChunkNumW", ChunkNumW);
-        RenderShader.SetFloat("ChunkNumH", ChunkNumH);
-        RenderShader.SetFloat("ParticlesNum", ParticlesNum);
+        RenderShader.SetInt("ResolutionX", ResolutionX);
+        RenderShader.SetInt("ResolutionY", ResolutionY);
+        RenderShader.SetInt("Width", Width);
+        RenderShader.SetInt("Height", Height);
+        RenderShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
+        RenderShader.SetInt("ChunkNumW", ChunkNumW);
+        RenderShader.SetInt("ChunkNumH", ChunkNumH);
+        RenderShader.SetInt("ParticlesNum", ParticlesNum);
+
+        RenderShader.SetInt("RBodiesNum", RBodiesNum);
     }
 
     void UpdateSortShaderVariables()
@@ -620,16 +629,16 @@ public class Main : MonoBehaviour
         // StartIndicesBuffer.SetData(StartIndices);
 
         if (ParticlesNum != 0) {
-            SimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
+            PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
         }
         if (RBodiesNum != 0) {
-            SimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+            PSimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
+            PSimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
         }
         if (ParticlesNum != 0) {
-            SimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
-            SimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
+            PSimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
+            PSimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
         }
 
         if (ParticlesNum != 0) {
@@ -643,22 +652,21 @@ public class Main : MonoBehaviour
         }
     }
 
-    void RunSimShader()
+    void RunPSimShader()
     {
-        UpdateSimShaderVariables();
+        UpdatePSimShaderVariables();
 
-        // Dispatch compute shader kernels
-        if (ParticlesNum != 0) {SimShader.Dispatch(0, ParticlesNum, 1, 1);}
-        if (ParticlesNum != 0) {SimShader.Dispatch(1, ParticlesNum, 1, 1);}
-        if (RBodiesNum != 0) {SimShader.Dispatch(2, RBodiesNum, 1, 1);}
-        if (RBodiesNum != 0 && ParticlesNum != 0) {SimShader.Dispatch(3, RBodiesNum, 1, 1);}
-        if (ParticlesNum != 0) {SimShader.Dispatch(4, ParticlesNum, 1, 1);}
+        if (ParticlesNum != 0) {PSimShader.Dispatch(0, ParticlesNum, 1, 1);}
+        if (ParticlesNum != 0) {PSimShader.Dispatch(1, ParticlesNum, 1, 1);}
+        if (ParticlesNum != 0) {PSimShader.Dispatch(2, ParticlesNum, 1, 1);}
+    }
 
-        // Example use: Retrieve PositionsBuffer to Positions
-        // DensitiesBuffer.GetData(Densities);
-        // NearDensitiesBuffer.GetData(NearDensities);
-        // PredPositionsBuffer.GetData(PredPositions);
-        // LastVelocitiesBuffer.GetData(LastVelocities);
+    void RunRbSimShader()
+    {
+        UpdateRbSimShaderVariables();
+
+        if (RBodiesNum != 0) {RbSimShader.Dispatch(0, RBodiesNum, 1, 1);} //RbRb collisions
+        if (RBodiesNum != 0 && ParticlesNum != 0) {RbSimShader.Dispatch(1, RBodiesNum, 1, 1);} // RbParticle collisions
     }
 
     void RunMarchingSquaresShader()
@@ -699,7 +707,7 @@ public class Main : MonoBehaviour
         RenderShader.SetTexture(0, "Result", renderTexture);
         if (ParticlesNum != 0) {RenderShader.Dispatch(0, renderTexture.width / ThreadSize, renderTexture.height / ThreadSize, 1);}
         // Render rigid bodies - not implemented
-        // if (RBodiesNum != 0) {SimShader.Dispatch(1, RBodiesNum, 1, 1);}
+        // if (RBodiesNum != 0) {PSimShader.Dispatch(1, RBodiesNum, 1, 1);}
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -734,9 +742,6 @@ public class Main : MonoBehaviour
 
         RBPositionsBuffer?.Release();
         RBVelocitiesBuffer?.Release();
-        RBRadiiBuffer?.Release();
-        RBMassBuffer?.Release();
-        ParticleImpulseStorageBuffer?.Release();
-        ParticleTeleportStorageBuffer?.Release();
+        RBPropertiesBuffer?.Release();
     }
 }

@@ -15,7 +15,13 @@ const int ChunkNumW;
 const int ChunkNumH;
 const int ParticlesNum;
 
+const int RBodiesNum;
+
 RWTexture2D<float4> Result;
+
+RWStructuredBuffer<float2> RBPositions;
+RWStructuredBuffer<float2> RBVelocities;
+RWStructuredBuffer<float2> RBProperties;
 
 RWStructuredBuffer<float2> Positions;
 RWStructuredBuffer<float2> Velocities;
@@ -63,7 +69,7 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
                 if (dst < VisualParticleRadii)
                 {
                     float r = min(1.0, length(Velocities[otherPIndex])/10);
-                    float b = max(0.0, 1-length(Velocities[otherPIndex])/10);
+                    float b = max(0.0, 1 - length(Velocities[otherPIndex])/10);
                     Result[id.xy] = float4(r, 0.0, b, 0.0);
                     return;
                 }
@@ -71,6 +77,19 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
             }
+        }
+    }
+
+    for (int i = 0; i < RBodiesNum; i++)
+    {
+        float dst = length(pixelPos - RBPositions[i]);
+        if (dst < RBProperties[i].x)
+        {
+            // RbVelocities not in use currently
+            // float r = min(1.0, length(RBVelocities[i])/10);
+            // float b = max(0.0, 1 - length(RBVelocities[i])/10);
+            Result[id.xy] = float4(1, 1, 1, 0.0);
+            return;
         }
     }
 
