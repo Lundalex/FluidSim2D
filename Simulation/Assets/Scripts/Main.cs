@@ -31,8 +31,9 @@ public class Main : MonoBehaviour
     [Range(0, 0.1f)] public float LookAheadFactor;
     public float Viscocity;
     public float Gravity;
-    public int PStorageLength;
+    public int SpringCapacity;
     public int TriStorageLength;
+    public float LiquidElasticity;
     public float radii;
 
     [Header("Boundrary settings")]
@@ -77,6 +78,8 @@ public class Main : MonoBehaviour
     private int ChunkNumW;
     private int ChunkNumH;
     private int IOOR; // Index Out Of Range
+    private int SIOOR; // Spring Index Out Of Range
+    private int SpringPairsLen;
     private int MSLen;
     private float MarchScale;
 
@@ -84,14 +87,13 @@ public class Main : MonoBehaviour
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
     private int2[] TemplateSpatialLookup;
     private int[] StartIndices;
+    // private SpringStruct[] SpringPairs;
     private PDataStruct[] PData;
 
     // Rigid Bodies - Properties
     private float2[] RBPositions;
     private float2[] RBVelocities;
     private float2[] RBProperties; // RBRadii, RBMass
-    private float3[] ParticleImpulseStorage;
-    private float3[] ParticleTeleportStorage;
 
     // Marching Squares - Buffer retrieval
     private Vector3[] vertices;
@@ -111,6 +113,7 @@ public class Main : MonoBehaviour
 
     // PData - Buffers
     private ComputeBuffer PDataBuffer;
+    // private ComputeBuffer SpringPairsBuffer;
 
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
@@ -162,6 +165,8 @@ public class Main : MonoBehaviour
         ChunkNumW = Width / MaxInfluenceRadius;
         ChunkNumH = Height / MaxInfluenceRadius;
         IOOR = ParticlesNum;
+        SIOOR = ParticlesNum * SpringCapacity;
+        SpringPairsLen = ParticlesNum * SpringCapacity;
         MarchW = (int)(Width / MSResolution);
         MarchH = (int)(Height / MSResolution);
         MSLen = MarchW * MarchH * TriStorageLength * 3;
@@ -172,6 +177,7 @@ public class Main : MonoBehaviour
         SpatialLookup = new int2[ParticlesNum];
         StartIndices = new int[ParticlesNum];
         PData = new PDataStruct[ParticlesNum];
+        // SpringPairs = new SpringStruct[SpringPairsLen];
 
         vertices = new Vector3[MSLen];
         triangles = new int[MSLen];
@@ -183,8 +189,6 @@ public class Main : MonoBehaviour
         RBPositions = new float2[RBodiesNum];
         RBVelocities = new float2[RBodiesNum];
         RBProperties = new float2[RBodiesNum];
-        ParticleImpulseStorage = new float3[RBodiesNum * PStorageLength];
-        ParticleTeleportStorage = new float3[RBodiesNum * PStorageLength];
 
         for (int i = 0; i < ParticlesNum; i++)
         {
@@ -210,12 +214,6 @@ public class Main : MonoBehaviour
             RBProperties[i] = new float2(radii, 14f);
         }
 
-        for (int i = 0; i < RBodiesNum * PStorageLength; i++)
-        {
-            ParticleImpulseStorage[i] = new float3(0.0f, 0.0f, 0.0f);
-            ParticleTeleportStorage[i] = new float3(0.0f, 0.0f, 0.0f);
-        }
-
         for (int i = 0; i < MSLen; i++)
         {
             vertices[i] = new Vector3(0.0f, 0.0f, 0.0f);
@@ -227,6 +225,18 @@ public class Main : MonoBehaviour
         {
             MSPoints[i] = 0.0f;
         }
+
+        // for (int i = 0; i < SpringPairsLen; i++)
+        // {
+        //     SpringPairs[i] = new SpringStruct
+        //     {
+        //         linkedPIndex = IOOR,
+        //         yieldLen = 0.1f,
+        //         plasticity = 0.5f,
+        //         stiffness = 0.5f,
+        //         restLength = 1f
+        //     };
+        // }
     }
 
     float2 ParticleSpawnPosition(int pIndex, int maxIndex)
@@ -296,7 +306,10 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10);
+            // SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) * 4 + sizeof(int) * 1);
+
             PDataBuffer.SetData(PData);
+            // SpringPairsBuffer.SetData(SpringPairs);
         }
         if (RBodiesNum != 0)
         {
@@ -340,6 +353,7 @@ public class Main : MonoBehaviour
             // Kernel ParticleForces
             PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
             PSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
+            // PSimShader.SetBuffer(2, "SpringPairs", SpringPairsBuffer);
 
             PSimShader.SetBuffer(2, "PData", PDataBuffer);
         }
@@ -447,13 +461,13 @@ public class Main : MonoBehaviour
         PSimShader.SetInt("ChunkNumW", ChunkNumW);
         PSimShader.SetInt("ChunkNumH", ChunkNumH);
         PSimShader.SetInt("IOOR", IOOR);
+        PSimShader.SetInt("SIOOR", SIOOR);
         PSimShader.SetInt("Width", Width);
         PSimShader.SetInt("Height", Height);
         PSimShader.SetInt("ParticlesNum", ParticlesNum);
         PSimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
         PSimShader.SetInt("SpawnDims", SpawnDims);
         PSimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
-        PSimShader.SetInt("PStorageLength", PStorageLength);
         PSimShader.SetFloat("LookAheadFactor", LookAheadFactor);
         PSimShader.SetFloat("TargetDensity", TargetDensity);
         PSimShader.SetFloat("PressureMultiplier", PressureMultiplier);
@@ -465,6 +479,8 @@ public class Main : MonoBehaviour
         PSimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
         PSimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
         PSimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
+        PSimShader.SetFloat("LiquidElasticity", LiquidElasticity);
+        PSimShader.SetFloat("SpringCapacity", SpringCapacity);
 
         // Set math resources constants
     }
@@ -704,6 +720,7 @@ public class Main : MonoBehaviour
         TrianglesBuffer?.Release();
         ColorsBuffer?.Release();
         MSPointsBuffer?.Release();
+        // SpringPairsBuffer?.Release();
 
         PDataBuffer?.Release();
 
@@ -722,3 +739,11 @@ struct PDataStruct
     public float Density;
     public float NearDensity;
 }
+// struct SpringStruct
+// {
+//     public int linkedPIndex;
+//     public float yieldLen;
+//     public float plasticity;
+//     public float stiffness;
+//     public float restLength;
+// };

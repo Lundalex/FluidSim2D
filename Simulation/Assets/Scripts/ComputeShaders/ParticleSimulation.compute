@@ -1,7 +1,5 @@
 #pragma kernel PreCalculations
 #pragma kernel CalculateDensities
-// #pragma kernel RbRbCollisions
-// #pragma kernel RbParticleCollisions
 #pragma kernel ParticleForces
 
 #include "MathResources.hlsl"
@@ -19,7 +17,6 @@ const int RBodiesNum;
 const int MaxInfluenceRadius;
 const int SpawnDims;
 const int TimeStepsPerRender;
-const int PStorageLength;
 
 const float LookAheadFactor;
 const float TargetDensity;
@@ -33,6 +30,8 @@ const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
+const float LiquidElasticity;
+const float SpringCapacity;
 
 // Per-timestep-set constants
 const float DeltaTime;
@@ -44,6 +43,16 @@ const bool LMousePressed;
 // Particles - Buffers
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
+
+struct SpringStruct
+{
+    int pIndex1;
+    int pIndex2;
+    int plasticity;
+    int stiffness;
+    int restLength;
+};
+RWStructuredBuffer<int2> SpringPairs;
 
 struct PDataStruct
 {
@@ -199,7 +208,13 @@ float2 ViscocityForce(int pIndex, int otherPIndex, float absDst)
 
 float2 LiquidSpringForce(int pIndex, int otherPIndex, float absDst, float2 dst)
 {
-    return float2(0.0, 0.0);
+    float springRestLen = 0.7;
+    float springStiffness = 0.5;
+    float2 normDst = normalize(dst);
+    float absSpringForce = LiquidSpringForceModel(springStiffness, springRestLen, MaxInfluenceRadius, absDst);
+    float2 springForce = absSpringForce * normDst / 2;
+
+    return -springForce * LiquidElasticity;
 }
 
 float2 InteractionForce(int pIndex)
@@ -261,6 +276,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
+    // Can probably be optimised by using if (i > otherPIndex) to avoid calculating each pair twice
+
     // Int type conversion removes decimals, effectively doing a Floor() operation
     int ChunkX = (int)(PData[i].PredPosition.x / MaxInfluenceRadius);
     int ChunkY = (int)(PData[i].PredPosition.y / MaxInfluenceRadius);
@@ -303,7 +320,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     float2 interactionForce = InteractionForce(i);
     //                                                                   / (constant) or density[i]???
-    float2 totForce = (totPressureForce + totViscocityForce + interactionForce) / 9;
+    float2 totForce = (totPressureForce + totViscocityForce + totSpringForce + interactionForce) / 9;
 
     PData[i].Velocity.y -= Gravity * DeltaTime;
     PData[i].Velocity += totForce * DeltaTime;
