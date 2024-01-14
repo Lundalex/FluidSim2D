@@ -23,11 +23,19 @@ RWStructuredBuffer<float2> RBPositions;
 RWStructuredBuffer<float2> RBVelocities;
 RWStructuredBuffer<float2> RBProperties;
 
-RWStructuredBuffer<float2> Positions;
-RWStructuredBuffer<float2> Velocities;
-
 RWStructuredBuffer<int2> SpatialLookup;
 RWStructuredBuffer<int> StartIndices;
+
+struct PDataStruct
+{
+    float2 PredPosition;
+    float2 Position;
+    float2 Velocity;
+    float2 LastVelocity;
+    float Density;
+    float NearDensity;
+};
+RWStructuredBuffer<PDataStruct> PData;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -64,12 +72,12 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
             {
                 int otherPIndex = SpatialLookup[Index].x;
 
-                float dst = length(pixelPos - Positions[otherPIndex]);
+                float dst = length(pixelPos - PData[otherPIndex].Position);
 
                 if (dst < VisualParticleRadii)
                 {
-                    float r = min(1.0, length(Velocities[otherPIndex])/10);
-                    float b = max(0.0, 1 - length(Velocities[otherPIndex])/10);
+                    float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
+                    float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
                     Result[id.xy] = float4(r, 0.0, b, 0.0);
                     return;
                 }

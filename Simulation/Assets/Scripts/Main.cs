@@ -80,16 +80,11 @@ public class Main : MonoBehaviour
     private int MSLen;
     private float MarchScale;
 
-    // Particles - Properties
+    // PData - Properties
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
-    private int[] StartIndices;
-    private float2[] PredPositions;
-    private float2[] Positions;
-    private float2[] Velocities;
-    private float2[] LastVelocities;
-    private float[] Densities;
-    private float[] NearDensities;
     private int2[] TemplateSpatialLookup;
+    private int[] StartIndices;
+    private PDataStruct[] PData;
 
     // Rigid Bodies - Properties
     private float2[] RBPositions;
@@ -114,13 +109,8 @@ public class Main : MonoBehaviour
     private ComputeBuffer SpatialLookupBuffer;
     private ComputeBuffer StartIndicesBuffer;
 
-    // Particles - Buffers
-    private ComputeBuffer PredPositionsBuffer;
-    private ComputeBuffer PositionsBuffer;
-    private ComputeBuffer VelocitiesBuffer;
-    private ComputeBuffer LastVelocitiesBuffer;
-    private ComputeBuffer DensitiesBuffer;
-    private ComputeBuffer NearDensitiesBuffer;
+    // PData - Buffers
+    private ComputeBuffer PDataBuffer;
 
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
@@ -152,7 +142,7 @@ public class Main : MonoBehaviour
         InitializeArrays();
 
         for (int i = 0; i < ParticlesNum; i++) {
-            Positions[i] = ParticleSpawnPosition(i, ParticlesNum);
+            PData[i].Position = ParticleSpawnPosition(i, ParticlesNum);
         }
 
         for (int i = 0; i < RBodiesNum; i++) {
@@ -181,17 +171,13 @@ public class Main : MonoBehaviour
     {
         SpatialLookup = new int2[ParticlesNum];
         StartIndices = new int[ParticlesNum];
+        PData = new PDataStruct[ParticlesNum];
+
         vertices = new Vector3[MSLen];
         triangles = new int[MSLen];
         colors = new Color[MSLen];
         MSPoints = new float[MSLen];
 
-        PredPositions = new float2[ParticlesNum];
-        Positions = new float2[ParticlesNum];
-        Velocities = new float2[ParticlesNum];
-        LastVelocities = new float2[ParticlesNum];
-        Densities = new float[ParticlesNum];
-        NearDensities = new float[ParticlesNum];
         TemplateSpatialLookup = new int2[ParticlesNum];
 
         RBPositions = new float2[RBodiesNum];
@@ -202,13 +188,17 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            Positions[i] = new float2(0.0f, 0.0f);
-            Velocities[i] = new float2(0.0f, 0.0f);
-            LastVelocities[i] = new float2(0.0f, 0.0f);
-            PredPositions[i] = new float2(0.0f, 0.0f);
-            Densities[i] = 0.0f;
-            NearDensities[i] = 0.0f;
             StartIndices[i] = 0;
+
+            PData[i] = new PDataStruct
+            {
+                PredPosition = new float2(0.0f, 0.0f),
+                Position = new float2(0.0f, 0.0f),
+                Velocity = new float2(0.0f, 0.0f),
+                LastVelocity = new float2(0.0f, 0.0f),
+                Density = 0.0f,
+                NearDensity = 0.0f
+            };
 
             TemplateSpatialLookup[i] = new int2(0, 0);
         }
@@ -305,19 +295,8 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PredPositionsBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 2);
-            PositionsBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 2);
-            VelocitiesBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 2);
-            LastVelocitiesBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 2);
-            DensitiesBuffer = new ComputeBuffer(ParticlesNum, sizeof(float));
-            NearDensitiesBuffer = new ComputeBuffer(ParticlesNum, sizeof(float));
-
-            PredPositionsBuffer.SetData(PredPositions);
-            PositionsBuffer.SetData(Positions);
-            VelocitiesBuffer.SetData(Velocities);
-            LastVelocitiesBuffer.SetData(Velocities);
-            DensitiesBuffer.SetData(Densities);
-            NearDensitiesBuffer.SetData(NearDensities);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10);
+            PDataBuffer.SetData(PData);
         }
         if (RBodiesNum != 0)
         {
@@ -349,29 +328,20 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0) {
             // Kernel PreCalculations
-            PSimShader.SetBuffer(0, "Positions", PositionsBuffer);
-            PSimShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
-            PSimShader.SetBuffer(0, "LastVelocities", LastVelocitiesBuffer);
-            PSimShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
+
+            PSimShader.SetBuffer(0, "PData", PDataBuffer);
         
-            // Kernel PreCalculations   
-            PSimShader.SetBuffer(1, "Positions", PositionsBuffer);
-            PSimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
-            PSimShader.SetBuffer(1, "Densities", DensitiesBuffer);
-            PSimShader.SetBuffer(1, "NearDensities", NearDensitiesBuffer);
-            PSimShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
+            // Kernel PreCalculations
             PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
             PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
 
-            // Kernel ParticleForces    
-            PSimShader.SetBuffer(2, "Positions", PositionsBuffer);
-            PSimShader.SetBuffer(2, "Velocities", VelocitiesBuffer);
-            PSimShader.SetBuffer(2, "Densities", DensitiesBuffer);
-            PSimShader.SetBuffer(2, "NearDensities", NearDensitiesBuffer);
-            PSimShader.SetBuffer(2, "LastVelocities", LastVelocitiesBuffer);
-            PSimShader.SetBuffer(2, "PredPositions", PredPositionsBuffer);
+            PSimShader.SetBuffer(1, "PData", PDataBuffer);
+
+            // Kernel ParticleForces
             PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
             PSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
+
+            PSimShader.SetBuffer(2, "PData", PDataBuffer);
         }
     }
 
@@ -387,20 +357,20 @@ public class Main : MonoBehaviour
             RbSimShader.SetBuffer(1, "RBPositions", RBPositionsBuffer);
             RbSimShader.SetBuffer(1, "RBVelocities", RBVelocitiesBuffer);
             RbSimShader.SetBuffer(1, "RBProperties", RBPropertiesBuffer);
-            RbSimShader.SetBuffer(1, "Positions", PositionsBuffer);
-            RbSimShader.SetBuffer(1, "Velocities", VelocitiesBuffer);
             RbSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
             RbSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
+
+            RbSimShader.SetBuffer(1, "PData", PDataBuffer);
         }
     }
 
     void SetRenderShaderBuffers()
     {
         if (ParticlesNum != 0) {
-            RenderShader.SetBuffer(0, "Positions", PositionsBuffer);
-            RenderShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
             RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
             RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+
+            RenderShader.SetBuffer(0, "PData", PDataBuffer);
         }
 
         if (RBodiesNum != 0) {
@@ -415,11 +385,13 @@ public class Main : MonoBehaviour
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
         
-        SortShader.SetBuffer(0, "PredPositions", PredPositionsBuffer);
         SortShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
 
-        SortShader.SetBuffer(1, "PredPositions", PredPositionsBuffer);
+        SortShader.SetBuffer(0, "PData", PDataBuffer);
+
         SortShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+
+        SortShader.SetBuffer(1, "PData", PDataBuffer);
 
         SortShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
 
@@ -430,10 +402,10 @@ public class Main : MonoBehaviour
     void SetMarchingSquaresShaderBuffers()
     {
         MarchingSquaresShader.SetBuffer(0, "MSPoints", MSPointsBuffer);
-        MarchingSquaresShader.SetBuffer(0, "Positions", PositionsBuffer);
-        MarchingSquaresShader.SetBuffer(0, "Velocities", VelocitiesBuffer);
         MarchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
         MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+
+        MarchingSquaresShader.SetBuffer(0, "PData", PDataBuffer);
 
         MarchingSquaresShader.SetBuffer(1, "Vertices", VerticesBuffer);
         MarchingSquaresShader.SetBuffer(1, "Triangles", TrianglesBuffer);
@@ -595,12 +567,12 @@ public class Main : MonoBehaviour
 
     void CPUSortChunkData()
     {
-        PredPositionsBuffer.GetData(PredPositions);
+        PDataBuffer.GetData(PData);
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            int ChunkX = (int)(PredPositions[i].x / MaxInfluenceRadius);
-            int ChunkY = (int)(PredPositions[i].y / MaxInfluenceRadius);
+            int ChunkX = (int)(PData[i].PredPosition.x / MaxInfluenceRadius);
+            int ChunkY = (int)(PData[i].PredPosition.y / MaxInfluenceRadius);
             int ChunkKey = ChunkY * ChunkNumW + ChunkX;
 
             SpatialLookup[i] = new int2(i, ChunkKey);
@@ -733,15 +705,20 @@ public class Main : MonoBehaviour
         ColorsBuffer?.Release();
         MSPointsBuffer?.Release();
 
-        PredPositionsBuffer?.Release();
-        PositionsBuffer?.Release();
-        VelocitiesBuffer?.Release();
-        LastVelocitiesBuffer?.Release();
-        DensitiesBuffer?.Release();
-        NearDensitiesBuffer?.Release();
+        PDataBuffer?.Release();
 
         RBPositionsBuffer?.Release();
         RBVelocitiesBuffer?.Release();
         RBPropertiesBuffer?.Release();
     }
+}
+
+struct PDataStruct
+{
+    public float2 PredPosition;
+    public float2 Position;
+    public float2 Velocity;
+    public float2 LastVelocity;
+    public float Density;
+    public float NearDensity;
 }
