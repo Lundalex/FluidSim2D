@@ -240,11 +240,13 @@ MonoBehaviour:
   RbElasticity: 0.2
   LookAheadFactor: 0.02
   Viscocity: 3
+  LiquidElasticity: 2
   Gravity: 5
-  SpringCapacity: 120
+  RbPStickyRadius: 2
+  RbPStickyness: 1
+  SpringCapacity: 1
   TriStorageLength: 4
-  LiquidElasticity: 2000
-  radii: 5
+  radii: 7
   Width: 300
   Height: 200
   SpawnDims: 160

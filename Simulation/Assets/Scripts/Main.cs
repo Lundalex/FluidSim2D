@@ -30,10 +30,12 @@ public class Main : MonoBehaviour
     [Range(0, 1)] public float RbElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
     public float Viscocity;
+    public float LiquidElasticity;
     public float Gravity;
+    public float RbPStickyRadius;
+    public float RbPStickyness;
     public int SpringCapacity;
     public int TriStorageLength;
-    public float LiquidElasticity;
     public float radii;
 
     [Header("Boundrary settings")]
@@ -498,6 +500,8 @@ public class Main : MonoBehaviour
         RbSimShader.SetFloat("Damping", Damping);
         RbSimShader.SetFloat("Gravity", Gravity);
         RbSimShader.SetFloat("RbElasticity", RbElasticity);
+        RbSimShader.SetFloat("RbPStickyRadius", RbPStickyRadius);
+        RbSimShader.SetFloat("RbPStickyness", RbPStickyness);
         RbSimShader.SetFloat("BorderPadding", BorderPadding);
         RbSimShader.SetFloat("DeltaTime", DeltaTime);
     }
