@@ -89,7 +89,7 @@ public class Main : MonoBehaviour
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
     private int2[] TemplateSpatialLookup;
     private int[] StartIndices;
-    // private SpringStruct[] SpringPairs;
+    private SpringStruct[] SpringPairs;
     private PDataStruct[] PData;
 
     // Rigid Bodies - Properties
@@ -113,9 +113,9 @@ public class Main : MonoBehaviour
     private ComputeBuffer SpatialLookupBuffer;
     private ComputeBuffer StartIndicesBuffer;
 
-    // PData - Buffers
+    // PData, SpringPairs - Buffers
     private ComputeBuffer PDataBuffer;
-    // private ComputeBuffer SpringPairsBuffer;
+    private ComputeBuffer SpringPairsBuffer;
 
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
@@ -551,8 +551,10 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum == 0) {return;}
         UpdateSortShaderVariables();
+        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 1024);
+        int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 1024)/2;
 
-        SortShader.Dispatch(0, ParticlesNum, 1, 1);
+        SortShader.Dispatch(0, ThreadSize, 1, 1);
 
         int len = ParticlesNum;
         int lenLog2 = (int)Math.Log(len, 2);
@@ -572,17 +574,16 @@ public class Main : MonoBehaviour
                 SortShader.SetInt("blocksNum", blocksNum);
                 SortShader.SetBool("BrownPinkSort", BrownPinkSort);
 
-                int hLen = ParticlesNum / 2;
-                SortShader.Dispatch(1, hLen, 1, 1);
+                SortShader.Dispatch(1, ThreadSizeHLen, 1, 1);
 
                 blockLen /= 2;
             }
             basebBlockLen *= 2;
         }
 
-        SortShader.Dispatch(2, ParticlesNum, 1, 1);
+        SortShader.Dispatch(2, ThreadSize, 1, 1);
 
-        SortShader.Dispatch(3, ParticlesNum, 1, 1);
+        SortShader.Dispatch(3, ThreadSize, 1, 1);
     }
 
     void CPUSortChunkData()
@@ -648,17 +649,21 @@ public class Main : MonoBehaviour
     {
         UpdatePSimShaderVariables();
 
-        if (ParticlesNum != 0) {PSimShader.Dispatch(0, ParticlesNum, 1, 1);}
-        if (ParticlesNum != 0) {PSimShader.Dispatch(1, ParticlesNum, 1, 1);}
-        if (ParticlesNum != 0) {PSimShader.Dispatch(2, ParticlesNum, 1, 1);}
+        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 1024);
+
+        if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {PSimShader.Dispatch(2, ThreadSize, 1, 1);}
     }
 
     void RunRbSimShader()
     {
         UpdateRbSimShaderVariables();
 
-        if (RBodiesNum != 0) {RbSimShader.Dispatch(0, RBodiesNum, 1, 1);} //RbRb collisions
-        if (RBodiesNum != 0 && ParticlesNum != 0) {RbSimShader.Dispatch(1, RBodiesNum, 1, 1);} // RbParticle collisions
+        int ThreadSize = (int)Math.Ceiling((float)RBodiesNum / 1024);
+
+        if (RBodiesNum != 0) {RbSimShader.Dispatch(0, ThreadSize, 1, 1);} //RbRb collisions
+        if (RBodiesNum != 0 && ParticlesNum != 0) {RbSimShader.Dispatch(1, ThreadSize, 1, 1);} // RbParticle collisions
     }
 
     void RunMarchingSquaresShader()
@@ -678,13 +683,13 @@ public class Main : MonoBehaviour
         marchingSquaresMesh.vertices = vertices;
         marchingSquaresMesh.triangles = triangles;
         // marchingSquaresMesh.colors = colors;
+        marchingSquaresMesh.RecalculateNormals();
     }
 
     void RunRenderShader()
     {
         UpdateRenderShaderVariables();
 
-        // ThreadSize has to be the same here as in RenderShader for correct rendering
         int ThreadSize = 32;
 
         if (renderTexture == null)
@@ -743,11 +748,12 @@ struct PDataStruct
     public float Density;
     public float NearDensity;
 }
-// struct SpringStruct
-// {
-//     public int linkedPIndex;
-//     public float yieldLen;
-//     public float plasticity;
-//     public float stiffness;
-//     public float restLength;
-// };
+struct SpringStruct
+{
+    public int pIndex1;
+    public int pIndex2;
+    // public float yieldLen;
+    // public float plasticity;
+    // public float stiffness;
+    public float restLength;
+};
