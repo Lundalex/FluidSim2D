@@ -4,7 +4,7 @@
 
 #include "MathResources.hlsl"
 
-static const int ThreadsNum = 32;
+static const int ThreadsNum = 1024;
 
 // Constants
 const int ChunkNumW;
@@ -44,15 +44,23 @@ const bool LMousePressed;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
+// for each particle i:
+//    for each neightboor(i):
+//        checkAndIfThereIsNoExistingSpringThenAddSpring()??????
+
+// for each spring:
+//    if springlen > MaxInfluenceRadius:
+//        delete spring
 struct SpringStruct
 {
     int pIndex1;
     int pIndex2;
-    int plasticity;
-    int stiffness;
-    int restLength;
+    // float yieldLen;
+    // float plasticity;
+    // float stiffness;
+    float restLength;
 };
-RWStructuredBuffer<int2> SpringPairs;
+RWStructuredBuffer<SpringStruct> SpringPairs;
 
 struct PDataStruct
 {

@@ -406,7 +406,7 @@ float CalcPointValue(float2 pos)
     return totValue;
 }
 
-[numthreads(1,1,1)]
+[numthreads(ThreadsNum,ThreadsNum,1)]
 void CalculateGridValues (uint3 id : SV_DispatchThreadID)
 {
     int x = id.x;
@@ -422,7 +422,7 @@ void CalculateGridValues (uint3 id : SV_DispatchThreadID)
     MSPoints[index] = val;
 }
 
-[numthreads(1,1,1)]
+[numthreads(ThreadsNum,ThreadsNum,1)]
 void GenerateMeshData (uint3 id : SV_DispatchThreadID)
 {
     int x = id.x;
