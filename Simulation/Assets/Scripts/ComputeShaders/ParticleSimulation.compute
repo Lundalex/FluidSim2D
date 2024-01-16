@@ -235,7 +235,7 @@ void DeleteSpring(int springKey, int otherPIndex, int maxIterationCount)
 
 float2 LiquidSpringForce(int pIndex, int otherPIndex, float absDst, float2 dst)
 {
-    int MaxIterationCount = 3;
+    int MaxIterationCount = 1;
     int springKey = pIndex * SpringCapacity + otherPIndex % SpringCapacity;
     if (absDst > MaxInfluenceRadius) {DeleteSpring(springKey, otherPIndex, MaxIterationCount); return float2(0.0, 0.0);}
     // eliminate duplicate springs between particles
@@ -249,17 +249,22 @@ float2 LiquidSpringForce(int pIndex, int otherPIndex, float absDst, float2 dst)
     }
     if (iteration == MaxIterationCount) {return float2(0.0, 0.0);}
 
-    if (SpringPairs[springKey].linkedIndex != IOOR) {AddSpring(springKey, otherPIndex, 0.7);}
+    if (SpringPairs[springKey].linkedIndex == IOOR) {AddSpring(springKey, otherPIndex, 0.7);}
 
+    float diffMng = absDst - SpringPairs[springKey].restLength;
+    int absDiffMng = abs(diffMng);
+    int sgnDiffMng = sign(diffMng);
+    int plasticityConst = 0.2;
+    float neutralLenDiff = 0.1;
+    // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL) 
+    SpringPairs[springKey].restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - neutralLenDiff) * DeltaTime;
 
-    float springRestLen = 0.7;
     float springStiffness = LiquidElasticity;
     float2 normDst = normalize(dst);
-
     float absSpringForce = LiquidSpringForceModel(springStiffness, SpringPairs[springKey].restLength, MaxInfluenceRadius, absDst);
 
     float2 springForce = absSpringForce * normDst / 2;
-    return -springForce * LiquidElasticity * DeltaTime;
+    return -springForce * DeltaTime;
     // PData[pIndex].Velocity -= springForce * LiquidElasticity * DeltaTime;
     // PData[otherPIndex].Velocity += springForce * LiquidElasticity * DeltaTime;
 }
@@ -354,6 +359,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 float sqrDst = dot(dst, dst);
                 if (sqrDst > MaxInfluenceRadiusSqr) {Index += 1; continue;}
                 float absDst = sqrt(sqrDst);
+
 
                 totPressureForce += PressureForce(i, otherPIndex, absDst, dst);
                 totViscocityForce += ViscocityForce(i, otherPIndex, absDst);
