@@ -31,6 +31,7 @@ public class Main : MonoBehaviour
     [Range(0, 0.1f)] public float LookAheadFactor;
     public float Viscocity;
     public float LiquidElasticity;
+    public float Plasticity;
     public float Gravity;
     public float RbPStickyRadius;
     public float RbPStickyness;
@@ -179,7 +180,7 @@ public class Main : MonoBehaviour
         SpatialLookup = new int2[ParticlesNum];
         StartIndices = new int[ParticlesNum];
         PData = new PDataStruct[ParticlesNum];
-        // SpringPairs = new SpringStruct[SpringPairsLen];
+        SpringPairs = new SpringStruct[SpringPairsLen];
 
         vertices = new Vector3[MSLen];
         triangles = new int[MSLen];
@@ -228,17 +229,14 @@ public class Main : MonoBehaviour
             MSPoints[i] = 0.0f;
         }
 
-        // for (int i = 0; i < SpringPairsLen; i++)
-        // {
-        //     SpringPairs[i] = new SpringStruct
-        //     {
-        //         linkedPIndex = IOOR,
-        //         yieldLen = 0.1f,
-        //         plasticity = 0.5f,
-        //         stiffness = 0.5f,
-        //         restLength = 1f
-        //     };
-        // }
+        for (int i = 0; i < SpringPairsLen; i++)
+        {
+            SpringPairs[i] = new SpringStruct
+            {
+                linkedIndex = IOOR,
+                restLength = 1f
+            };
+        }
     }
 
     float2 ParticleSpawnPosition(int pIndex, int maxIndex)
@@ -308,10 +306,10 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10);
-            // SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) * 4 + sizeof(int) * 1);
+            SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) * 1 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
-            // SpringPairsBuffer.SetData(SpringPairs);
+            SpringPairsBuffer.SetData(SpringPairs);
         }
         if (RBodiesNum != 0)
         {
@@ -343,7 +341,6 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0) {
             // Kernel PreCalculations
-
             PSimShader.SetBuffer(0, "PData", PDataBuffer);
         
             // Kernel PreCalculations
@@ -355,8 +352,8 @@ public class Main : MonoBehaviour
             // Kernel ParticleForces
             PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
             PSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
-            // PSimShader.SetBuffer(2, "SpringPairs", SpringPairsBuffer);
 
+            PSimShader.SetBuffer(2, "SpringPairs", SpringPairsBuffer);
             PSimShader.SetBuffer(2, "PData", PDataBuffer);
         }
     }
@@ -483,6 +480,7 @@ public class Main : MonoBehaviour
         PSimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
         PSimShader.SetFloat("LiquidElasticity", LiquidElasticity);
         PSimShader.SetFloat("SpringCapacity", SpringCapacity);
+        PSimShader.SetFloat("Plasticity", Plasticity);
 
         // Set math resources constants
     }
@@ -750,8 +748,7 @@ struct PDataStruct
 }
 struct SpringStruct
 {
-    public int pIndex1;
-    public int pIndex2;
+    public int linkedIndex;
     // public float yieldLen;
     // public float plasticity;
     // public float stiffness;
