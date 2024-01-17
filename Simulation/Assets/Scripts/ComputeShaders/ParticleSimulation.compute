@@ -237,11 +237,20 @@ void DeleteSpring(int springKey, int otherPIndex, int maxIterationCount)
 
 float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 dst)
 {
+<<<<<<< HEAD
     // if (absDst > MaxInfluenceRadius-0.5) {return float2(0,0);}
+=======
+    int MaxIterationCount = 1;
+    int springKey = pIndex * SpringCapacity + otherPIndex % SpringCapacity;
+    if (absDst > MaxInfluenceRadius) {DeleteSpring(springKey, otherPIndex, MaxIterationCount); return float2(0.0, 0.0);}
+    // eliminate duplicate springs between particles
+    // if (pIndex < otherPIndex) {return;}
+>>>>>>> 95d6cd434be4bd7337eb018b7e15ffd60f26edf1
 
     // // eliminate duplicate springs between particles
     // // if (pIndex < otherPIndex) {return;}
 
+<<<<<<< HEAD
     // // int springKey = pIndex * SpringCapacity + (uint)otherPIndex % SpringCapacity;
 
     // int iteration = 0;
@@ -268,6 +277,26 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
  
     float2 springForce = absSpringForce * normDst * 0.5;
     return -springForce * DeltaTime;
+=======
+    if (SpringPairs[springKey].linkedIndex == IOOR) {AddSpring(springKey, otherPIndex, 0.7);}
+
+    float diffMng = absDst - SpringPairs[springKey].restLength;
+    int absDiffMng = abs(diffMng);
+    int sgnDiffMng = sign(diffMng);
+    int plasticityConst = 0.2;
+    float neutralLenDiff = 0.1;
+    // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL) 
+    SpringPairs[springKey].restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - neutralLenDiff) * DeltaTime;
+
+    float springStiffness = LiquidElasticity;
+    float2 normDst = normalize(dst);
+    float absSpringForce = LiquidSpringForceModel(springStiffness, SpringPairs[springKey].restLength, MaxInfluenceRadius, absDst);
+
+    float2 springForce = absSpringForce * normDst / 2;
+    return -springForce * DeltaTime;
+    // PData[pIndex].Velocity -= springForce * LiquidElasticity * DeltaTime;
+    // PData[otherPIndex].Velocity += springForce * LiquidElasticity * DeltaTime;
+>>>>>>> 95d6cd434be4bd7337eb018b7e15ffd60f26edf1
 }
 
 float2 InteractionForce(int pIndex)
@@ -373,10 +402,18 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 if (sqrDst > MaxInfluenceRadiusSqr) {Index += 1; continue;}
                 float absDst = sqrt(sqrDst);
+<<<<<<< HEAD
                 
                 totPressureForce += PressureForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst); 
                 // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, dst);
+=======
+
+
+                totPressureForce += PressureForce(i, otherPIndex, absDst, dst);
+                totViscocityForce += ViscocityForce(i, otherPIndex, absDst);
+                // totSpringForce += LiquidSpringForce(i, otherPIndex, absDst, dst);
+>>>>>>> 95d6cd434be4bd7337eb018b7e15ffd60f26edf1
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
