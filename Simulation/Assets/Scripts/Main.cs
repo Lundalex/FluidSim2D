@@ -92,6 +92,7 @@ public class Main : MonoBehaviour
     private int[] StartIndices;
     private SpringStruct[] SpringPairs;
     private PDataStruct[] PData;
+    private PTypeStruct[] PTypes;
 
     // Rigid Bodies - Properties
     private float2[] RBPositions;
@@ -117,6 +118,7 @@ public class Main : MonoBehaviour
     // PData, SpringPairs - Buffers
     private ComputeBuffer PDataBuffer;
     private ComputeBuffer SpringPairsBuffer;
+    private ComputeBuffer PTypesBuffer;
 
     // Rigid Bodies - Buffers
     private ComputeBuffer RBPositionsBuffer;
@@ -137,6 +139,7 @@ public class Main : MonoBehaviour
         }
 
         CreateVisualBoundrary();
+        InitializeLiquidTypes();
 
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
@@ -175,6 +178,37 @@ public class Main : MonoBehaviour
         MSLen = MarchW * MarchH * TriStorageLength * 3;
     }
 
+    void InitializeLiquidTypes()
+    {
+        PTypes = new PTypeStruct[2];
+        PTypes[0] = new PTypeStruct
+        {
+            TargetDensity = TargetDensity,
+            MaxInfluenceRadius = 1,
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+            Damping = Damping,
+            Viscocity = Viscocity,
+            Elasticity = LiquidElasticity,
+            Plasticity = Plasticity,
+            Gravity = Gravity,
+            colorG = 0f
+        };
+        PTypes[1] = new PTypeStruct
+        {
+            TargetDensity = TargetDensity * 2,
+            MaxInfluenceRadius = 1,
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+            Damping = Damping,
+            Viscocity = Viscocity,
+            Elasticity = LiquidElasticity,
+            Plasticity = Plasticity,
+            Gravity = Gravity,
+            colorG = 1f
+        };  
+    }
+
     void InitializeArrays()
     {
         SpatialLookup = new int2[ParticlesNum];
@@ -197,15 +231,32 @@ public class Main : MonoBehaviour
         {
             StartIndices[i] = 0;
 
-            PData[i] = new PDataStruct
+            if (i < ParticlesNum *0.5f)
             {
-                PredPosition = new float2(0.0f, 0.0f),
-                Position = new float2(0.0f, 0.0f),
-                Velocity = new float2(0.0f, 0.0f),
-                LastVelocity = new float2(0.0f, 0.0f),
-                Density = 0.0f,
-                NearDensity = 0.0f
-            };
+                PData[i] = new PDataStruct
+                {
+                    PredPosition = new float2(0.0f, 0.0f),
+                    Position = new float2(0.0f, 0.0f),
+                    Velocity = new float2(0.0f, 0.0f),
+                    LastVelocity = new float2(0.0f, 0.0f),
+                    Density = 0.0f,
+                    NearDensity = 0.0f,
+                    PType = 0
+                };
+            }
+            else
+            {
+                PData[i] = new PDataStruct
+                {
+                    PredPosition = new float2(0.0f, 0.0f),
+                    Position = new float2(0.0f, 0.0f),
+                    Velocity = new float2(0.0f, 0.0f),
+                    LastVelocity = new float2(0.0f, 0.0f),
+                    Density = 0.0f,
+                    NearDensity = 0.0f,
+                    PType = 1
+                };
+            }
 
             TemplateSpatialLookup[i] = new int2(0, 0);
         }
@@ -234,7 +285,7 @@ public class Main : MonoBehaviour
             SpringPairs[i] = new SpringStruct
             {
                 linkedIndex = IOOR,
-                restLength = 1f
+                restLength = 1
             };
         }
     }
@@ -292,6 +343,7 @@ public class Main : MonoBehaviour
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
             RunPSimShader();
+            // SpringPairsBuffer.GetData(SpringPairs);
             RunRbSimShader();
         }
         if (RenderMarchingSquares)
@@ -305,11 +357,13 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10);
-            SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) * 1 + sizeof(int) * 1);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int));
+            SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
+            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 9 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
             SpringPairsBuffer.SetData(SpringPairs);
+            PTypesBuffer.SetData(PTypes);
         }
         if (RBodiesNum != 0)
         {
@@ -342,12 +396,14 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0) {
             // Kernel PreCalculations
             PSimShader.SetBuffer(0, "PData", PDataBuffer);
+            PSimShader.SetBuffer(0, "PTypes", PTypesBuffer);
         
             // Kernel PreCalculations
             PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
             PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
 
             PSimShader.SetBuffer(1, "PData", PDataBuffer);
+            PSimShader.SetBuffer(1, "PTypes", PTypesBuffer);
 
             // Kernel ParticleForces
             PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
@@ -355,6 +411,7 @@ public class Main : MonoBehaviour
 
             PSimShader.SetBuffer(2, "SpringPairs", SpringPairsBuffer);
             PSimShader.SetBuffer(2, "PData", PDataBuffer);
+            PSimShader.SetBuffer(2, "PTypes", PTypesBuffer);
         }
     }
 
@@ -374,6 +431,7 @@ public class Main : MonoBehaviour
             RbSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
 
             RbSimShader.SetBuffer(1, "PData", PDataBuffer);
+            RbSimShader.SetBuffer(1, "PTypes", PTypesBuffer);
         }
     }
 
@@ -384,6 +442,7 @@ public class Main : MonoBehaviour
             RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
 
             RenderShader.SetBuffer(0, "PData", PDataBuffer);
+            RenderShader.SetBuffer(0, "PTypes", PTypesBuffer);
         }
 
         if (RBodiesNum != 0) {
@@ -401,10 +460,12 @@ public class Main : MonoBehaviour
         SortShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
 
         SortShader.SetBuffer(0, "PData", PDataBuffer);
+        SortShader.SetBuffer(0, "PTypes", PTypesBuffer);
 
         SortShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
 
         SortShader.SetBuffer(1, "PData", PDataBuffer);
+        SortShader.SetBuffer(1, "PTypes", PTypesBuffer);
 
         SortShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
 
@@ -419,7 +480,8 @@ public class Main : MonoBehaviour
         MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
 
         MarchingSquaresShader.SetBuffer(0, "PData", PDataBuffer);
-
+        MarchingSquaresShader.SetBuffer(0, "PTypes", PTypesBuffer);
+        
         MarchingSquaresShader.SetBuffer(1, "Vertices", VerticesBuffer);
         MarchingSquaresShader.SetBuffer(1, "Triangles", TrianglesBuffer);
         MarchingSquaresShader.SetBuffer(1, "Colors", ColorsBuffer);
@@ -436,11 +498,6 @@ public class Main : MonoBehaviour
         else
         {
             DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
-        }
-        // cap DeltaTime to avoid instabilities caused by sudden lag spikes
-        if (DeltaTime > 0.03f)
-        {
-            DeltaTime = 0.03f;
         }
 
         // Mouse variables
@@ -468,20 +525,12 @@ public class Main : MonoBehaviour
         PSimShader.SetInt("SpawnDims", SpawnDims);
         PSimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
         PSimShader.SetFloat("LookAheadFactor", LookAheadFactor);
-        PSimShader.SetFloat("TargetDensity", TargetDensity);
-        PSimShader.SetFloat("PressureMultiplier", PressureMultiplier);
-        PSimShader.SetFloat("NearPressureMultiplier", NearPressureMultiplier);
-        PSimShader.SetFloat("Damping", Damping);
-        PSimShader.SetFloat("Viscocity", Viscocity);
-        PSimShader.SetFloat("Gravity", Gravity);
         PSimShader.SetFloat("BorderPadding", BorderPadding);
         PSimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
         PSimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
         PSimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
-        PSimShader.SetFloat("LiquidElasticity", LiquidElasticity);
-        PSimShader.SetFloat("SpringCapacity", SpringCapacity);
+        PSimShader.SetInt("SpringCapacity", SpringCapacity);
         PSimShader.SetFloat("Plasticity", Plasticity);
-
         // Set math resources constants
     }
 
@@ -727,9 +776,10 @@ public class Main : MonoBehaviour
         TrianglesBuffer?.Release();
         ColorsBuffer?.Release();
         MSPointsBuffer?.Release();
-        // SpringPairsBuffer?.Release();
+        SpringPairsBuffer?.Release();
 
         PDataBuffer?.Release();
+        PTypesBuffer?.Release();
 
         RBPositionsBuffer?.Release();
         RBVelocitiesBuffer?.Release();
@@ -745,12 +795,26 @@ struct PDataStruct
     public float2 LastVelocity;
     public float Density;
     public float NearDensity;
+    public int PType;
 }
 struct SpringStruct
 {
     public int linkedIndex;
+    public float restLength;
     // public float yieldLen;
     // public float plasticity;
     // public float stiffness;
-    public float restLength;
+};
+struct PTypeStruct
+{
+    public float TargetDensity;
+    public int MaxInfluenceRadius;
+    public float Pressure;
+    public float NearPressure;
+    public float Damping;
+    public float Viscocity;
+    public float Elasticity;
+    public float Plasticity;
+    public float Gravity;
+    public float colorG;
 };

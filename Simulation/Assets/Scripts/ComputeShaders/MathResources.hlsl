@@ -7,6 +7,9 @@ const float SmoothViscosityLaplacianFactor;
 
 // Geogebra: https://www.geogebra.org/calculator/bsyseckq
 
+// http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf#page10
+// https://iquilezles.org/articles/distfunctions/
+
 // Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
 float InteractionInfluence(float dst, float radius)
 {
