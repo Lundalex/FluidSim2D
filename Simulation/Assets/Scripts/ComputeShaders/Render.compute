@@ -26,6 +26,21 @@ RWStructuredBuffer<float2> RBProperties;
 RWStructuredBuffer<int2> SpatialLookup;
 RWStructuredBuffer<int> StartIndices;
 
+struct PTypeStruct
+{
+    float TargetDensity;
+    int MaxInfluenceRadius;
+    float Pressure;
+    float NearPressure;
+    float Damping;
+    float Viscocity;
+    float Elasticity;
+    float Plasticity;
+    float Gravity;
+    float colorG;
+};
+RWStructuredBuffer<PTypeStruct> PTypes;
+
 struct PDataStruct
 {
     float2 PredPosition;
@@ -34,6 +49,7 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -68,7 +84,7 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum-1 && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
 
@@ -77,8 +93,9 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
                 if (dst < VisualParticleRadii)
                 {
                     float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
+                    float g = PTypes[PData[otherPIndex].PType].colorG;
                     float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
-                    Result[id.xy] = float4(r, 0.0, b, 0.0);
+                    Result[id.xy] = float4(r, g, b, 0.0);
                     return;
                 }
 

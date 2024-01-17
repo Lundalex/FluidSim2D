@@ -26,6 +26,21 @@ RWStructuredBuffer<float> MSPoints;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
+struct PTypeStruct
+{
+    float TargetDensity;
+    int MaxInfluenceRadius;
+    float Pressure;
+    float NearPressure;
+    float Damping;
+    float Viscocity;
+    float Elasticity;
+    float Plasticity;
+    float Gravity;
+    float colorG;
+};
+RWStructuredBuffer<PTypeStruct> PTypes;
+
 struct PDataStruct
 {
     float2 PredPosition;
@@ -34,6 +49,7 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
 

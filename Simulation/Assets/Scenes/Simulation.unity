@@ -234,8 +234,8 @@ MonoBehaviour:
   RBodiesNum: 0
   MaxInfluenceRadius: 2
   TargetDensity: 3
-  PressureMultiplier: 5000
-  NearPressureMultiplier: 150
+  PressureMultiplier: 500
+  NearPressureMultiplier: 12
   Damping: 0.7
   RbElasticity: 0.2
   LookAheadFactor: 0.017
@@ -247,14 +247,14 @@ MonoBehaviour:
   RbPStickyness: 1
   SpringCapacity: 500
   TriStorageLength: 4
-  radii: 7
+  radii: 2
   Width: 300
   Height: 200
   SpawnDims: 160
   BorderPadding: 4
-  FixedTimeStep: 0
+  FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.01
+  TimeStep: 0.005
   ProgramSpeed: 4
   VisualParticleRadii: 0.4
   TimeStepsPerRender: 3
@@ -265,7 +265,7 @@ MonoBehaviour:
   MarchW: 75
   MarchH: 50
   MaxInteractionRadius: 70
-  InteractionAttractionPower: 150
+  InteractionAttractionPower: 15
   InteractionFountainPower: 0
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
