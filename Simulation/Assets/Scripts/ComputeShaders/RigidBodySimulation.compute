@@ -1,5 +1,7 @@
 #pragma kernel RbRbCollisions
 #pragma kernel RbParticleCollisions
+#pragma kernel PopulateTraversedChunks
+#pragma kernel ConsumeTraversedChunks
 
 #include "MathResources.hlsl"
 
@@ -60,6 +62,15 @@ RWStructuredBuffer<PDataStruct> PData;
 RWStructuredBuffer<float2> RBPositions;
 RWStructuredBuffer<float2> RBVelocities;
 RWStructuredBuffer<float2> RBProperties; // RBRadii, RBMass
+
+RWStructuredBuffer<int2> RigidBodyIndices;
+RWStructuredBuffer<float2> LineVertices;
+
+AppendStructuredBuffer<int2> TraversedChunksAPPEND;
+ConsumeStructuredBuffer<int2> TraversedChunksCONSUME;
+
+AppendStructuredBuffer<int2> NearCollisionParticlesAPPEND;
+ConsumeStructuredBuffer<int2> NearCollisionParticlesCONSUME;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -264,10 +275,91 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
     RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
 }
 
-[numthreads(ThreadsNum,1,1)]
-void RBodiesForces (uint3 id : SV_DispatchThreadID)
+void TraverseLine(float startX, float startY, float endX, float endY)
+{
+    if (startX > endX)
+    {
+        float eX = endX;
+        float eY = endY;
+        endX = startX;
+        endY = startY;
+        startX = eX;
+        startY = eY;
+    }
+    float denominator = endX - startX;
+    // if dx == 0, skip collision detection for this frame
+    if (denominator == 0) {return;}
+    float k = (endY - startY) / denominator;
+    int searchHeight = (int)ceil(abs(k)) + 1;
+    int xBase = (int)floor(startX);
+    float yBase = (int)floor(startY);
+
+    for (int y = yBase; y < yBase + searchHeight; y++)
+    {
+        int2 chunkPos = int2(xBase, y);
+        TraversedChunksAPPEND.Append(chunkPos);
+    }
+
+    float dx = ceil(startX) - startX;
+    yBase += dx * k;
+    int yBaseUse = (int)floor(yBase);
+    xBase += 1;
+
+    for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
+    {
+        int2 chunkPos = int2(xBase, y);
+        TraversedChunksAPPEND.Append(chunkPos);
+    }
+
+    for (int x = xBase; x <= (int)floor(endX); x++) // Ensure end condition matches Python logic
+    {
+        yBase += k;
+        yBaseUse = (int)floor(yBase);
+        for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
+        {
+            int2 chunkPos = int2(x, y);
+            TraversedChunksAPPEND.Append(chunkPos);
+        }
+    }
+}
+
+[numthreads(1,1,1)]
+void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-    
-    // no forces implemented yet
+
+    float2 startPos = LineVertices[i] / (float)MaxInfluenceRadius;
+    float2 endPos = LineVertices[i+1] / (float)MaxInfluenceRadius;
+    TraverseLine(startPos.x, startPos.y, endPos.x, endPos.y);
+}
+
+[numthreads(ThreadsNum, 1, 1)]
+void ConsumeTraversedChunks(uint3 id : SV_DispatchThreadID)
+{
+    int2 curChunk = TraversedChunksCONSUME.Consume();
+    int CurChunkX = curChunk.x;
+    int CurChunkY = curChunk.y;
+
+    for (int i = 0; i < 99; i++)
+    {
+        int a = rand(i*i*i);
+        a = rand(i*i*i);
+        a = rand(i*i*i);
+        a = rand(i*i*i);
+        a = rand(i*i*i);
+    }
+    // check the default value for data!!!!!
+    if (CurChunkX == 0 && CurChunkY == 0) {return;}
+    if (!ValidChunk(CurChunkX, CurChunkY)) {return;}
+
+    int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+    int startIndex = StartIndices[ChunkKey];
+
+    int Index = startIndex; 
+    while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+    {
+
+        // Increment Index each iteration - Chunk particle search algorithm
+        Index += 1;
+    }
 }

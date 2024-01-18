@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.UIElements;
 using Unity.Mathematics;
 using System;
+using System.Runtime.InteropServices;
 using System.Linq;
 using Unity.VisualScripting;
 using System.Numerics;
@@ -16,6 +17,7 @@ using Unity.Burst;
 using UnityEngine.Jobs;
 using System.Threading.Tasks;
 using System.Collections;
+using UnityEngine.Rendering;
 
 public class Main : MonoBehaviour
 {
@@ -85,6 +87,8 @@ public class Main : MonoBehaviour
     private int SpringPairsLen;
     private int MSLen;
     private float MarchScale;
+    private int NewRigidBodiesNum;
+    private int LineVerticesNum;
 
     // PData - Properties
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
@@ -98,6 +102,10 @@ public class Main : MonoBehaviour
     private float2[] RBPositions;
     private float2[] RBVelocities;
     private float2[] RBProperties; // RBRadii, RBMass
+
+    private float2[] LineVertices;
+    private int2[] RigidBodyIndices;
+    private int[] TCCount = new int[1];
 
     // Marching Squares - Buffer retrieval
     private Vector3[] vertices;
@@ -125,6 +133,12 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBVelocitiesBuffer;
     private ComputeBuffer RBPropertiesBuffer;
 
+    private ComputeBuffer LineVerticesBuffer;
+    private ComputeBuffer RigidBodyIndicesBuffer;
+    private ComputeBuffer TraversedChunks_AC_Buffer;
+    private ComputeBuffer NearCollisionParticles_AC_Buffer;
+    private ComputeBuffer TCCountBuffer;
+
     // Other
     private float DeltaTime;
 
@@ -139,7 +153,7 @@ public class Main : MonoBehaviour
         }
 
         CreateVisualBoundrary();
-        InitializeLiquidTypes();
+        InitializeSetArrays();
 
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
@@ -176,9 +190,11 @@ public class Main : MonoBehaviour
         MarchW = (int)(Width / MSResolution);
         MarchH = (int)(Height / MSResolution);
         MSLen = MarchW * MarchH * TriStorageLength * 3;
+        NewRigidBodiesNum = RigidBodyIndices.Length;
+        LineVerticesNum = LineVertices.Length;
     }
 
-    void InitializeLiquidTypes()
+    void InitializeSetArrays()
     {
         PTypes = new PTypeStruct[2];
         PTypes[0] = new PTypeStruct
@@ -206,7 +222,16 @@ public class Main : MonoBehaviour
             Plasticity = Plasticity,
             Gravity = Gravity,
             colorG = 1f
-        };  
+        };
+
+        RigidBodyIndices = new int2[1];
+        RigidBodyIndices[0] = new int2(0, 3);
+
+        LineVertices = new float2[4];
+        LineVertices[0] = new float2(10f, 10f);
+        LineVertices[1] = new float2(30f, 30f);
+        LineVertices[2] = new float2(60f, 10f);
+        LineVertices[3] = new float2(10f, 11f);
     }
 
     void InitializeArrays()
@@ -389,6 +414,15 @@ public class Main : MonoBehaviour
         VerticesBuffer.SetData(vertices);
         TrianglesBuffer.SetData(triangles);
         MSPointsBuffer.SetData(MSPoints);
+
+        RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
+        LineVerticesBuffer = new ComputeBuffer(LineVertices.Length, sizeof(float) * 2);
+        RigidBodyIndicesBuffer.SetData(RigidBodyIndices);
+        LineVerticesBuffer.SetData(LineVertices);
+
+        TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 2, ComputeBufferType.Append);
+        NearCollisionParticles_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 2, ComputeBufferType.Append);
+        TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 
     void SetPSimShaderBuffers()
@@ -433,6 +467,14 @@ public class Main : MonoBehaviour
             RbSimShader.SetBuffer(1, "PData", PDataBuffer);
             RbSimShader.SetBuffer(1, "PTypes", PTypesBuffer);
         }
+        if (NewRigidBodiesNum != 0)
+        {
+            RbSimShader.SetBuffer(2, "RigidBodyIndices", RigidBodyIndicesBuffer);
+            RbSimShader.SetBuffer(2, "LineVertices", LineVerticesBuffer);
+
+            RbSimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
+            RbSimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+        }
     }
 
     void SetRenderShaderBuffers()
@@ -449,6 +491,11 @@ public class Main : MonoBehaviour
             RenderShader.SetBuffer(0, "RBPositions", RBPositionsBuffer);
             RenderShader.SetBuffer(0, "RBVelocities", RBVelocitiesBuffer);
             RenderShader.SetBuffer(0, "RBProperties", RBPropertiesBuffer);
+        }
+
+        if (NewRigidBodiesNum != 0)
+        {
+            // RenderShader.SetBuffer(0, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
         }
     }
 
@@ -711,6 +758,47 @@ public class Main : MonoBehaviour
 
         if (RBodiesNum != 0) {RbSimShader.Dispatch(0, ThreadSize, 1, 1);} //RbRb collisions
         if (RBodiesNum != 0 && ParticlesNum != 0) {RbSimShader.Dispatch(1, ThreadSize, 1, 1);} // RbParticle collisions
+
+        if (LineVerticesNum > 1) 
+        {
+            TraversedChunks_AC_Buffer.SetCounterValue(0);
+
+            RbSimShader.SetBuffer(2, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
+            RbSimShader.Dispatch(2, LineVerticesNum-1, 1, 1);
+
+            // Get the count of elements in the appendBuffer - VERY EXPENSIVE!!!!!
+            ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
+            TCCountBuffer.GetData(TCCount);
+            int count = TCCount[0];
+            int2[] testlist = new int2[count];
+            TraversedChunks_AC_Buffer.GetData(testlist);
+
+            RbSimShader.SetBuffer(3, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
+            // RbSimShader.SetBuffer(3, "NearCollisionParticlesAPPEND", NearCollisionParticles_AC_Buffer);
+            // RbSimShader.Dispatch(3, count, 1, 1);
+
+            // int count2 = 190;
+
+            // NearCollisionParticles_AC_Buffer.SetCounterValue(0);
+            // RbSimShader.SetBuffer(4, "NearCollisionParticlesCONSUME", NearCollisionParticles_AC_Buffer);
+            // RbSimShader.Dispatch(4, count2, 1, 1);
+
+            // ASYNCHRONOUS APPEND BUFFER COUNT RETRIEVAL BELLOW
+
+            // TraversedChunks_AC_Buffer.SetCounterValue(0);
+
+            // RbSimShader.SetBuffer(2, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
+            // RbSimShader.Dispatch(2, LineVerticesNum-1, 1, 1);
+
+            // AsyncGPUReadback.Request(TCCountBuffer, request => {
+            //     int count = request.GetData<int>()[0];
+            //     if (count > 0)
+            //     {
+            //         RbSimShader.SetBuffer(3, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
+            //         RbSimShader.Dispatch(3, count, 1, 1);
+            //     }
+            // });
+        }
     }
 
     void RunMarchingSquaresShader()
@@ -784,6 +872,12 @@ public class Main : MonoBehaviour
         RBPositionsBuffer?.Release();
         RBVelocitiesBuffer?.Release();
         RBPropertiesBuffer?.Release();
+
+        RigidBodyIndicesBuffer?.Release();
+        LineVerticesBuffer?.Release();
+        TraversedChunks_AC_Buffer?.Release();
+        TCCountBuffer?.Release();
+        NearCollisionParticles_AC_Buffer?.Release();
     }
 }
 
