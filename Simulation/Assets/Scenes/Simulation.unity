@@ -247,14 +247,14 @@ MonoBehaviour:
   RbPStickyness: 1
   SpringCapacity: 500
   TriStorageLength: 4
-  radii: 2
+  radii: 15
   Width: 300
   Height: 200
   SpawnDims: 160
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.005
+  TimeStep: 0.02
   ProgramSpeed: 4
   VisualParticleRadii: 0.4
   TimeStepsPerRender: 3
