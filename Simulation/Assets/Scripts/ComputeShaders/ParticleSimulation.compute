@@ -1,6 +1,7 @@
 #pragma kernel PreCalculations
 #pragma kernel CalculateDensities
 #pragma kernel ParticleForces
+#pragma kernel UpdatePositions
 
 #include "MathResources.hlsl"
 
@@ -387,11 +388,26 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 interactionForce = InteractionForce(i);
 
     float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce;
-    PData_i.Velocity.y -= PType_i.Gravity * DeltaTime;
-    PData_i.Velocity += totForce * DeltaTime;
+    PData[i].Velocity.y -= PType_i.Gravity * DeltaTime;
+    PData[i].Velocity += totForce * DeltaTime;
+
+    // update position
+    // PData_i.Position += PData_i.Velocity * DeltaTime;
+    // float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
+    // PData[i].Position = float2(PosVelData.x, PosVelData.y);
+    // PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
+}
+
+[numthreads(ThreadsNum,1,1)]
+void UpdatePositions (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+    PDataStruct PData_i = PData[i];
+
     PData_i.Position += PData_i.Velocity * DeltaTime;
 
-    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
+    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[PData_i.PType].Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
 }

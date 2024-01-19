@@ -286,6 +286,9 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 
 void TraverseLineSegment(float startX, float startY, float endX, float endY, int LineIndex)
 {
+    // CHANGES:
+    // -1 to all baseY values in the for loops
+
     if (startX > endX)
     {
         float eX = endX;
@@ -304,7 +307,7 @@ void TraverseLineSegment(float startX, float startY, float endX, float endY, int
     int xBase = (int)floor(startX);
     float yBase = (int)floor(startY);
 
-    for (int y1 = yBase; y1 < yBase + searchHeight; y1++)
+    for (int y1 = yBase-1; y1 < yBase + searchHeight+1; y1++)
     {
         TraversedChunksAPPEND.Append(int3(xBase, y1, LineIndex));
     }
@@ -314,16 +317,16 @@ void TraverseLineSegment(float startX, float startY, float endX, float endY, int
     int yBaseUse = (int)floor(yBase);
     xBase += 1;
 
-    for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
+    for (int y = yBaseUse-1; y < yBaseUse + searchHeight+1; y++)
     {
         TraversedChunksAPPEND.Append(int3(xBase, y, LineIndex));
     }
 
-    for (int x = xBase; x <= (int)floor(endX); x++)
+    for (int x = xBase; x <= (int)floor(endX)+1; x++)
     {
         yBase += k;
         yBaseUse = (int)floor(yBase);
-        for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
+        for (int y = yBaseUse-1; y < yBaseUse + searchHeight+1; y++)
         {
             TraversedChunksAPPEND.Append(int3(x, y, LineIndex));
         }
@@ -347,7 +350,7 @@ float2 SignedDistanceToLineSegment(float2 A, float2 B, float2 P)
     float2 closestPoint = A + t * AB;
 
     // Return the distance vector from P to the closest point
-    return P - closestPoint;
+    return -(P - closestPoint);
 }
 
 bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
