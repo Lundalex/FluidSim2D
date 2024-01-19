@@ -66,8 +66,8 @@ RWStructuredBuffer<float2> RBProperties; // RBRadii, RBMass
 RWStructuredBuffer<int2> RigidBodyIndices;
 RWStructuredBuffer<float2> LineVertices;
 
-AppendStructuredBuffer<int2> TraversedChunksAPPEND;
-ConsumeStructuredBuffer<int2> TraversedChunksCONSUME;
+AppendStructuredBuffer<int3> TraversedChunksAPPEND;
+ConsumeStructuredBuffer<int3> TraversedChunksCONSUME;
 
 AppendStructuredBuffer<int2> NearCollisionParticlesAPPEND;
 ConsumeStructuredBuffer<int2> NearCollisionParticlesCONSUME;
@@ -275,7 +275,7 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
     RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
 }
 
-void TraverseLine(float startX, float startY, float endX, float endY)
+void TraverseLine(float startX, float startY, float endX, float endY, int LineIndex)
 {
     if (startX > endX)
     {
@@ -290,14 +290,14 @@ void TraverseLine(float startX, float startY, float endX, float endY)
     // if dx == 0, skip collision detection for this frame
     if (denominator == 0) {return;}
     float k = (endY - startY) / denominator;
+    if (k == 0) {k = 0.0001;}
     int searchHeight = (int)ceil(abs(k)) + 1;
     int xBase = (int)floor(startX);
     float yBase = (int)floor(startY);
 
     for (int y = yBase; y < yBase + searchHeight; y++)
     {
-        int2 chunkPos = int2(xBase, y);
-        TraversedChunksAPPEND.Append(chunkPos);
+        TraversedChunksAPPEND.Append(int3(xBase, y, LineIndex));
     }
 
     float dx = ceil(startX) - startX;
@@ -307,20 +307,23 @@ void TraverseLine(float startX, float startY, float endX, float endY)
 
     for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
     {
-        int2 chunkPos = int2(xBase, y);
-        TraversedChunksAPPEND.Append(chunkPos);
+        TraversedChunksAPPEND.Append(int3(xBase, y, LineIndex));
     }
 
-    for (int x = xBase; x <= (int)floor(endX); x++) // Ensure end condition matches Python logic
+    for (int x = xBase; x <= (int)floor(endX); x++)
     {
         yBase += k;
         yBaseUse = (int)floor(yBase);
         for (int y = yBaseUse; y < yBaseUse + searchHeight; y++)
         {
-            int2 chunkPos = int2(x, y);
-            TraversedChunksAPPEND.Append(chunkPos);
+            TraversedChunksAPPEND.Append(int3(x, y, LineIndex));
         }
     }
+}
+
+void CheckCollision(int pIndex, int lineIndex)
+{
+
 }
 
 [numthreads(1,1,1)]
@@ -330,26 +333,19 @@ void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 
     float2 startPos = LineVertices[i] / (float)MaxInfluenceRadius;
     float2 endPos = LineVertices[i+1] / (float)MaxInfluenceRadius;
-    TraverseLine(startPos.x, startPos.y, endPos.x, endPos.y);
+    TraverseLine(startPos.x, startPos.y, endPos.x, endPos.y, i);
 }
 
-[numthreads(ThreadsNum, 1, 1)]
+[numthreads(1, 1, 1)]
 void ConsumeTraversedChunks(uint3 id : SV_DispatchThreadID)
 {
-    int2 curChunk = TraversedChunksCONSUME.Consume();
+    int3 curChunk = TraversedChunksCONSUME.Consume();
     int CurChunkX = curChunk.x;
     int CurChunkY = curChunk.y;
+    int LineIndex = curChunk.z;
 
-    for (int i = 0; i < 99; i++)
-    {
-        int a = rand(i*i*i);
-        a = rand(i*i*i);
-        a = rand(i*i*i);
-        a = rand(i*i*i);
-        a = rand(i*i*i);
-    }
     // check the default value for data!!!!!
-    if (CurChunkX == 0 && CurChunkY == 0) {return;}
+    if (CurChunkX == 0 && CurChunkY == 0 && LineIndex == 0) {return;}
     if (!ValidChunk(CurChunkX, CurChunkY)) {return;}
 
     int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
@@ -358,6 +354,7 @@ void ConsumeTraversedChunks(uint3 id : SV_DispatchThreadID)
     int Index = startIndex; 
     while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
     {
+        CheckCollision(Index, LineIndex);
 
         // Increment Index each iteration - Chunk particle search algorithm
         Index += 1;
