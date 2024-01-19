@@ -420,7 +420,7 @@ public class Main : MonoBehaviour
         RigidBodyIndicesBuffer.SetData(RigidBodyIndices);
         LineVerticesBuffer.SetData(LineVertices);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 2, ComputeBufferType.Append);
+        TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 3, ComputeBufferType.Append);
         NearCollisionParticles_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 2, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
@@ -775,7 +775,7 @@ public class Main : MonoBehaviour
 
             RbSimShader.SetBuffer(3, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
             // RbSimShader.SetBuffer(3, "NearCollisionParticlesAPPEND", NearCollisionParticles_AC_Buffer);
-            // RbSimShader.Dispatch(3, count, 1, 1);
+            RbSimShader.Dispatch(3, count, 1, 1);
 
             // int count2 = 190;
 
