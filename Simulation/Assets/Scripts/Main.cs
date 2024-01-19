@@ -88,7 +88,7 @@ public class Main : MonoBehaviour
     private int MSLen;
     private float MarchScale;
     private int NewRigidBodiesNum;
-    private int LineVerticesNum;
+    private int RBVectorNum;
 
     // PData - Properties
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
@@ -103,8 +103,8 @@ public class Main : MonoBehaviour
     private float2[] RBVelocities;
     private float2[] RBProperties; // RBRadii, RBMass
 
-    private float2[] LineVertices;
-    private int2[] RigidBodyIndices;
+    private RBVectorStruct[] RBVector;
+    private RBDataStruct[] RBData;
     private int[] TCCount = new int[1];
 
     // Marching Squares - Buffer retrieval
@@ -133,10 +133,9 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBVelocitiesBuffer;
     private ComputeBuffer RBPropertiesBuffer;
 
-    private ComputeBuffer LineVerticesBuffer;
-    private ComputeBuffer RigidBodyIndicesBuffer;
+    private ComputeBuffer RBVectorBuffer;
+    private ComputeBuffer RBDataBuffer;
     private ComputeBuffer TraversedChunks_AC_Buffer;
-    private ComputeBuffer NearCollisionParticles_AC_Buffer;
     private ComputeBuffer TCCountBuffer;
 
     // Other
@@ -190,8 +189,7 @@ public class Main : MonoBehaviour
         MarchW = (int)(Width / MSResolution);
         MarchH = (int)(Height / MSResolution);
         MSLen = MarchW * MarchH * TriStorageLength * 3;
-        NewRigidBodiesNum = RigidBodyIndices.Length;
-        LineVerticesNum = LineVertices.Length;
+        RBVectorNum = RBVector.Length;
     }
 
     void InitializeSetArrays()
@@ -224,14 +222,20 @@ public class Main : MonoBehaviour
             colorG = 1f
         };
 
-        RigidBodyIndices = new int2[1];
-        RigidBodyIndices[0] = new int2(0, 3);
+        RBData = new RBDataStruct[1];
+        RBData[0] = new RBDataStruct
+        {
+            Position = new float2(100f, 100f),
+            Velocity = new float2(0.0f, 0.0f),
+            LineIndices = new int2(0, 3)
+        };
 
-        LineVertices = new float2[4];
-        LineVertices[0] = new float2(10f, 10f);
-        LineVertices[1] = new float2(30f, 30f);
-        LineVertices[2] = new float2(60f, 10f);
-        LineVertices[3] = new float2(10f, 11f);
+        RBVector = new RBVectorStruct[4];
+        RBVector[0] = new RBVectorStruct { Position = new float2(10f, 10f), ParentRBIndex = 0 };
+        RBVector[1] = new RBVectorStruct { Position = new float2(30f, 30f), ParentRBIndex = 0 };
+        RBVector[2] = new RBVectorStruct { Position = new float2(60f, 10f), ParentRBIndex = 0 };
+        RBVector[3] = new RBVectorStruct { Position = new float2(10f, 11f), ParentRBIndex = 0 };
+        NewRigidBodiesNum = RBData.Length;
     }
 
     void InitializeArrays()
@@ -415,13 +419,13 @@ public class Main : MonoBehaviour
         TrianglesBuffer.SetData(triangles);
         MSPointsBuffer.SetData(MSPoints);
 
-        RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
-        LineVerticesBuffer = new ComputeBuffer(LineVertices.Length, sizeof(float) * 2);
-        RigidBodyIndicesBuffer.SetData(RigidBodyIndices);
-        LineVerticesBuffer.SetData(LineVertices);
+        // RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
+        RBDataBuffer = new ComputeBuffer(RBData.Length, sizeof(int) * 2 + sizeof(float) * 4);
+        RBVectorBuffer = new ComputeBuffer(RBVector.Length, sizeof(float) * 2 + sizeof(int));
+        RBDataBuffer.SetData(RBData);
+        RBVectorBuffer.SetData(RBVector);
 
         TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 3, ComputeBufferType.Append);
-        NearCollisionParticles_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 2, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 
@@ -469,11 +473,15 @@ public class Main : MonoBehaviour
         }
         if (NewRigidBodiesNum != 0)
         {
-            RbSimShader.SetBuffer(2, "RigidBodyIndices", RigidBodyIndicesBuffer);
-            RbSimShader.SetBuffer(2, "LineVertices", LineVerticesBuffer);
+            RbSimShader.SetBuffer(2, "RBVector", RBVectorBuffer);
+            RbSimShader.SetBuffer(2, "RBData", RBDataBuffer);
 
+            RbSimShader.SetBuffer(3, "PData", PDataBuffer);
+            RbSimShader.SetBuffer(3, "RBData", RBDataBuffer);
+            RbSimShader.SetBuffer(3, "RBVector", RBVectorBuffer);
             RbSimShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
             RbSimShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+
         }
     }
 
@@ -518,6 +526,8 @@ public class Main : MonoBehaviour
 
         SortShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
         SortShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
+        SortShader.SetBuffer(3, "PTypes", PTypesBuffer);
+        SortShader.SetBuffer(3, "PData", PDataBuffer);
     }
 
     void SetMarchingSquaresShaderBuffers()
@@ -759,36 +769,30 @@ public class Main : MonoBehaviour
         if (RBodiesNum != 0) {RbSimShader.Dispatch(0, ThreadSize, 1, 1);} //RbRb collisions
         if (RBodiesNum != 0 && ParticlesNum != 0) {RbSimShader.Dispatch(1, ThreadSize, 1, 1);} // RbParticle collisions
 
-        if (LineVerticesNum > 1) 
+        if (RBVectorNum > 1) 
         {
             TraversedChunks_AC_Buffer.SetCounterValue(0);
 
             RbSimShader.SetBuffer(2, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
-            RbSimShader.Dispatch(2, LineVerticesNum-1, 1, 1);
+            RbSimShader.Dispatch(2, RBVectorNum-1, 1, 1);
 
             // Get the count of elements in the appendBuffer - VERY EXPENSIVE!!!!!
             ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
             TCCountBuffer.GetData(TCCount);
             int count = TCCount[0];
-            int2[] testlist = new int2[count];
+            int3[] testlist = new int3[count];
             TraversedChunks_AC_Buffer.GetData(testlist);
 
             RbSimShader.SetBuffer(3, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
-            // RbSimShader.SetBuffer(3, "NearCollisionParticlesAPPEND", NearCollisionParticles_AC_Buffer);
             RbSimShader.Dispatch(3, count, 1, 1);
 
-            // int count2 = 190;
-
-            // NearCollisionParticles_AC_Buffer.SetCounterValue(0);
-            // RbSimShader.SetBuffer(4, "NearCollisionParticlesCONSUME", NearCollisionParticles_AC_Buffer);
-            // RbSimShader.Dispatch(4, count2, 1, 1);
 
             // ASYNCHRONOUS APPEND BUFFER COUNT RETRIEVAL BELLOW
 
             // TraversedChunks_AC_Buffer.SetCounterValue(0);
 
             // RbSimShader.SetBuffer(2, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
-            // RbSimShader.Dispatch(2, LineVerticesNum-1, 1, 1);
+            // RbSimShader.Dispatch(2, RBVectorNum-1, 1, 1);
 
             // AsyncGPUReadback.Request(TCCountBuffer, request => {
             //     int count = request.GetData<int>()[0];
@@ -873,11 +877,10 @@ public class Main : MonoBehaviour
         RBVelocitiesBuffer?.Release();
         RBPropertiesBuffer?.Release();
 
-        RigidBodyIndicesBuffer?.Release();
-        LineVerticesBuffer?.Release();
+        RBDataBuffer?.Release();
+        RBVectorBuffer?.Release();
         TraversedChunks_AC_Buffer?.Release();
         TCCountBuffer?.Release();
-        NearCollisionParticles_AC_Buffer?.Release();
     }
 }
 
@@ -911,4 +914,15 @@ struct PTypeStruct
     public float Plasticity;
     public float Gravity;
     public float colorG;
+};
+struct RBDataStruct
+{
+    public float2 Position;
+    public float2 Velocity;
+    public int2 LineIndices;
+};
+struct RBVectorStruct
+{
+    public float2 Position;
+    public int ParentRBIndex;
 };
