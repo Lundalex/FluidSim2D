@@ -58,19 +58,28 @@ struct PDataStruct
 };
 RWStructuredBuffer<PDataStruct> PData;
 
+struct RBDataStruct
+{
+    float2 Position;
+    float2 Velocity;
+    int2 LineIndices;
+};
+RWStructuredBuffer<RBDataStruct> RBData;
+
 // Rigid bodies - Buffers
 RWStructuredBuffer<float2> RBPositions;
 RWStructuredBuffer<float2> RBVelocities;
 RWStructuredBuffer<float2> RBProperties; // RBRadii, RBMass
 
-RWStructuredBuffer<int2> RigidBodyIndices;
-RWStructuredBuffer<float2> LineVertices;
+struct RBVectorStruct
+{
+    float2 Position;
+    int ParentRBIndex;
+};
+RWStructuredBuffer<RBVectorStruct> RBVector;
 
 AppendStructuredBuffer<int3> TraversedChunksAPPEND;
 ConsumeStructuredBuffer<int3> TraversedChunksCONSUME;
-
-AppendStructuredBuffer<int2> NearCollisionParticlesAPPEND;
-ConsumeStructuredBuffer<int2> NearCollisionParticlesCONSUME;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -275,7 +284,7 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
     RBVelocities[i] = float2(PosVelData.z, PosVelData.w);
 }
 
-void TraverseLine(float startX, float startY, float endX, float endY, int LineIndex)
+void TraverseLineSegment(float startX, float startY, float endX, float endY, int LineIndex)
 {
     if (startX > endX)
     {
@@ -295,9 +304,9 @@ void TraverseLine(float startX, float startY, float endX, float endY, int LineIn
     int xBase = (int)floor(startX);
     float yBase = (int)floor(startY);
 
-    for (int y = yBase; y < yBase + searchHeight; y++)
+    for (int y1 = yBase; y1 < yBase + searchHeight; y1++)
     {
-        TraversedChunksAPPEND.Append(int3(xBase, y, LineIndex));
+        TraversedChunksAPPEND.Append(int3(xBase, y1, LineIndex));
     }
 
     float dx = ceil(startX) - startX;
@@ -321,9 +330,95 @@ void TraverseLine(float startX, float startY, float endX, float endY, int LineIn
     }
 }
 
-void CheckCollision(int pIndex, int lineIndex)
+float2 SignedDistanceToLineSegment(float2 A, float2 B, float2 P)
 {
+    float2 AB = B - A;
+    float2 AP = P - A;
+    float ABLengthSquared = dot(AB, AB);
 
+    // Scalar projection
+    float AP_dot_AB = dot(AP, AB);
+    float t = AP_dot_AB / ABLengthSquared;
+
+    // Clamp t to the closest point on the line segment
+    t = clamp(t, 0.0, 1.0);
+
+    // Closest point on line segment to P
+    float2 closestPoint = A + t * AB;
+
+    // Return the distance vector from P to the closest point
+    return P - closestPoint;
+}
+
+bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
+    float uLength = length(dstToLine);
+    if (uLength == 0) {
+        return false;
+    }
+
+    float dotProductVU = dot(nextFramePosDisplacement, dstToLine);
+    if (dotProductVU < 0) {
+        // Projection is in the opposite direction
+        return false;
+    }
+
+    float projectionLength = abs(dotProductVU) / uLength;
+    return projectionLength > uLength;
+}
+
+void ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct RBData_i, float2 NormLineVector, int pIndex)
+{
+    // is wallDir pointing IN or OUT, and does it matter? Is is probably the result of a 90 degree turn a (clockwise or anticlockwise) direction
+    float2 perpNormLineVector = float2(NormLineVector.y, -NormLineVector.x);
+
+    // When adding circular motion, this will have to be updated
+    float2 RBVel = RBData_i.Velocity;
+    float2 diffVel = PData_i.Velocity - RBVel;
+
+    // float2 normDst = normalize(dst); = perpNormLineVector
+    // float2 wallDir = float2(normDst.y, -normDst.x);
+
+    // v = (a,b)
+    // u = (c,d) (u is normalized)
+    // => v':
+    // v'_x = (2c^2-1)*a + 2cdb
+    // v'_y = 2cda + (2d^2-1)b
+    // Mirror vel_diff through normDst
+    float a = diffVel.x;
+    float b = diffVel.y;
+    float c = perpNormLineVector.x;
+    float d = perpNormLineVector.y;
+
+    float mirrorDiffVelX = (2*c*c-1)*a + 2*c*d*b;
+    float mirrorDiffVelY = 2*c*d*a + (2*d*d-1)*b;
+    float2 mirrorDiffVel = float2(-mirrorDiffVelX, -mirrorDiffVelY);
+
+    float2 collisionImpulse = mirrorDiffVel - diffVel;
+
+    float2 exchangedMomentum = collisionImpulse * RbElasticity;
+
+    // Not currently in use. Also, this is not equal to the energy loss by the collision since temperature_energy is not proportional to vel_energy;
+    float absOverflowMomentum = length(collisionImpulse * (1 - RbElasticity));
+
+    // v = (a,b)
+    // u = (c,d) (u is normalized)
+    // => v_projected:
+    // v_projected_x = (ac+bd)*c
+    // v_projected_y = (ac+bd)*d
+    // Momentum and circular impulses:
+
+    // Vector2 centerImpulse = exchangedMomentum [proj to] normDst
+    // Vector2 rotation_impulse = exchangedMomentum [proj to] wallDir
+    // float2 centerImpulse = exchangedMomentum; // not usable - RB Impulse!!!!!
+    // RBVelocities[i] -= centerImpulse / (2 * RBProperties[i].y); // not usable - RB Impulse!!!!!
+
+    // float2 relCollisionPos = RBProperties[i].x * normDst;
+    // float2 newParticlePos = RBPositions[i] + relCollisionPos;
+    // PData[particleIndex].Position = newParticlePos;
+
+    // PData[pIndex].Velocity += exchangedMomentum * 0.5;
+    // PData[pIndex].Velocity = float2(0, 0);
+    PData[pIndex].Velocity += exchangedMomentum;
 }
 
 [numthreads(1,1,1)]
@@ -331,9 +426,15 @@ void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    float2 startPos = LineVertices[i] / (float)MaxInfluenceRadius;
-    float2 endPos = LineVertices[i+1] / (float)MaxInfluenceRadius;
-    TraverseLine(startPos.x, startPos.y, endPos.x, endPos.y, i);
+    RBVectorStruct lineVectorA = RBVector[i];
+    RBVectorStruct lineVectorB = RBVector[i+1];
+
+    if (lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) {return;}
+
+    float2 parentPos = RBData[lineVectorA.ParentRBIndex].Position; // A and B have the same parent
+    float2 startPos = (lineVectorA.Position + parentPos) / (float)MaxInfluenceRadius;
+    float2 endPos = (lineVectorB.Position + parentPos) / (float)MaxInfluenceRadius;
+    TraverseLineSegment(startPos.x, startPos.y, endPos.x, endPos.y, i);
 }
 
 [numthreads(1, 1, 1)]
@@ -351,12 +452,34 @@ void ConsumeTraversedChunks(uint3 id : SV_DispatchThreadID)
     int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
     int startIndex = StartIndices[ChunkKey];
 
+    float2 totRBImpulse = float2(0.0, 0.0);
     int Index = startIndex; 
     while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
     {
-        CheckCollision(Index, LineIndex);
+        int pIndex = SpatialLookup[Index].x;
+        PDataStruct PData_i = PData[pIndex];
+        PTypeStruct PType_i = PTypes[PData_i.PType];
+
+        RBVectorStruct lineVectorA = RBVector[LineIndex];
+        RBVectorStruct lineVectorB = RBVector[LineIndex+1];
+
+        RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
+        float2 dstToLine = SignedDistanceToLineSegment(lineVectorA.Position + parentRBData.Position, lineVectorB.Position + parentRBData.Position, PData_i.Position);
+        // Make sure to set DeltaTime correctly!!!!!
+        float2 nextTimeStepDst = PData_i.Velocity * DeltaTime;
+
+        if (CheckCollision(nextTimeStepDst, dstToLine))
+        {
+            float2 LineVectorNorm = normalize(RBVector[LineIndex+1].Position - RBVector[LineIndex].Position);
+            ResolveCollision(PData_i, PType_i, parentRBData, LineVectorNorm, pIndex);
+        }
 
         // Increment Index each iteration - Chunk particle search algorithm
         Index += 1;
     }
+
+    // Add totRBImpulse to current line's parent RB
+
+    // Could delete other impulse data if they write to the same line at the same time.
+    // LineCollisionImpulses[LineIndex] += totRBImpulse;
 }

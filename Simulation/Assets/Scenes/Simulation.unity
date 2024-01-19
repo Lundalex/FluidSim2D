@@ -237,7 +237,7 @@ MonoBehaviour:
   PressureMultiplier: 500
   NearPressureMultiplier: 12
   Damping: 0.7
-  RbElasticity: 0.2
+  RbElasticity: 0.7
   LookAheadFactor: 0.017
   Viscocity: 3
   LiquidElasticity: 2
