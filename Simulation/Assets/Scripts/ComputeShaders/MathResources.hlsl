@@ -86,3 +86,15 @@ float LiquidSpringForceModel(float springStiffness, float restLen, float maxInfl
 {
     return springStiffness * (1 - restLen/maxInfluenceRadius) * (restLen - Len);
 }
+
+float cross2d(float2 VectorA, float2 VectorB)
+{
+    return VectorA.x * VectorB.y - VectorA.y * VectorB.x;
+}
+
+// This function was found on the internet. I have no clue how it works
+// ccw = CounterClockWise
+bool ccw(float2 A, float2 B, float2 C)
+{
+    return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
+}

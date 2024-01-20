@@ -286,8 +286,7 @@ void RbParticleCollisions (uint3 id : SV_DispatchThreadID)
 
 void TraverseLineSegment(float startX, float startY, float endX, float endY, int LineIndex)
 {
-    // CHANGES:
-    // -1 to all baseY values in the for loops
+    // Before imlementing any changes, try them out in MODULETEST3.py first
 
     if (startX > endX)
     {
@@ -304,10 +303,10 @@ void TraverseLineSegment(float startX, float startY, float endX, float endY, int
     float k = (endY - startY) / denominator;
     if (k == 0) {k = 0.0001;}
     int searchHeight = (int)ceil(abs(k)) + 1;
-    int xBase = (int)floor(startX);
-    float yBase = (int)floor(startY);
+    int xBase = (int)floor(startX) - 1;
+    float yBase = (int)floor(startY - k);
 
-    for (int y1 = yBase-1; y1 < yBase + searchHeight+1; y1++)
+    for (int y1 = yBase - 1; y1 < yBase + searchHeight + 1; y1++)
     {
         TraversedChunksAPPEND.Append(int3(xBase, y1, LineIndex));
     }
@@ -317,16 +316,16 @@ void TraverseLineSegment(float startX, float startY, float endX, float endY, int
     int yBaseUse = (int)floor(yBase);
     xBase += 1;
 
-    for (int y = yBaseUse-1; y < yBaseUse + searchHeight+1; y++)
+    for (int y = yBaseUse - 1; y < yBaseUse + searchHeight + 1; y++)
     {
         TraversedChunksAPPEND.Append(int3(xBase, y, LineIndex));
     }
 
-    for (int x = xBase; x <= (int)floor(endX)+1; x++)
+    for (int x = xBase; x <= (int)floor(endX)+2; x++)
     {
         yBase += k;
         yBaseUse = (int)floor(yBase);
-        for (int y = yBaseUse-1; y < yBaseUse + searchHeight+1; y++)
+        for (int y = yBaseUse - 1; y < yBaseUse + searchHeight + 1; y++)
         {
             TraversedChunksAPPEND.Append(int3(x, y, LineIndex));
         }
@@ -353,6 +352,12 @@ float2 SignedDistanceToLineSegment(float2 A, float2 B, float2 P)
     return -(P - closestPoint);
 }
 
+// Returns true if the line AB crosses the line CD
+bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
+{
+    return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
+}
+
 bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
     float uLength = length(dstToLine);
     if (uLength == 0) {
@@ -367,6 +372,14 @@ bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
 
     float projectionLength = abs(dotProductVU) / uLength;
     return projectionLength > uLength;
+}
+
+bool SideOfLine(float2 A, float2 B, float2 dstVec) {
+    float2 lineVec = normalize(B - A);
+
+    float crossProduct = cross2d(lineVec, dstVec);
+
+    return crossProduct > 0;  // True if P is on the left side of the line from A to B
 }
 
 void ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct RBData_i, float2 NormLineVector, int pIndex)
@@ -422,6 +435,9 @@ void ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct RBD
     // PData[pIndex].Velocity += exchangedMomentum * 0.5;
     // PData[pIndex].Velocity = float2(0, 0);
     PData[pIndex].Velocity += exchangedMomentum;
+
+    // Slightly offset the particle from the RB surface to minimize the risk of particles glitching through as very low velocities
+    PData[pIndex].Position += perpNormLineVector*0.1;
 }
 
 [numthreads(1,1,1)]
@@ -468,10 +484,9 @@ void ConsumeTraversedChunks(uint3 id : SV_DispatchThreadID)
 
         RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
         float2 dstToLine = SignedDistanceToLineSegment(lineVectorA.Position + parentRBData.Position, lineVectorB.Position + parentRBData.Position, PData_i.Position);
-        // Make sure to set DeltaTime correctly!!!!!
-        float2 nextTimeStepDst = PData_i.Velocity * DeltaTime;
+        float2 nextDstToLine = SignedDistanceToLineSegment(lineVectorA.Position + parentRBData.Position, lineVectorB.Position + parentRBData.Position, PData_i.Position + PData_i.Velocity * DeltaTime);
 
-        if (CheckCollision(nextTimeStepDst, dstToLine))
+        if (SideOfLine(lineVectorA.Position, lineVectorB.Position, dstToLine) != SideOfLine(lineVectorA.Position, lineVectorB.Position, nextDstToLine) && CheckLinesIntersect(PData_i.Position, PData_i.Position + PData_i.Velocity * DeltaTime, lineVectorA.Position + parentRBData.Position, lineVectorB.Position + parentRBData.Position))
         {
             float2 LineVectorNorm = normalize(RBVector[LineIndex+1].Position - RBVector[LineIndex].Position);
             ResolveCollision(PData_i, PType_i, parentRBData, LineVectorNorm, pIndex);
