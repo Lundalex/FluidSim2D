@@ -245,6 +245,7 @@ MonoBehaviour:
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
+  MaxChunkSearchSafety: 0
   SpringCapacity: 500
   TriStorageLength: 4
   radii: 15

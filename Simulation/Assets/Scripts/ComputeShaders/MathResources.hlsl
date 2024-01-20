@@ -68,7 +68,7 @@ float SmoothViscosityLaplacian(float dst, float radius)
 
 float LiquidSpringForceModel(float springStiffness, float restLen, float maxInfluenceRadius, float Len)
 {
-    return springStiffness * (1 - restLen/maxInfluenceRadius) * (restLen - Len);
+    return springStiffness * (restLen - Len);
 }
 
 float avg(float a, float b)
@@ -109,4 +109,30 @@ float2 rotate2d(float2 vec, float radians)
 bool ccw(float2 A, float2 B, float2 C)
 {
     return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
+}
+
+// Returns true if the line AB crosses the line CD
+bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
+{
+    return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
+}
+
+// Function to calculate the intersection point of two lines.
+float2 LineIntersectionPoint(float2 A, float2 B, float2 C, float2 D) {
+    float a1 = B.y - A.y;
+    float b1 = A.x - B.x;
+    float c1 = a1 * A.x + b1 * A.y;
+
+    float a2 = D.y - C.y;
+    float b2 = C.x - D.x;
+    float c2 = a2 * C.x + b2 * C.y;
+
+    float delta = a1 * b2 - a2 * b1;
+    if (delta == 0) {
+        return float2(0, 0);  // Lines are parallel or coincident.
+    }
+
+    float x = (b2 * c1 - b1 * c2) / delta;
+    float y = (a1 * c2 - a2 * c1) / delta;
+    return float2(x, y);
 }
