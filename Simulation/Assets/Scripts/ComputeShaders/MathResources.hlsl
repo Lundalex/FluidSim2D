@@ -8,7 +8,7 @@ const float SmoothViscosityLaplacianFactor;
 // Geogebra: https://www.geogebra.org/calculator/bsyseckq
 
 // http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf#page10
-// https://iquilezles.org/articles/distfunctions/
+// https://iquilezles.org/articles/distfunctions/ SDFs Not used yet
 
 // Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
 float InteractionInfluence(float dst, float radius)
@@ -66,6 +66,11 @@ float SmoothViscosityLaplacian(float dst, float radius)
 	return 0;
 }
 
+float LiquidSpringForceModel(float springStiffness, float restLen, float maxInfluenceRadius, float Len)
+{
+    return springStiffness * (1 - restLen/maxInfluenceRadius) * (restLen - Len);
+}
+
 float avg(float a, float b)
 {
     return (a + b) / 2;
@@ -82,14 +87,21 @@ float lerp1D(float posA, float posB, float valA, float valB, float targetVal)
     return posA + t * (posB - posA);
 }
 
-float LiquidSpringForceModel(float springStiffness, float restLen, float maxInfluenceRadius, float Len)
-{
-    return springStiffness * (1 - restLen/maxInfluenceRadius) * (restLen - Len);
-}
-
 float cross2d(float2 VectorA, float2 VectorB)
 {
     return VectorA.x * VectorB.y - VectorA.y * VectorB.x;
+}
+
+float2 rotate2d(float2 vec, float radians)
+{
+    // Rotation matrix
+    float2x2 rotMatrix = float2x2(
+        cos(radians), -sin(radians),
+        sin(radians), cos(radians)
+    );
+
+    // Rotate the vector
+    return mul(rotMatrix, vec);
 }
 
 // This function was found on the internet. I have no clue how it works
