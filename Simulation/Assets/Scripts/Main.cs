@@ -232,10 +232,11 @@ public class Main : MonoBehaviour
             Velocity = new float2(0.0f, 0.0f),
             NextPos = new float2(140f, 100f),
             NextVel = new float2(0.0f, 0.0f),
-            NextAngVel = 0.0f,
-            AngularVelocity = 0.0f,
+            NextAngImpulse = 3.14f,
+            AngularImpulse = 0.0f,
             Mass = 200f,
-            LineIndices = new int2(0, 8)
+            WallCollision = 0,
+            LineIndices = new int2(0, 20)
         };
         // RBData[1] = new RBDataStruct
         // {
@@ -250,14 +251,14 @@ public class Main : MonoBehaviour
         // RBVector[2] = new RBVectorStruct { Position = new float2(60f, 10f), ParentRBIndex = 0 };
         // RBVector[3] = new RBVectorStruct { Position = new float2(10f, 10f), ParentRBIndex = 0 };
 
-        // LARGE TRIANGLE
-        RBVector = new RBVectorStruct[5];
-        float2 somevector = new float2(-40, -49);
-        RBVector[0] = new RBVectorStruct { Position = new float2(3f, 3f) * 3, LocalPosition = new float2(3f, 3f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), ParentRBIndex = 0 };
-        RBVector[1] = new RBVectorStruct { Position = new float2(40f, 10f) * 3, LocalPosition = new float2(40f, 10f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), ParentRBIndex = 0 };
-        RBVector[2] = new RBVectorStruct { Position = new float2(18f, 20f) * 3, LocalPosition = new float2(18f, 20f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), ParentRBIndex = 0 };
-        RBVector[3] = new RBVectorStruct { Position = new float2(8f, 20f) * 3, LocalPosition = new float2(8f, 20f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), ParentRBIndex = 0 };
-        RBVector[4] = new RBVectorStruct { Position = new float2(3f, 3f) * 3, LocalPosition = new float2(3f, 3f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), ParentRBIndex = 0 };
+        // // LARGE TRIANGLE
+        // RBVector = new RBVectorStruct[5];
+        // float2 somevector = new float2(-20f, -20f);
+        // RBVector[0] = new RBVectorStruct { Position = new float2(3f, 3f) * 3, LocalPosition = new float2(3f, 3f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
+        // RBVector[1] = new RBVectorStruct { Position = new float2(40f, 10f) * 3, LocalPosition = new float2(40f, 10f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
+        // RBVector[2] = new RBVectorStruct { Position = new float2(18f, 20f) * 3, LocalPosition = new float2(18f, 20f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
+        // RBVector[3] = new RBVectorStruct { Position = new float2(8f, 20f) * 3, LocalPosition = new float2(8f, 20f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
+        // RBVector[4] = new RBVectorStruct { Position = new float2(3f, 3f) * 3, LocalPosition = new float2(3f, 3f) * 3-somevector, parentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
 
         // // BUCKET
         // RBVector = new RBVectorStruct[9];
@@ -282,6 +283,35 @@ public class Main : MonoBehaviour
         // RBVector[2] = new RBVectorStruct { Position = new float2(6f, 1f) * 5, ParentRBIndex = 0 };
         // RBVector[1] = new RBVectorStruct { Position = new float2(4f, 0f) * 5, ParentRBIndex = 0 };
         // RBVector[0] = new RBVectorStruct { Position = new float2(2f, 1f) * 5, ParentRBIndex = 0 };
+
+        // BOAT - Requires rotation by 180 degrees (AngImpulse = pi at start)
+        RBVector = new RBVectorStruct[21];
+        RBVector[0] = new RBVectorStruct { Position = new float2(5f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[1] = new RBVectorStruct { Position = new float2(4.71f, 1.71f) * 5, ParentRBIndex = 0 };
+        RBVector[2] = new RBVectorStruct { Position = new float2(4.04f, 3.24f) * 5, ParentRBIndex = 0 };
+        RBVector[3] = new RBVectorStruct { Position = new float2(3.04f, 4.43f) * 5, ParentRBIndex = 0 };
+        RBVector[4] = new RBVectorStruct { Position = new float2(1.76f, 5.24f) * 5, ParentRBIndex = 0 };
+        RBVector[5] = new RBVectorStruct { Position = new float2(0.29f, 5.65f) * 5, ParentRBIndex = 0 };
+        RBVector[6] = new RBVectorStruct { Position = new float2(-1.29f, 5.65f) * 5, ParentRBIndex = 0 };
+        RBVector[7] = new RBVectorStruct { Position = new float2(-2.76f, 5.24f) * 5, ParentRBIndex = 0 };
+        RBVector[8] = new RBVectorStruct { Position = new float2(-4.04f, 4.43f) * 5, ParentRBIndex = 0 };
+        RBVector[9] = new RBVectorStruct { Position = new float2(-5.04f, 3.24f) * 5, ParentRBIndex = 0 };
+        RBVector[10] = new RBVectorStruct { Position = new float2(-5.71f, 1.71f) * 5, ParentRBIndex = 0 };
+        RBVector[11] = new RBVectorStruct { Position = new float2(-6f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[12] = new RBVectorStruct { Position = new float2(-5.29f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[13] = new RBVectorStruct { Position = new float2(-4.57f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[14] = new RBVectorStruct { Position = new float2(-3.86f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[15] = new RBVectorStruct { Position = new float2(-3.14f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[16] = new RBVectorStruct { Position = new float2(-2.43f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[17] = new RBVectorStruct { Position = new float2(-1.71f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[18] = new RBVectorStruct { Position = new float2(-1f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[19] = new RBVectorStruct { Position = new float2(0f, 0f) * 5, ParentRBIndex = 0 };
+        RBVector[20] = new RBVectorStruct { Position = new float2(5f, 0f) * 5, ParentRBIndex = 0 };
+        for (int i = 0; i < 21; i++)
+        {
+            RBVector[i].Position.y *= 0.5f;
+            RBVector[i].Position.x *= 1.4f;
+        }
 
         NewRigidBodiesNum = RBData.Length;
     }
@@ -472,12 +502,12 @@ public class Main : MonoBehaviour
         MSPointsBuffer.SetData(MSPoints);
 
         // RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
-        RBDataBuffer = new ComputeBuffer(RBData.Length, sizeof(float) * 11 + sizeof(int) * 2);
-        RBVectorBuffer = new ComputeBuffer(RBVector.Length, sizeof(float) * 7 + sizeof(int));
+        RBDataBuffer = new ComputeBuffer(RBData.Length, sizeof(float) * 11 + sizeof(int) * 3);
+        RBVectorBuffer = new ComputeBuffer(RBVector.Length, sizeof(float) * 7 + sizeof(int) * 2);
         RBDataBuffer.SetData(RBData);
         RBVectorBuffer.SetData(RBVector);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(8192*2, sizeof(int) * 3, ComputeBufferType.Append);
+        TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 3, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 
@@ -991,12 +1021,13 @@ struct RBDataStruct
     public float2 Position;
     public float2 Velocity;
     // radians / second
-    public float AngularVelocity;
+    public float AngularImpulse;
     public float2 NextPos;
     public float2 NextVel;
-    public float NextAngVel;
+    public float NextAngImpulse;
     public float Mass;
     public int2 LineIndices;
+    public int WallCollision;
 };
 struct RBVectorStruct
 {
@@ -1004,4 +1035,5 @@ struct RBVectorStruct
     public float2 LocalPosition;
     public float3 parentImpulse;
     public int ParentRBIndex;
+    public int WallCollision;
 };

@@ -262,10 +262,10 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     // float tolDeformation = 0; // = yieldRatio / restLength
     // // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
     // SpringPairs[springKey].restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
- 
-    float springStiffness = avg(PType_i.Elasticity, PType_otherPIndex.Elasticity);
+
+    float springStiffness = Plasticity;
     float2 normDst = normalize(dst);                             // SpringPairs[springKey].restLength
-    float absSpringForce = LiquidSpringForceModel(springStiffness, MaxInfluenceRadius-0.8, MaxInfluenceRadius-0.5, absDst);
+    float absSpringForce = LiquidSpringForceModel(springStiffness, MaxInfluenceRadius/2, MaxInfluenceRadius, absDst);
  
     float2 springForce = absSpringForce * normDst * 0.5;
     return -springForce * DeltaTime;

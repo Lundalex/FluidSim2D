@@ -60,12 +60,13 @@ struct RBDataStruct
     float2 Position;
     float2 Velocity;
     // radians / second
-    float AngularVelocity;
+    float AngularImpulse;
     float2 NextPos;
     float2 NextVel;
-    float NextAngVel;
+    float NextAngImpulse;
     float Mass;
     int2 LineIndices;
+    int WallCollision;
 };
 RWStructuredBuffer<RBDataStruct> RBData;
 
@@ -75,6 +76,7 @@ struct RBVectorStruct
     float2 LocalPosition;
     float3 parentImpulse;
     int ParentRBIndex;
+    int WallCollision;
 };
 RWStructuredBuffer<RBVectorStruct> RBVector;
 
@@ -84,38 +86,18 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return false;
 }
 
-float2 SignedDistanceToLineSegment(float2 A, float2 B, float2 P)
-{
-    float2 AB = B - A;
-    float2 AP = P - A;
-    float ABLengthSquared = dot(AB, AB);
-
-    // Scalar projection
-    float AP_dot_AB = dot(AP, AB);
-    float t = AP_dot_AB / ABLengthSquared;
-
-    // Clamp t to the closest point on the line segment
-    t = clamp(t, 0.0, 1.0);
-
-    // Closest point on line segment to P
-    float2 closestPoint = A + t * AB;
-
-    // Return the distance vector from P to the closest point
-    return P - closestPoint;
-}
 
 [numthreads(ThreadsNum,ThreadsNum,1)]
 void RenderParticles (uint3 id : SV_DispatchThreadID)
 {
-    // texturePosition has float x, y values between 0 and 1
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
     float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
     float2 pixelPos = float2(pixelPosX, pixelPosY);
 
-    // Int type conversion removes decimals, effectively doing a Floor() operation
     int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
     int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
 
+    // Render particle
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -150,6 +132,11 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
         }
     }
 
+    // Render RB line segments
+    int rayHits = 0;
+    float rayY = pixelPos.y;
+    float2 rayCoordA = float2(0, rayY);
+    float2 rayCoordB = float2(Width, rayY);
     for (int LineIndex = 0; LineIndex < RBVectorNum-1; LineIndex++)
     {
         RBVectorStruct lineVectorA = RBVector[LineIndex];
@@ -158,30 +145,18 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
         if (lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) {continue;}
 
         RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
-        float2 dstToLine = SignedDistanceToLineSegment(lineVectorA.Position + parentRBData.Position, lineVectorB.Position + parentRBData.Position, pixelPos);
-
-        if (length(dstToLine) < RBRenderThickness)
-        {
-            // RbVelocities not in use currently
-            // float r = min(1.0, length(RBVelocities[i])/10);
-            // float b = max(0.0, 1 - length(RBVelocities[i])/10);
-            Result[id.xy] = float4(1, 1, 1, 0.0);
-            return;
+        float2 lineVectorAWorldSpace = lineVectorA.Position + parentRBData.Position;
+        float2 lineVectorBWorldSpace = lineVectorB.Position + parentRBData.Position;
+        if (CheckLinesIntersect(lineVectorAWorldSpace, lineVectorBWorldSpace, rayCoordA, rayCoordB))
+        { 
+            if (LineIntersectionPoint(lineVectorAWorldSpace, lineVectorBWorldSpace, rayCoordA, rayCoordB).x < pixelPos.x)
+            {
+                rayHits++; 
+            }
         }
     }
+    if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
 
-    // for (int i = 0; i < RBodiesNum; i++)
-    // {
-    //     float dst = length(pixelPos - RBPositions[i]);
-    //     if (dst < RBProperties[i].x)
-    //     {
-    //         // RbVelocities not in use currently
-    //         // float r = min(1.0, length(RBVelocities[i])/10);
-    //         // float b = max(0.0, 1 - length(RBVelocities[i])/10);
-    //         Result[id.xy] = float4(1, 1, 1, 0.0);
-    //         return;
-    //     }
-    // }
 
     Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 }
