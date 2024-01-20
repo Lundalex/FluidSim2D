@@ -59,6 +59,12 @@ struct RBDataStruct
 {
     float2 Position;
     float2 Velocity;
+    // radians / second
+    float AngularVelocity;
+    float2 NextPos;
+    float2 NextVel;
+    float NextAngVel;
+    float Mass;
     int2 LineIndices;
 };
 RWStructuredBuffer<RBDataStruct> RBData;
@@ -66,6 +72,8 @@ RWStructuredBuffer<RBDataStruct> RBData;
 struct RBVectorStruct
 {
     float2 Position;
+    float2 LocalPosition;
+    float3 parentImpulse;
     int ParentRBIndex;
 };
 RWStructuredBuffer<RBVectorStruct> RBVector;

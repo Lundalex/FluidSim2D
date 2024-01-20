@@ -237,7 +237,7 @@ MonoBehaviour:
   PressureMultiplier: 500
   NearPressureMultiplier: 12
   Damping: 0.7
-  RbElasticity: 1
+  RbElasticity: 0.7
   LookAheadFactor: 0.017
   Viscocity: 3
   LiquidElasticity: 2
@@ -250,11 +250,11 @@ MonoBehaviour:
   radii: 15
   Width: 300
   Height: 200
-  SpawnDims: 160
+  SpawnDims: 140
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.02
+  TimeStep: 0.01
   ProgramSpeed: 1
   VisualParticleRadii: 0.4
   RBRenderThickness: 0.5

@@ -48,11 +48,12 @@ class TraverseLineSegmentDemo:
         k = (endY - startY) / denominator
         if k == 0:
             k = 0.0001
-        search_height = int(np.ceil(abs(k))) + 1
-        x_base = int(np.floor(startX)) - 1
-        y_base = int(np.floor(startY - k * 1))
+        SafetyFactor = int(min(1 + abs(k), 3))
+        search_height = int(np.ceil(abs(k))) + SafetyFactor
+        x_base = int(np.floor(startX)) - SafetyFactor
+        y_base = int(np.floor(startY - k * SafetyFactor))
 
-        for y1 in range(y_base - 1, y_base + search_height + 1):
+        for y1 in range(y_base - SafetyFactor, y_base + search_height + SafetyFactor):
             traversed_chunks.append((x_base, y1))
 
         dx = np.ceil(startX) - startX
@@ -60,13 +61,13 @@ class TraverseLineSegmentDemo:
         y_base_use = int(np.floor(y_base))
         x_base += 1
 
-        for y in range(y_base_use - 1, y_base_use + search_height + 1):
+        for y in range(y_base_use - SafetyFactor, y_base_use + search_height + SafetyFactor):
             traversed_chunks.append((x_base, y))
 
         for x in range(x_base, int(np.floor(endX)) + 2):
             y_base += k
             y_base_use = int(np.floor(y_base))
-            for y in range(y_base_use - 1, y_base_use + search_height + 1):
+            for y in range(y_base_use - SafetyFactor, y_base_use + search_height + SafetyFactor):
                 traversed_chunks.append((x, y))
 
         return traversed_chunks
