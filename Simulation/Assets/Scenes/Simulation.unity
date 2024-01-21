@@ -231,13 +231,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ParticlesNum: 32768
-  RBodiesNum: 0
   MaxInfluenceRadius: 2
   TargetDensity: 3
   PressureMultiplier: 500
   NearPressureMultiplier: 12
   Damping: 0.7
-  RbElasticity: 0.7
+  RbElasticity: 0.645
   LookAheadFactor: 0.017
   Viscocity: 3
   LiquidElasticity: 2
@@ -245,7 +244,8 @@ MonoBehaviour:
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
-  MaxChunkSearchSafety: 0
+  MaxChunkSearchSafety: 1
+  ChunkStorageSafety: 0.2
   SpringCapacity: 500
   TriStorageLength: 4
   radii: 15

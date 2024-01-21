@@ -59,6 +59,7 @@ struct PTypeStruct
     float Viscocity;
     float Elasticity;
     float Plasticity;
+    float Stickyness;
     float Gravity;
     float colorG;
 };
@@ -72,9 +73,42 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float2 StickyLineDst;
+    float StickyLineDstSqr;
+    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
+
+struct RBDataStruct
+{
+    float2 Position;
+    float2 Velocity;
+    // radians / second
+    float AngularImpulse;
+    float Stickyness;
+    float StickynessRange;
+    float StickynessRangeSqr;
+    float2 NextPos;
+    float2 NextVel;
+    float NextAngImpulse;
+    float Mass;
+    int2 LineIndices;
+    float MaxDstSqr;
+    int WallCollision;
+    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
+};
+RWStructuredBuffer<RBDataStruct> RBData;
+
+struct RBVectorStruct
+{
+    float2 Position;
+    float2 LocalPosition;
+    float3 ParentImpulse;
+    int ParentRBIndex;
+    int WallCollision;
+};
+RWStructuredBuffer<RBVectorStruct> RBVector;
 
 
 bool ValidChunk(int ChunkX, int ChunkY)
@@ -215,6 +249,26 @@ float2 ViscocityForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeS
     float2 viscocityForce = (PData_otherPIndex.LastVelocity - PData_i.LastVelocity) * SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
 
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
+}
+
+float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex)
+{
+    int stickyLineIndex = PData_i.StickyLineIndex;
+    if (stickyLineIndex == -1) { return float2(0.0, 0.0); }
+
+    float absDstToLine = sqrt(PData_i.StickyLineDstSqr);
+
+    RBDataStruct RBData_i = RBData[RBVector[stickyLineIndex].ParentRBIndex];
+
+    float Stickyness = RBData_i.Stickyness * PType_i.Stickyness;
+
+    float absStickynessForce = RBPStickynessModel(Stickyness, absDstToLine, RBData_i.StickynessRange);
+
+    float2 normDstToLine = normalize(PData_i.StickyLineDst);
+    float2 stickynessImpulse = absStickynessForce * normDstToLine;
+    PData[pIndex].StickyLineIndex = -1;
+
+    return stickynessImpulse;
 }
 
 void AddSpring(int springKey, int otherPIndex, float springRestLen)
@@ -386,8 +440,9 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     }
 
     float2 interactionForce = InteractionForce(i);
+    float2 stickynessForce = StickynessForce(PData_i, PType_i, i);
 
-    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce;
+    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + stickynessForce + interactionForce;
     PData[i].Velocity.y -= PType_i.Gravity * DeltaTime;
     PData[i].Velocity += totForce * DeltaTime;
 
