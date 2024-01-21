@@ -16,7 +16,6 @@ const int MaxInfluenceRadius;
 const int ChunkNumW;
 const int ChunkNumH;
 const int ParticlesNum;
-
 const int RBodiesNum;
 
 RWTexture2D<float4> Result;
@@ -38,6 +37,7 @@ struct PTypeStruct
     float Viscocity;
     float Elasticity;
     float Plasticity;
+    float Stickyness;
     float Gravity;
     float colorG;
 };
@@ -51,6 +51,9 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float2 StickyLineDst;
+    float StickyLineDstSqr;
+    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -61,12 +64,17 @@ struct RBDataStruct
     float2 Velocity;
     // radians / second
     float AngularImpulse;
+    float Stickyness;
+    float StickynessRange;
+    float StickynessRangeSqr;
     float2 NextPos;
     float2 NextVel;
     float NextAngImpulse;
     float Mass;
     int2 LineIndices;
+    float MaxDstSqr;
     int WallCollision;
+    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
 };
 RWStructuredBuffer<RBDataStruct> RBData;
 
@@ -74,7 +82,7 @@ struct RBVectorStruct
 {
     float2 Position;
     float2 LocalPosition;
-    float3 parentImpulse;
+    float3 ParentImpulse;
     int ParentRBIndex;
     int WallCollision;
 };
@@ -93,11 +101,10 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
     float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
     float2 pixelPos = float2(pixelPosX, pixelPosY);
-
     int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
     int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
 
-    // Render particle
+    // Render particles
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -137,26 +144,32 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     float rayY = pixelPos.y;
     float2 rayCoordA = float2(0, rayY);
     float2 rayCoordB = float2(Width, rayY);
-    for (int LineIndex = 0; LineIndex < RBVectorNum-1; LineIndex++)
+    for (int RBIndex = 0; RBIndex < RBodiesNum; RBIndex++)
     {
-        RBVectorStruct lineVectorA = RBVector[LineIndex];
-        RBVectorStruct lineVectorB = RBVector[LineIndex+1];
+        RBDataStruct RBData_i = RBData[RBIndex];
+        float2 dst = pixelPos - RBData_i.Position;
+        float dstSqr = dot(dst, dst);
+        if (dstSqr > RBData_i.MaxDstSqr) { continue; }
 
-        if (lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) {continue;}
-
-        RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
-        float2 lineVectorAWorldSpace = lineVectorA.Position + parentRBData.Position;
-        float2 lineVectorBWorldSpace = lineVectorB.Position + parentRBData.Position;
-        if (CheckLinesIntersect(lineVectorAWorldSpace, lineVectorBWorldSpace, rayCoordA, rayCoordB))
-        { 
-            if (LineIntersectionPoint(lineVectorAWorldSpace, lineVectorBWorldSpace, rayCoordA, rayCoordB).x < pixelPos.x)
-            {
-                rayHits++; 
+        float2 localRayCoordA = rayCoordA - RBData_i.Position;
+        float2 localRayCoordB = rayCoordB - RBData_i.Position;
+        float localRayPosX = pixelPos.x - RBData_i.Position.x;
+        int startIndex = RBData_i.LineIndices.x;
+        int endIndex = RBData_i.LineIndices.y;
+        for (int lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
+        {
+            float2 localVecA = RBVector[lineIndex].Position;
+            float2 localVecB = RBVector[lineIndex+1].Position;
+            if (CheckLinesIntersect(localVecA, localVecB, localRayCoordA, localRayCoordB))
+            { 
+                if (LineIntersectionPoint(localVecA, localVecB, localRayCoordA, localRayCoordB).x < localRayPosX)
+                {
+                    rayHits++; 
+                }
             }
         }
+        if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
     }
-    if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
-
 
     Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 }

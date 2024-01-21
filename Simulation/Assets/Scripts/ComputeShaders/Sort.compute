@@ -32,6 +32,7 @@ struct PTypeStruct
     float Viscocity;
     float Elasticity;
     float Plasticity;
+    float Stickyness;
     float Gravity;
     float colorG;
 };
@@ -45,6 +46,9 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float2 StickyLineDst;
+    float StickyLineDstSqr;
+    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
