@@ -255,7 +255,7 @@ MonoBehaviour:
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.01
+  TimeStep: 0.02
   ProgramSpeed: 1
   VisualParticleRadii: 1
   RBRenderThickness: 0.5

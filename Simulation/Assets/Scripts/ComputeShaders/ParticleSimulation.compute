@@ -16,6 +16,8 @@ const int Height;
 const int ParticlesNum;
 const int RBodiesNum;
 const int MaxInfluenceRadius;
+const int MaxInfluenceRadiusSqr;
+const float InvMaxInfluenceRadius;
 const int SpawnDims;
 const int TimeStepsPerRender;
 
@@ -116,6 +118,7 @@ bool ValidChunk(int ChunkX, int ChunkY)
     if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
     return false;
 }
+
 
 float2 CalcDensity(int pIndex) // (density, nearDensity)
 {
@@ -253,7 +256,6 @@ float2 ViscocityForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeS
 
 float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex, int stickyLineIndex)
 {
-
     float absDstToLine = sqrt(PData_i.StickyLineDstSqr);
 
     RBDataStruct RBData_i = RBData[RBVector[stickyLineIndex].ParentRBIndex];
@@ -263,10 +265,10 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex, int
     float absStickynessForce = RBPStickynessModel(Stickyness, absDstToLine, RBData_i.StickynessRange);
 
     float2 normDstToLine = normalize(PData_i.StickyLineDst);
-    float2 stickynessImpulse = absStickynessForce * normDstToLine;
+    float2 stickynessForce = absStickynessForce * normDstToLine;
     PData[pIndex].StickyLineIndex = -1;
 
-    return stickynessImpulse;
+    return stickynessForce;
 }
 
 void AddSpring(int springKey, int otherPIndex, float springRestLen)
@@ -387,9 +389,11 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
-    int ChunkX = (int)(PData_i.PredPosition.x / MaxInfluenceRadius);
-    int ChunkY = (int)(PData_i.PredPosition.y / MaxInfluenceRadius);
-    float MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
+    int ChunkX = (int)(PData_i.PredPosition.x * InvMaxInfluenceRadius);
+    int ChunkY = (int)(PData_i.PredPosition.y * InvMaxInfluenceRadius);
+
+    float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
+    float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
     float2 totPressureForce = float2(0.0, 0.0);
     float2 totViscocityForce = float2(0.0, 0.0);
     float2 totSpringForce = float2(0.0, 0.0);
@@ -399,8 +403,21 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
         {
             int CurChunkX = ChunkX + x;
             int CurChunkY = ChunkY + y;
-            
-            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+            if (x == 0 && y != 0)
+            {
+                int xUse = 0;
+                int yUse = 0;
+                if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
+                else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
+                else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
+                else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
+                float2 dst = float2(localPosX - xUse, localPosY - yUse);
+                float absDstSqr = dot(dst, dst);
+                if (absDstSqr > MaxInfluenceRadiusSqr) { continue; }
+            }
+
+            if (!ValidChunk(CurChunkX, CurChunkY)) { continue; }
 
             int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
             int startIndex = StartIndices[ChunkKey];
@@ -409,7 +426,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
             while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
-                if (i == otherPIndex) {Index += 1; continue;}
+                if (i == otherPIndex) { Index += 1; continue; }
                 PDataStruct PData_otherPIndex = PData[otherPIndex];
                 PTypeStruct PType_otherPIndex = PTypes[PData_otherPIndex.PType];
 
@@ -424,7 +441,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 //     DeleteSpring(springKey, otherPIndex, MaxIterationCount); 
                 // }
 
-                if (sqrDst > MaxInfluenceRadiusSqr) {Index += 1; continue;}
+                if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; continue; }
                 float absDst = sqrt(sqrDst);
                 
                 totPressureForce += PressureForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
@@ -441,17 +458,12 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     int stickyLineIndex = PData_i.StickyLineIndex;
     float2 stickynessForce = float2(0.0, 0.0);
+     // StickynessForce() decreases performance over time!
     if (stickyLineIndex != -1) { stickynessForce = StickynessForce(PData_i, PType_i, i, stickyLineIndex); }
 
     float2 totForce = totPressureForce + totViscocityForce + totSpringForce + stickynessForce + interactionForce;
     PData[i].Velocity.y -= PType_i.Gravity * DeltaTime;
     PData[i].Velocity += totForce * DeltaTime;
-
-    // update position
-    // PData_i.Position += PData_i.Velocity * DeltaTime;
-    // float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
-    // PData[i].Position = float2(PosVelData.x, PosVelData.y);
-    // PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
 }
 
 [numthreads(ThreadsNum,1,1)]

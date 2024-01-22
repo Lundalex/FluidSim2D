@@ -58,7 +58,6 @@ float LerpNorm(float a, float b)
     return lerp1D(0, 1, a, b, MSvalMin);
 }
 
-// TriIndex!
 void AddTriangle(int TriangleID, float BaseX, float BaseY, float Scale, int TriIndex, float a, float b, float c, float d)
 {
     for (int i = TriIndex; i < TriIndex+3*TriStorageLength; i++)

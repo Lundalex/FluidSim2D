@@ -82,13 +82,15 @@ public class Main : MonoBehaviour
     private Mesh marchingSquaresMesh;
 
     // Constants
+    private int MaxInfluenceRadiusSqr;
+    private float InvMaxInfluenceRadius;
+    private float MarchScale;
     private int ChunkNumW;
     private int ChunkNumH;
     private int IOOR; // Index Out Of Range
     private int SIOOR; // Spring Index Out Of Range
     private int SpringPairsLen;
     private int MSLen;
-    private float MarchScale;
     private int RBodiesNum;
     private int RBVectorNum;
     private int TraversedChunksCount;
@@ -176,6 +178,8 @@ public class Main : MonoBehaviour
         // CPUSortChunkData();
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
+            GPUSortChunkData();
+            
             RunPSimShader();
 
             RunRbSimShader();
@@ -192,6 +196,8 @@ public class Main : MonoBehaviour
 
     void SetConstants()
     {
+        MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
+        InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
         ChunkNumW = Width / MaxInfluenceRadius;
         ChunkNumH = Height / MaxInfluenceRadius;
         IOOR = ParticlesNum;
@@ -395,6 +401,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
+                    StickyLineDst = new float2(0.0f, 0.0f),
                     StickyLineDstSqr = 0.0f,
                     StickyLineIndex = -1,
                     PType = 1
@@ -632,6 +639,8 @@ public class Main : MonoBehaviour
         PSimShader.SetBool("LMousePressed", LMousePressed);
 
         // Set PSimShader constants
+        PSimShader.SetInt("MaxInfluenceRadiusSqr", MaxInfluenceRadiusSqr);
+        PSimShader.SetFloat("InvMaxInfluenceRadius", InvMaxInfluenceRadius);
         PSimShader.SetInt("ChunkNumW", ChunkNumW);
         PSimShader.SetInt("ChunkNumH", ChunkNumH);
         PSimShader.SetInt("IOOR", IOOR);
@@ -807,6 +816,17 @@ public class Main : MonoBehaviour
         UpdatePSimShaderVariables();
 
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
+
+        // int count = 0;
+        // PDataBuffer.GetData(PData);
+        // for (int i = 0; i < PData.Length; i++)
+        // {
+        //     if (PData[i].StickyLineIndex != -1) {
+        //         count++;
+        //     }
+        // }
+        // int totCount = count;
+        // Debug.Log(totCount);
 
         if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
         if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}
