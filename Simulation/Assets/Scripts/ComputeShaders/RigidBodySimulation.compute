@@ -197,12 +197,13 @@ bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
 void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBDataStruct RBData_i)
 {
     // StickynessRange should stay smaller than ~chunksearchDst to avoid visual artifacts
-    if (absDstToLineSqr >= RBData_i.StickynessRangeSqr) { return; }
+    // if (PData[pIndex].StickyLineIndex != -1) { return; }
+    if (absDstToLineSqr > RBData_i.StickynessRangeSqr) { return; }
     // otherDstToLineSqr is 0 if a lineIndex has yet to be assigned
     // otherLine is -1 if a lineIndex is yet to be assigned
     float absDstToOtherLineSqr = PData[pIndex].StickyLineDstSqr;
-    if (absDstToLineSqr >= absDstToOtherLineSqr && PData[pIndex].StickyLineIndex != -1) { return; }
-
+    if (absDstToLineSqr > absDstToOtherLineSqr && PData[pIndex].StickyLineIndex != -1) { return; }
+    
     PData[pIndex].StickyLineIndex = lineIndex;
     PData[pIndex].StickyLineDst = dstToLine;
     PData[pIndex].StickyLineDstSqr = absDstToLineSqr;
@@ -325,6 +326,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     RBVectorStruct lineVectorA = RBVector[LineIndex];
     RBVectorStruct lineVectorB = RBVector[LineIndex+1];
     RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
+    if (LineIndex+1 == parentRBData.LineIndices.y) { return; }
     
     float2 NextPos = parentRBData.NextPos;
     float2 NextPosChange = NextPos - parentRBData.Position;
