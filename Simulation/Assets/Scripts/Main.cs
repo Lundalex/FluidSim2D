@@ -135,7 +135,6 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
-    private int frameCounter = 3;
 
     // Perhaps should create a seperate class for PSimShader functions/methods
     void Start()
@@ -181,7 +180,7 @@ public class Main : MonoBehaviour
 
             RunRbSimShader();
 
-            int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 1024);
+            int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
             if (ParticlesNum != 0) {PSimShader.Dispatch(3, ThreadSize, 1, 1);}
         }
         if (RenderMarchingSquares)
@@ -237,13 +236,13 @@ public class Main : MonoBehaviour
             Viscocity = Viscocity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
-            Stickyness = 1f,
+            Stickyness = 5f,
             Gravity = Gravity,
             colorG = 0f
         };
         PTypes[1] = new PTypeStruct
         {
-            TargetDensity = TargetDensity * 2,
+            TargetDensity = TargetDensity * 1.5f,
             MaxInfluenceRadius = 1,
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
@@ -251,7 +250,7 @@ public class Main : MonoBehaviour
             Viscocity = Viscocity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
-            Stickyness = 15f,
+            Stickyness = 22f,
             Gravity = Gravity,
             colorG = 1f
         };
@@ -807,7 +806,7 @@ public class Main : MonoBehaviour
     {
         UpdatePSimShaderVariables();
 
-        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 1024);
+        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
         if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
         if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}

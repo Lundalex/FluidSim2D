@@ -257,7 +257,7 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.01
   ProgramSpeed: 1
-  VisualParticleRadii: 0.4
+  VisualParticleRadii: 1
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41
@@ -267,7 +267,7 @@ MonoBehaviour:
   MarchW: 75
   MarchH: 50
   MaxInteractionRadius: 70
-  InteractionAttractionPower: 15
+  InteractionAttractionPower: 25
   InteractionFountainPower: 0
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
