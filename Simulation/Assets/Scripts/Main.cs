@@ -36,7 +36,7 @@ public class Main : MonoBehaviour
     public float Gravity;
     public float RbPStickyRadius;
     public float RbPStickyness;
-    [Range(0, 2)] public int MaxChunkSearchSafety;
+    [Range(0, 3)] public int MaxChunkSearchSafety;
     public float ChunkStorageSafety;
     public int SpringCapacity;
     public int TriStorageLength;
@@ -498,7 +498,7 @@ public class Main : MonoBehaviour
         RBDataBuffer.SetData(RBData);
         RBVectorBuffer.SetData(RBVector);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(4096, sizeof(int) * 3, ComputeBufferType.Append);
+        TraversedChunks_AC_Buffer = new ComputeBuffer(4096*4, sizeof(int) * 3, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 

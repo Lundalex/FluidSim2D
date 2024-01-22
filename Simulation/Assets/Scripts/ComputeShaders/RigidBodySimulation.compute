@@ -201,7 +201,7 @@ void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int l
     // otherDstToLineSqr is 0 if a lineIndex has yet to be assigned
     // otherLine is -1 if a lineIndex is yet to be assigned
     float absDstToOtherLineSqr = PData[pIndex].StickyLineDstSqr;
-    if (absDstToLineSqr >= absDstToOtherLineSqr) { return; }
+    if (absDstToLineSqr >= absDstToOtherLineSqr && PData[pIndex].StickyLineIndex != -1) { return; }
 
     PData[pIndex].StickyLineIndex = lineIndex;
     PData[pIndex].StickyLineDst = dstToLine;
@@ -354,8 +354,8 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         float2 D = lineVectorB.Position + parentRBData.Position;
 
         float2 dstToLine = dstToLineSegment(C, D, A);
-        float dstToLineSqr = dot(dstToLine, dstToLine);
-        AddRBPStickyness(dstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData);
+        float absDstToLineSqr = dot(dstToLine, dstToLine);
+        AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData);
 
         if (CheckLinesIntersect(A, B, C, D))
         {

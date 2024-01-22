@@ -251,10 +251,8 @@ float2 ViscocityForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeS
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
 }
 
-float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex)
+float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex, int stickyLineIndex)
 {
-    int stickyLineIndex = PData_i.StickyLineIndex;
-    if (stickyLineIndex == -1) { return float2(0.0, 0.0); }
 
     float absDstToLine = sqrt(PData_i.StickyLineDstSqr);
 
@@ -319,7 +317,7 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
 
     float springStiffness = Plasticity;
     float2 normDst = normalize(dst);                             // SpringPairs[springKey].restLength
-    float absSpringForce = LiquidSpringForceModel(springStiffness, MaxInfluenceRadius/2, MaxInfluenceRadius, absDst);
+    float absSpringForce = LiquidSpringForceModel(springStiffness, (uint)MaxInfluenceRadius/2, MaxInfluenceRadius, absDst);
  
     float2 springForce = absSpringForce * normDst * 0.5;
     return -springForce * DeltaTime;
@@ -431,7 +429,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 
                 totPressureForce += PressureForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst); 
-                // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, dst);
+                totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, dst);
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
@@ -440,7 +438,10 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     }
 
     float2 interactionForce = InteractionForce(i);
-    float2 stickynessForce = StickynessForce(PData_i, PType_i, i);
+
+    int stickyLineIndex = PData_i.StickyLineIndex;
+    float2 stickynessForce = float2(0.0, 0.0);
+    if (stickyLineIndex != -1) { stickynessForce = StickynessForce(PData_i, PType_i, i, stickyLineIndex); }
 
     float2 totForce = totPressureForce + totViscocityForce + totSpringForce + stickynessForce + interactionForce;
     PData[i].Velocity.y -= PType_i.Gravity * DeltaTime;
