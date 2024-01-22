@@ -135,6 +135,7 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
+    private int frameCounter = 3;
 
     // Perhaps should create a seperate class for PSimShader functions/methods
     void Start()
@@ -177,7 +178,6 @@ public class Main : MonoBehaviour
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
             RunPSimShader();
-            // SpringPairsBuffer.GetData(SpringPairs);
 
             RunRbSimShader();
 
@@ -498,7 +498,7 @@ public class Main : MonoBehaviour
         RBDataBuffer.SetData(RBData);
         RBVectorBuffer.SetData(RBVector);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(8192, sizeof(int) * 3, ComputeBufferType.Append);
+        TraversedChunks_AC_Buffer = new ComputeBuffer(4096, sizeof(int) * 3, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 
@@ -833,9 +833,6 @@ public class Main : MonoBehaviour
                     TCCountBuffer.GetData(TCCount);
                     TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
                 }
-                RBDataBuffer.GetData(RBData);
-                PDataBuffer.GetData(PData);
-                PTypesBuffer.GetData(PTypes);
 
                 RbSimShader.SetBuffer(2, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
                 RbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
