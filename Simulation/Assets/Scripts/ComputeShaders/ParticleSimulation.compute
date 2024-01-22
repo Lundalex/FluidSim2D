@@ -5,7 +5,7 @@
 
 #include "MathResources.hlsl"
 
-static const int ThreadsNum = 1024;
+static const int ThreadsNum = 512;
 
 // Constants
 const int ChunkNumW;

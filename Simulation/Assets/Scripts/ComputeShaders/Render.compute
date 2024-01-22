@@ -104,41 +104,6 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
     int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
 
-    // Render particles
-    for (int x = -1; x <= 1; x++)
-    {
-        for (int y = -1; y <= 1; y++)
-        {
-            int CurChunkX = ChunkX + x;
-            int CurChunkY = ChunkY + y;
-            
-            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
-
-            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
-            int startIndex = StartIndices[ChunkKey];
-
-            int Index = startIndex; 
-            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
-            {
-                int otherPIndex = SpatialLookup[Index].x;
-
-                float dst = length(pixelPos - PData[otherPIndex].Position);
-
-                if (dst < VisualParticleRadii)
-                {
-                    float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
-                    float g = PTypes[PData[otherPIndex].PType].colorG;
-                    float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
-                    Result[id.xy] = float4(r, g, b, 0.0);
-                    return;
-                }
-
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
-            }
-        }
-    }
-
     // Render RB line segments
     int rayHits = 0;
     float rayY = pixelPos.y;
@@ -170,6 +135,80 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
         }
         if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
     }
+
+    // // Render particles - Cheap
+    // for (int x = -1; x <= 1; x++)
+    // {
+    //     for (int y = -1; y <= 1; y++)
+    //     {
+    //         int CurChunkX = ChunkX + x;
+    //         int CurChunkY = ChunkY + y;
+            
+    //         if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+    //         int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+    //         int startIndex = StartIndices[ChunkKey];
+
+    //         int Index = startIndex; 
+    //         while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+    //         {
+    //             int otherPIndex = SpatialLookup[Index].x;
+
+    //             float dst = length(pixelPos - PData[otherPIndex].Position);
+
+    //             if (dst < VisualParticleRadii)
+    //             {
+    //                 float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
+    //                 float g = PTypes[PData[otherPIndex].PType].colorG;
+    //                 float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
+    //                 Result[id.xy] = float4(r, g, b, 0.0);
+    //                 return;
+    //             }
+
+    //             // Increment Index each iteration - Chunk particle search algorithm
+    //             Index += 1;
+    //         }
+    //     }
+    // }
+
+    // Render particles - Seamless
+    float minDst = VisualParticleRadii;
+    bool particleFound;
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            int CurChunkX = ChunkX + x;
+            int CurChunkY = ChunkY + y;
+            
+            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+
+            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[ChunkKey];
+
+            int Index = startIndex; 
+            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+            {
+                int otherPIndex = SpatialLookup[Index].x;
+
+                float dst = length(pixelPos - PData[otherPIndex].Position);
+
+                if (dst < minDst)
+                {
+                    float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
+                    float g = PTypes[PData[otherPIndex].PType].colorG;
+                    float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
+                    Result[id.xy] = float4(r, g, b, 0.0);
+                    minDst = dst;
+                    particleFound = true;
+                }
+
+                // Increment Index each iteration - Chunk particle search algorithm
+                Index += 1;
+            }
+        }
+    }
+    if (particleFound) { return; }
 
     Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 }
