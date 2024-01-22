@@ -46,9 +46,6 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    float2 StickyLineDst;
-    float StickyLineDstSqr;
-    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;

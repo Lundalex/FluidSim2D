@@ -133,6 +133,7 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBVectorBuffer;
     private ComputeBuffer RBDataBuffer;
     private ComputeBuffer TraversedChunks_AC_Buffer;
+    private ComputeBuffer StickynessReqs_AC;
     private ComputeBuffer TCCountBuffer;
 
     // Other
@@ -178,8 +179,6 @@ public class Main : MonoBehaviour
         // CPUSortChunkData();
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
-            GPUSortChunkData();
-            
             RunPSimShader();
 
             RunRbSimShader();
@@ -385,9 +384,6 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    StickyLineDst = new float2(0.0f, 0.0f),
-                    StickyLineDstSqr = 0.0f,
-                    StickyLineIndex = -1,
                     PType = 0
                 };
             }
@@ -401,9 +397,6 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    StickyLineDst = new float2(0.0f, 0.0f),
-                    StickyLineDstSqr = 0.0f,
-                    StickyLineIndex = -1,
                     PType = 1
                 };
             }
@@ -475,7 +468,7 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 13 + sizeof(int) * 2);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 1);
             SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
 
@@ -504,8 +497,9 @@ public class Main : MonoBehaviour
         RBDataBuffer.SetData(RBData);
         RBVectorBuffer.SetData(RBVector);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(4096*4, sizeof(int) * 3, ComputeBufferType.Append);
+        TraversedChunks_AC_Buffer = new ComputeBuffer(4096, sizeof(int) * 3, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        StickynessReqs_AC = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
     }
 
     void SetPSimShaderBuffers()
@@ -530,10 +524,13 @@ public class Main : MonoBehaviour
             PSimShader.SetBuffer(2, "PData", PDataBuffer);
             PSimShader.SetBuffer(2, "PTypes", PTypesBuffer);
             PSimShader.SetBuffer(2, "RBData", RBDataBuffer);
-            PSimShader.SetBuffer(2, "RBVector", RBVectorBuffer);
+            PSimShader.SetBuffer(2, "RBVector", RBVectorBuffer); 
 
             PSimShader.SetBuffer(3, "PData", PDataBuffer);
             PSimShader.SetBuffer(3, "PTypes", PTypesBuffer);
+
+            PSimShader.SetBuffer(4, "PData", PDataBuffer);
+            PSimShader.SetBuffer(4, "PTypes", PTypesBuffer);
         }
     }
 
@@ -830,6 +827,11 @@ public class Main : MonoBehaviour
 
         if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
         if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}
+
+        PSimShader.SetBuffer(4, "StickynessReqsCONSUME", StickynessReqs_AC);
+        // CHANGE FROM 5000!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // if (ParticlesNum != 0) {PSimShader.Dispatch(4, 5000, 1, 1);}
+
         if (ParticlesNum != 0) {PSimShader.Dispatch(2, ThreadSize, 1, 1);}
     }
 
@@ -852,27 +854,15 @@ public class Main : MonoBehaviour
                     TCCountBuffer.GetData(TCCount);
                     TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
                 }
+                // ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
+                // TCCountBuffer.GetData(TCCount);
+                // TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
 
+                StickynessReqs_AC.SetCounterValue(0);
+                RbSimShader.SetBuffer(2, "StickynessReqsAPPEND", StickynessReqs_AC);
                 RbSimShader.SetBuffer(2, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
                 RbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
-
                 RbSimShader.Dispatch(3, RBodiesNum, 1, 1);
-
-            // ASYNCHRONOUS APPEND BUFFER COUNT RETRIEVAL BELLOW
-
-            // TraversedChunks_AC_Buffer.SetCounterValue(0);
-
-            // RbSimShader.SetBuffer(2, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
-            // RbSimShader.Dispatch(2, RBVectorNum-1, 1, 1);
-
-            // AsyncGPUReadback.Request(TCCountBuffer, request => {
-            //     int TraversedChunksCount = request.GetData<int>()[0];
-            //     if (TraversedChunksCount > 0)
-            //     {
-            //         RbSimShader.SetBuffer(3, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
-            //         RbSimShader.Dispatch(3, TraversedChunksCount, 1, 1);
-            //     }
-            // });
         }
     }
 
@@ -948,6 +938,7 @@ public class Main : MonoBehaviour
         RBVectorBuffer?.Release();
         TraversedChunks_AC_Buffer?.Release();
         TCCountBuffer?.Release();
+        StickynessReqs_AC?.Release();
     }
 }
 
@@ -959,6 +950,15 @@ struct SpringStruct
     // public float plasticity;
     // public float stiffness;
 };
+struct StickynessRequestStruct
+{
+    public int pIndex;
+    public int StickyLineIndex;
+    public float2 StickyLineDst;
+    public float absDstToLineSqr;
+    public float RBStickyness;
+    public float RBStickynessRange;
+};
 struct PDataStruct
 {
     public float2 PredPosition;
@@ -967,9 +967,6 @@ struct PDataStruct
     public float2 LastVelocity;
     public float Density;
     public float NearDensity;
-    public float2 StickyLineDst;
-    public float StickyLineDstSqr;
-    public int StickyLineIndex;
     public int PType;
 }
 struct PTypeStruct

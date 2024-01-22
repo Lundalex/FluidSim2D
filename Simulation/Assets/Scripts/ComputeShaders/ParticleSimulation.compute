@@ -2,6 +2,7 @@
 #pragma kernel CalculateDensities
 #pragma kernel ParticleForces
 #pragma kernel UpdatePositions
+#pragma kernel ConsumeStickynessRequests
 
 #include "MathResources.hlsl"
 
@@ -75,9 +76,6 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    float2 StickyLineDst;
-    float StickyLineDstSqr;
-    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -112,6 +110,16 @@ struct RBVectorStruct
 };
 RWStructuredBuffer<RBVectorStruct> RBVector;
 
+struct StickynessRequestStruct
+{
+    int pIndex;
+    int StickyLineIndex;
+    float2 StickyLineDst;
+    float absDstToLineSqr;
+    float RBStickyness;
+    float RBStickynessRange;
+};
+ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -213,7 +221,7 @@ float SharedNearPressure(float nearDensityA, float nearDensityB, float NearPress
     return sharedNearPressure;
 }
 
-float2 PressureForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst, float2 dst, int randSeed)
+float2 PressureForce(float densityA, float densityB, float nearDensityA, float nearDensityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst, float2 dst, int randSeed)
 {
     float absPressureGradient = SmoothLiquidDer(absDst, MaxInfluenceRadius);
     float absNearPressureGradient = SmoothLiquidNearDer(absDst, MaxInfluenceRadius);
@@ -233,12 +241,8 @@ float2 PressureForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeSt
         nearPressureGradient = normalize(dst) * absNearPressureGradient;
     }
 
-    float densityA = PData_i.Density;
-    float densityB = PData_otherPIndex.Density;
     float avgPressure = SharedPressure(densityA, densityB, PType_i.TargetDensity, PType_otherPIndex.TargetDensity, PType_i.Pressure, PType_otherPIndex.Pressure);
 
-    float nearDensityA = PData_i.NearDensity;
-    float nearDensityB = PData_otherPIndex.NearDensity;
     float avgNearPressure = SharedNearPressure(nearDensityA, nearDensityB, PType_i.NearPressure, PType_otherPIndex.NearPressure);
 
     if (densityA + densityB == 0) {return float2(0.0, 0.0);}
@@ -247,27 +251,23 @@ float2 PressureForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeSt
     return pressureForce;
 }
 
-float2 ViscocityForce(PDataStruct PData_i, PDataStruct PData_otherPIndex, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst)
+float2 ViscocityForce(float2 LastVelocityA, float2 LastVelocityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst)
 {
-    float2 viscocityForce = (PData_otherPIndex.LastVelocity - PData_i.LastVelocity) * SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
+    float2 viscocityForce = (LastVelocityB - LastVelocityA) * SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
 
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
 }
 
-float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, int pIndex, int stickyLineIndex)
+float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessRequestStruct stickynessRequest)
 {
-    float absDstToLine = sqrt(PData_i.StickyLineDstSqr);
+    float absDstToLine = sqrt(stickynessRequest.absDstToLineSqr);
 
-    RBDataStruct RBData_i = RBData[RBVector[stickyLineIndex].ParentRBIndex];
+    float Stickyness = stickynessRequest.RBStickyness * PType_i.Stickyness;
+    float absStickynessForce = RBPStickynessModel(Stickyness, absDstToLine, stickynessRequest.RBStickynessRange);
 
-    float Stickyness = RBData_i.Stickyness * PType_i.Stickyness;
-
-    float absStickynessForce = RBPStickynessModel(Stickyness, absDstToLine, RBData_i.StickynessRange);
-
-    float2 normDstToLine = normalize(PData_i.StickyLineDst);
+    float2 normDstToLine = normalize(stickynessRequest.StickyLineDst);
     float2 stickynessForce = absStickynessForce * normDstToLine;
-    PData[pIndex].StickyLineIndex = -1;
-
+    
     return stickynessForce;
 }
 
@@ -444,8 +444,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; continue; }
                 float absDst = sqrt(sqrDst);
                 
-                totPressureForce += PressureForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
-                totViscocityForce += ViscocityForce(PData_i, PData_otherPIndex, PType_i, PType_otherPIndex, absDst); 
+                totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
+                totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
                 totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, dst);
 
                 // Increment Index each iteration - Chunk particle search algorithm
@@ -456,13 +456,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     float2 interactionForce = InteractionForce(i);
 
-    int stickyLineIndex = PData_i.StickyLineIndex;
-    float2 stickynessForce = float2(0.0, 0.0);
-     // StickynessForce() decreases performance over time!
-    if (stickyLineIndex != -1) { stickynessForce = StickynessForce(PData_i, PType_i, i, stickyLineIndex); }
-
-    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + stickynessForce + interactionForce;
-    PData[i].Velocity.y -= PType_i.Gravity * DeltaTime;
+    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce + float2(0, -PType_i.Gravity);
     PData[i].Velocity += totForce * DeltaTime;
 }
 
@@ -478,4 +472,17 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[PData_i.PType].Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
+}
+
+// DECREASES PERFORMANCE OVER TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[numthreads(ThreadsNum,1,1)]
+void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
+{
+    StickynessRequestStruct stickynessRequest = StickynessReqsCONSUME.Consume();
+
+    PDataStruct PData_i = PData[stickynessRequest.pIndex];
+    PTypeStruct PType_i = PTypes[PData_i.PType];
+    float2 stickynessForce = StickynessForce(PData_i, PType_i, stickynessRequest);
+
+    PData[stickynessRequest.pIndex].Velocity += stickynessForce * DeltaTime;
 }
