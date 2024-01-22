@@ -54,9 +54,6 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    float2 StickyLineDst;
-    float StickyLineDstSqr;
-    int StickyLineIndex;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -93,6 +90,17 @@ RWStructuredBuffer<RBVectorStruct> RBVector;
 
 AppendStructuredBuffer<int3> TraversedChunksAPPEND;
 ConsumeStructuredBuffer<int3> TraversedChunksCONSUME;
+
+struct StickynessRequestStruct
+{
+    int pIndex;
+    int StickyLineIndex;
+    float2 StickyLineDst;
+    float absDstToLineSqr;
+    float RBStickyness;
+    float RBStickynessRange;
+};
+AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -197,16 +205,17 @@ bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
 void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBDataStruct RBData_i)
 {
     // StickynessRange should stay smaller than ~chunksearchDst to avoid visual artifacts
-    // if (PData[pIndex].StickyLineIndex != -1) { return; }
     if (absDstToLineSqr > RBData_i.StickynessRangeSqr) { return; }
-    // otherDstToLineSqr is 0 if a lineIndex has yet to be assigned
-    // otherLine is -1 if a lineIndex is yet to be assigned
-    float absDstToOtherLineSqr = PData[pIndex].StickyLineDstSqr;
-    if (absDstToLineSqr > absDstToOtherLineSqr && PData[pIndex].StickyLineIndex != -1) { return; }
-    
-    PData[pIndex].StickyLineIndex = lineIndex;
-    PData[pIndex].StickyLineDst = dstToLine;
-    PData[pIndex].StickyLineDstSqr = absDstToLineSqr;
+
+    StickynessRequestStruct stickynessRequest;
+    stickynessRequest.pIndex = pIndex;
+    stickynessRequest.StickyLineIndex = lineIndex;
+    stickynessRequest.StickyLineDst = dstToLine;
+    stickynessRequest.absDstToLineSqr = absDstToLineSqr;
+    stickynessRequest.RBStickyness = RBData_i.Stickyness;
+    stickynessRequest.RBStickynessRange = RBData_i.StickynessRange;
+
+    StickynessReqsAPPEND.Append(stickynessRequest);
 }
 
 float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct parentRBData, float2 NormLineVector, int pIndex, float2 NextPosChange, float2 NextVel, float NextAngImpulse)
@@ -326,7 +335,6 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     RBVectorStruct lineVectorA = RBVector[LineIndex];
     RBVectorStruct lineVectorB = RBVector[LineIndex+1];
     RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
-    if (LineIndex+1 == parentRBData.LineIndices.y) { return; }
     
     float2 NextPos = parentRBData.NextPos;
     float2 NextPosChange = NextPos - parentRBData.Position;
@@ -355,9 +363,9 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         float2 C = lineVectorA.Position + parentRBData.Position;
         float2 D = lineVectorB.Position + parentRBData.Position;
 
-        float2 dstToLine = dstToLineSegment(C, D, A);
-        float absDstToLineSqr = dot(dstToLine, dstToLine);
-        AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData);
+        // float2 dstToLine = dstToLineSegment(C, D, A);
+        // float absDstToLineSqr = dot(dstToLine, dstToLine);
+        // AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData);
 
         if (CheckLinesIntersect(A, B, C, D))
         {
