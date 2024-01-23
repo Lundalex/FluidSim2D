@@ -107,6 +107,7 @@ public class Main : MonoBehaviour
     private RBVectorStruct[] RBVector;
     private RBDataStruct[] RBData;
     private int[] TCCount = new int[1];
+    private int[] SRCount = new int[1];
 
     // Marching Squares - Buffer retrieval
     private Vector3[] vertices;
@@ -133,11 +134,19 @@ public class Main : MonoBehaviour
     private ComputeBuffer RBVectorBuffer;
     private ComputeBuffer RBDataBuffer;
     private ComputeBuffer TraversedChunks_AC_Buffer;
-    private ComputeBuffer StickynessReqs_AC;
+    private ComputeBuffer StickynessReqs_AC_Buffer;
+    private ComputeBuffer SortedStickyRequestsBuffer;
+    private ComputeBuffer StickyRequestsResult_AC_Buffer;
     private ComputeBuffer TCCountBuffer;
+    private ComputeBuffer SRCountBuffer;
 
     // Other
     private float DeltaTime;
+    private int FrameCounter;
+    private int CalcStickyRequestsFrequency = 1;
+    private int GPUChunkDataSortFrequency = 3;
+    private bool DoCalcStickyRequests = false;
+    private bool DoGPUChunkDataSort = false;
 
     // Perhaps should create a seperate class for PSimShader functions/methods
     void Start()
@@ -171,25 +180,41 @@ public class Main : MonoBehaviour
         SetRenderShaderBuffers();
         SetSortShaderBuffers();
         SetMarchingSquaresShaderBuffers();
+
+        UpdateRenderShaderVariables();
+
+        // init chunk data
+        GPUSortChunkData();
     }
 
     void Update()
     {
-        GPUSortChunkData();
-        // CPUSortChunkData();
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
+            FrameCounter++;
+
+            if (FrameCounter % CalcStickyRequestsFrequency != 0 || CalcStickyRequestsFrequency == -1) { DoCalcStickyRequests = false; }
+            else { DoCalcStickyRequests = true; } 
+            if (FrameCounter % GPUChunkDataSortFrequency == 0) { DoGPUChunkDataSort = true; }
+            else { DoGPUChunkDataSort = false; }
+
+            if (DoGPUChunkDataSort) { GPUSortChunkData(); }
+
             RunPSimShader();
+            
+            if (DoCalcStickyRequests) { GPUSortStickynessRequests(); }
 
             RunRbSimShader();
 
             int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
             if (ParticlesNum != 0) {PSimShader.Dispatch(3, ThreadSize, 1, 1);}
         }
+        
         if (RenderMarchingSquares)
         {
             RunMarchingSquaresShader();
         }
+
         // RunRenderShader() is called by OnRenderImage()
     }
 
@@ -269,9 +294,9 @@ public class Main : MonoBehaviour
             NextVel = new float2(0.0f, 0.0f),
             NextAngImpulse = 0f,
             AngularImpulse = 0.0f,
-            Stickyness = 2.5f,
-            StickynessRange = 6f,
-            StickynessRangeSqr = 36f,
+            Stickyness = 4f,
+            StickynessRange = 4f,
+            StickynessRangeSqr = 16f,
             Mass = 200f,
             WallCollision = 0,
             Stationary = 1,
@@ -499,7 +524,10 @@ public class Main : MonoBehaviour
 
         TraversedChunks_AC_Buffer = new ComputeBuffer(4096, sizeof(int) * 3, ComputeBufferType.Append);
         TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-        StickynessReqs_AC = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
+        SRCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        StickynessReqs_AC_Buffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
+        SortedStickyRequestsBuffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2);
+        StickyRequestsResult_AC_Buffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
     }
 
     void SetPSimShaderBuffers()
@@ -531,6 +559,7 @@ public class Main : MonoBehaviour
 
             PSimShader.SetBuffer(4, "PData", PDataBuffer);
             PSimShader.SetBuffer(4, "PTypes", PTypesBuffer);
+            PSimShader.SetBuffer(4, "SortedStickyRequests", SortedStickyRequestsBuffer); 
         }
     }
 
@@ -543,13 +572,17 @@ public class Main : MonoBehaviour
 
             RbSimShader.SetBuffer(1, "RBVector", RBVectorBuffer);
             RbSimShader.SetBuffer(1, "RBData", RBDataBuffer);
+            RbSimShader.SetBuffer(1, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
 
+            // Maximum reached! (8)
             RbSimShader.SetBuffer(2, "PData", PDataBuffer);
             RbSimShader.SetBuffer(2, "PTypes", PTypesBuffer);
             RbSimShader.SetBuffer(2, "RBData", RBDataBuffer);
             RbSimShader.SetBuffer(2, "RBVector", RBVectorBuffer);
             RbSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
             RbSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
+            RbSimShader.SetBuffer(2, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
+            RbSimShader.SetBuffer(2, "StickynessReqsAPPEND", StickynessReqs_AC_Buffer);
 
             RbSimShader.SetBuffer(3, "RBData", RBDataBuffer);
             RbSimShader.SetBuffer(3, "RBVector", RBVectorBuffer);
@@ -593,6 +626,11 @@ public class Main : MonoBehaviour
         SortShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
         SortShader.SetBuffer(3, "PTypes", PTypesBuffer);
         SortShader.SetBuffer(3, "PData", PDataBuffer);
+
+        SortShader.SetBuffer(4, "StickynessReqsCONSUME", StickynessReqs_AC_Buffer);
+        SortShader.SetBuffer(4, "SortedStickyRequests", SortedStickyRequestsBuffer);
+
+        SortShader.SetBuffer(5, "SortedStickyRequests", SortedStickyRequestsBuffer);
     }
 
     void SetMarchingSquaresShaderBuffers()
@@ -675,6 +713,13 @@ public class Main : MonoBehaviour
         RbSimShader.SetFloat("BorderPadding", BorderPadding);
 
         RbSimShader.SetFloat("DeltaTime", DeltaTime);
+
+        if (DoCalcStickyRequests) {
+            RbSimShader.SetInt("DoCalcStickyRequests", 1);
+        }
+        else {
+            RbSimShader.SetInt("DoCalcStickyRequests", 0);
+        }
     }
 
     void UpdateRenderShaderVariables()
@@ -720,12 +765,58 @@ public class Main : MonoBehaviour
         MarchingSquaresShader.SetFloat("TriStorageLength", TriStorageLength);
     }
 
+    void GPUSortStickynessRequests()
+    {
+        UpdateSortShaderVariables();
+        // Very expensive
+        // ComputeBuffer.CopyCount(StickynessReqs_AC_Buffer, SRCountBuffer, 0);
+        // SRCountBuffer.GetData(SRCount);
+        // int StickyRequestsCount = SRCount[0];
+        // if (StickyRequestsCount == 0) { StickyRequestsCount = 2; }
+        int StickyRequestsCount = 4096;
+
+        if (StickyRequestsCount == 0) {return;}
+        int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 32);
+        int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 32)/2;
+
+        SortShader.Dispatch(4, ThreadSize, 1, 1);
+
+        int len = StickyRequestsCount;
+        int lenLog2 = (int)Math.Log(len, 2);
+        SortShader.SetInt("SortedStickyRequestsLength", len);
+        SortShader.SetInt("SortedStickyRequestsLog2Length", lenLog2);
+
+        int basebBlockLen = 2;
+        while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
+        {
+            int blockLen = basebBlockLen;
+            while (blockLen != 1) // BlockLen = 2 is the last inner iteration
+            {
+                int blocksNum = len / blockLen;
+                bool BrownPinkSort = blockLen == basebBlockLen;
+
+                SortShader.SetInt("SRBlockLen", blockLen);
+                SortShader.SetInt("SRblocksNum", blocksNum);
+                SortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
+
+                SortShader.Dispatch(5, ThreadSizeHLen, 1, 1);
+
+                blockLen /= 2;
+            }
+            basebBlockLen *= 2;
+        }
+
+        ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
+        PSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
+        PSimShader.Dispatch(4, ThreadSize, 1, 1);
+    }
+
     void GPUSortChunkData()
     {
         if (ParticlesNum == 0) {return;}
         UpdateSortShaderVariables();
-        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 1024);
-        int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 1024)/2;
+        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 32);
+        int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 32)/2;
 
         SortShader.Dispatch(0, ThreadSize, 1, 1);
 
@@ -754,7 +845,8 @@ public class Main : MonoBehaviour
             basebBlockLen *= 2;
         }
 
-        SortShader.Dispatch(2, ThreadSize, 1, 1);
+        // This is unnecessary IF PARTICLESNUM STAYS CONSTANT
+        // SortShader.Dispatch(2, ThreadSize, 1, 1);
 
         SortShader.Dispatch(3, ThreadSize, 1, 1);
     }
@@ -814,24 +906,8 @@ public class Main : MonoBehaviour
 
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
-        // int count = 0;
-        // PDataBuffer.GetData(PData);
-        // for (int i = 0; i < PData.Length; i++)
-        // {
-        //     if (PData[i].StickyLineIndex != -1) {
-        //         count++;
-        //     }
-        // }
-        // int totCount = count;
-        // Debug.Log(totCount);
-
         if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
         if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}
-
-        PSimShader.SetBuffer(4, "StickynessReqsCONSUME", StickynessReqs_AC);
-        // CHANGE FROM 5000!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // if (ParticlesNum != 0) {PSimShader.Dispatch(4, 5000, 1, 1);}
-
         if (ParticlesNum != 0) {PSimShader.Dispatch(2, ThreadSize, 1, 1);}
     }
 
@@ -844,7 +920,6 @@ public class Main : MonoBehaviour
                 RbSimShader.Dispatch(0, RBVectorNum, 1, 1);
 
                 TraversedChunks_AC_Buffer.SetCounterValue(0);
-                RbSimShader.SetBuffer(1, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
                 RbSimShader.Dispatch(1, RBVectorNum-1, 1, 1);
 
                 if (TraversedChunksCount == 0)
@@ -858,9 +933,9 @@ public class Main : MonoBehaviour
                 // TCCountBuffer.GetData(TCCount);
                 // TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
 
-                StickynessReqs_AC.SetCounterValue(0);
-                RbSimShader.SetBuffer(2, "StickynessReqsAPPEND", StickynessReqs_AC);
-                RbSimShader.SetBuffer(2, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
+                if (DoCalcStickyRequests) {
+                    StickynessReqs_AC_Buffer.SetCounterValue(0);
+                }
                 RbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
                 RbSimShader.Dispatch(3, RBodiesNum, 1, 1);
         }
@@ -888,7 +963,6 @@ public class Main : MonoBehaviour
 
     void RunRenderShader()
     {
-        UpdateRenderShaderVariables();
 
         int ThreadSize = 32;
 
@@ -938,7 +1012,10 @@ public class Main : MonoBehaviour
         RBVectorBuffer?.Release();
         TraversedChunks_AC_Buffer?.Release();
         TCCountBuffer?.Release();
-        StickynessReqs_AC?.Release();
+        SRCountBuffer?.Release();
+        StickynessReqs_AC_Buffer?.Release();
+        SortedStickyRequestsBuffer?.Release();
+        StickyRequestsResult_AC_Buffer?.Release();
     }
 }
 

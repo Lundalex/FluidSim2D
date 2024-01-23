@@ -3,11 +3,14 @@
 #pragma kernel PrepStartIndices
 #pragma kernel PopulateStartIndices
 
+#pragma kernel PopulateSortedStickyRequests
+#pragma kernel SRSortIteration
+
 #include "MathResources.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
-static const int ThreadsNum = 1024;
+static const int ThreadsNum = 32;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
@@ -18,6 +21,13 @@ const int SpatialLookupLog2Length;
 const int BlockLen;
 const int BlocksNum;
 const int IOOR;
+
+const int SortedStickyRequestsLength;
+const int SortedStickyRequestsLog2Length;
+
+const bool SRBrownPinkSort; // True -> BrownSort, False -> PinkSort
+const int SRBlockLen;
+const int SRblocksNum;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
@@ -49,6 +59,18 @@ struct PDataStruct
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
+
+struct StickynessRequestStruct
+{
+    int pIndex;
+    int StickyLineIndex;
+    float2 StickyLineDst;
+    float absDstToLineSqr;
+    float RBStickyness;
+    float RBStickynessRange;
+};
+ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
+RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
 int GetChunkKey(int pIndex, float2 pos)
 {
@@ -115,6 +137,7 @@ void SortIteration (uint3 id : SV_DispatchThreadID)
     }
 }
 
+// This is unnecessary IF PARTICLESNUM STAYS CONSTANT
 [numthreads(ThreadsNum,1,1)]
 void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
@@ -139,5 +162,74 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     if (ChunkKey != LastChunkKey)
     {
         StartIndices[ChunkKey] = i;
+    }
+}
+
+
+
+void SRBrownSort(int lowRef)
+{
+    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
+    int relPos = lowRef % (0.5 * SRBlockLen);
+
+    int lowIndex = relBlock * SRBlockLen + relPos;
+    int highIndex = relBlock * SRBlockLen + SRBlockLen - 1 - relPos;
+
+    // if (SortedStickyRequests[lowIndex].pIndex == SortedStickyRequests[highIndex].pIndex)
+    // {
+    //     SortedStickyRequests[lowIndex].absDstToLineSqr = -1;
+    // }
+    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
+    {
+        StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];
+        StickynessRequestStruct lowIndexValue = SortedStickyRequests[lowIndex];
+        SortedStickyRequests[highIndex] = lowIndexValue;
+        SortedStickyRequests[lowIndex] = highIndexValue;
+    }
+}
+
+void SRPinkSort(int lowRef)
+{
+    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
+    int relPos = lowRef % (0.5 * SRBlockLen);
+
+    int lowIndex = relBlock * SRBlockLen + relPos;
+    int highIndex = relBlock * SRBlockLen + relPos + (int)(SRBlockLen * 0.5);
+
+    // if (SortedStickyRequests[lowIndex].pIndex == SortedStickyRequests[highIndex].pIndex)
+    // {
+    //     SortedStickyRequests[lowIndex].absDstToLineSqr = -1;
+    // }
+    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
+    {
+        StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];
+        StickynessRequestStruct lowIndexValue = SortedStickyRequests[lowIndex];
+        SortedStickyRequests[highIndex] = lowIndexValue;
+        SortedStickyRequests[lowIndex] = highIndexValue;
+    }
+}
+
+
+[numthreads(ThreadsNum,1,1)]
+void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+
+    StickynessRequestStruct stickynessRequest = StickynessReqsCONSUME.Consume();
+
+    SortedStickyRequests[i] = stickynessRequest;
+}
+
+[numthreads(ThreadsNum,1,1)]
+void SRSortIteration (uint3 id : SV_DispatchThreadID)
+{
+    int lowRef = id.x;
+    if (SRBrownPinkSort)
+    {
+        SRBrownSort(lowRef);
+    }
+    else
+    {
+        SRPinkSort(lowRef);
     }
 }
