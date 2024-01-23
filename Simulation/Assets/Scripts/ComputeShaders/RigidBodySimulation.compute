@@ -16,7 +16,6 @@ const int ParticlesNum;
 const int RBodiesNum;
 const int MaxInfluenceRadius;
 const int MaxChunkSearchSafety;
-
 const float Damping;
 // const float Viscocity;
 const float Gravity;
@@ -25,6 +24,7 @@ const float BorderPadding;
 
 // Per-timestep-set constants
 const float DeltaTime;
+const int DoCalcStickyRequests;
 
 // Particles - Buffers
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
@@ -202,7 +202,7 @@ bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
     return projectionLength > uLength;
 }
 
-void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBDataStruct RBData_i)
+void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBDataStruct RBData_i, int randSeed)
 {
     // StickynessRange should stay smaller than ~chunksearchDst to avoid visual artifacts
     if (absDstToLineSqr > RBData_i.StickynessRangeSqr) { return; }
@@ -211,7 +211,7 @@ void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int l
     stickynessRequest.pIndex = pIndex;
     stickynessRequest.StickyLineIndex = lineIndex;
     stickynessRequest.StickyLineDst = dstToLine;
-    stickynessRequest.absDstToLineSqr = absDstToLineSqr;
+    stickynessRequest.absDstToLineSqr = absDstToLineSqr + 0.01 * rand(randSeed);
     stickynessRequest.RBStickyness = RBData_i.Stickyness;
     stickynessRequest.RBStickynessRange = RBData_i.StickynessRange;
 
@@ -327,6 +327,7 @@ void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 [numthreads(ThreadsNum, 1, 1)]
 void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
 {
+    int randSeed = id.x;
     int3 curChunk = TraversedChunksCONSUME.Consume();
     int CurChunkX = curChunk.x;
     int CurChunkY = curChunk.y;
@@ -363,9 +364,12 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         float2 C = lineVectorA.Position + parentRBData.Position;
         float2 D = lineVectorB.Position + parentRBData.Position;
 
-        // float2 dstToLine = dstToLineSegment(C, D, A);
-        // float absDstToLineSqr = dot(dstToLine, dstToLine);
-        // AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData);
+        if (DoCalcStickyRequests)
+        {
+            float2 dstToLine = dstToLineSegment(C, D, A);
+            float absDstToLineSqr = dot(dstToLine, dstToLine);
+            AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData, randSeed);
+        }
 
         if (CheckLinesIntersect(A, B, C, D))
         {
