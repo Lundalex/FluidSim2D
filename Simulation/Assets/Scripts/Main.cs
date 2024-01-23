@@ -78,7 +78,6 @@ public class Main : MonoBehaviour
 
     // Private references
     private RenderTexture renderTexture;
-    private GameObject simulationBoundrary;
     private Mesh marchingSquaresMesh;
 
     // Constants
@@ -148,7 +147,23 @@ public class Main : MonoBehaviour
     private bool DoCalcStickyRequests = false;
     private bool DoGPUChunkDataSort = false;
 
-    // Perhaps should create a seperate class for PSimShader functions/methods
+    public int RoundUpToNextPowerOfTwo(int number)
+    {
+        if (number < 0)
+            throw new ArgumentOutOfRangeException("number must be non-negative");
+
+        if (number <= 1)
+            return 1;
+
+        int roundedNumber = 2;
+        while (roundedNumber < number)
+        {
+            roundedNumber *= 2;
+        }
+
+        return roundedNumber;
+    }
+
     void Start()
     {
         while (Height % MaxInfluenceRadius != 0) {
@@ -158,7 +173,6 @@ public class Main : MonoBehaviour
             Width += 1;
         }
 
-        CreateVisualBoundrary();
         InitializeSetArrays();
 
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
@@ -462,33 +476,6 @@ public class Main : MonoBehaviour
         return new float2(x, y);
     }
 
-    void CreateVisualBoundrary()
-    {
-        // Create an empty GameObject for the border
-        simulationBoundrary = new GameObject("SimulationBoundary");
-        simulationBoundrary.transform.parent = transform;
-
-        // Add a LineRenderer component to represent the border
-        LineRenderer lineRenderer = simulationBoundrary.AddComponent<LineRenderer>();
-        lineRenderer.positionCount = 5;
-
-        lineRenderer.SetPositions(new Vector3[]
-        {
-            new(0f, 0f, 0f),
-            new(Width, 0f, 0f),
-            new(Width, Height, 0f),
-            new(0f, Height, 0f),
-            new(0f, 0f, 0f),
-        });
-
-        // Optional: Set LineRenderer properties (material, color, width, etc.)
-        // lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        lineRenderer.startColor = Color.green;
-        lineRenderer.endColor = Color.green;
-        lineRenderer.startWidth = 0.1f;
-        lineRenderer.endWidth = 0.1f;
-    }
-
     void InitializeBuffers()
     {
         if (ParticlesNum != 0)
@@ -768,11 +755,6 @@ public class Main : MonoBehaviour
     void GPUSortStickynessRequests()
     {
         UpdateSortShaderVariables();
-        // Very expensive
-        // ComputeBuffer.CopyCount(StickynessReqs_AC_Buffer, SRCountBuffer, 0);
-        // SRCountBuffer.GetData(SRCount);
-        // int StickyRequestsCount = SRCount[0];
-        // if (StickyRequestsCount == 0) { StickyRequestsCount = 2; }
         int StickyRequestsCount = 4096;
 
         if (StickyRequestsCount == 0) {return;}
