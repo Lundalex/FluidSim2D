@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 486538}
   - component: {fileID: 486542}
   - component: {fileID: 486543}
+  - component: {fileID: 486544}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -269,12 +270,13 @@ MonoBehaviour:
   MaxInteractionRadius: 70
   InteractionAttractionPower: 25
   InteractionFountainPower: 0
+  shaderHelper: {fileID: 486544}
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
-  RenderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
-  PSimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
-  RbSimShader: {fileID: 7200000, guid: 4d59659466c24004abd1a03885ef1897, type: 3}
-  SortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
-  MarchingSquaresShader: {fileID: 7200000, guid: c01a42ec308252949bb8f27d6fd9617e, type: 3}
+  renderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
+  pSimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
+  rbSimShader: {fileID: 7200000, guid: 4d59659466c24004abd1a03885ef1897, type: 3}
+  sortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
+  marchingSquaresShader: {fileID: 7200000, guid: c01a42ec308252949bb8f27d6fd9617e, type: 3}
 --- !u!33 &486542
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -325,6 +327,19 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &486544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34963fa8f59caac40a20699f54ed5e48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m: {fileID: 486541}
 --- !u!1 &1828815362
 GameObject:
   m_ObjectHideFlags: 0
