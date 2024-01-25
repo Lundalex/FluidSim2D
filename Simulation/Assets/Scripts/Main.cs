@@ -19,6 +19,10 @@ using System.Threading.Tasks;
 using System.Collections;
 using UnityEngine.Rendering;
 
+// Import utils from Resources.cs
+using Resources;
+// Usage: Utils.(functionName)()
+
 public class Main : MonoBehaviour
 {
     [Header("Simulation settings")]
@@ -69,30 +73,57 @@ public class Main : MonoBehaviour
     public float InteractionFountainPower;
 
     [Header("References")]
+    public ShaderHelper shaderHelper;
     public GameObject ParticlePrefab;
-    public ComputeShader RenderShader;
-    public ComputeShader PSimShader;
-    public ComputeShader RbSimShader;
-    public ComputeShader SortShader;
-    public ComputeShader MarchingSquaresShader;
+    public ComputeShader renderShader;
+    public ComputeShader pSimShader;
+    public ComputeShader rbSimShader;
+    public ComputeShader sortShader;
+    public ComputeShader marchingSquaresShader;
+
+    // Marching Squares - Buffers
+    [System.NonSerialized]
+    public ComputeBuffer VerticesBuffer;
+    public ComputeBuffer TrianglesBuffer;
+    public ComputeBuffer ColorsBuffer;
+    public ComputeBuffer MSPointsBuffer;
+
+    // Bitonic Mergesort - Buffers
+    public ComputeBuffer SpatialLookupBuffer;
+    public ComputeBuffer StartIndicesBuffer;
+
+    // PData, SpringPairs - Buffers
+    public ComputeBuffer PDataBuffer;
+    public ComputeBuffer SpringPairsBuffer;
+    public ComputeBuffer PTypesBuffer;
+
+    // Rigid Bodies - Buffers
+    public ComputeBuffer RBVectorBuffer;
+    public ComputeBuffer RBDataBuffer;
+    public ComputeBuffer TraversedChunks_AC_Buffer;
+    public ComputeBuffer StickynessReqs_AC_Buffer;
+    public ComputeBuffer SortedStickyRequestsBuffer;
+    public ComputeBuffer StickyRequestsResult_AC_Buffer;
+    public ComputeBuffer TCCountBuffer;
+    public ComputeBuffer SRCountBuffer;
+
+    // Constants
+    [System.NonSerialized] public int MaxInfluenceRadiusSqr;
+    [System.NonSerialized] public float InvMaxInfluenceRadius;
+    [System.NonSerialized] public float MarchScale;
+    [System.NonSerialized] public int ChunkNumW;
+    [System.NonSerialized] public int ChunkNumH;
+    [System.NonSerialized] public int IOOR; // Index Out Of Range
+    [System.NonSerialized] public int SIOOR; // Spring Index Out Of Range
+    [System.NonSerialized] public int SpringPairsLen;
+    [System.NonSerialized] public int MSLen;
+    [System.NonSerialized] public int RBodiesNum;
+    [System.NonSerialized] public int RBVectorNum;
+    [System.NonSerialized] public int TraversedChunksCount;
 
     // Private references
     private RenderTexture renderTexture;
     private Mesh marchingSquaresMesh;
-
-    // Constants
-    private int MaxInfluenceRadiusSqr;
-    private float InvMaxInfluenceRadius;
-    private float MarchScale;
-    private int ChunkNumW;
-    private int ChunkNumH;
-    private int IOOR; // Index Out Of Range
-    private int SIOOR; // Spring Index Out Of Range
-    private int SpringPairsLen;
-    private int MSLen;
-    private int RBodiesNum;
-    private int RBVectorNum;
-    private int TraversedChunksCount;
 
     // PData - Properties
     private int2[] SpatialLookup; // [](particleIndex, chunkKey)
@@ -114,57 +145,95 @@ public class Main : MonoBehaviour
     private Color[] colors;
     private float[] MSPoints;
 
-    // Marching Squares - Buffers
-    private ComputeBuffer VerticesBuffer;
-    private ComputeBuffer TrianglesBuffer;
-    private ComputeBuffer ColorsBuffer;
-    private ComputeBuffer MSPointsBuffer;
-
-    // Bitonic Mergesort - Buffers
-    private ComputeBuffer SpatialLookupBuffer;
-    private ComputeBuffer StartIndicesBuffer;
-
-    // PData, SpringPairs - Buffers
-    private ComputeBuffer PDataBuffer;
-    private ComputeBuffer SpringPairsBuffer;
-    private ComputeBuffer PTypesBuffer;
-
-    // Rigid Bodies - Buffers
-    private ComputeBuffer RBVectorBuffer;
-    private ComputeBuffer RBDataBuffer;
-    private ComputeBuffer TraversedChunks_AC_Buffer;
-    private ComputeBuffer StickynessReqs_AC_Buffer;
-    private ComputeBuffer SortedStickyRequestsBuffer;
-    private ComputeBuffer StickyRequestsResult_AC_Buffer;
-    private ComputeBuffer TCCountBuffer;
-    private ComputeBuffer SRCountBuffer;
-
     // Other
     private float DeltaTime;
     private int FrameCounter;
     private int CalcStickyRequestsFrequency = 1;
     private int GPUChunkDataSortFrequency = 3;
-    private bool DoCalcStickyRequests = false;
-    private bool DoGPUChunkDataSort = false;
-
-    public int RoundUpToNextPowerOfTwo(int number)
-    {
-        if (number < 0)
-            throw new ArgumentOutOfRangeException("number must be non-negative");
-
-        if (number <= 1)
-            return 1;
-
-        int roundedNumber = 2;
-        while (roundedNumber < number)
-        {
-            roundedNumber *= 2;
-        }
-
-        return roundedNumber;
-    }
+    private bool DoCalcStickyRequests = true;
+    private bool DoGPUChunkDataSort = true;
 
     void Start()
+    {
+        SceneSetup();
+
+        InitializeSetArrays();
+        SetConstants();
+        InitializeArrays();
+
+        for (int i = 0; i < ParticlesNum; i++) {
+            PData[i].Position = Utils.ParticleSpawnPosition(i, ParticlesNum, Width, Height, SpawnDims);
+        }
+
+        InitializeBuffers();
+        shaderHelper.SetPSimShaderBuffers(pSimShader);
+        shaderHelper.SetRbSimShaderBuffers(rbSimShader);
+        shaderHelper.SetRenderShaderBuffers(renderShader);
+        shaderHelper.SetSortShaderBuffers(sortShader);
+        shaderHelper.SetMarchingSquaresShaderBuffers(marchingSquaresShader);
+
+        shaderHelper.UpdatePSimShaderVariables(pSimShader);
+        shaderHelper.UpdateRbSimShaderVariables(rbSimShader);
+        shaderHelper.UpdateRenderShaderVariables(renderShader);
+        shaderHelper.UpdateSortShaderVariables(sortShader);
+        shaderHelper.UpdateMarchingSquaresShaderVariables(marchingSquaresShader);
+
+        // init chunk data
+        GPUSortChunkData();
+    }
+
+    void Update()
+    {
+        GPUSortChunkData();
+
+        for (int i = 0; i < 3; i++)
+        {
+            UpdateShaderTimeStep();
+
+            RunPSimShader();
+            
+            if (i == 0) { GPUSortStickynessRequests(); }
+
+            RunRbSimShader();
+
+            int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
+            if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize, 1, 1);}
+            
+            if (RenderMarchingSquares)
+            {
+                RunMarchingSquaresShader();
+            }
+        }
+
+        // RunRenderShader() is called by OnRenderImage()
+    }
+
+    public void UpdateShaderTimeStep()
+    {
+        float DeltaTime = GetDeltaTime();
+        
+        Vector2 mouseWorldPos = Utils.GetMouseWorldPos(Width, Height);
+        // (Left?, Right?)
+        bool2 mousePressed = Utils.GetMousePressed();
+
+        //pSimShader
+        pSimShader.SetFloat("DeltaTime", DeltaTime);
+        pSimShader.SetFloat("MouseX", mouseWorldPos.x);
+        pSimShader.SetFloat("MouseY", mouseWorldPos.y);
+        pSimShader.SetBool("LMousePressed", mousePressed.x);
+        pSimShader.SetBool("RMousePressed", mousePressed.y);
+
+        rbSimShader.SetFloat("DeltaTime", DeltaTime);
+
+        if (DoCalcStickyRequests) {
+            rbSimShader.SetInt("DoCalcStickyRequests", 1);
+        }
+        else {
+            rbSimShader.SetInt("DoCalcStickyRequests", 0);
+        }
+    }
+
+    void SceneSetup()
     {
         while (Height % MaxInfluenceRadius != 0) {
             Height += 1;
@@ -173,63 +242,22 @@ public class Main : MonoBehaviour
             Width += 1;
         }
 
-        InitializeSetArrays();
-
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
 
         marchingSquaresMesh = GetComponent<MeshFilter>().mesh;
-
-        SetConstants();
-
-        InitializeArrays();
-
-        for (int i = 0; i < ParticlesNum; i++) {
-            PData[i].Position = ParticleSpawnPosition(i, ParticlesNum);
-        }
-
-        InitializeBuffers();
-        SetPSimShaderBuffers();
-        SetRbSimShaderBuffers();
-        SetRenderShaderBuffers();
-        SetSortShaderBuffers();
-        SetMarchingSquaresShaderBuffers();
-
-        UpdateRenderShaderVariables();
-
-        // init chunk data
-        GPUSortChunkData();
     }
 
-    void Update()
+    float GetDeltaTime()
     {
-        for (int i = 0; i < TimeStepsPerRender; i++)
-        {
-            FrameCounter++;
-
-            if (FrameCounter % CalcStickyRequestsFrequency != 0 || CalcStickyRequestsFrequency == -1) { DoCalcStickyRequests = false; }
-            else { DoCalcStickyRequests = true; } 
-            if (FrameCounter % GPUChunkDataSortFrequency == 0) { DoGPUChunkDataSort = true; }
-            else { DoGPUChunkDataSort = false; }
-
-            if (DoGPUChunkDataSort) { GPUSortChunkData(); }
-
-            RunPSimShader();
-            
-            if (DoCalcStickyRequests) { GPUSortStickynessRequests(); }
-
-            RunRbSimShader();
-
-            int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
-            if (ParticlesNum != 0) {PSimShader.Dispatch(3, ThreadSize, 1, 1);}
+        float DeltaTime;
+        if (FixedTimeStep) {
+            DeltaTime = TimeStep / TimeStepsPerRender;
         }
-        
-        if (RenderMarchingSquares)
-        {
-            RunMarchingSquaresShader();
+        else {
+            DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
         }
-
-        // RunRenderShader() is called by OnRenderImage()
+        return DeltaTime;
     }
 
     void SetConstants()
@@ -517,256 +545,20 @@ public class Main : MonoBehaviour
         StickyRequestsResult_AC_Buffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
     }
 
-    void SetPSimShaderBuffers()
-    {
-        if (ParticlesNum != 0) {
-            // Kernel PreCalculations
-            PSimShader.SetBuffer(0, "PData", PDataBuffer);
-            PSimShader.SetBuffer(0, "PTypes", PTypesBuffer);
-        
-            // Kernel PreCalculations
-            PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-            PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
-
-            PSimShader.SetBuffer(1, "PData", PDataBuffer);
-            PSimShader.SetBuffer(1, "PTypes", PTypesBuffer);
-
-            // Kernel ParticleForces
-            PSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
-            PSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
-
-            PSimShader.SetBuffer(2, "SpringPairs", SpringPairsBuffer);
-            PSimShader.SetBuffer(2, "PData", PDataBuffer);
-            PSimShader.SetBuffer(2, "PTypes", PTypesBuffer);
-            PSimShader.SetBuffer(2, "RBData", RBDataBuffer);
-            PSimShader.SetBuffer(2, "RBVector", RBVectorBuffer); 
-
-            PSimShader.SetBuffer(3, "PData", PDataBuffer);
-            PSimShader.SetBuffer(3, "PTypes", PTypesBuffer);
-
-            PSimShader.SetBuffer(4, "PData", PDataBuffer);
-            PSimShader.SetBuffer(4, "PTypes", PTypesBuffer);
-            PSimShader.SetBuffer(4, "SortedStickyRequests", SortedStickyRequestsBuffer); 
-        }
-    }
-
-    void SetRbSimShaderBuffers()
-    {
-        if (RBodiesNum != 0)
-        {
-            RbSimShader.SetBuffer(0, "RBVector", RBVectorBuffer);
-            RbSimShader.SetBuffer(0, "RBData", RBDataBuffer);
-
-            RbSimShader.SetBuffer(1, "RBVector", RBVectorBuffer);
-            RbSimShader.SetBuffer(1, "RBData", RBDataBuffer);
-            RbSimShader.SetBuffer(1, "TraversedChunksAPPEND", TraversedChunks_AC_Buffer);
-
-            // Maximum reached! (8)
-            RbSimShader.SetBuffer(2, "PData", PDataBuffer);
-            RbSimShader.SetBuffer(2, "PTypes", PTypesBuffer);
-            RbSimShader.SetBuffer(2, "RBData", RBDataBuffer);
-            RbSimShader.SetBuffer(2, "RBVector", RBVectorBuffer);
-            RbSimShader.SetBuffer(2, "SpatialLookup", SpatialLookupBuffer);
-            RbSimShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
-            RbSimShader.SetBuffer(2, "TraversedChunksCONSUME", TraversedChunks_AC_Buffer);
-            RbSimShader.SetBuffer(2, "StickynessReqsAPPEND", StickynessReqs_AC_Buffer);
-
-            RbSimShader.SetBuffer(3, "RBData", RBDataBuffer);
-            RbSimShader.SetBuffer(3, "RBVector", RBVectorBuffer);
-        }
-    }
-
-    void SetRenderShaderBuffers()
-    {
-        if (ParticlesNum != 0) {
-            RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-            RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
-
-            RenderShader.SetBuffer(0, "PData", PDataBuffer);
-            RenderShader.SetBuffer(0, "PTypes", PTypesBuffer);
-        }
-        if (RBodiesNum != 0)
-        {
-            RenderShader.SetBuffer(0, "RBData", RBDataBuffer);
-            RenderShader.SetBuffer(0, "RBVector", RBVectorBuffer);
-        }
-    }
-
-    void SetSortShaderBuffers()
-    {
-        SpatialLookupBuffer.SetData(SpatialLookup);
-        StartIndicesBuffer.SetData(StartIndices);
-        
-        SortShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-
-        SortShader.SetBuffer(0, "PData", PDataBuffer);
-        SortShader.SetBuffer(0, "PTypes", PTypesBuffer);
-
-        SortShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-
-        SortShader.SetBuffer(1, "PData", PDataBuffer);
-        SortShader.SetBuffer(1, "PTypes", PTypesBuffer);
-
-        SortShader.SetBuffer(2, "StartIndices", StartIndicesBuffer);
-
-        SortShader.SetBuffer(3, "SpatialLookup", SpatialLookupBuffer);
-        SortShader.SetBuffer(3, "StartIndices", StartIndicesBuffer);
-        SortShader.SetBuffer(3, "PTypes", PTypesBuffer);
-        SortShader.SetBuffer(3, "PData", PDataBuffer);
-
-        SortShader.SetBuffer(4, "StickynessReqsCONSUME", StickynessReqs_AC_Buffer);
-        SortShader.SetBuffer(4, "SortedStickyRequests", SortedStickyRequestsBuffer);
-
-        SortShader.SetBuffer(5, "SortedStickyRequests", SortedStickyRequestsBuffer);
-    }
-
-    void SetMarchingSquaresShaderBuffers()
-    {
-        MarchingSquaresShader.SetBuffer(0, "MSPoints", MSPointsBuffer);
-        MarchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-        MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
-
-        MarchingSquaresShader.SetBuffer(0, "PData", PDataBuffer);
-        MarchingSquaresShader.SetBuffer(0, "PTypes", PTypesBuffer);
-        
-        MarchingSquaresShader.SetBuffer(1, "Vertices", VerticesBuffer);
-        MarchingSquaresShader.SetBuffer(1, "Triangles", TrianglesBuffer);
-        MarchingSquaresShader.SetBuffer(1, "Colors", ColorsBuffer);
-        MarchingSquaresShader.SetBuffer(1, "MSPoints", MSPointsBuffer);
-    }
-    
-    void UpdatePSimShaderVariables()
-    {
-        // Delta time
-        if (FixedTimeStep)
-        {
-            DeltaTime = TimeStep / TimeStepsPerRender;
-        }
-        else
-        {
-            DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
-        }
-
-        // Mouse variables
-        Vector3 MousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x , Input.mousePosition.y , -Camera.main.transform.position.z));
-        Vector2 MouseWorldPos = new(((MousePos.x - Width/2) * 0.55f + Width) / 2, ((MousePos.y - Height/2) * 0.55f + Height) / 2);
-        bool LMousePressed = Input.GetMouseButton(0);
-        bool RMousePressed = Input.GetMouseButton(1);
-
-        // Set sim shader variables
-        PSimShader.SetFloat("DeltaTime", DeltaTime);
-        PSimShader.SetFloat("MouseX", MouseWorldPos.x);
-        PSimShader.SetFloat("MouseY", MouseWorldPos.y);
-        PSimShader.SetBool("RMousePressed", RMousePressed);
-        PSimShader.SetBool("LMousePressed", LMousePressed);
-
-        // Set PSimShader constants
-        PSimShader.SetInt("MaxInfluenceRadiusSqr", MaxInfluenceRadiusSqr);
-        PSimShader.SetFloat("InvMaxInfluenceRadius", InvMaxInfluenceRadius);
-        PSimShader.SetInt("ChunkNumW", ChunkNumW);
-        PSimShader.SetInt("ChunkNumH", ChunkNumH);
-        PSimShader.SetInt("IOOR", IOOR);
-        PSimShader.SetInt("SIOOR", SIOOR);
-        PSimShader.SetInt("Width", Width);
-        PSimShader.SetInt("Height", Height);
-        PSimShader.SetInt("ParticlesNum", ParticlesNum);
-        PSimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        PSimShader.SetInt("SpawnDims", SpawnDims);
-        PSimShader.SetInt("TimeStepsPerRender", TimeStepsPerRender);
-        PSimShader.SetFloat("LookAheadFactor", LookAheadFactor);
-        PSimShader.SetFloat("BorderPadding", BorderPadding);
-        PSimShader.SetFloat("MaxInteractionRadius", MaxInteractionRadius);
-        PSimShader.SetFloat("InteractionAttractionPower", InteractionAttractionPower);
-        PSimShader.SetFloat("InteractionFountainPower", InteractionFountainPower);
-        PSimShader.SetInt("SpringCapacity", SpringCapacity);
-        PSimShader.SetFloat("Plasticity", Plasticity);
-        // Set math resources constants
-    }
-
-    void UpdateRbSimShaderVariables()
-    {
-        RbSimShader.SetInt("ChunkNumW", ChunkNumW);
-        RbSimShader.SetInt("ChunkNumH", ChunkNumH);
-        RbSimShader.SetInt("Width", Width);
-        RbSimShader.SetInt("Height", Height);
-        RbSimShader.SetInt("ParticlesNum", ParticlesNum);
-        RbSimShader.SetInt("RBodiesNum", RBodiesNum);
-        RbSimShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        RbSimShader.SetInt("MaxChunkSearchSafety", MaxChunkSearchSafety);
-
-        RbSimShader.SetFloat("Damping", Damping);
-        RbSimShader.SetFloat("Gravity", Gravity);
-        RbSimShader.SetFloat("RbElasticity", RbElasticity);
-        RbSimShader.SetFloat("BorderPadding", BorderPadding);
-
-        RbSimShader.SetFloat("DeltaTime", DeltaTime);
-
-        if (DoCalcStickyRequests) {
-            RbSimShader.SetInt("DoCalcStickyRequests", 1);
-        }
-        else {
-            RbSimShader.SetInt("DoCalcStickyRequests", 0);
-        }
-    }
-
-    void UpdateRenderShaderVariables()
-    {
-        RenderShader.SetFloat("VisualParticleRadii", VisualParticleRadii);
-        RenderShader.SetFloat("RBRenderThickness", RBRenderThickness);
-        RenderShader.SetInt("ResolutionX", ResolutionX);
-        RenderShader.SetInt("ResolutionY", ResolutionY);
-        RenderShader.SetInt("Width", Width);
-        RenderShader.SetInt("Height", Height);
-        RenderShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        RenderShader.SetInt("ChunkNumW", ChunkNumW);
-        RenderShader.SetInt("ChunkNumH", ChunkNumH);
-        RenderShader.SetInt("ParticlesNum", ParticlesNum);
-        RenderShader.SetInt("RBodiesNum", RBodiesNum);
-        RenderShader.SetInt("RBVectorNum", RBVectorNum);
-        
-    }
-
-    void UpdateSortShaderVariables()
-    {
-        SortShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        SortShader.SetInt("ChunkNumW", ChunkNumW);
-        SortShader.SetInt("IOOR", IOOR);
-    }
-
-    void UpdateMarchingSquaresShaderVariables()
-    {
-        MarchW = (int)(Width / MSResolution);
-        MarchH = (int)(Height / MSResolution);
-        MSLen = MarchW * MarchH * TriStorageLength * 3;
-        
-        MarchingSquaresShader.SetInt("MarchW", MarchW);
-        MarchingSquaresShader.SetInt("MarchH", MarchH);
-        MarchingSquaresShader.SetFloat("MSResolution", MSResolution);
-        MarchingSquaresShader.SetInt("MaxInfluenceRadius", MaxInfluenceRadius);
-        MarchingSquaresShader.SetInt("ChunkNumW", ChunkNumW);
-        MarchingSquaresShader.SetInt("ChunkNumH", ChunkNumH);
-        MarchingSquaresShader.SetInt("Width", Width);
-        MarchingSquaresShader.SetInt("Height", Height);
-        MarchingSquaresShader.SetInt("ParticlesNum", ParticlesNum);
-        MarchingSquaresShader.SetFloat("MSvalMin", MSvalMin);
-        MarchingSquaresShader.SetFloat("TriStorageLength", TriStorageLength);
-    }
-
     void GPUSortStickynessRequests()
     {
-        UpdateSortShaderVariables();
         int StickyRequestsCount = 4096;
 
         if (StickyRequestsCount == 0) {return;}
         int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 32);
         int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 32)/2;
 
-        SortShader.Dispatch(4, ThreadSize, 1, 1);
+        sortShader.Dispatch(4, ThreadSize, 1, 1);
 
         int len = StickyRequestsCount;
         int lenLog2 = (int)Math.Log(len, 2);
-        SortShader.SetInt("SortedStickyRequestsLength", len);
-        SortShader.SetInt("SortedStickyRequestsLog2Length", lenLog2);
+        sortShader.SetInt("SortedStickyRequestsLength", len);
+        sortShader.SetInt("SortedStickyRequestsLog2Length", lenLog2);
 
         int basebBlockLen = 2;
         while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
@@ -777,11 +569,11 @@ public class Main : MonoBehaviour
                 int blocksNum = len / blockLen;
                 bool BrownPinkSort = blockLen == basebBlockLen;
 
-                SortShader.SetInt("SRBlockLen", blockLen);
-                SortShader.SetInt("SRblocksNum", blocksNum);
-                SortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
+                sortShader.SetInt("SRBlockLen", blockLen);
+                sortShader.SetInt("SRblocksNum", blocksNum);
+                sortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
 
-                SortShader.Dispatch(5, ThreadSizeHLen, 1, 1);
+                sortShader.Dispatch(5, ThreadSizeHLen, 1, 1);
 
                 blockLen /= 2;
             }
@@ -789,23 +581,22 @@ public class Main : MonoBehaviour
         }
 
         ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
-        PSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
-        PSimShader.Dispatch(4, ThreadSize, 1, 1);
+        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
+        pSimShader.Dispatch(4, ThreadSize, 1, 1);
     }
 
     void GPUSortChunkData()
     {
         if (ParticlesNum == 0) {return;}
-        UpdateSortShaderVariables();
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 32);
         int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 32)/2;
 
-        SortShader.Dispatch(0, ThreadSize, 1, 1);
+        sortShader.Dispatch(0, ThreadSize, 1, 1);
 
         int len = ParticlesNum;
         int lenLog2 = (int)Math.Log(len, 2);
-        SortShader.SetInt("SortedSpatialLookupLength", len);
-        SortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
+        sortShader.SetInt("SortedSpatialLookupLength", len);
+        sortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
 
         int basebBlockLen = 2;
         while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
@@ -816,11 +607,11 @@ public class Main : MonoBehaviour
                 int blocksNum = len / blockLen;
                 bool BrownPinkSort = blockLen == basebBlockLen;
 
-                SortShader.SetInt("BlockLen", blockLen);
-                SortShader.SetInt("blocksNum", blocksNum);
-                SortShader.SetBool("BrownPinkSort", BrownPinkSort);
+                sortShader.SetInt("BlockLen", blockLen);
+                sortShader.SetInt("blocksNum", blocksNum);
+                sortShader.SetBool("BrownPinkSort", BrownPinkSort);
 
-                SortShader.Dispatch(1, ThreadSizeHLen, 1, 1);
+                sortShader.Dispatch(1, ThreadSizeHLen, 1, 1);
 
                 blockLen /= 2;
             }
@@ -828,9 +619,9 @@ public class Main : MonoBehaviour
         }
 
         // This is unnecessary IF PARTICLESNUM STAYS CONSTANT
-        // SortShader.Dispatch(2, ThreadSize, 1, 1);
+        // sortShader.Dispatch(2, ThreadSize, 1, 1);
 
-        SortShader.Dispatch(3, ThreadSize, 1, 1);
+        sortShader.Dispatch(3, ThreadSize, 1, 1);
     }
 
     void CPUSortChunkData()
@@ -865,44 +656,40 @@ public class Main : MonoBehaviour
         }
 
         if (ParticlesNum != 0) {
-            PSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
-            PSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
+            pSimShader.SetBuffer(1, "SpatialLookup", SpatialLookupBuffer);
+            pSimShader.SetBuffer(1, "StartIndices", StartIndicesBuffer);
         }
         if (ParticlesNum != 0) {
-            PSimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
-            PSimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
+            pSimShader.SetBuffer(4, "SpatialLookup", SpatialLookupBuffer);
+            pSimShader.SetBuffer(4, "StartIndices", StartIndicesBuffer);
         }
         if (ParticlesNum != 0) {
-            RenderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-            RenderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+            renderShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+            renderShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
         }
         if (ParticlesNum != 0) {
-            MarchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
-            MarchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
+            marchingSquaresShader.SetBuffer(0, "SpatialLookup", SpatialLookupBuffer);
+            marchingSquaresShader.SetBuffer(0, "StartIndices", StartIndicesBuffer);
         }
     }
 
     void RunPSimShader()
     {
-        UpdatePSimShaderVariables();
-
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
-        if (ParticlesNum != 0) {PSimShader.Dispatch(0, ThreadSize, 1, 1);}
-        if (ParticlesNum != 0) {PSimShader.Dispatch(1, ThreadSize, 1, 1);}
-        if (ParticlesNum != 0) {PSimShader.Dispatch(2, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize, 1, 1);}
     }
 
     void RunRbSimShader()
     {
-        UpdateRbSimShaderVariables();
-
         if (RBVectorNum > 1 && ParticlesNum != 0) 
         {
-                RbSimShader.Dispatch(0, RBVectorNum, 1, 1);
+                rbSimShader.Dispatch(0, RBVectorNum, 1, 1);
 
                 TraversedChunks_AC_Buffer.SetCounterValue(0);
-                RbSimShader.Dispatch(1, RBVectorNum-1, 1, 1);
+                rbSimShader.Dispatch(1, RBVectorNum-1, 1, 1);
 
                 if (TraversedChunksCount == 0)
                 {
@@ -918,20 +705,18 @@ public class Main : MonoBehaviour
                 if (DoCalcStickyRequests) {
                     StickynessReqs_AC_Buffer.SetCounterValue(0);
                 }
-                RbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
-                RbSimShader.Dispatch(3, RBodiesNum, 1, 1);
+                rbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
+                rbSimShader.Dispatch(3, RBodiesNum, 1, 1);
         }
     }
 
     void RunMarchingSquaresShader()
     {
-        UpdateMarchingSquaresShaderVariables();
-
         VerticesBuffer.SetData(vertices);
         TrianglesBuffer.SetData(triangles);
 
-        MarchingSquaresShader.Dispatch(0, MarchW, MarchH, 1);
-        MarchingSquaresShader.Dispatch(1, MarchW-1, MarchH-1, 1);
+        marchingSquaresShader.Dispatch(0, MarchW, MarchH, 1);
+        marchingSquaresShader.Dispatch(1, MarchW-1, MarchH-1, 1);
 
         VerticesBuffer.GetData(vertices);
         TrianglesBuffer.GetData(triangles);
@@ -957,10 +742,10 @@ public class Main : MonoBehaviour
             renderTexture.Create();
         }
 
-        RenderShader.SetTexture(0, "Result", renderTexture);
-        if (ParticlesNum != 0) {RenderShader.Dispatch(0, renderTexture.width / ThreadSize, renderTexture.height / ThreadSize, 1);}
+        renderShader.SetTexture(0, "Result", renderTexture);
+        if (ParticlesNum != 0) {renderShader.Dispatch(0, renderTexture.width / ThreadSize, renderTexture.height / ThreadSize, 1);}
         // Render rigid bodies - not implemented
-        // if (RBodiesNum != 0) {PSimShader.Dispatch(1, RBodiesNum, 1, 1);}
+        // if (RBodiesNum != 0) {pSimShader.Dispatch(1, RBodiesNum, 1, 1);}
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -1000,72 +785,3 @@ public class Main : MonoBehaviour
         StickyRequestsResult_AC_Buffer?.Release();
     }
 }
-
-struct SpringStruct
-{
-    public int linkedIndex;
-    public float restLength;
-    // public float yieldLen;
-    // public float plasticity;
-    // public float stiffness;
-};
-struct StickynessRequestStruct
-{
-    public int pIndex;
-    public int StickyLineIndex;
-    public float2 StickyLineDst;
-    public float absDstToLineSqr;
-    public float RBStickyness;
-    public float RBStickynessRange;
-};
-struct PDataStruct
-{
-    public float2 PredPosition;
-    public float2 Position;
-    public float2 Velocity;
-    public float2 LastVelocity;
-    public float Density;
-    public float NearDensity;
-    public int PType;
-}
-struct PTypeStruct
-{
-    public float TargetDensity;
-    public int MaxInfluenceRadius;
-    public float Pressure;
-    public float NearPressure;
-    public float Damping;
-    public float Viscocity;
-    public float Elasticity;
-    public float Plasticity;
-    public float Stickyness;
-    public float Gravity;
-    public float colorG;
-};
-struct RBDataStruct
-{
-    public float2 Position;
-    public float2 Velocity;
-    // radians / second
-    public float AngularImpulse;
-
-    public float Stickyness;
-    public float StickynessRange;
-    public float StickynessRangeSqr;
-    public float2 NextPos;
-    public float2 NextVel;
-    public float NextAngImpulse;
-    public float Mass;
-    public int2 LineIndices;
-    public float MaxDstSqr;
-    public int WallCollision;
-    public int Stationary; // 1 -> Stationary, 0 -> Non-stationary
-};
-struct RBVectorStruct
-{
-    public float2 Position;
-    public float2 LocalPosition;
-    public float3 ParentImpulse;
-    public int ParentRBIndex;
-    public int WallCollision;
-};
