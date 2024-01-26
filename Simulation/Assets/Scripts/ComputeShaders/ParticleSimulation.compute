@@ -299,6 +299,10 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
     float Stickyness = stickynessRequest.RBStickyness * PType_i.Stickyness;
     float absStickynessForce = RBPStickynessModel(Stickyness, absDstToLine, stickynessRequest.RBStickynessRange);
 
+    // If the lenSqr of a vector is 0, normalized(0) does a /0 operation, leading to thread errors
+    // Over time, this decreases the amount of available threads, leading to decreased performance!
+    if (dot(stickynessRequest.StickyLineDst, stickynessRequest.StickyLineDst) == 0) { return float2(0, 0); }
+
     float2 normDstToLine = normalize(stickynessRequest.StickyLineDst);
     float2 stickynessForce = absStickynessForce * normDstToLine;
     
@@ -515,35 +519,25 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
 void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-    if (i == 0) { return; }
 
     StickynessRequestStruct stickynessRequest = SortedStickyRequests[i];
-
     int pIndex = stickynessRequest.pIndex;
 
-    int offset = 1;
     float smallestDstSqr = 100;
-    while (SortedStickyRequests[i+offset].pIndex == pIndex && i+offset+1 < 4098)
-    {
-        if (SortedStickyRequests[i+offset].absDstToLineSqr < smallestDstSqr)
-        {
-            smallestDstSqr = SortedStickyRequests[i+offset].absDstToLineSqr;
+    for (int offset = -3; offset <= 3; offset++) {  // Adjust the range as necessary.
+        if (offset == 0) continue;  // Skip the current element.
+
+        int idx = i + offset;
+        if (idx > 0 && idx < 4098) {  // Adjust 4098 to the actual size of your array.
+            if (SortedStickyRequests[idx].pIndex == pIndex) {
+                if (SortedStickyRequests[idx].absDstToLineSqr < smallestDstSqr) {
+                    smallestDstSqr = SortedStickyRequests[idx].absDstToLineSqr;
+                }
+            }
         }
-        offset++;
-    }
-    offset = 1;
-    while (SortedStickyRequests[i-offset].pIndex == pIndex && i-offset-1 > 0)
-    {
-        if (SortedStickyRequests[i-offset].absDstToLineSqr < smallestDstSqr)
-        {
-            smallestDstSqr = SortedStickyRequests[i+offset].absDstToLineSqr;
-        }
-        offset++;
     }
 
-    if (stickynessRequest.absDstToLineSqr > smallestDstSqr) { return; }
-    else
-    {
+    if (stickynessRequest.absDstToLineSqr <= smallestDstSqr) {
         PDataStruct PData_i = PData[pIndex];
         PTypeStruct PType_i = PTypes[PData_i.PType];
         float2 stickynessForce = StickynessForce(PData_i, PType_i, stickynessRequest);

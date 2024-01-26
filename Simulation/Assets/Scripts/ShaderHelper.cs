@@ -34,7 +34,7 @@ public class ShaderHelper : MonoBehaviour
 
             pSimShader.SetBuffer(4, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(4, "PTypes", m.PTypesBuffer);
-            pSimShader.SetBuffer(4, "SortedStickyRequests", m.SortedStickyRequestsBuffer); 
+            pSimShader.SetBuffer(4, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
         }
     }
 

@@ -246,7 +246,7 @@ MonoBehaviour:
   RbPStickyRadius: 2
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
-  ChunkStorageSafety: 0
+  ChunkStorageSafety: 0.2
   SpringCapacity: 500
   TriStorageLength: 4
   radii: 15
