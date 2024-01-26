@@ -41,8 +41,8 @@ public class Main : MonoBehaviour
     public float RbPStickyRadius;
     public float RbPStickyness;
     [Range(0, 3)] public int MaxChunkSearchSafety;
+    public int SpringSafety; // Avg slots per particle Index
     public float ChunkStorageSafety;
-    public int SpringCapacity;
     public int TriStorageLength;
     public float radii;
 
@@ -92,10 +92,14 @@ public class Main : MonoBehaviour
     public ComputeBuffer SpatialLookupBuffer;
     public ComputeBuffer StartIndicesBuffer;
 
-    // PData, SpringPairs - Buffers
+    // PData - Buffers
     public ComputeBuffer PDataBuffer;
-    public ComputeBuffer SpringPairsBuffer;
     public ComputeBuffer PTypesBuffer;
+
+    // SpringPairs - DoubleBuffer
+    private bool SpringPairsRotation = true; // true -> SpringPairsABuffer is main, false -> SpringPairsBBuffer is main
+    public ComputeBuffer SpringPairsABuffer;
+    public ComputeBuffer SpringPairsBBuffer;
 
     // Rigid Bodies - Buffers
     public ComputeBuffer RBVectorBuffer;
@@ -114,7 +118,6 @@ public class Main : MonoBehaviour
     [System.NonSerialized] public int ChunkNumW;
     [System.NonSerialized] public int ChunkNumH;
     [System.NonSerialized] public int IOOR; // Index Out Of Range
-    [System.NonSerialized] public int SIOOR; // Spring Index Out Of Range
     [System.NonSerialized] public int SpringPairsLen;
     [System.NonSerialized] public int MSLen;
     [System.NonSerialized] public int RBodiesNum;
@@ -147,11 +150,13 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
+    private int TimeStepInt = 1;
     private int FrameCounter;
     private int CalcStickyRequestsFrequency = 3;
     private int GPUChunkDataSortFrequency = 3;
     private bool DoCalcStickyRequests = true;
     private bool DoGPUChunkDataSort = true;
+    private bool ProgramStarted = false;
 
     void Start()
     {
@@ -180,6 +185,8 @@ public class Main : MonoBehaviour
 
         // init chunk data
         GPUSortChunkData();
+
+        ProgramStarted = true;
     }
 
     void Update()
@@ -216,6 +223,25 @@ public class Main : MonoBehaviour
         // RunRenderShader() is called by OnRenderImage()
     }
 
+    private void OnValidate()
+    {
+        if (ProgramStarted)
+        {
+            CallOnInspectorUpdate();
+        }
+    }
+
+    // Doesn't work
+    public void CallOnInspectorUpdate()
+    {
+        SetConstants();
+        shaderHelper.UpdatePSimShaderVariables(pSimShader);
+        shaderHelper.UpdateRbSimShaderVariables(rbSimShader);
+        shaderHelper.UpdateRenderShaderVariables(renderShader);
+        shaderHelper.UpdateSortShaderVariables(sortShader);
+        shaderHelper.UpdateMarchingSquaresShaderVariables(marchingSquaresShader);
+    }
+    
     public void UpdateShaderTimeStep()
     {
         float DeltaTime = GetDeltaTime();
@@ -275,8 +301,7 @@ public class Main : MonoBehaviour
         ChunkNumW = Width / MaxInfluenceRadius;
         ChunkNumH = Height / MaxInfluenceRadius;
         IOOR = ParticlesNum;
-        SIOOR = ParticlesNum * SpringCapacity;
-        SpringPairsLen = ParticlesNum * SpringCapacity;
+        SpringPairsLen = ParticlesNum * (1 + SpringSafety);
         MarchW = (int)(Width / MSResolution);
         MarchH = (int)(Height / MSResolution);
         MSLen = MarchW * MarchH * TriStorageLength * 3;
@@ -496,7 +521,7 @@ public class Main : MonoBehaviour
             SpringPairs[i] = new SpringStruct
             {
                 linkedIndex = IOOR,
-                restLength = 1
+                restLength = 0
             };
         }
     }
@@ -517,12 +542,14 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 1);
-            SpringPairsBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
+            SpringPairsABuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
+            SpringPairsBBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
 
             PDataBuffer.SetData(PData);
-            SpringPairsBuffer.SetData(SpringPairs);
             PTypesBuffer.SetData(PTypes);
+            SpringPairsABuffer.SetData(SpringPairs);
+            SpringPairsBBuffer.SetData(SpringPairs);
         }
 
         SpatialLookupBuffer = new ComputeBuffer(ParticlesNum, sizeof(int) * 2);
@@ -679,6 +706,14 @@ public class Main : MonoBehaviour
 
     void RunPSimShader()
     {
+        SpringPairsRotation = !SpringPairsRotation;
+        pSimShader.SetBool("SpringPairsRotation", SpringPairsRotation);
+
+        pSimShader.SetInt("LastTimeStepInt", TimeStepInt);
+        TimeStepInt++;
+        if (TimeStepInt > 100) { TimeStepInt = 1; }
+        pSimShader.SetInt("CurTimeStepInt", TimeStepInt);
+
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
         if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadSize, 1, 1);}
@@ -767,11 +802,14 @@ public class Main : MonoBehaviour
     {
         SpatialLookupBuffer?.Release();
         StartIndicesBuffer?.Release();
+
         VerticesBuffer?.Release();
         TrianglesBuffer?.Release();
         ColorsBuffer?.Release();
         MSPointsBuffer?.Release();
-        SpringPairsBuffer?.Release();
+
+        SpringPairsABuffer?.Release();
+        SpringPairsBBuffer?.Release();
 
         PDataBuffer?.Release();
         PTypesBuffer?.Release();

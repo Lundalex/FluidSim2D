@@ -175,10 +175,6 @@ void SRBrownSort(int lowRef)
     int lowIndex = relBlock * SRBlockLen + relPos;
     int highIndex = relBlock * SRBlockLen + SRBlockLen - 1 - relPos;
 
-    // if (SortedStickyRequests[lowIndex].pIndex == SortedStickyRequests[highIndex].pIndex)
-    // {
-    //     SortedStickyRequests[lowIndex].absDstToLineSqr = -1;
-    // }
     if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
     {
         StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];
@@ -196,10 +192,6 @@ void SRPinkSort(int lowRef)
     int lowIndex = relBlock * SRBlockLen + relPos;
     int highIndex = relBlock * SRBlockLen + relPos + (int)(SRBlockLen * 0.5);
 
-    // if (SortedStickyRequests[lowIndex].pIndex == SortedStickyRequests[highIndex].pIndex)
-    // {
-    //     SortedStickyRequests[lowIndex].absDstToLineSqr = -1;
-    // }
     if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
     {
         StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];

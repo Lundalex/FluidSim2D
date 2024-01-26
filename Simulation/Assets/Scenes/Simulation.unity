@@ -234,20 +234,20 @@ MonoBehaviour:
   ParticlesNum: 32768
   MaxInfluenceRadius: 2
   TargetDensity: 3
-  PressureMultiplier: 500
+  PressureMultiplier: 1000
   NearPressureMultiplier: 12
   Damping: 0.7
   RbElasticity: 0.645
   LookAheadFactor: 0.017
   Viscocity: 3
   LiquidElasticity: 2
-  Plasticity: 0
+  Plasticity: 50
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
+  SpringSafety: 5
   ChunkStorageSafety: 0.2
-  SpringCapacity: 500
   TriStorageLength: 4
   radii: 15
   Width: 300
@@ -258,17 +258,17 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.02
   ProgramSpeed: 1
-  VisualParticleRadii: 1
+  VisualParticleRadii: 0.8
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41
   ResolutionX: 1920
   ResolutionY: 1280
   MSResolution: 3
-  MarchW: 75
-  MarchH: 50
+  MarchW: 100
+  MarchH: 66
   MaxInteractionRadius: 70
-  InteractionAttractionPower: 25
+  InteractionAttractionPower: 50
   InteractionFountainPower: 0
   shaderHelper: {fileID: 486544}
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}

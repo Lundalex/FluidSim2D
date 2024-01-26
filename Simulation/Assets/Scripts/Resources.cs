@@ -90,6 +90,16 @@ namespace Resources
             return MouseWorldPos;
         }
 
+        public static bool2 GetMousePressed()
+        {
+            bool LMousePressed = Input.GetMouseButton(0);
+            bool RMousePressed = Input.GetMouseButton(1);
+
+            bool2 MousePressed = new bool2(LMousePressed, RMousePressed);
+
+            return MousePressed;
+        }
+        
         public static float2 ParticleSpawnPosition(int pIndex, int maxIndex, int Width, int Height, int SpawnDims)
         {
             float x = (Width - SpawnDims) / 2 + Mathf.Floor(pIndex % Mathf.Sqrt(maxIndex)) * (SpawnDims / Mathf.Sqrt(maxIndex));
@@ -99,16 +109,6 @@ namespace Resources
                 throw new ArgumentException("Particle spawn dimensions larger than either border_width or border_height");
             }
             return new float2(x, y);
-        }
-
-        public static bool2 GetMousePressed()
-        {
-            bool LMousePressed = Input.GetMouseButton(0);
-            bool RMousePressed = Input.GetMouseButton(1);
-
-            bool2 MousePressed = new bool2(LMousePressed, RMousePressed);
-
-            return MousePressed;
         }
     }
 }
