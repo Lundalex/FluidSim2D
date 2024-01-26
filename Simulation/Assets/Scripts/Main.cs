@@ -148,7 +148,7 @@ public class Main : MonoBehaviour
     // Other
     private float DeltaTime;
     private int FrameCounter;
-    private int CalcStickyRequestsFrequency = 1;
+    private int CalcStickyRequestsFrequency = 3;
     private int GPUChunkDataSortFrequency = 3;
     private bool DoCalcStickyRequests = true;
     private bool DoGPUChunkDataSort = true;
@@ -184,15 +184,23 @@ public class Main : MonoBehaviour
 
     void Update()
     {
+        UpdateShaderTimeStep();
         GPUSortChunkData();
 
-        for (int i = 0; i < 3; i++)
-        {
-            UpdateShaderTimeStep();
+        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
 
+        for (int i = 0; i < TimeStepsPerRender; i++)
+        {
             RunPSimShader();
             
-            if (i == 0) { GPUSortStickynessRequests(); }
+            if (i == 1) {
+                DoCalcStickyRequests = true;
+                rbSimShader.SetInt("DoCalcStickyRequests", 1);
+                GPUSortStickynessRequests(); 
+                int ThreadSizee = (int)Math.Ceiling((float)4096 / 512);
+                pSimShader.Dispatch(4, ThreadSizee, 1, 1);
+            }
+            else { DoCalcStickyRequests = false; rbSimShader.SetInt("DoCalcStickyRequests", 0); }
 
             RunRbSimShader();
 
@@ -322,7 +330,7 @@ public class Main : MonoBehaviour
             Viscocity = Viscocity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
-            Stickyness = 22f,
+            Stickyness = 4f,
             Gravity = Gravity,
             colorG = 1f
         };
@@ -336,7 +344,7 @@ public class Main : MonoBehaviour
             NextVel = new float2(0.0f, 0.0f),
             NextAngImpulse = 0f,
             AngularImpulse = 0.0f,
-            Stickyness = 4f,
+            Stickyness = 16f,
             StickynessRange = 4f,
             StickynessRangeSqr = 16f,
             Mass = 200f,
@@ -550,8 +558,8 @@ public class Main : MonoBehaviour
         int StickyRequestsCount = 4096;
 
         if (StickyRequestsCount == 0) {return;}
-        int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 32);
-        int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 32)/2;
+        int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 512);
+        int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 512)/2;
 
         sortShader.Dispatch(4, ThreadSize, 1, 1);
 
@@ -579,17 +587,13 @@ public class Main : MonoBehaviour
             }
             basebBlockLen *= 2;
         }
-
-        ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
-        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
-        pSimShader.Dispatch(4, ThreadSize, 1, 1);
     }
 
     void GPUSortChunkData()
     {
         if (ParticlesNum == 0) {return;}
-        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 32);
-        int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 32)/2;
+        int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
+        int ThreadSizeHLen = (int)Math.Ceiling((float)ParticlesNum / 512)/2;
 
         sortShader.Dispatch(0, ThreadSize, 1, 1);
 
@@ -698,9 +702,6 @@ public class Main : MonoBehaviour
                     TCCountBuffer.GetData(TCCount);
                     TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
                 }
-                // ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
-                // TCCountBuffer.GetData(TCCount);
-                // TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+ChunkStorageSafety));
 
                 if (DoCalcStickyRequests) {
                     StickynessReqs_AC_Buffer.SetCounterValue(0);
