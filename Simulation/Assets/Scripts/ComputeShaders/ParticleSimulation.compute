@@ -28,12 +28,18 @@ const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
-const int SpringCapacity;
+const int SpringSafety;
+const int SpringPairsLen;
 const float Plasticity;
 
 // Per-timestep-set constants
 const float DeltaTime;
 const float SRDeltaTime;
+
+const bool SpringPairsRotation;
+
+const int CurTimeStepInt; // range(1 - 100), changes every time step
+const int LastTimeStepInt; // CurTimeStepInt value from last time step
 
 const float MouseX;
 const float MouseY;
@@ -52,7 +58,8 @@ struct SpringStruct
     // float plasticity;
     // float stiffness;
 };
-RWStructuredBuffer<SpringStruct> SpringPairs;
+RWStructuredBuffer<SpringStruct> SpringPairsA;
+RWStructuredBuffer<SpringStruct> SpringPairsB;
 
 struct PTypeStruct
 {
@@ -81,36 +88,6 @@ struct PDataStruct
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
-
-struct RBDataStruct
-{
-    float2 Position;
-    float2 Velocity;
-    // radians / second
-    float AngularImpulse;
-    float Stickyness;
-    float StickynessRange;
-    float StickynessRangeSqr;
-    float2 NextPos;
-    float2 NextVel;
-    float NextAngImpulse;
-    float Mass;
-    int2 LineIndices;
-    float MaxDstSqr;
-    int WallCollision;
-    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
-};
-RWStructuredBuffer<RBDataStruct> RBData;
-
-struct RBVectorStruct
-{
-    float2 Position;
-    float2 LocalPosition;
-    float3 ParentImpulse;
-    int ParentRBIndex;
-    int WallCollision;
-};
-RWStructuredBuffer<RBVectorStruct> RBVector;
 
 struct StickynessRequestStruct
 {
@@ -255,7 +232,7 @@ float SharedNearPressure(float nearDensityA, float nearDensityB, float NearPress
     return sharedNearPressure;
 }
 
-float2 PressureForce(float densityA, float densityB, float nearDensityA, float nearDensityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst, float2 dst, int randSeed)
+float2 PressureForce(float densityA, float densityB, float nearDensityA, float nearDensityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst, float2 normDst, int randSeed)
 {
     float absPressureGradient = SmoothLiquidDer(absDst, MaxInfluenceRadius);
     float absNearPressureGradient = SmoothLiquidNearDer(absDst, MaxInfluenceRadius);
@@ -271,8 +248,8 @@ float2 PressureForce(float densityA, float densityB, float nearDensityA, float n
         nearPressureGradient = 0.05 * randVector * absNearPressureGradient;
     }
     else {
-        pressureGradient = normalize(dst) * absPressureGradient;
-        nearPressureGradient = normalize(dst) * absNearPressureGradient;
+        pressureGradient = normDst * absPressureGradient;
+        nearPressureGradient = normDst * absNearPressureGradient;
     }
 
     float avgPressure = SharedPressure(densityA, densityB, PType_i.TargetDensity, PType_otherPIndex.TargetDensity, PType_i.Pressure, PType_otherPIndex.Pressure);
@@ -309,58 +286,55 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
     return stickynessForce;
 }
 
-void AddSpring(int springKey, int otherPIndex, float springRestLen)
+// curSpringKey, lastSpringKey
+int2 GetSpringKeys(int pIndex, int otherPIndex)
 {
-    SpringPairs[springKey].linkedIndex = otherPIndex;
-    SpringPairs[springKey].restLength = springRestLen;
+    // Wrap getKey method around SpringPairsLen
+    int curSpringKey = (uint)((pIndex + CurTimeStepInt) * otherPIndex + pIndex * CurTimeStepInt) % SpringPairsLen;
+    int lastSpringKey = (uint)((pIndex + LastTimeStepInt) * otherPIndex + pIndex * CurTimeStepInt) % SpringPairsLen;
+
+    return int2(lastSpringKey, curSpringKey);
 }
 
-void DeleteSpring(int springKey, int otherPIndex, int maxIterationCount)
+float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 normDst)
 {
-    int endIndex = springKey + maxIterationCount;
-    for (int springIndex = springKey; springIndex < endIndex; springIndex++)
+    if (absDst > MaxInfluenceRadius) { return float2(0, 0); }
+
+    // SpringPairsBuffer == true -> using doublebuffer A
+    // SpringPairsBuffer == false -> using doublebuffer B
+    bool SpringPairsBuffer = true;
+    int2 springKeys = GetSpringKeys(pIndex, otherPIndex);
+
+    SpringStruct lastSpring;
+    if (SpringPairsRotation) { lastSpring = SpringPairsA[springKeys.x]; }
+    else { lastSpring = SpringPairsB[springKeys.x]; }
+
+    // If no spring exists, create a new one
+    if (lastSpring.linkedIndex != otherPIndex)
     {
-        if (SpringPairs[springIndex].linkedIndex == otherPIndex)
-        {
-            SpringPairs[springIndex].linkedIndex = IOOR;
-            return;
-        }
+        lastSpring.linkedIndex = otherPIndex;
+        lastSpring.restLength = MaxInfluenceRadius;
     }
-}
 
-float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 dst)
-{
-    // if (absDst > MaxInfluenceRadius-0.5) {return float2(0,0);}
+    // Plasticity calculations
+    float diffMng = absDst - lastSpring.restLength;
+    float absDiffMng = abs(diffMng);
+    int sgnDiffMng = sign(diffMng);
+    float plasticityConst = 0.7;
+    float tolDeformation = 0.2; // = yieldRatio / restLength
+    // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
+    lastSpring.restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
 
-    // // eliminate duplicate springs between particles
-    // // if (pIndex < otherPIndex) {return;}
-
-    // // int springKey = pIndex * SpringCapacity + (uint)otherPIndex % SpringCapacity;
-
-    // int iteration = 0;
-    // while (SpringPairs[springKey].linkedIndex != otherPIndex && SpringPairs[springKey].linkedIndex != IOOR && iteration < MaxIterationCount)
-    // {
-    //     springKey++;
-    //     iteration++;
-    // }
-    // // if (iteration == MaxIterationCount) {return float2(0.0, 0.0);}
- 
-    // if (SpringPairs[springKey].linkedIndex != IOOR) {AddSpring(springKey, otherPIndex, 1);}
- 
-    // float diffMng = absDst - SpringPairs[springKey].restLength;
-    // int absDiffMng = abs(diffMng);
-    // int sgnDiffMng = sign(diffMng);
-    // int plasticityConst = 0.7;
-    // float tolDeformation = 0; // = yieldRatio / restLength
-    // // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
-    // SpringPairs[springKey].restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
-
+    // Elasticity calculations
     float springStiffness = Plasticity;
-    float2 normDst = normalize(dst);                             // SpringPairs[springKey].restLength
-    float absSpringForce = LiquidSpringForceModel(springStiffness, (uint)MaxInfluenceRadius/2, MaxInfluenceRadius, absDst);
- 
+    float absSpringForce = LiquidSpringForceModel(springStiffness, lastSpring.restLength, MaxInfluenceRadius, absDst);
     float2 springForce = absSpringForce * normDst * 0.5;
-    return -springForce * DeltaTime;
+
+    // "Transfer" modified spring to new springPairs index
+    if (SpringPairsRotation) { SpringPairsB[springKeys.y] = lastSpring; }
+    else { SpringPairsA[springKeys.y] = lastSpring; }
+
+    return -springForce;
 }
 
 float2 InteractionForce(int pIndex)
@@ -472,21 +446,14 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 float2 dst = PData_otherPIndex.PredPosition - PData_i.PredPosition;
                 float sqrDst = dot(dst, dst);
-                // float absDst = sqrt(sqrDst);
-
-                // int MaxIterationCount = 2;
-                // int springKey = i * SpringCapacity + (uint)otherPIndex % SpringCapacity;
-                // if (absDst > 1)
-                // {
-                //     DeleteSpring(springKey, otherPIndex, MaxIterationCount); 
-                // }
 
                 if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; continue; }
                 float absDst = sqrt(sqrDst);
+                float2 normDst = normalize(dst);
                 
-                totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, dst, otherPIndex);
+                totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
-                totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, dst);
+                totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
@@ -514,7 +481,6 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
 }
 
-
 [numthreads(ThreadsNum,1,1)]
 void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
 {
@@ -523,12 +489,13 @@ void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
     StickynessRequestStruct stickynessRequest = SortedStickyRequests[i];
     int pIndex = stickynessRequest.pIndex;
 
+    // This does many "unnecessary" iterations for every id.x, but since thread management complexity is reduced, performance is higher
     float smallestDstSqr = 100;
-    for (int offset = -3; offset <= 3; offset++) {  // Adjust the range as necessary.
-        if (offset == 0) continue;  // Skip the current element.
+    for (int offset = -3; offset <= 3; offset++) {
+        if (offset == 0) continue;
 
         int idx = i + offset;
-        if (idx > 0 && idx < 4098) {  // Adjust 4098 to the actual size of your array.
+        if (idx > 0 && idx < 4098) {
             if (SortedStickyRequests[idx].pIndex == pIndex) {
                 if (SortedStickyRequests[idx].absDstToLineSqr < smallestDstSqr) {
                     smallestDstSqr = SortedStickyRequests[idx].absDstToLineSqr;

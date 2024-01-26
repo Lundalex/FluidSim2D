@@ -19,15 +19,15 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(1, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(1, "PTypes", m.PTypesBuffer);
 
-            // Kernel ParticleForces
+            // Kernel ParticleForces - 5/8
             pSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
 
-            pSimShader.SetBuffer(2, "SpringPairs", m.SpringPairsBuffer);
+            pSimShader.SetBuffer(2, "SpringPairsA", m.SpringPairsABuffer);
+            pSimShader.SetBuffer(2, "SpringPairsB", m.SpringPairsBBuffer);
+
             pSimShader.SetBuffer(2, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(2, "PTypes", m.PTypesBuffer);
-            pSimShader.SetBuffer(2, "RBData", m.RBDataBuffer);
-            pSimShader.SetBuffer(2, "RBVector", m.RBVectorBuffer); 
 
             pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
@@ -127,7 +127,6 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("ChunkNumW", m.ChunkNumW);
         pSimShader.SetInt("ChunkNumH", m.ChunkNumH);
         pSimShader.SetInt("IOOR", m.IOOR);
-        pSimShader.SetInt("SIOOR", m.SIOOR);
         pSimShader.SetInt("Width", m.Width);
         pSimShader.SetInt("Height", m.Height);
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
@@ -139,7 +138,8 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
-        pSimShader.SetInt("SpringCapacity", m.SpringCapacity);
+        pSimShader.SetInt("SpringSafety", m.SpringSafety);
+        pSimShader.SetInt("SpringPairsLen", m.SpringPairsLen);
         pSimShader.SetFloat("Plasticity", m.Plasticity);
         
         // Set math resources constants
