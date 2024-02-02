@@ -49,6 +49,7 @@ const bool LMousePressed;
 // Particles - Buffers
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
+RWStructuredBuffer<int> ChunkSizes;
 
 struct SpringStruct
 {
@@ -290,15 +291,15 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
 int2 GetSpringKeys(int pIndex, int otherPIndex)
 {
     // Wrap getKey method around SpringPairsLen
-    int curSpringKey = (uint)((pIndex + CurTimeStepInt) * otherPIndex + pIndex * CurTimeStepInt) % SpringPairsLen;
-    int lastSpringKey = (uint)((pIndex + LastTimeStepInt) * otherPIndex + pIndex * CurTimeStepInt) % SpringPairsLen;
+    int curSpringKey = (uint)(pIndex * SpringSafety + otherPIndex % SpringSafety) % SpringPairsLen;
+    int lastSpringKey = (uint)(pIndex * SpringSafety + otherPIndex % SpringSafety) % SpringPairsLen;
 
     return int2(lastSpringKey, curSpringKey);
 }
 
 float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 normDst)
 {
-    if (absDst > MaxInfluenceRadius) { return float2(0, 0); }
+    if (absDst > MaxInfluenceRadius) { return float2(0.0, 0.0); }
 
     // SpringPairsBuffer == true -> using doublebuffer A
     // SpringPairsBuffer == false -> using doublebuffer B
@@ -313,17 +314,17 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     if (lastSpring.linkedIndex != otherPIndex)
     {
         lastSpring.linkedIndex = otherPIndex;
-        lastSpring.restLength = MaxInfluenceRadius;
+        lastSpring.restLength = MaxInfluenceRadius / 2;
     }
 
-    // Plasticity calculations
-    float diffMng = absDst - lastSpring.restLength;
-    float absDiffMng = abs(diffMng);
-    int sgnDiffMng = sign(diffMng);
-    float plasticityConst = 0.7;
-    float tolDeformation = 0.2; // = yieldRatio / restLength
-    // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
-    lastSpring.restLength -= plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
+    // // Plasticity calculations
+    // float diffMng = absDst - lastSpring.restLength;
+    // float absDiffMng = abs(diffMng);
+    // int sgnDiffMng = sign(diffMng);
+    // float plasticityConst = 0.01;
+    // float tolDeformation = 0.1; // = yieldRatio / restLength
+    // // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
+    // lastSpring.restLength -= LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
 
     // Elasticity calculations
     float springStiffness = Plasticity;
@@ -404,8 +405,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     int ChunkX = (int)(PData_i.PredPosition.x * InvMaxInfluenceRadius);
     int ChunkY = (int)(PData_i.PredPosition.y * InvMaxInfluenceRadius);
 
-    float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
-    float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
+    // float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
+    // float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
     float2 totPressureForce = float2(0.0, 0.0);
     float2 totViscocityForce = float2(0.0, 0.0);
     float2 totSpringForce = float2(0.0, 0.0);
@@ -417,18 +418,18 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
             int CurChunkY = ChunkY + y;
 
             // This does the same as IsInfluencedChunk(), but the funtion call is too costly in terms of performance
-            if (x != 0 && y != 0)
-            {
-                int xUse = 0;
-                int yUse = 0;
-                if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
-                else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
-                else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
-                else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
-                float2 dst = float2(localPosX - xUse, localPosY - yUse);
-                float absDstSqr = dot(dst, dst);
-                if (absDstSqr > MaxInfluenceRadiusSqr) { continue; }
-            }
+            // if (x != 0 && y != 0)
+            // {
+            //     int xUse = 0;
+            //     int yUse = 0;
+            //     if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
+            //     else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
+            //     else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
+            //     else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
+            //     float2 dst = float2(localPosX - xUse, localPosY - yUse);
+            //     float absDstSqr = dot(dst, dst);
+            //     if (absDstSqr > MaxInfluenceRadiusSqr) { continue; }
+            // }
             // if (!IsInfluencedChunk(x, y, localPosX, localPosY)) { continue; }
 
             if (!ValidChunk(CurChunkX, CurChunkY)) { continue; }
@@ -453,7 +454,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
-                totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
+                // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;

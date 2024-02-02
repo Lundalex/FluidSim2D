@@ -68,7 +68,12 @@ float SmoothViscosityLaplacian(float dst, float radius)
 
 float LiquidSpringForceModel(float springStiffness, float restLen, float maxLen, float curLen)
 {
-    return springStiffness * (restLen - curLen);
+    return springStiffness * (restLen - curLen); // * (1 - curLen/maxLen)?
+}
+
+float LiquidSpringPlasticityModel(float plasticityConst, int sgnDiffMng, float absDiffMng, float tolDeformation, float DeltaTime)
+{
+    return plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
 }
 
 float RBPStickynessModel(float stickyness, float dst, float maxDst)

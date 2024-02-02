@@ -1,7 +1,8 @@
 #pragma kernel CalculateChunkKeys
 #pragma kernel SortIteration
 #pragma kernel PrepStartIndices
-#pragma kernel PopulateStartIndices
+#pragma kernel PopulateStartIndices 
+#pragma kernel PopulateChunkSizes 
 
 #pragma kernel PopulateSortedStickyRequests
 #pragma kernel SRSortIteration
@@ -11,9 +12,11 @@
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
 static const int ThreadsNum = 512;
+static const int ThreadsNumChunkDivider = 32;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
+const int ParticlesNum;
 
 // Per-iteration-set constants
 const bool BrownPinkSort; // True -> BrownSort, False -> PinkSort
@@ -31,6 +34,7 @@ const int SRblocksNum;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
+RWStructuredBuffer<int> ChunkSizes;
 
 struct PTypeStruct
 {
@@ -165,7 +169,31 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     }
 }
 
+// SET BUFFERS, INIT ChunkSizes
+[numthreads(ThreadsNumChunkDivider,1,1)]
+void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
+{
+    int ChunkKey = id.x;
 
+    int totPowSearchedIndices = 8;
+    int depthSize = pow(2, totPowSearchedIndices);
+
+    int startIndex = StartIndices[ChunkKey];
+    int leftIndex = startIndex;
+    for (int depth = 0; depth < totPowSearchedIndices; depth++)
+    {
+        depthSize /= 2;
+        int checkIndex = leftIndex + depthSize;
+
+        // In "this" chunk -> Move search range forward
+        if (checkIndex < ParticlesNum && ChunkKey == SpatialLookup[checkIndex].y)
+        {
+            leftIndex = checkIndex;
+        }
+    }
+    int totChunkParticlesNum = leftIndex - startIndex;
+    ChunkSizes[ChunkKey] = totChunkParticlesNum;
+}
 
 void SRBrownSort(int lowRef)
 {

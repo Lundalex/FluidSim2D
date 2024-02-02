@@ -99,10 +99,10 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
         sortShader.SetBuffer(3, "PData", m.PDataBuffer);
 
-        sortShader.SetBuffer(4, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
-        sortShader.SetBuffer(4, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
-
+        sortShader.SetBuffer(5, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
         sortShader.SetBuffer(5, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+
+        sortShader.SetBuffer(6, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
     }
 
     public void SetMarchingSquaresShaderBuffers(ComputeShader marchingSquaresShader)
@@ -183,6 +183,7 @@ public class ShaderHelper : MonoBehaviour
     {
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         sortShader.SetInt("ChunkNumW", m.ChunkNumW);
+        sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("IOOR", m.IOOR);
     }
 
