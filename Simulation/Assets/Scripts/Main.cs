@@ -151,11 +151,11 @@ public class Main : MonoBehaviour
     // Other
     private float DeltaTime;
     private int TimeStepInt = 1;
-    private int FrameCounter;
+    // private int FrameCounter;
     private int CalcStickyRequestsFrequency = 3;
-    private int GPUChunkDataSortFrequency = 3;
+    // private int GPUChunkDataSortFrequency = 3;
     private bool DoCalcStickyRequests = true;
-    private bool DoGPUChunkDataSort = true;
+    // private bool DoGPUChunkDataSort = true;
     private bool ProgramStarted = false;
 
     void Start()
@@ -318,7 +318,7 @@ public class Main : MonoBehaviour
             for (int j = startIndex; j <= endIndex; j++)
             {
                 Vector2 dst = RBVector[j].Position - RBData[i].Position;
-                float absDstSqr = dst.sqrMagnitude;
+                float absDstSqr = 2*dst.sqrMagnitude;
                 if (absDstSqr > furthestDstSqr)
                 {
                     furthestDstSqr = absDstSqr;
@@ -360,7 +360,7 @@ public class Main : MonoBehaviour
             colorG = 1f
         };
 
-        RBData = new RBDataStruct[1];
+        RBData = new RBDataStruct[2];
         RBData[0] = new RBDataStruct
         {
             Position = new float2(140f, 100f),
@@ -376,6 +376,22 @@ public class Main : MonoBehaviour
             WallCollision = 0,
             Stationary = 1,
             LineIndices = new int2(0, 8)
+        };
+        RBData[1] = new RBDataStruct
+        {
+            Position = new float2(50f, 100f),
+            Velocity = new float2(0.0f, 0.0f),
+            NextPos = new float2(50f, 100f),
+            NextVel = new float2(0.0f, 0.0f),
+            NextAngImpulse = 0f,
+            AngularImpulse = 0.0f,
+            Stickyness = 16f,
+            StickynessRange = 4f,
+            StickynessRangeSqr = 16f,
+            Mass = 200f,
+            WallCollision = 0,
+            Stationary = 1,
+            LineIndices = new int2(9, 17)
         };
         // RBData[1] = new RBDataStruct
         // {
@@ -400,7 +416,7 @@ public class Main : MonoBehaviour
         // RBVector[4] = new RBVectorStruct { Position = new float2(3f, 3f) * 3, LocalPosition = new float2(3f, 3f) * 3-somevector, ParentImpulse = new float3(0.0f, 0.0f, 0.0f), WallCollision = 0, ParentRBIndex = 0 };
 
         // BUCKET
-        RBVector = new RBVectorStruct[9];
+        RBVector = new RBVectorStruct[18];
         RBVector[0] = new RBVectorStruct { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 0 };
         RBVector[1] = new RBVectorStruct { Position = new float2(50f, 20f) * 1.5f, ParentRBIndex = 0 };
         RBVector[2] = new RBVectorStruct { Position = new float2(50f, 50f) * 1.5f, ParentRBIndex = 0 };
@@ -411,6 +427,16 @@ public class Main : MonoBehaviour
         RBVector[7] = new RBVectorStruct { Position = new float2(10f, 50f) * 1.5f, ParentRBIndex = 0 };
         RBVector[8] = new RBVectorStruct { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 0 };
 
+        // BUCKET
+        RBVector[9] = new RBVectorStruct { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[10] = new RBVectorStruct { Position = new float2(50f, 20f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[11] = new RBVectorStruct { Position = new float2(50f, 50f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[12] = new RBVectorStruct { Position = new float2(40f, 50f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[13] = new RBVectorStruct { Position = new float2(39f, 30f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[14] = new RBVectorStruct { Position = new float2(21f, 30f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[15] = new RBVectorStruct { Position = new float2(20f, 50f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[16] = new RBVectorStruct { Position = new float2(10f, 50f) * 1.5f, ParentRBIndex = 1 };
+        RBVector[17] = new RBVectorStruct { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
         // // HEXAGON
         // RBVector = new RBVectorStruct[9];
         // RBVector[8] = new RBVectorStruct { Position = new float2(2f, 1f) * 5, ParentRBIndex = 0 };
@@ -521,7 +547,7 @@ public class Main : MonoBehaviour
             SpringPairs[i] = new SpringStruct
             {
                 linkedIndex = IOOR,
-                restLength = 0
+                restLength = MaxInfluenceRadius / 2
             };
         }
     }
@@ -588,7 +614,7 @@ public class Main : MonoBehaviour
         int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 512);
         int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 512)/2;
 
-        sortShader.Dispatch(4, ThreadSize, 1, 1);
+        sortShader.Dispatch(5, ThreadSize, 1, 1);
 
         int len = StickyRequestsCount;
         int lenLog2 = (int)Math.Log(len, 2);
@@ -608,7 +634,7 @@ public class Main : MonoBehaviour
                 sortShader.SetInt("SRblocksNum", blocksNum);
                 sortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
 
-                sortShader.Dispatch(5, ThreadSizeHLen, 1, 1);
+                sortShader.Dispatch(6, ThreadSizeHLen, 1, 1);
 
                 blockLen /= 2;
             }
