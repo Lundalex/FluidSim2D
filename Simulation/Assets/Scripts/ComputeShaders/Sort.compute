@@ -286,16 +286,6 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
     }
 }
 
-// TRASFER COMPLETE INDICES
-
-// SpringStartIndices_dbA
-// SpringStartIndices_dbB
-
-// const bool bufferCycle;
-// const int offset;
-// const int halfOffset;
-// const int totIndicesToProcess;
-
 void SRBrownSort(int lowRef)
 {
     int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
