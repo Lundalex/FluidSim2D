@@ -99,10 +99,24 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
         sortShader.SetBuffer(3, "PData", m.PDataBuffer);
 
-        sortShader.SetBuffer(5, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
-        sortShader.SetBuffer(5, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+        sortShader.SetBuffer(4, "SpatialLookup", m.SpatialLookupBuffer);
+        sortShader.SetBuffer(4, "StartIndices", m.StartIndicesBuffer);
+        sortShader.SetBuffer(4, "ChunkSizes", m.ChunkSizesBuffer);
 
-        sortShader.SetBuffer(6, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+        sortShader.SetBuffer(5, "ChunkSizes", m.ChunkSizesBuffer);
+        sortShader.SetBuffer(5, "SpringCapacities", m.SpringCapacitiesBuffer);
+
+        sortShader.SetBuffer(6, "SpringCapacities", m.SpringCapacitiesBuffer);
+        sortShader.SetBuffer(6, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
+        sortShader.SetBuffer(6, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
+
+        sortShader.SetBuffer(7, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
+        sortShader.SetBuffer(7, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
+
+        sortShader.SetBuffer(8, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
+        sortShader.SetBuffer(8, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+
+        sortShader.SetBuffer(9, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
     }
 
     public void SetMarchingSquaresShaderBuffers(ComputeShader marchingSquaresShader)
@@ -183,6 +197,8 @@ public class ShaderHelper : MonoBehaviour
     {
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         sortShader.SetInt("ChunkNumW", m.ChunkNumW);
+        sortShader.SetInt("ChunkNumH", m.ChunkNumH);
+        sortShader.SetInt("ChunkNumNextPow2", m.ChunkNumNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("IOOR", m.IOOR);
     }

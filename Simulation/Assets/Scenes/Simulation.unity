@@ -234,7 +234,7 @@ MonoBehaviour:
   ParticlesNum: 32768
   MaxInfluenceRadius: 2
   TargetDensity: 3
-  PressureMultiplier: 1000
+  PressureMultiplier: 3000
   NearPressureMultiplier: 12
   Damping: 0.7
   RbElasticity: 0.645
@@ -248,17 +248,18 @@ MonoBehaviour:
   MaxChunkSearchSafety: 1
   SpringSafety: 1024
   ChunkStorageSafety: 0.2
+  SpringCapacitySafety: 10
   TriStorageLength: 4
   radii: 15
   Width: 300
   Height: 200
-  SpawnDims: 140
+  SpawnDims: 170
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.02
+  TimeStep: 0.01
   ProgramSpeed: 1
-  VisualParticleRadii: 0.4
+  VisualParticleRadii: 1
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41

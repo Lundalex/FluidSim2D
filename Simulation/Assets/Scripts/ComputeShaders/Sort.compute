@@ -1,21 +1,27 @@
-#pragma kernel CalculateChunkKeys
-#pragma kernel SortIteration
-#pragma kernel PrepStartIndices
-#pragma kernel PopulateStartIndices 
-#pragma kernel PopulateChunkSizes 
+#pragma kernel CalculateChunkKeys // 0
+#pragma kernel SortIteration // 1
+#pragma kernel PrepStartIndices // 2
+#pragma kernel PopulateStartIndices // 3
 
-#pragma kernel PopulateSortedStickyRequests
-#pragma kernel SRSortIteration
+#pragma kernel PopulateChunkSizes // 4
+#pragma kernel PopulateSpringCapacities // 5
+#pragma kernel CopySpringCapacities // 6
+#pragma kernel ParallelPrefixSumScan // 7
+
+#pragma kernel PopulateSortedStickyRequests // 8
+#pragma kernel SRSortIteration // 9
 
 #include "MathResources.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
 static const int ThreadsNum = 512;
-static const int ThreadsNumChunkDivider = 32;
+static const int ThreadsNumChunkDivider = 30;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
+const int ChunkNumH;
+const int ChunkNumNextPow2;
 const int ParticlesNum;
 
 // Per-iteration-set constants
@@ -32,9 +38,25 @@ const bool SRBrownPinkSort; // True -> BrownSort, False -> PinkSort
 const int SRBlockLen;
 const int SRblocksNum;
 
+const bool BufferCycle;
+const int IndexOffset;
+const int HalfOffset;
+const int TotIndicesToProcess;
+
+struct SpringStruct
+{
+    int linkedIndex;
+    float restLength;
+    // float yieldLen;
+    // float plasticity;
+    // float stiffness;
+};
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 RWStructuredBuffer<int> ChunkSizes;
+RWStructuredBuffer<int> SpringCapacities;
+RWStructuredBuffer<int> SpringStartIndices_dbA;
+RWStructuredBuffer<int> SpringStartIndices_dbB;
 
 struct PTypeStruct
 {
@@ -76,6 +98,12 @@ struct StickynessRequestStruct
 ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
 RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
+bool ValidChunk(int ChunkX, int ChunkY)
+{
+    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
+    return false;
+}
+
 int GetChunkKey(int pIndex, float2 pos)
 {
     int chunkX = (int)(pos.x / MaxInfluenceRadius);
@@ -116,6 +144,29 @@ void PinkSort(int lowRef)
         SpatialLookup[highIndex] = lowIndexValue;
         SpatialLookup[lowIndex] = highIndexValue;
     }
+}
+
+int GetNeighboorParticlesNum(int ChunkKey)
+{
+    int chunkX = (uint)ChunkKey % ChunkNumW;
+    int chunkY = (int)((float)ChunkKey / (float)ChunkNumW);
+
+    int neighboorParticlesNum = 0;
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            int curChunkX = chunkX + x;
+            int curChunkY = chunkY + y;
+
+            if (ValidChunk(curChunkX, curChunkY))
+            {
+                int neighboorChunkKey = curChunkX + curChunkY * ChunkNumW;
+                neighboorParticlesNum += ChunkSizes[neighboorChunkKey];
+            }
+        }
+    }
+    return neighboorParticlesNum;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -169,7 +220,6 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     }
 }
 
-// SET BUFFERS, INIT ChunkSizes
 [numthreads(ThreadsNumChunkDivider,1,1)]
 void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
@@ -182,7 +232,7 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
     int leftIndex = startIndex;
     for (int depth = 0; depth < totPowSearchedIndices; depth++)
     {
-        depthSize /= 2;
+        depthSize *= 0.5;
         int checkIndex = leftIndex + depthSize;
 
         // In "this" chunk -> Move search range forward
@@ -194,6 +244,57 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
     int totChunkParticlesNum = leftIndex - startIndex;
     ChunkSizes[ChunkKey] = totChunkParticlesNum;
 }
+
+[numthreads(ThreadsNumChunkDivider,1,1)]
+void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
+{
+    int ChunkKey = id.x;
+
+    int SpringCapacity = GetNeighboorParticlesNum(ChunkKey);
+
+    SpringCapacities[ChunkKey] = SpringCapacity;
+}
+
+[numthreads(ThreadsNumChunkDivider,1,1)]
+void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
+{
+    // Copying both should be unnecessary
+    int ChunkKey = id.x;
+    SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey];
+    SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey];
+}
+
+[numthreads(ThreadsNumChunkDivider,1,1)]
+void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x + IndexOffset;
+    if (BufferCycle)
+    {
+        if (i < ChunkNumNextPow2)
+        {
+            int storedVal = SpringStartIndices_dbA[i] + SpringStartIndices_dbA[i - IndexOffset];
+            SpringStartIndices_dbB[i] = storedVal;
+        }
+    }
+    else
+    {
+        if (i < ChunkNumNextPow2)
+        {
+            int storedVal = SpringStartIndices_dbB[i] + SpringStartIndices_dbB[i - IndexOffset];
+            SpringStartIndices_dbA[i] = storedVal;
+        }
+    }
+}
+
+// TRASFER COMPLETE INDICES
+
+// SpringStartIndices_dbA
+// SpringStartIndices_dbB
+
+// const bool bufferCycle;
+// const int offset;
+// const int halfOffset;
+// const int totIndicesToProcess;
 
 void SRBrownSort(int lowRef)
 {
@@ -228,7 +329,6 @@ void SRPinkSort(int lowRef)
         SortedStickyRequests[lowIndex] = highIndexValue;
     }
 }
-
 
 [numthreads(ThreadsNum,1,1)]
 void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
