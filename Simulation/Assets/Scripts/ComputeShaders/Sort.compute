@@ -82,6 +82,7 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    int POrder;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;

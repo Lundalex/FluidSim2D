@@ -103,11 +103,6 @@ public class Main : MonoBehaviour
     public ComputeBuffer PDataBuffer;
     public ComputeBuffer PTypesBuffer;
 
-    // SpringPairs - DoubleBuffer
-    private bool SpringPairsRotation = true; // true -> SpringPairsABuffer is main, false -> SpringPairsBBuffer is main
-    public ComputeBuffer SpringPairsABuffer;
-    public ComputeBuffer SpringPairsBBuffer;
-
     // Rigid Bodies - Buffers
     public ComputeBuffer RBVectorBuffer;
     public ComputeBuffer RBDataBuffer;
@@ -323,6 +318,13 @@ public class Main : MonoBehaviour
         RBVectorNum = RBVector.Length;
         // RBodiesNum set at InitializeSetArrays()
 
+        // chunkOffsets = new int[9]
+        // {
+        //     -ChunkNumW-1, -ChunkNumW, -ChunkNumW+1,
+        //     -1,           0,          1,
+        //     ChunkNumW-1,  ChunkNumW,  ChunkNumW+1
+        // };
+
         for (int i = 0; i < RBodiesNum; i++)
         {
             RBData[i].StickynessRangeSqr = RBData[i].StickynessRange*RBData[i].StickynessRange;
@@ -530,6 +532,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
+                    POrder = 0,
                     PType = 0
                 };
             }
@@ -603,15 +606,11 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 1);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 2);
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
-            SpringPairsABuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
-            SpringPairsBBuffer = new ComputeBuffer(SpringPairsLen, sizeof(float) + sizeof(int));
 
             PDataBuffer.SetData(PData);
             PTypesBuffer.SetData(PTypes);
-            SpringPairsABuffer.SetData(SpringPairs);
-            SpringPairsBBuffer.SetData(SpringPairs);
         }
 
         SpatialLookupBuffer = new ComputeBuffer(ParticlesNum, sizeof(int) * 2);
@@ -804,9 +803,6 @@ public class Main : MonoBehaviour
 
     void RunPSimShader()
     {
-        SpringPairsRotation = !SpringPairsRotation;
-        pSimShader.SetBool("SpringPairsRotation", SpringPairsRotation);
-
         pSimShader.SetInt("LastTimeStepInt", TimeStepInt);
         TimeStepInt++;
         if (TimeStepInt > 100) { TimeStepInt = 1; }
@@ -905,9 +901,6 @@ public class Main : MonoBehaviour
         TrianglesBuffer?.Release();
         ColorsBuffer?.Release();
         MSPointsBuffer?.Release();
-
-        SpringPairsABuffer?.Release();
-        SpringPairsBBuffer?.Release();
 
         PDataBuffer?.Release();
         PTypesBuffer?.Release();
