@@ -113,11 +113,16 @@ public class ShaderHelper : MonoBehaviour
 
         sortShader.SetBuffer(7, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
         sortShader.SetBuffer(7, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
+        sortShader.SetBuffer(7, "SpringStartIndices_dbC", m.SpringStartIndicesBuffer_dbC);
 
-        sortShader.SetBuffer(8, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
-        sortShader.SetBuffer(8, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+        sortShader.SetBuffer(8, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
+        sortShader.SetBuffer(8, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
+        sortShader.SetBuffer(8, "SpringStartIndices_dbC", m.SpringStartIndicesBuffer_dbC);
 
+        sortShader.SetBuffer(9, "StickynessReqsCONSUME", m.StickynessReqs_AC_Buffer);
         sortShader.SetBuffer(9, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+
+        sortShader.SetBuffer(10, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
     }
 
     public void SetMarchingSquaresShaderBuffers(ComputeShader marchingSquaresShader)

@@ -96,8 +96,10 @@ public class Main : MonoBehaviour
     // Inter-particle springs - Buffers
     public ComputeBuffer ChunkSizesBuffer;
     public ComputeBuffer SpringCapacitiesBuffer;
-    public ComputeBuffer SpringStartIndicesBuffer_dbA;
-    public ComputeBuffer SpringStartIndicesBuffer_dbB;
+    private bool FrameBufferCycle = true;
+    public ComputeBuffer SpringStartIndicesBuffer_dbA; // Result A
+    public ComputeBuffer SpringStartIndicesBuffer_dbB; // Result B
+    public ComputeBuffer SpringStartIndicesBuffer_dbC; // Support
 
     // PData - Buffers
     public ComputeBuffer PDataBuffer;
@@ -272,6 +274,10 @@ public class Main : MonoBehaviour
         else {
             rbSimShader.SetInt("DoCalcStickyRequests", 0);
         }
+
+        FrameBufferCycle = !FrameBufferCycle;
+        sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
+        pSimShader.SetBool("FrameBufferCycle", FrameBufferCycle);
     }
 
     void SceneSetup()
@@ -619,6 +625,7 @@ public class Main : MonoBehaviour
         SpringCapacitiesBuffer = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbA = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbB = new ComputeBuffer(ChunkNum, sizeof(int));
+        SpringStartIndicesBuffer_dbC = new ComputeBuffer(ChunkNum, sizeof(int));
         
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
@@ -626,6 +633,7 @@ public class Main : MonoBehaviour
         SpringCapacitiesBuffer.SetData(SpringCapacities);
         SpringStartIndicesBuffer_dbA.SetData(SpringStartIndices);
         SpringStartIndicesBuffer_dbB.SetData(SpringStartIndices);
+        SpringStartIndicesBuffer_dbC.SetData(SpringStartIndices);
 
         VerticesBuffer = new ComputeBuffer(MSLen, sizeof(float) * 3);
         TrianglesBuffer = new ComputeBuffer(MSLen, sizeof(int));
@@ -657,7 +665,7 @@ public class Main : MonoBehaviour
         int ThreadSize = (int)Math.Ceiling((float)StickyRequestsCount / 512);
         int ThreadSizeHLen = (int)Math.Ceiling((float)StickyRequestsCount / 512)/2;
 
-        sortShader.Dispatch(8, ThreadSize, 1, 1);
+        sortShader.Dispatch(9, ThreadSize, 1, 1);
 
         int len = StickyRequestsCount;
         int lenLog2 = (int)Math.Log(len, 2);
@@ -677,7 +685,7 @@ public class Main : MonoBehaviour
                 sortShader.SetInt("SRblocksNum", blocksNum);
                 sortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
 
-                sortShader.Dispatch(9, ThreadSizeHLen, 1, 1);
+                sortShader.Dispatch(10, ThreadSizeHLen, 1, 1);
 
                 blockLen /= 2;
             }
@@ -735,21 +743,29 @@ public class Main : MonoBehaviour
 
         // Calculate prefix sums (SpringStartIndices)
         int offset = -1;
-        bool bufferCycle = false;
+        bool StepBufferCycle = false;
         for (int iteration = 1; iteration <= ChunksNumLog2; iteration++)
         {
-            bufferCycle = !bufferCycle;
+            StepBufferCycle = !StepBufferCycle;
             offset = offset == -1 ? 1 : 2 * offset; // offset *= 2, offset_1 = 1
             int halfOffset = offset == 1 ? 0 : offset / 2;
             int totIndicesToProcess = ChunkNum - offset;
 
-            sortShader.SetBool("BufferCycle", bufferCycle);
+            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
             sortShader.SetInt("IndexOffset", offset);
             sortShader.SetInt("HalfOffset", halfOffset);
             sortShader.SetInt("TotIndicesToProcess", totIndicesToProcess);
             
-            sortShader.Dispatch(7, ThreadSizeChunkSizes, 1, 1);
+            sortShader.Dispatch(7, ThreadSizeChunkSizes, 1, 1); // totIndicesToProcess !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }
+        if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
+
+        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+        // a = 0;
+        // SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
+        // a = 0;
+        // SpringStartIndicesBuffer_dbC.GetData(SpringStartIndices);
+        // a = 0;
     }
 
     void CPUSortChunkData()
@@ -909,6 +925,7 @@ public class Main : MonoBehaviour
         SpringCapacitiesBuffer?.Release();
         SpringStartIndicesBuffer_dbA?.Release();
         SpringStartIndicesBuffer_dbB?.Release();
+        SpringStartIndicesBuffer_dbC?.Release();
 
         RBDataBuffer?.Release();
         RBVectorBuffer?.Release();

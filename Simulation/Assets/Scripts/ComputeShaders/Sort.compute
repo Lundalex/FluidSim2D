@@ -7,9 +7,10 @@
 #pragma kernel PopulateSpringCapacities // 5
 #pragma kernel CopySpringCapacities // 6
 #pragma kernel ParallelPrefixSumScan // 7
+#pragma kernel CopySpringStartIndicesBuffer // 8
 
-#pragma kernel PopulateSortedStickyRequests // 8
-#pragma kernel SRSortIteration // 9
+#pragma kernel PopulateSortedStickyRequests // 9
+#pragma kernel SRSortIteration // 10
 
 #include "MathResources.hlsl"
 
@@ -38,7 +39,8 @@ const bool SRBrownPinkSort; // True -> BrownSort, False -> PinkSort
 const int SRBlockLen;
 const int SRblocksNum;
 
-const bool BufferCycle;
+const bool FrameBufferCycle;
+const bool StepBufferCycle;
 const int IndexOffset;
 const int HalfOffset;
 const int TotIndicesToProcess;
@@ -55,8 +57,9 @@ RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKe
 RWStructuredBuffer<int> StartIndices;
 RWStructuredBuffer<int> ChunkSizes;
 RWStructuredBuffer<int> SpringCapacities;
-RWStructuredBuffer<int> SpringStartIndices_dbA;
-RWStructuredBuffer<int> SpringStartIndices_dbB;
+RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
+RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
+RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
 
 struct PTypeStruct
 {
@@ -261,29 +264,79 @@ void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     // Copying both should be unnecessary
     int ChunkKey = id.x;
-    SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey];
-    SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey];
+    if (FrameBufferCycle)
+    {
+        SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey];
+    }
+    else
+    {
+        SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey];
+    }
 }
 
 [numthreads(ThreadsNumChunkDivider,1,1)]
 void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x + IndexOffset;
-    if (BufferCycle)
+    // A <-> C
+    if (FrameBufferCycle)
     {
-        if (i < ChunkNumNextPow2)
+        // A -> C
+        if (StepBufferCycle)
         {
-            int storedVal = SpringStartIndices_dbA[i] + SpringStartIndices_dbA[i - IndexOffset];
-            SpringStartIndices_dbB[i] = storedVal;
+            if (i < ChunkNumNextPow2)
+            {
+                int storedVal = SpringStartIndices_dbA[i] + SpringStartIndices_dbA[i - IndexOffset];
+                SpringStartIndices_dbC[i] = storedVal;
+            }
+        }
+        // C -> A
+        else
+        {
+            if (i < ChunkNumNextPow2)
+            {
+                int storedVal = SpringStartIndices_dbC[i] + SpringStartIndices_dbC[i - IndexOffset];
+                SpringStartIndices_dbA[i] = storedVal;
+            }
         }
     }
+    // B <-> C
     else
     {
-        if (i < ChunkNumNextPow2)
+        // B -> C
+        if (StepBufferCycle)
         {
-            int storedVal = SpringStartIndices_dbB[i] + SpringStartIndices_dbB[i - IndexOffset];
-            SpringStartIndices_dbA[i] = storedVal;
+            if (i < ChunkNumNextPow2)
+            {
+                int storedVal = SpringStartIndices_dbB[i] + SpringStartIndices_dbB[i - IndexOffset];
+                SpringStartIndices_dbC[i] = storedVal;
+            }
         }
+        // C -> B
+        else
+        {
+            if (i < ChunkNumNextPow2)
+            {
+                int storedVal = SpringStartIndices_dbC[i] + SpringStartIndices_dbC[i - IndexOffset];
+                SpringStartIndices_dbB[i] = storedVal;
+            }
+        }
+    }
+}
+
+[numthreads(ThreadsNumChunkDivider,1,1)]
+void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
+{
+    int i = id.x;
+    // C -> A
+    if (FrameBufferCycle)
+    {
+        SpringStartIndices_dbA[i] = SpringStartIndices_dbC[i];
+    }
+    // C -> B
+    else
+    {
+        SpringStartIndices_dbB[i] = SpringStartIndices_dbC[i];
     }
 }
 
