@@ -57,9 +57,10 @@ struct SpringStruct
     // float plasticity;
     // float stiffness;
 };
+const bool FrameBufferCycle;
 RWStructuredBuffer<int> SpringCapacities;
-RWStructuredBuffer<int> SpringStartIndices_dbA;
-RWStructuredBuffer<int> SpringStartIndices_dbB;
+RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
+RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 
 struct PTypeStruct
 {
@@ -124,12 +125,12 @@ bool IsInfluencedChunk(int x, int y, int localPosX, int localPosY)
     return true;
 }
 
-float2 CalcDensity(int pIndex) // (density, nearDensity)
+float2 CalcDensityAndTransferSpringData(int pIndex) // (density, nearDensity)
 {
     PDataStruct PData_i = PData[pIndex];
     // Int type conversion removes decimals, effectively doing a Floor() operation
-    int ChunkX = (int)(PData_i.PredPosition.x / MaxInfluenceRadius);
-    int ChunkY = (int)(PData_i.PredPosition.y / MaxInfluenceRadius);
+    int ChunkX = (int)(PData_i.Position.x / MaxInfluenceRadius);
+    int ChunkY = (int)(PData_i.Position.y / MaxInfluenceRadius);
 
     // float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
     // float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
@@ -144,23 +145,37 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
             if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
 
-            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
-            int startIndex = StartIndices[ChunkKey];
+            int chunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[chunkKey];
 
             int Index = startIndex;
-            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+            int neighboorCount = 0;
+            while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
 
-                // pOrder !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                if (pIndex == otherPIndex) { int pOrder = Index - startIndex; PData[pIndex].POrder = pOrder; }
+                // -- Spring handling --
+
+                // Get springsNum up until and excluding current chunk + Unique springIndex in chunk
+                // int LastSpringIndex = FrameBufferCycle
+                // ? SpringStartIndices_dbB[lastChunkKey-1] + PData_i.POrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount
+                // : SpringStartIndices_dbA[lastChunkKey-1] + PData_i.POrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount;
+
+                // Update PData pOrder for NewSpringIndex 
+                if (pIndex == otherPIndex) { int pOrder = Index - startIndex; PData[pIndex].POrder = pOrder; PData_i.POrder = pOrder; }
+
+                int NewSpringIndex = FrameBufferCycle
+                ? SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount
+                : SpringStartIndices_dbB[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                // -- Calculate densities --
 
                 float dst = length(PData_i.PredPosition - PData[otherPIndex].PredPosition);
-
                 totDensity += SmoothLiquid(dst, MaxInfluenceRadius);
                 totNearDensity += SmoothLiquidNear(dst, MaxInfluenceRadius);
 
                 // Increment Index each iteration - Chunk particle search algorithm
+                neighboorCount += 1;
                 Index += 1;
             }
         }
@@ -378,7 +393,7 @@ void CalculateDensities (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
     // density
-    float2 Dns = CalcDensity(i);
+    float2 Dns = CalcDensityAndTransferSpringData(i);
     PData[i].Density = Dns.x;
     PData[i].NearDensity = Dns.y;
 }
@@ -393,8 +408,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
-    int ChunkX = (int)(PData_i.PredPosition.x * InvMaxInfluenceRadius);
-    int ChunkY = (int)(PData_i.PredPosition.y * InvMaxInfluenceRadius);
+    int ChunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
+    int ChunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
 
     // float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
     // float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
@@ -432,9 +447,13 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
                 // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
-                int springIndex = SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount;
 
-                // Increment Index each iteration - Chunk particle search algorithm
+                // Get springsNum up until and excluding current chunk + unique springIndex in chunk
+                int springIndex = FrameBufferCycle
+                ? SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount
+                : SpringStartIndices_dbB[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                // Increment Index each iteration - particle chunks algorithm, particle springs algorithm
                 Index += 1;
                 neighboorCount += 1;
             }
