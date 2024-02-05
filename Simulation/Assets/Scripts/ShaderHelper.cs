@@ -19,15 +19,16 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(1, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(1, "PTypes", m.PTypesBuffer);
 
-            // Kernel ParticleForces - 5/8
+            // Kernel ParticleForces - 4/8
             pSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
 
-            pSimShader.SetBuffer(2, "SpringPairsA", m.SpringPairsABuffer);
-            pSimShader.SetBuffer(2, "SpringPairsB", m.SpringPairsBBuffer);
-
             pSimShader.SetBuffer(2, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(2, "PTypes", m.PTypesBuffer);
+
+            pSimShader.SetBuffer(2, "SpringCapacities", m.SpringCapacitiesBuffer);
+            pSimShader.SetBuffer(2, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
+            pSimShader.SetBuffer(2, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
 
             pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);

@@ -36,6 +36,7 @@ namespace Resources
         public float2 LastVelocity;
         public float Density;
         public float NearDensity;
+        public int POrder;
         public int PType;
     }
     public struct PTypeStruct

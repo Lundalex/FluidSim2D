@@ -36,8 +36,6 @@ const float Plasticity;
 const float DeltaTime;
 const float SRDeltaTime;
 
-const bool SpringPairsRotation;
-
 const int CurTimeStepInt; // range(1 - 100), changes every time step
 const int LastTimeStepInt; // CurTimeStepInt value from last time step
 
@@ -59,8 +57,9 @@ struct SpringStruct
     // float plasticity;
     // float stiffness;
 };
-RWStructuredBuffer<SpringStruct> SpringPairsA;
-RWStructuredBuffer<SpringStruct> SpringPairsB;
+RWStructuredBuffer<int> SpringCapacities;
+RWStructuredBuffer<int> SpringStartIndices_dbA;
+RWStructuredBuffer<int> SpringStartIndices_dbB;
 
 struct PTypeStruct
 {
@@ -86,6 +85,7 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    int POrder;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -142,19 +142,6 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
             int CurChunkX = ChunkX + x;
             int CurChunkY = ChunkY + y;
 
-            // if (x != 0 && y != 0)
-            // {
-            //     int xUse = 0;
-            //     int yUse = 0;
-            //     if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
-            //     else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
-            //     else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
-            //     else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
-            //     float2 dst = float2(localPosX - xUse, localPosY - yUse);
-            //     float absDstSqr = dot(dst, dst);
-            //     if (absDstSqr > MaxInfluenceRadiusSqr) { continue; }
-            // }
-            
             if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
 
             int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
@@ -164,6 +151,9 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
             while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
+
+                // pOrder !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                if (pIndex == otherPIndex) { int pOrder = Index - startIndex; PData[pIndex].POrder = pOrder; }
 
                 float dst = length(PData_i.PredPosition - PData[otherPIndex].PredPosition);
 
@@ -299,43 +289,44 @@ int2 GetSpringKeys(int pIndex, int otherPIndex)
 
 float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 normDst)
 {
-    if (absDst > MaxInfluenceRadius) { return float2(0.0, 0.0); }
+    return float2(0.0, 0.0);
+    // if (absDst > MaxInfluenceRadius) { return float2(0.0, 0.0); }
 
-    // SpringPairsBuffer == true -> using doublebuffer A
-    // SpringPairsBuffer == false -> using doublebuffer B
-    bool SpringPairsBuffer = true;
-    int2 springKeys = GetSpringKeys(pIndex, otherPIndex);
+    // // SpringPairsBuffer == true -> using doublebuffer A
+    // // SpringPairsBuffer == false -> using doublebuffer B
+    // bool SpringPairsBuffer = true;
+    // int2 springKeys = GetSpringKeys(pIndex, otherPIndex);
 
-    SpringStruct lastSpring;
-    if (SpringPairsRotation) { lastSpring = SpringPairsA[springKeys.x]; }
-    else { lastSpring = SpringPairsB[springKeys.x]; }
+    // SpringStruct lastSpring;
+    // if (true) { lastSpring = SpringPairsA[springKeys.x]; }
+    // else { lastSpring = SpringPairsB[springKeys.x]; }
 
-    // If no spring exists, create a new one
-    if (lastSpring.linkedIndex != otherPIndex)
-    {
-        lastSpring.linkedIndex = otherPIndex;
-        lastSpring.restLength = MaxInfluenceRadius / 2;
-    }
+    // // If no spring exists, create a new one
+    // if (lastSpring.linkedIndex != otherPIndex)
+    // {
+    //     lastSpring.linkedIndex = otherPIndex;
+    //     lastSpring.restLength = MaxInfluenceRadius / 2;
+    // }
 
-    // // Plasticity calculations
-    // float diffMng = absDst - lastSpring.restLength;
-    // float absDiffMng = abs(diffMng);
-    // int sgnDiffMng = sign(diffMng);
-    // float plasticityConst = 0.01;
-    // float tolDeformation = 0.1; // = yieldRatio / restLength
-    // // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
-    // lastSpring.restLength -= LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
+    // // // Plasticity calculations
+    // // float diffMng = absDst - lastSpring.restLength;
+    // // float absDiffMng = abs(diffMng);
+    // // int sgnDiffMng = sign(diffMng);
+    // // float plasticityConst = 0.01;
+    // // float tolDeformation = 0.1; // = yieldRatio / restLength
+    // // // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
+    // // lastSpring.restLength -= LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
 
-    // Elasticity calculations
-    float springStiffness = Plasticity;
-    float absSpringForce = LiquidSpringForceModel(springStiffness, lastSpring.restLength, MaxInfluenceRadius, absDst);
-    float2 springForce = absSpringForce * normDst * 0.5;
+    // // Elasticity calculations
+    // float springStiffness = Plasticity;
+    // float absSpringForce = LiquidSpringForceModel(springStiffness, lastSpring.restLength, MaxInfluenceRadius, absDst);
+    // float2 springForce = absSpringForce * normDst * 0.5;
 
-    // "Transfer" modified spring to new springPairs index
-    if (SpringPairsRotation) { SpringPairsB[springKeys.y] = lastSpring; }
-    else { SpringPairsA[springKeys.y] = lastSpring; }
+    // // "Transfer" modified spring to new springPairs index
+    // if (true) { SpringPairsB[springKeys.y] = lastSpring; }
+    // else { SpringPairsA[springKeys.y] = lastSpring; }
 
-    return -springForce;
+    // return -springForce;
 }
 
 float2 InteractionForce(int pIndex)
@@ -410,6 +401,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 totPressureForce = float2(0.0, 0.0);
     float2 totViscocityForce = float2(0.0, 0.0);
     float2 totSpringForce = float2(0.0, 0.0);
+    int neighboorCount = 0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -417,47 +409,34 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
             int CurChunkX = ChunkX + x;
             int CurChunkY = ChunkY + y;
 
-            // This does the same as IsInfluencedChunk(), but the funtion call is too costly in terms of performance
-            // if (x != 0 && y != 0)
-            // {
-            //     int xUse = 0;
-            //     int yUse = 0;
-            //     if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
-            //     else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
-            //     else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
-            //     else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
-            //     float2 dst = float2(localPosX - xUse, localPosY - yUse);
-            //     float absDstSqr = dot(dst, dst);
-            //     if (absDstSqr > MaxInfluenceRadiusSqr) { continue; }
-            // }
-            // if (!IsInfluencedChunk(x, y, localPosX, localPosY)) { continue; }
-
             if (!ValidChunk(CurChunkX, CurChunkY)) { continue; }
 
-            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
-            int startIndex = StartIndices[ChunkKey];
+            int chunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int startIndex = StartIndices[chunkKey];
 
             int Index = startIndex; 
-            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+            while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
-                if (i == otherPIndex) { Index += 1; continue; }
+                if (i == otherPIndex) { Index += 1; neighboorCount += 1; continue; }
                 PDataStruct PData_otherPIndex = PData[otherPIndex];
                 PTypeStruct PType_otherPIndex = PTypes[PData_otherPIndex.PType];
 
                 float2 dst = PData_otherPIndex.PredPosition - PData_i.PredPosition;
                 float sqrDst = dot(dst, dst);
 
-                if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; continue; }
+                if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; neighboorCount += 1; continue; }
                 float absDst = sqrt(sqrDst);
                 float2 normDst = normalize(dst);
                 
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
                 // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
+                int springIndex = SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount;
 
                 // Increment Index each iteration - Chunk particle search algorithm
                 Index += 1;
+                neighboorCount += 1;
             }
         }
     }
