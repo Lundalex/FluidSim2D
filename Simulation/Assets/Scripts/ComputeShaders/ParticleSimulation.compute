@@ -87,6 +87,8 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
+    int LastPOrder;
+    int LastChunkKey;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -156,7 +158,7 @@ float2 CalcDensityAndTransferSpringData(int pIndex) // (density, nearDensity)
 
                 // -- Spring handling --
 
-                // Get springsNum up until and excluding current chunk + Unique springIndex in chunk
+                // // Get springsNum up until and excluding current chunk + Unique springIndex in chunk
                 // int LastSpringIndex = FrameBufferCycle
                 // ? SpringStartIndices_dbB[lastChunkKey-1] + PData_i.POrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount
                 // : SpringStartIndices_dbA[lastChunkKey-1] + PData_i.POrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount;
