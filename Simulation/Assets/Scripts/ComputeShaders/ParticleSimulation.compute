@@ -36,6 +36,7 @@ const float Plasticity;
 // Per-timestep-set constants
 const float DeltaTime;
 const float SRDeltaTime;
+const bool TransferSpringData;
 
 const int CurTimeStepInt; // range(1 - 100), changes every time step
 const int LastTimeStepInt; // CurTimeStepInt value from last time step
@@ -52,12 +53,13 @@ RWStructuredBuffer<int> ChunkSizes;
 
 struct SpringStruct
 {
-    int linkedIndex;
     float restLength;
     // float yieldLen;
     // float plasticity;
     // float stiffness;
 };
+RWStructuredBuffer<SpringStruct> ParticleSpringsCombined; // Result A
+
 const bool FrameBufferCycle;
 RWStructuredBuffer<int> SpringCapacities;
 RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
@@ -88,7 +90,8 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
-    int Last_POrder_ChunkKey; // int2 Get_POrder_ChunkKey(Last_POrder_ChunkKey) -> (POrder, ChunkKey)
+    int LastPOrder;
+    int LastChunkKey;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -133,25 +136,16 @@ int2 Get_POrder_ChunkKey(int POrder_ChunkKey)
     return int2(pOrder, chunkKey);
 }
 
-float2 CalcDensityAndTransferSpringData(int pIndex) // (density, nearDensity)
+float2 CalcDensity(int pIndex) // (density, nearDensity)
 {
     PDataStruct PData_i = PData[pIndex];
-    // Int type conversion removes decimals, effectively doing a Floor() operation
 
-
-    // // Get LastChunkKey
-    // int2 last_POrder_ChunkKey = Get_POrder_ChunkKey(PData_i.Last_POrder_ChunkKey);
-    // int lastPOrder = last_POrder_ChunkKey.x;
-    // int lastChunkKey = last_POrder_ChunkKey.y;
-    // // Set new LastChunkKey
     int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
     int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
-    // int chunkKey = chunkY * ChunkNumW + chunkX;
-    // PData[pIndex].Last_POrder_ChunkKey = chunkKey + ChunkNum * PData_i.POrder;
-
 
     float totDensity = 0.0;
     float totNearDensity = 0.0;
+    // int springSkips = 0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -165,39 +159,23 @@ float2 CalcDensityAndTransferSpringData(int pIndex) // (density, nearDensity)
             int startIndex = StartIndices[chunkKey];
 
             int Index = startIndex;
-            int neighboorCount = 0;
             while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
-                PDataStruct PData_otherPIndex = PData[otherPIndex];
+
 
                 // -- Spring handling --
 
-                int otherChunkX = (int)(PData_otherPIndex.Position.x * InvMaxInfluenceRadius);
-                int otherChunkY = (int)(PData_otherPIndex.Position.y * InvMaxInfluenceRadius);
-                int otherChunkKey = otherChunkY * ChunkNumW + otherChunkX;
-
-                int lastSpringIndex = 0;
-                for (int i = 0; i < 9; i++)
+                if (TransferSpringData)
                 {
-                    if ()
+                    if (pIndex == otherPIndex)
                     {
-
+                        int pOrder = Index - startIndex;
+                        PData[pIndex].LastPOrder = PData_i.POrder;
+                        PData[pIndex].POrder = pOrder;
+                        PData_i.POrder = pOrder;
                     }
-                    // lastSpringIndex += 
                 }
-
-
-                // // Get springsNum up until and excluding current chunk + Unique springIndex in chunk
-                // int lastNeighboorCount = getLastNeighboorCount();
-                // int LastSpringIndex = FrameBufferCycle
-                // ? SpringStartIndices_dbB[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount
-                // : SpringStartIndices_dbA[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount;
-                // // Update PData pOrder for NewSpringIndex 
-                // if (pIndex == otherPIndex) { int pOrder = Index - startIndex; PData[pIndex].POrder = pOrder; PData_i.POrder = pOrder; }
-                // int NewSpringIndex = FrameBufferCycle
-                // ? SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount
-                // : SpringStartIndices_dbB[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount;
 
 
                 // -- Calculate densities --
@@ -208,7 +186,6 @@ float2 CalcDensityAndTransferSpringData(int pIndex) // (density, nearDensity)
 
                 // -- Increment Index each iteration - Chunk particle search algorithm --
 
-                neighboorCount += 1;
                 Index += 1;
             }
         }
@@ -416,7 +393,7 @@ void CalculateDensities (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
     // density
-    float2 Dns = CalcDensityAndTransferSpringData(i);
+    float2 Dns = CalcDensity(i);
     PData[i].Density = Dns.x;
     PData[i].NearDensity = Dns.y;
 }
@@ -431,14 +408,14 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
+    int lastPOrder = PData_i.LastPOrder;
+    int lastChunkKey = PData_i.LastChunkKey;
+    int pOrder = PData_i.POrder;
+    int springsNum = SpringCapacities[ChunkNum];
+
     int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
     int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
 
-    int LastPOrder = PData_i.Last_POrder_ChunkKey % ChunkNum;
-    int LastChunkKey = (int)(PData_i.Last_POrder_ChunkKey / ChunkNum);
-
-    // float localPosX = (PData_i.PredPosition.x % MaxInfluenceRadius) * InvMaxInfluenceRadius;
-    // float localPosY = (PData_i.PredPosition.y % MaxInfluenceRadius) * InvMaxInfluenceRadius;
     float2 totPressureForce = float2(0.0, 0.0);
     float2 totViscocityForce = float2(0.0, 0.0);
     float2 totSpringForce = float2(0.0, 0.0);
@@ -469,21 +446,51 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; neighboorCount += 1; continue; }
                 float absDst = sqrt(sqrDst);
                 float2 normDst = normalize(dst);
+
+
+                // -- Spring Handling --
+
+                int overrideSpringIndex = FrameBufferCycle
+                ? SpringStartIndices_dbA[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount + springsNum
+                : SpringStartIndices_dbB[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount;
+
+                // Transfer spring corresponding to (pIndex, otherPIndex) from A -> B or B -> A depending on FrameBufferCycle
+                int springIndex;
+                if (TransferSpringData)
+                {
+                    // New positions kernel -> lastChunkKey
+                    // Calc density kernel -> lastPOrder
+                    // this kernel -> lastNeighboorCount using the index-compare algorithm
+
+                    int lastNeighboorCount = 999;
+
+                    springIndex = FrameBufferCycle
+                    ? SpringStartIndices_dbB[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount
+                    : SpringStartIndices_dbA[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount + springsNum;
+                }
+                else
+                {
+                    springIndex = overrideSpringIndex; // If springs should not be tranfered, override the current spring with itself
+                }
+
+                SpringStruct springToModify = ParticleSpringsCombined[springIndex];
+
+                // Modify springToModify...
+
+                // transfer/override spring
+                ParticleSpringsCombined[overrideSpringIndex] = springToModify;
+
+
+                // -- Forces --
                 
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
-                totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst); 
+                totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst);
+                // use springToModify for spring force calculations
                 // totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst);
 
-                // -- Springs --
 
+                // -- Increment Index each iteration - particle chunks algorithm, particle springs algorithm --
 
-                // // Get springsNum up until and excluding current chunk + unique springIndex in chunk
-                // int springIndex = FrameBufferCycle
-                // ? SpringStartIndices_dbA[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount
-                // : SpringStartIndices_dbB[chunkKey-1] + PData_i.POrder * SpringCapacities[chunkKey-1] + neighboorCount;
-
-
-                // Increment Index each iteration - particle chunks algorithm, particle springs algorithm
                 Index += 1;
                 neighboorCount += 1;
             }
@@ -502,6 +509,20 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     int i = id.x;
 
     PDataStruct PData_i = PData[i];
+
+
+    // -- Spring handling --
+
+    if (TransferSpringData)
+    {
+        int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
+        int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+        int chunkKey = chunkY * ChunkNumW + chunkX;
+        PData[i].LastChunkKey = chunkKey;
+        PData[i].LastPOrder = PData_i.POrder * SpringCapacities[chunkKey-1];
+    }
+
+    // -- Update positions --
 
     PData_i.Position += PData_i.Velocity * DeltaTime;
 

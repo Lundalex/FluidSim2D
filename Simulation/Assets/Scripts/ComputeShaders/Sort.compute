@@ -45,14 +45,6 @@ const int IndexOffset;
 const int HalfOffset;
 const int TotIndicesToProcess;
 
-struct SpringStruct
-{
-    int linkedIndex;
-    float restLength;
-    // float yieldLen;
-    // float plasticity;
-    // float stiffness;
-};
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 RWStructuredBuffer<int> ChunkSizes;
@@ -86,7 +78,8 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
-    int Last_POrder_ChunkKey;
+    int LastPOrder;
+    int LastChunkKey;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -132,6 +125,16 @@ void BrownSort(int lowRef)
         SpatialLookup[highIndex] = lowIndexValue;
         SpatialLookup[lowIndex] = highIndexValue;
     }
+    else if (SpatialLookup[lowIndex].y == SpatialLookup[highIndex].y)
+    {
+        if (SpatialLookup[lowIndex].x > SpatialLookup[highIndex].x)
+        {
+            int2 highIndexValue = SpatialLookup[highIndex];
+            int2 lowIndexValue = SpatialLookup[lowIndex];
+            SpatialLookup[highIndex] = lowIndexValue;
+            SpatialLookup[lowIndex] = highIndexValue;
+        }
+    }
 }
 
 void PinkSort(int lowRef)
@@ -148,6 +151,16 @@ void PinkSort(int lowRef)
         int2 lowIndexValue = SpatialLookup[lowIndex];
         SpatialLookup[highIndex] = lowIndexValue;
         SpatialLookup[lowIndex] = highIndexValue;
+    }
+    else if (SpatialLookup[lowIndex].y == SpatialLookup[highIndex].y)
+    {
+        if (SpatialLookup[lowIndex].x > SpatialLookup[highIndex].x)
+        {
+            int2 highIndexValue = SpatialLookup[highIndex];
+            int2 lowIndexValue = SpatialLookup[lowIndex];
+            SpatialLookup[highIndex] = lowIndexValue;
+            SpatialLookup[lowIndex] = highIndexValue;
+        }
     }
 }
 
