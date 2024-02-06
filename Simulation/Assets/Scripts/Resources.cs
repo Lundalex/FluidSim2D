@@ -13,7 +13,6 @@ namespace Resources
     }
     public struct SpringStruct
     {
-        public int linkedIndex;
         public float restLength;
         // public float yieldLen;
         // public float plasticity;
@@ -37,7 +36,8 @@ namespace Resources
         public float Density;
         public float NearDensity;
         public int POrder;
-        public int Last_POrder_ChunkKey;
+        public int LastPOrder;
+        public int LastChunkKey;
         public int PType;
     }
     public struct PTypeStruct

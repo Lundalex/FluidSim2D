@@ -100,6 +100,7 @@ public class Main : MonoBehaviour
     public ComputeBuffer SpringStartIndicesBuffer_dbA; // Result A
     public ComputeBuffer SpringStartIndicesBuffer_dbB; // Result B
     public ComputeBuffer SpringStartIndicesBuffer_dbC; // Support
+    public ComputeBuffer ParticleSpringsCombinedBuffer; // [[Last frame springs], [New frame springs]]
 
     // PData - Buffers
     public ComputeBuffer PDataBuffer;
@@ -142,8 +143,7 @@ public class Main : MonoBehaviour
     private int[] ChunkSizes;
     private int[] SpringCapacities;
     private int[] SpringStartIndices;
-    private SpringStruct[] SpringLookup;
-    private SpringStruct[] SpringPairs;
+    private SpringStruct[] ParticleSpringsCombined;
     private PDataStruct[] PData;
     private PTypeStruct[] PTypes;
 
@@ -203,10 +203,21 @@ public class Main : MonoBehaviour
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
 
+        // SpatialLookupBuffer.GetData(SpatialLookup);
+        // int a = 0;
+
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
 
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
+            if (i == 0)
+            {
+                pSimShader.SetBool("TransferSpringData", true);
+            }
+            else
+            {
+                pSimShader.SetBool("TransferSpringData", false);
+            }
             RunPSimShader();
             
             if (i == 1) {
@@ -511,11 +522,10 @@ public class Main : MonoBehaviour
         StartIndices = new int[ParticlesNum];
         ChunkSizes = new int[ChunkNum];
         SpringCapacities = new int[ChunkNum];
-        SpringStartIndices = new int[ChunkNum]; 
-        SpringLookup = new SpringStruct[ParticlesNum * SpringCapacitySafety];
+        SpringStartIndices = new int[ChunkNum];
+        ParticleSpringsCombined = new SpringStruct[ParticlesNum * SpringCapacitySafety];
 
         PData = new PDataStruct[ParticlesNum];
-        SpringPairs = new SpringStruct[SpringPairsLen];
 
         vertices = new Vector3[MSLen];
         triangles = new int[MSLen];
@@ -539,7 +549,8 @@ public class Main : MonoBehaviour
                     Density = 0.0f,
                     NearDensity = 0.0f,
                     POrder = 0,
-                    Last_POrder_ChunkKey = 0,
+                    LastPOrder = 0,
+                    LastChunkKey = 0,
                     PType = 0
                 };
             }
@@ -581,19 +592,9 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < ParticlesNum * SpringCapacitySafety; i++)
         {
-            SpringLookup[i] = new SpringStruct
+            ParticleSpringsCombined[i] = new SpringStruct
             {
-                linkedIndex = -1,
                 restLength = 0.0f
-            };
-        }
-
-        for (int i = 0; i < SpringPairsLen; i++)
-        {
-            SpringPairs[i] = new SpringStruct
-            {
-                linkedIndex = IOOR,
-                restLength = MaxInfluenceRadius / 2
             };
         }
     }
@@ -613,7 +614,7 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 3);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 4);
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
@@ -627,6 +628,7 @@ public class Main : MonoBehaviour
         SpringStartIndicesBuffer_dbA = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbB = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbC = new ComputeBuffer(ChunkNum, sizeof(int));
+        ParticleSpringsCombinedBuffer = new ComputeBuffer(ParticlesNum * SpringCapacitySafety, sizeof(float));
         
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
@@ -635,6 +637,7 @@ public class Main : MonoBehaviour
         SpringStartIndicesBuffer_dbA.SetData(SpringStartIndices);
         SpringStartIndicesBuffer_dbB.SetData(SpringStartIndices);
         SpringStartIndicesBuffer_dbC.SetData(SpringStartIndices);
+        ParticleSpringsCombinedBuffer.SetData(ParticleSpringsCombined);
 
         VerticesBuffer = new ComputeBuffer(MSLen, sizeof(float) * 3);
         TrianglesBuffer = new ComputeBuffer(MSLen, sizeof(int));
