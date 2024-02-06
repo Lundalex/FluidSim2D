@@ -145,6 +145,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         pSimShader.SetInt("ChunkNumW", m.ChunkNumW);
         pSimShader.SetInt("ChunkNumH", m.ChunkNumH);
+        pSimShader.SetInt("ChunkNum", m.ChunkNum);
         pSimShader.SetInt("IOOR", m.IOOR);
         pSimShader.SetInt("Width", m.Width);
         pSimShader.SetInt("Height", m.Height);
