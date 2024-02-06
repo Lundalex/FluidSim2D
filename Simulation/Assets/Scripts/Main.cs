@@ -539,8 +539,7 @@ public class Main : MonoBehaviour
                     Density = 0.0f,
                     NearDensity = 0.0f,
                     POrder = 0,
-                    LastPOrder = 0,
-                    LastChunkKey = 0,
+                    Last_POrder_ChunkKey = 0,
                     PType = 0
                 };
             }
@@ -614,7 +613,7 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 4);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 3);
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);

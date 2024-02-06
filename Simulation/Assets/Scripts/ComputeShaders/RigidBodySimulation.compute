@@ -55,8 +55,7 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
-    int LastPOrder;
-    int LastChunkKey;
+    int Last_POrder_ChunkKey;
     int PType;
 };
 RWStructuredBuffer<PDataStruct> PData;
