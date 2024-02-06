@@ -1,6 +1,7 @@
 #pragma kernel PreCalculations
 #pragma kernel CalculateDensities
 #pragma kernel ParticleForces
+#pragma kernel TransferAllSpringData
 #pragma kernel UpdatePositions
 #pragma kernel ConsumeStickynessRequests
 
@@ -16,7 +17,7 @@ const int IOOR;
 const int Width;
 const int Height;
 const int ParticlesNum;
-const int RBodiesNum;
+const int ParticleSpringsCombinedHalfLength;
 const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
 const float InvMaxInfluenceRadius;
@@ -30,7 +31,6 @@ const float MaxInteractionRadius;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
 const int SpringSafety;
-const int SpringPairsLen;
 const float Plasticity;
 
 // Per-timestep-set constants
@@ -53,7 +53,9 @@ RWStructuredBuffer<int> ChunkSizes;
 
 struct SpringStruct
 {
-    float restLength;
+    int PLinkedA;
+    int PLinkedB;
+    float RestLength;
     // float yieldLen;
     // float plasticity;
     // float stiffness;
@@ -408,10 +410,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
-    int lastPOrder = PData_i.LastPOrder;
-    int lastChunkKey = PData_i.LastChunkKey;
+    SpringStruct spring_i = ParticleSpringsCombined[i];
     int pOrder = PData_i.POrder;
-    int springsNum = SpringCapacities[ChunkNum];
 
     int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
     int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
@@ -450,35 +450,16 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 // -- Spring Handling --
 
-                int overrideSpringIndex = FrameBufferCycle
-                ? SpringStartIndices_dbA[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount + springsNum
-                : SpringStartIndices_dbB[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount;
+                int springIndex = FrameBufferCycle
+                ? SpringStartIndices_dbB[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount
+                : SpringStartIndices_dbA[chunkKey-1] + pOrder * SpringCapacities[chunkKey-1] + neighboorCount + ParticleSpringsCombinedHalfLength;
 
-                // Transfer spring corresponding to (pIndex, otherPIndex) from A -> B or B -> A depending on FrameBufferCycle
-                int springIndex;
-                if (TransferSpringData)
-                {
-                    // New positions kernel -> lastChunkKey
-                    // Calc density kernel -> lastPOrder
-                    // this kernel -> lastNeighboorCount using the index-compare algorithm
+                SpringStruct spring = ParticleSpringsCombined[springIndex];
 
-                    int lastNeighboorCount = 999;
+                // Modify spring...
 
-                    springIndex = FrameBufferCycle
-                    ? SpringStartIndices_dbB[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount
-                    : SpringStartIndices_dbA[lastChunkKey-1] + lastPOrder * SpringCapacities[lastChunkKey-1] + lastNeighboorCount + springsNum;
-                }
-                else
-                {
-                    springIndex = overrideSpringIndex; // If springs should not be tranfered, override the current spring with itself
-                }
-
-                SpringStruct springToModify = ParticleSpringsCombined[springIndex];
-
-                // Modify springToModify...
-
-                // transfer/override spring
-                ParticleSpringsCombined[overrideSpringIndex] = springToModify;
+                // override last spring data
+                ParticleSpringsCombined[springIndex] = spring;
 
 
                 // -- Forces --
@@ -502,6 +483,37 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce + float2(0, -PType_i.Gravity);
     PData[i].Velocity += totForce * DeltaTime;
 }
+
+[numthreads(30,1,1)]
+void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
+{
+    int i = FrameBufferCycle
+    ? id.x
+    : id.x + ParticleSpringsCombinedHalfLength;
+
+    SpringStruct spring_i = ParticleSpringsCombined[i];
+}
+
+// struct SpringStruct
+// {
+//     int PLinkedA;
+//     int PLinkedB;
+//     float RestLength;
+// };
+
+// struct PDataStruct
+// {
+//     float2 PredPosition;
+//     float2 Position;
+//     float2 Velocity;
+//     float2 LastVelocity;
+//     float Density;
+//     float NearDensity;
+//     int POrder;
+//     int LastPOrder;
+//     int LastChunkKey;
+//     int PType;
+// };
 
 [numthreads(ThreadsNum,1,1)]
 void UpdatePositions (uint3 id : SV_DispatchThreadID)

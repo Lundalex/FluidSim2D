@@ -31,13 +31,15 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(2, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
             pSimShader.SetBuffer(2, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
-            pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
-            pSimShader.SetBuffer(3, "SpringCapacities", m.SpringCapacitiesBuffer);
+            pSimShader.SetBuffer(3, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
             pSimShader.SetBuffer(4, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(4, "PTypes", m.PTypesBuffer);
-            pSimShader.SetBuffer(4, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
+            pSimShader.SetBuffer(4, "SpringCapacities", m.SpringCapacitiesBuffer);
+
+            pSimShader.SetBuffer(5, "PData", m.PDataBuffer);
+            pSimShader.SetBuffer(5, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(5, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
         }
     }
 
@@ -153,6 +155,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("Width", m.Width);
         pSimShader.SetInt("Height", m.Height);
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
+        pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
         pSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         pSimShader.SetInt("SpawnDims", m.SpawnDims);
         pSimShader.SetInt("TimeStepsPerRender", m.TimeStepsPerRender);
@@ -162,7 +165,6 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
         pSimShader.SetInt("SpringSafety", m.SpringSafety);
-        pSimShader.SetInt("SpringPairsLen", m.SpringPairsLen);
         pSimShader.SetFloat("Plasticity", m.Plasticity);
         
         // Set math resources constants
