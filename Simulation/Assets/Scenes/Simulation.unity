@@ -248,7 +248,7 @@ MonoBehaviour:
   MaxChunkSearchSafety: 1
   SpringSafety: 1024
   ChunkStorageSafety: 0.2
-  SpringCapacitySafety: 10
+  SpringCapacitySafety: 20
   TriStorageLength: 4
   radii: 15
   Width: 300
@@ -259,7 +259,7 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.01
   ProgramSpeed: 1
-  VisualParticleRadii: 0.4
+  VisualParticleRadii: 1
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41

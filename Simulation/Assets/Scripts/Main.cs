@@ -126,11 +126,11 @@ public class Main : MonoBehaviour
     [System.NonSerialized] public int ChunksNumLog2;
     [System.NonSerialized] public int ChunkNumNextPow2;
     [System.NonSerialized] public int IOOR; // Index Out Of Range
-    [System.NonSerialized] public int SpringPairsLen;
     [System.NonSerialized] public int MSLen;
     [System.NonSerialized] public int RBodiesNum;
     [System.NonSerialized] public int RBVectorNum;
     [System.NonSerialized] public int TraversedChunksCount;
+    [System.NonSerialized] public int ParticleSpringsCombinedHalfLength;
 
     // Private references
     private RenderTexture renderTexture;
@@ -219,20 +219,30 @@ public class Main : MonoBehaviour
                 pSimShader.SetBool("TransferSpringData", false);
             }
             RunPSimShader();
-            
+
+            // Particle springs
+            if (i == 0)
+            {
+                int ThreadSize = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (30 * 2));
+                // Transfer spring data kernel
+                if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize, 1, 1);}
+            }
+
+            // Stickyness requests
             if (i == 1) {
                 DoCalcStickyRequests = true;
                 rbSimShader.SetInt("DoCalcStickyRequests", 1);
                 GPUSortStickynessRequests(); 
-                int ThreadSizee = (int)Math.Ceiling((float)4096 / 512);
-                pSimShader.Dispatch(4, ThreadSizee, 1, 1);
+                int ThreadSize2 = (int)Math.Ceiling((float)4096 / 512);
+                pSimShader.Dispatch(5, ThreadSize2, 1, 1);
             }
             else { DoCalcStickyRequests = false; rbSimShader.SetInt("DoCalcStickyRequests", 0); }
 
+
             RunRbSimShader();
 
-            int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
-            if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize, 1, 1);}
+            int ThreadSize3 = (int)Math.Ceiling((float)ParticlesNum / 512);
+            if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadSize3, 1, 1);}
             
             if (RenderMarchingSquares)
             {
@@ -328,19 +338,11 @@ public class Main : MonoBehaviour
         ChunksNumLog2 = (int)Math.Ceiling(Math.Log(ChunkNum) / Math.Log(2));
         ChunkNumNextPow2 = (int)Math.Pow(2, ChunksNumLog2);
         IOOR = ParticlesNum;
-        SpringPairsLen = ParticlesNum * (1 + SpringSafety);
         MarchW = (int)(Width / MSResolution);
         MarchH = (int)(Height / MSResolution);
         MSLen = MarchW * MarchH * TriStorageLength * 3;
         RBVectorNum = RBVector.Length;
-        // RBodiesNum set at InitializeSetArrays()
-
-        // chunkOffsets = new int[9]
-        // {
-        //     -ChunkNumW-1, -ChunkNumW, -ChunkNumW+1,
-        //     -1,           0,          1,
-        //     ChunkNumW-1,  ChunkNumW,  ChunkNumW+1
-        // };
+        ParticleSpringsCombinedHalfLength = (int)(ParticlesNum * SpringSafety / 2);
 
         for (int i = 0; i < RBodiesNum; i++)
         {
@@ -594,7 +596,9 @@ public class Main : MonoBehaviour
         {
             ParticleSpringsCombined[i] = new SpringStruct
             {
-                restLength = 0.0f
+                PLinkedA = 0,
+                PLinkedB = 0,
+                RestLength = 0.0f
             };
         }
     }
@@ -628,7 +632,7 @@ public class Main : MonoBehaviour
         SpringStartIndicesBuffer_dbA = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbB = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbC = new ComputeBuffer(ChunkNum, sizeof(int));
-        ParticleSpringsCombinedBuffer = new ComputeBuffer(ParticlesNum * SpringCapacitySafety, sizeof(float));
+        ParticleSpringsCombinedBuffer = new ComputeBuffer(ParticlesNum * SpringCapacitySafety, sizeof(float) + sizeof(int) * 2);
         
         SpatialLookupBuffer.SetData(SpatialLookup);
         StartIndicesBuffer.SetData(StartIndices);
@@ -930,6 +934,7 @@ public class Main : MonoBehaviour
         SpringStartIndicesBuffer_dbA?.Release();
         SpringStartIndicesBuffer_dbB?.Release();
         SpringStartIndicesBuffer_dbC?.Release();
+        ParticleSpringsCombinedBuffer?.Release();
 
         RBDataBuffer?.Release();
         RBVectorBuffer?.Release();

@@ -13,7 +13,9 @@ namespace Resources
     }
     public struct SpringStruct
     {
-        public float restLength;
+        public int PLinkedA;
+        public int PLinkedB;
+        public float RestLength;
         // public float yieldLen;
         // public float plasticity;
         // public float stiffness;
