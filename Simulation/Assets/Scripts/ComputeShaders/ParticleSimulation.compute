@@ -1,7 +1,7 @@
 #pragma kernel PreCalculations
 #pragma kernel CalculateDensities
-#pragma kernel ParticleForces
 #pragma kernel TransferAllSpringData
+#pragma kernel ParticleForces
 #pragma kernel UpdatePositions
 #pragma kernel ConsumeStickynessRequests
 
@@ -131,6 +131,7 @@ bool IsInfluencedChunk(int x, int y, int localPosX, int localPosY)
     }
     return true;
 }
+
 int2 Get_POrder_ChunkKey(int POrder_ChunkKey)
 {
     int pOrder = (int)(POrder_ChunkKey / ChunkNum);
@@ -400,6 +401,57 @@ void CalculateDensities (uint3 id : SV_DispatchThreadID)
     PData[i].NearDensity = Dns.y;
 }
 
+[numthreads(30,1,1)]
+void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
+{
+    int i = FrameBufferCycle
+    ? id.x
+    : id.x + ParticleSpringsCombinedHalfLength;
+
+    // last -> new
+    // this is not a solution for adding springs - default spring data should be set before this shader pass
+
+    // B is connected to A
+    SpringStruct lastSpring_i = ParticleSpringsCombined[i];
+    PDataStruct PData_A = PData[lastSpring_i.PLinkedA];
+    PDataStruct PData_B = PData[lastSpring_i.PLinkedB];
+
+    float2 PosDiff = PData_A.Position - PData_B.Position;
+    float absPosDiffSqr = dot(PosDiff, PosDiff);
+
+    // If A and B are in range of each other, transfer data. Otherwise, do not (spring data is deleted)
+    if (absPosDiffSqr <= MaxInfluenceRadiusSqr)
+    {
+        int pOrder_A = PData_A.POrder;
+        int pOrder_B = PData_B.POrder;
+    
+        int newChunkX_A = (int)(PData_A.Position.x * InvMaxInfluenceRadius);
+        int newChunkY_A = (int)(PData_A.Position.y * InvMaxInfluenceRadius);
+        int newChunkKey_A = newChunkY_A * ChunkNumW + newChunkX_A;
+    
+        int newChunkX_B = (int)(PData_B.Position.x * InvMaxInfluenceRadius);
+        int newChunkY_B = (int)(PData_B.Position.y * InvMaxInfluenceRadius);
+        int newChunkKey_B = newChunkY_B * ChunkNumW + newChunkX_B;
+    
+        // int chunkKeyDiff = newChunkKey_B - newChunkKey_A;
+        // int diffX = chunkKeyDiff % ChunkNumW;
+        // int diffY = (int)(chunkKeyDiff / ChunkNumW);
+
+        int SpringsSkipIndex_1 = newChunkKey_A - ChunkNumW - 2;
+        int SpringsSkipIndex_2 = newChunkKey_B - 1;
+
+        int newNeighboorCount = FrameBufferCycle
+        ? SpringStartIndices_dbB[SpringsSkipIndex_2] - SpringStartIndices_dbB[SpringsSkipIndex_1] + pOrder_B
+        : SpringStartIndices_dbA[SpringsSkipIndex_2] - SpringStartIndices_dbA[SpringsSkipIndex_1] + pOrder_B;
+
+        int newSpringIndex = FrameBufferCycle
+        ? SpringStartIndices_dbB[newChunkKey_A-1] + pOrder_A * SpringCapacities[newChunkKey_A-1] + newNeighboorCount
+        : SpringStartIndices_dbA[newChunkKey_A-1] + pOrder_A * SpringCapacities[newChunkKey_A-1] + newNeighboorCount + ParticleSpringsCombinedHalfLength;
+
+        ParticleSpringsCombined[newSpringIndex] = lastSpring_i;
+    }
+}
+
 [numthreads(ThreadsNum,1,1)]
 void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
@@ -458,7 +510,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 // Modify spring...
 
-                // override last spring data
+                // write new spring data
                 ParticleSpringsCombined[springIndex] = spring;
 
 
@@ -484,37 +536,6 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     PData[i].Velocity += totForce * DeltaTime;
 }
 
-[numthreads(30,1,1)]
-void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
-{
-    int i = FrameBufferCycle
-    ? id.x
-    : id.x + ParticleSpringsCombinedHalfLength;
-
-    SpringStruct spring_i = ParticleSpringsCombined[i];
-}
-
-// struct SpringStruct
-// {
-//     int PLinkedA;
-//     int PLinkedB;
-//     float RestLength;
-// };
-
-// struct PDataStruct
-// {
-//     float2 PredPosition;
-//     float2 Position;
-//     float2 Velocity;
-//     float2 LastVelocity;
-//     float Density;
-//     float NearDensity;
-//     int POrder;
-//     int LastPOrder;
-//     int LastChunkKey;
-//     int PType;
-// };
-
 [numthreads(ThreadsNum,1,1)]
 void UpdatePositions (uint3 id : SV_DispatchThreadID)
 {
@@ -531,7 +552,7 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
         int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
         int chunkKey = chunkY * ChunkNumW + chunkX;
         PData[i].LastChunkKey = chunkKey;
-        PData[i].LastPOrder = PData_i.POrder * SpringCapacities[chunkKey-1];
+        // PData[i].LastPOrder = PData_i.POrder * SpringCapacities[chunkKey-1];
     }
 
     // -- Update positions --

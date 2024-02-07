@@ -11,6 +11,7 @@ const float SmoothViscosityLaplacianFactor;
 // https://iquilezles.org/articles/distfunctions/ SDFs Not used yet
 
 // Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
+// some/all Last-values for PData may be unnecessary!!!
 float InteractionInfluence(float dst, float radius)
 {
 	if (dst < radius)

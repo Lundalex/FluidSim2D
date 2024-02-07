@@ -19,18 +19,22 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(1, "PData", m.PDataBuffer);
             pSimShader.SetBuffer(1, "PTypes", m.PTypesBuffer);
 
-            // Kernel 2 - 8/8 buffers
-            pSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
-            pSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
-
             pSimShader.SetBuffer(2, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(2, "PTypes", m.PTypesBuffer);
-
             pSimShader.SetBuffer(2, "SpringCapacities", m.SpringCapacitiesBuffer);
             pSimShader.SetBuffer(2, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
             pSimShader.SetBuffer(2, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
             pSimShader.SetBuffer(2, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
+            
+            // Kernel 3 - 8/8 buffers
+            pSimShader.SetBuffer(3, "SpatialLookup", m.SpatialLookupBuffer);
+            pSimShader.SetBuffer(3, "StartIndices", m.StartIndicesBuffer);
 
+            pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
+            pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
+
+            pSimShader.SetBuffer(3, "SpringCapacities", m.SpringCapacitiesBuffer);
+            pSimShader.SetBuffer(3, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
+            pSimShader.SetBuffer(3, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
             pSimShader.SetBuffer(3, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
             pSimShader.SetBuffer(4, "PData", m.PDataBuffer);
