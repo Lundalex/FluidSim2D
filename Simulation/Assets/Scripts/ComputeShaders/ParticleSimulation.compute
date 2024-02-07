@@ -49,7 +49,6 @@ const bool LMousePressed;
 // Particles - Buffers
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
-RWStructuredBuffer<int> ChunkSizes;
 
 struct SpringStruct
 {
@@ -63,6 +62,7 @@ struct SpringStruct
 RWStructuredBuffer<SpringStruct> ParticleSpringsCombined; // Result A
 
 const bool FrameBufferCycle;
+RWStructuredBuffer<int> ChunkSizes;
 RWStructuredBuffer<int> SpringCapacities;
 RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
 RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
@@ -427,22 +427,32 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     
         int newChunkX_A = (int)(PData_A.Position.x * InvMaxInfluenceRadius);
         int newChunkY_A = (int)(PData_A.Position.y * InvMaxInfluenceRadius);
-        int newChunkKey_A = newChunkY_A * ChunkNumW + newChunkX_A;
     
         int newChunkX_B = (int)(PData_B.Position.x * InvMaxInfluenceRadius);
         int newChunkY_B = (int)(PData_B.Position.y * InvMaxInfluenceRadius);
-        int newChunkKey_B = newChunkY_B * ChunkNumW + newChunkX_B;
-    
-        // int chunkKeyDiff = newChunkKey_B - newChunkKey_A;
-        // int diffX = chunkKeyDiff % ChunkNumW;
-        // int diffY = (int)(chunkKeyDiff / ChunkNumW);
 
-        int SpringsSkipIndex_1 = newChunkKey_A - ChunkNumW - 2;
-        int SpringsSkipIndex_2 = newChunkKey_B - 1;
+        int localSpringBCapacityOrder = 0;
+        bool inRangeAB = false;
+        for (int y = -1; y <= 1; y++)
+        {
+            int curChunkY = newChunkY_B + y;
 
-        int newNeighboorCount = FrameBufferCycle
-        ? SpringStartIndices_dbB[SpringsSkipIndex_2] - SpringStartIndices_dbB[SpringsSkipIndex_1] + pOrder_B
-        : SpringStartIndices_dbA[SpringsSkipIndex_2] - SpringStartIndices_dbA[SpringsSkipIndex_1] + pOrder_B;
+            for (int x = -1; x <= 1; x++)
+            {
+                int curChunkX = newChunkX_B + x;
+
+                if (curChunkX == newChunkX_A && curChunkY == newChunkY_A) { inRangeAB = true; }
+
+                int curChunkKey = curChunkY * ChunkNumW + curChunkX;
+
+                localSpringBCapacityOrder += ChunkSizes[curChunkKey];
+            }
+        }
+        if (!inRangeAB) { return; }
+
+        int newNeighboorCount = localSpringBCapacityOrder + pOrder_B;
+        
+        int newChunkKey_A = newChunkY_A * ChunkNumW + newChunkX_A;
 
         int newSpringIndex = FrameBufferCycle
         ? SpringStartIndices_dbB[newChunkKey_A-1] + pOrder_A * SpringCapacities[newChunkKey_A-1] + newNeighboorCount
@@ -462,7 +472,6 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
-    SpringStruct spring_i = ParticleSpringsCombined[i];
     int pOrder = PData_i.POrder;
 
     int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
