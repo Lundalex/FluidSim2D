@@ -47,6 +47,7 @@ const int TotIndicesToProcess;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
+
 RWStructuredBuffer<int> ChunkSizes;
 RWStructuredBuffer<int> SpringCapacities;
 RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
@@ -243,12 +244,12 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
     int ChunkKey = id.x;
 
-    int totPowSearchedIndices = 8;
-    int depthSize = pow(2, totPowSearchedIndices);
+    int totSearchedIndicesPow = 8;
+    int depthSize = pow(2, totSearchedIndicesPow);
 
     int startIndex = StartIndices[ChunkKey];
     int leftIndex = startIndex;
-    for (int depth = 0; depth < totPowSearchedIndices; depth++)
+    for (int depth = 0; depth < totSearchedIndicesPow; depth++)
     {
         depthSize *= 0.5;
         int checkIndex = leftIndex + depthSize;
