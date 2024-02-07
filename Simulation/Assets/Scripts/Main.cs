@@ -218,31 +218,23 @@ public class Main : MonoBehaviour
             {
                 pSimShader.SetBool("TransferSpringData", false);
             }
-            RunPSimShader();
 
-            // Particle springs
-            if (i == 0)
-            {
-                int ThreadSize = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (30 * 2));
-                // Transfer spring data kernel
-                if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize, 1, 1);}
-            }
+            RunPSimShader(i);
 
             // Stickyness requests
             if (i == 1) {
                 DoCalcStickyRequests = true;
                 rbSimShader.SetInt("DoCalcStickyRequests", 1);
                 GPUSortStickynessRequests(); 
-                int ThreadSize2 = (int)Math.Ceiling((float)4096 / 512);
-                pSimShader.Dispatch(5, ThreadSize2, 1, 1);
+                int ThreadSize = (int)Math.Ceiling((float)4096 / 512);
+                pSimShader.Dispatch(5, ThreadSize, 1, 1);
             }
             else { DoCalcStickyRequests = false; rbSimShader.SetInt("DoCalcStickyRequests", 0); }
 
-
             RunRbSimShader();
 
-            int ThreadSize3 = (int)Math.Ceiling((float)ParticlesNum / 512);
-            if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadSize3, 1, 1);}
+            int ThreadSize2 = (int)Math.Ceiling((float)ParticlesNum / 512);
+            if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadSize2, 1, 1);}
             
             if (RenderMarchingSquares)
             {
@@ -280,7 +272,6 @@ public class Main : MonoBehaviour
         // (Left?, Right?)
         bool2 mousePressed = Utils.GetMousePressed();
 
-        //pSimShader
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("MouseX", mouseWorldPos.x);
         pSimShader.SetFloat("MouseY", mouseWorldPos.y);
@@ -825,7 +816,7 @@ public class Main : MonoBehaviour
         }
     }
 
-    void RunPSimShader()
+    void RunPSimShader(int i)
     {
         pSimShader.SetInt("LastTimeStepInt", TimeStepInt);
         TimeStepInt++;
@@ -835,8 +826,17 @@ public class Main : MonoBehaviour
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
         if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadSize, 1, 1);}
-        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadSize, 1, 1);}
-        if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize, 1, 1);}
+        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadSize, 1, 1);} // CalculateDensities
+
+        // Particle springs
+        if (i == 0)
+        {
+            int ThreadSize2 = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (30 * 2));
+            // Transfer spring data kernel
+            if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize2, 1, 1);}
+        }
+
+        if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize, 1, 1);} // ParticleForces
     }
 
     void RunRbSimShader()
