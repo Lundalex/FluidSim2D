@@ -17,7 +17,7 @@
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
 static const int ThreadsNum = 512;
-static const int ThreadsNumChunkDivider = 30;
+static const int ThreadsNumChunkDivider = 10;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
@@ -173,9 +173,9 @@ int GetNeighboorParticlesNum(int ChunkKey)
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
     {
+        int curChunkX = chunkX + x;
         for (int y = -1; y <= 1; y++)
         {
-            int curChunkX = chunkX + x;
             int curChunkY = chunkY + y;
 
             if (ValidChunk(curChunkX, curChunkY))
@@ -185,7 +185,7 @@ int GetNeighboorParticlesNum(int ChunkKey)
             }
         }
     }
-    return neighboorParticlesNum;
+    return neighboorParticlesNum * ChunkSizes[ChunkKey];
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -242,26 +242,46 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
 [numthreads(ThreadsNumChunkDivider,1,1)]
 void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
-    int ChunkKey = id.x;
-
-    int totSearchedIndicesPow = 8;
-    int depthSize = pow(2, totSearchedIndicesPow);
+    int ChunkKey = id.x - 1;
 
     int startIndex = StartIndices[ChunkKey];
-    int leftIndex = startIndex;
-    for (int depth = 0; depth < totSearchedIndicesPow; depth++)
-    {
-        depthSize *= 0.5;
-        int checkIndex = leftIndex + depthSize;
 
-        // In "this" chunk -> Move search range forward
-        if (checkIndex < ParticlesNum && ChunkKey == SpatialLookup[checkIndex].y)
-        {
-            leftIndex = checkIndex;
-        }
+    int neighboorCount = 0;
+    int Index = startIndex; 
+    while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+    {
+        Index += 1;
+        neighboorCount += 1;
     }
-    int totChunkParticlesNum = leftIndex - startIndex;
-    ChunkSizes[ChunkKey] = totChunkParticlesNum;
+    ChunkSizes[ChunkKey] = neighboorCount;
+
+
+    // int totSearchedIndicesPow = 8;
+    // int depthSize = pow(2, totSearchedIndicesPow);
+
+    // int startIndex = ChunkKey == -1
+    // ? 0
+    // : StartIndices[ChunkKey];
+    // int leftIndex = startIndex;
+    // for (int depth = 0; depth < totSearchedIndicesPow; depth++)
+    // {
+    //     depthSize *= 0.5;
+    //     int checkIndex = leftIndex + depthSize;
+ 
+    //     // In "this" chunk -> Move search range forward
+    //     if (checkIndex < ParticlesNum && ChunkKey == SpatialLookup[checkIndex].y)
+    //     {
+    //         leftIndex = checkIndex;
+    //     }
+    // }
+    // int totChunkParticlesNum = StartIndices[ChunkKey] == 0
+    // ? 0
+    // : leftIndex - startIndex + 1;
+    // ChunkSizes[ChunkKey] = totChunkParticlesNum;
+
+    // ChunkSizes[ChunkKey] = ChunkKey == 0
+    // ? StartIndices[ChunkKey+1]
+    // : StartIndices[ChunkKey+1] - StartIndices[ChunkKey];
 }
 
 [numthreads(ThreadsNumChunkDivider,1,1)]

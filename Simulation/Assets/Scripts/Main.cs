@@ -161,7 +161,7 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
-    private int TimeStepInt = 1;
+    private int frameCounter = 0;
     // private int FrameCounter;
     private int CalcStickyRequestsFrequency = 3;
     // private int GPUChunkDataSortFrequency = 3;
@@ -205,36 +205,7 @@ public class Main : MonoBehaviour
         // GPUSortSpringLookUp() have to be called directly after GPUSortChunkLookUp()
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
-
-        // StartIndicesBuffer.GetData(StartIndices);
-        // SpatialLookupBuffer.GetData(SpatialLookup);
-        // ChunkSizesBuffer.GetData(ChunkSizes);
-        // SpringCapacitiesBuffer.GetData(SpringCapacities);
-        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
-        // ParticleSpringsCombinedBuffer.GetData(ParticleSpringsCombined);
-
-        // int a = 0;
-        // for (int i = 0; i < ParticleSpringsCombined.Length; i++)
-        // {
-        //     if (ParticleSpringsCombined[i].PLinkedA == 1000) { 
-        //         if (foundParticleB == -1)
-        //         {
-        //             foundParticleB = ParticleSpringsCombined[i].PLinkedB;
-        //         }
-        //         else
-        //         {
-        //             if (ParticleSpringsCombined[i].PLinkedB == foundParticleB)
-        //             {
-        //                 Debug.Log(ParticleSpringsCombined[i].PLinkedB);
-        //                 Debug.Log(i);
-        //             }
-        //         }
-        //     }
-        // }
-        // SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
-        // a = 0;
-
-        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
+        frameCounter++;
 
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
@@ -248,6 +219,101 @@ public class Main : MonoBehaviour
             }
 
             RunPSimShader(i);
+
+
+
+
+
+            StartIndicesBuffer.GetData(StartIndices);
+            PDataBuffer.GetData(PData);
+            SpatialLookupBuffer.GetData(SpatialLookup);
+            ChunkSizesBuffer.GetData(ChunkSizes);
+            SpringCapacitiesBuffer.GetData(SpringCapacities);
+            SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+            ParticleSpringsCombinedBuffer.GetData(ParticleSpringsCombined);
+
+            if (FrameBufferCycle)
+            {
+                SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+            }
+            else
+            {
+                SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
+            }
+
+            // Debug.Log("Frame");
+            // for (int j = 0; j < ParticleSpringsCombined.Length; j++)
+            // {
+            //     if (ParticleSpringsCombined[j].PLinkedA == 1000) { 
+            //         if (foundParticleB == -1)
+            //         {
+            //             foundParticleB = ParticleSpringsCombined[j].PLinkedB;
+            //         }
+            //         else
+            //         {
+            //             if (ParticleSpringsCombined[j].PLinkedB == foundParticleB)
+            //             {
+            //                 float2 pA = PData[ParticleSpringsCombined[j].PLinkedA].Position;
+            //                 float2 pB = PData[ParticleSpringsCombined[j].PLinkedB].Position;
+            //                 float2 diff = pA - pB;
+            //                 float dst = (float)Math.Sqrt(diff.x*diff.x+diff.y*diff.y);
+            //                 if (dst <= MaxInfluenceRadius)
+            //                 {
+            //                     // Debug.Log(ParticleSpringsCombined[i].PLinkedB);
+            //                     // Debug.Log(i);
+            //                     Debug.Log(ParticleSpringsCombined[j].RestLength);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+
+            // if (frameCounter == 500 && i == 0)
+            // {
+            //     for (int pIndex = 0; pIndex < PData.Length; pIndex++)
+            //     {
+            //         PDataStruct PData_i = PData[pIndex];
+            //         int baseX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
+            //         int baseY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+            //         int pOrder = PData_i.POrder;
+
+            //         int nNum = 0;
+            //         int chunkKe = baseY * ChunkNumW + baseX;
+            //         for (int x = -1; x <= 1; x++)
+            //         {
+            //             for (int y = -1; y <= 1; y++)
+            //             {
+            //                 int curChunkX = baseX + x;
+            //                 int curChunkY = baseY + y;
+
+            //                 if (!(curChunkX >= 0 && curChunkX < ChunkNumW && curChunkY >= 0 && curChunkY < ChunkNumH)) { continue; }
+
+            //                 int chunkKey = curChunkY * ChunkNumW + curChunkX;
+            //                 int startIndex = StartIndices[chunkKey];
+
+            //                 int Index = startIndex; 
+            //                 while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
+            //                 {
+
+            //                     int springIndex = FrameBufferCycle
+            //                     ? SpringStartIndices[chunkKe-1] + pOrder * SpringCapacities[chunkKe] + nNum + ParticleSpringsCombinedHalfLength
+            //                     : SpringStartIndices[chunkKe-1] + pOrder * SpringCapacities[chunkKe] + nNum;
+
+            //                     Debug.Log(springIndex);
+                                
+            //                     Index++;
+            //                     nNum++;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     int a = 0;
+            // }
+
+
+
+
+
 
             // Stickyness requests
             if (i == 1) {
@@ -294,13 +360,14 @@ public class Main : MonoBehaviour
     
     public void UpdateShaderTimeStep()
     {
-        float DeltaTime = GetDeltaTime();
+        DeltaTime = GetDeltaTime();
         
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(Width, Height);
         // (Left?, Right?)
         bool2 mousePressed = Utils.GetMousePressed();
 
         pSimShader.SetFloat("DeltaTime", DeltaTime);
+        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetFloat("MouseX", mouseWorldPos.x);
         pSimShader.SetFloat("MouseY", mouseWorldPos.y);
         pSimShader.SetBool("LMousePressed", mousePressed.x);
@@ -751,7 +818,7 @@ public class Main : MonoBehaviour
     void GPUSortSpringLookUp()
     {
         // Spring buffer kernels
-        int ThreadSizeChunkSizes = ChunkNum / 30;
+        int ThreadSizeChunkSizes = ChunkNum / 10;
         sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
         sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
 
@@ -827,22 +894,17 @@ public class Main : MonoBehaviour
         // }
     }
 
-    void RunPSimShader(int i)
+    void RunPSimShader(int step)
     {
-        pSimShader.SetInt("LastTimeStepInt", TimeStepInt);
-        TimeStepInt++;
-        if (TimeStepInt > 100) { TimeStepInt = 1; }
-        pSimShader.SetInt("CurTimeStepInt", TimeStepInt);
-
         int ThreadSize = (int)Math.Ceiling((float)ParticlesNum / 512);
 
         if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadSize, 1, 1);}
         if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadSize, 1, 1);} // CalculateDensities
 
         // Particle springs
-        if (i == 0)
+        if (step == 0)
         {
-            int ThreadSize2 = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (30 * 2));
+            int ThreadSize2 = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (2 * 30));
             // Transfer spring data kernel
             if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize2, 1, 1);}
             if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize2, 1, 1);}
