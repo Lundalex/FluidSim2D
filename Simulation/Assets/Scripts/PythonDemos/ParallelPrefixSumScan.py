@@ -53,6 +53,6 @@ def ParallelPrefixSum(input_array):
     else:
         return dBufferA
     
-input_array = [1, 2, 3, 4, 5, 6, 7, 8, 13, 1, 1, 1, 4, 5, 6, 21]
+input_array = [1, 2, 3, 4, 412, 6, 7, 12, 13, 1, 1, 1, 4, 5, 28, 21]
 output_array = ParallelPrefixSum(input_array)
 print(output_array)

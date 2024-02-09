@@ -322,7 +322,7 @@ public class Main : MonoBehaviour
             // THIS IS PROGRESS __________________________________________________
             // There is probably a problem with startIndices mapping onto the same value for particles in different chunks
 
-            if (frameCounter == 10 && i == 0)
+            if (frameCounter == 100 && i == 0)
             {
                 int nNum = 0;
                 // int lastSpringIndex = -1;
@@ -402,18 +402,22 @@ public class Main : MonoBehaviour
                     }
             }
                 int d = 0;
+                int a1111 = 0;
                 for (int l = 1; l < lastSpringIndices.Length; l++)
                 {
                     if(lastSpringIndices[l-1] == -1 && lastSpringIndices[l] != -1)
                     {
                         // Debug.Log(lastSpringIndices[l]);
                         int a22=1;
+                        a1111++;
                     }
                     if (lastSpringIndices[l] > 0)
                     {
                         int a222=1;
+                        d++;
                     }
                 }
+                int dwwdwddwdwdw = 0;
             }
 
 
@@ -922,31 +926,74 @@ public class Main : MonoBehaviour
 
     void GPUSortSpringLookUp()
     {
+        // // Spring buffer kernels
+        // int ThreadSizeChunkSizes = (int)Math.Ceiling((float)ChunkNum / 10);
+        // sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
+        // sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
+
+        // sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
+
+        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+        // SpringCapacitiesBuffer.GetData(SpringCapacities);
+
+        // // Calculate prefix sums (SpringStartIndices)
+        // int offset = -1;
+        // bool StepBufferCycle = false;
+        // for (int iteration = 1; iteration < ChunksNumLog2+1; iteration++)
+        // {
+        //     StepBufferCycle = !StepBufferCycle;
+        //     offset = offset == -1 ? 1 : 2*offset; // offset *= 2, offset_1 = 1
+        //     int halfOffset = offset == 1 ? 0 : offset / 2;
+        //     int totIndicesToProcess = ChunkNum - offset;
+
+        //     sortShader.SetBool("StepBufferCycle", StepBufferCycle);
+        //     sortShader.SetInt("IndexOffset", offset);
+        //     sortShader.SetInt("HalfOffset", halfOffset);
+        //     sortShader.SetInt("TotIndicesToProcess", totIndicesToProcess);
+
+        //     int ThreadSizeChunkSizes2 = (int)Math.Ceiling((float)totIndicesToProcess / 10);
+
+        //     sortShader.Dispatch(7, ThreadSizeChunkSizes2, 1, 1);
+        // }
+        // if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
+
+        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+        // SpringCapacitiesBuffer.GetData(SpringCapacities);
+        // int a = 0;
+
         // Spring buffer kernels
-        int ThreadSizeChunkSizes = ChunkNum / 10;
+        int ThreadSizeChunkSizes = (int)Math.Ceiling((float)ChunkNum / 10);
         sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
         sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
 
         sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
 
-        // Calculate prefix sums (SpringStartIndices)
-        int offset = -1;
-        bool StepBufferCycle = false;
-        for (int iteration = 1; iteration <= ChunksNumLog2; iteration++)
-        {
-            StepBufferCycle = !StepBufferCycle;
-            offset = offset == -1 ? 1 : 2 * offset; // offset *= 2, offset_1 = 1
-            int halfOffset = offset == 1 ? 0 : offset / 2;
-            int totIndicesToProcess = ChunkNum - offset;
+        SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+    
+        // Assuming SpringStartIndices is already populated
+        int[] SpringStartIndices2 = new int[SpringStartIndices.Length];
 
-            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
-            sortShader.SetInt("IndexOffset", offset);
-            sortShader.SetInt("HalfOffset", halfOffset);
-            sortShader.SetInt("TotIndicesToProcess", totIndicesToProcess);
-            
-            sortShader.Dispatch(7, ThreadSizeChunkSizes, 1, 1); // totIndicesToProcess !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // Perform the prefix sum operation
+        for (int offset = 1; offset < SpringStartIndices.Length; offset *= 2)
+        {
+            for (int i = 0; i < SpringStartIndices.Length; i++)
+            {
+                SpringStartIndices2[i] = SpringStartIndices[i];
+                if (i >= offset)
+                {
+                    SpringStartIndices2[i] += SpringStartIndices[i - offset];
+                }
+            }
+            // Copy back for the next iteration
+            Array.Copy(SpringStartIndices2, SpringStartIndices, SpringStartIndices.Length);
         }
-        if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
+
+        // if (StepBufferCycle == true) { for (int i = 0; i < ChunkNum; i++)
+        // {
+        //     SpringStartIndices[i] = SpringStartIndices2[i];
+        // } } // copy to result buffer if necessary
+
+        int a = 0;
     }
 
     void CPUSortChunkData()
