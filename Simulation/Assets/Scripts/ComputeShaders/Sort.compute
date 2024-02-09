@@ -194,7 +194,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    int chunkKey = GetChunkKey(i, PData[i].PredPosition);
+    int chunkKey = GetChunkKey(i, PData[i].Position);
     SpatialLookup[i] = int2(i, chunkKey);
 }
 
