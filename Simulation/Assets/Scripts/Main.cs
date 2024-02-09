@@ -322,17 +322,17 @@ public class Main : MonoBehaviour
             // THIS IS PROGRESS __________________________________________________
             // There is probably a problem with startIndices mapping onto the same value for particles in different chunks
 
-            if (frameCounter == 200 && i == 0)
+            if (frameCounter == 10 && i == 0)
             {
                 int nNum = 0;
                 // int lastSpringIndex = -1;
-                int[] lastSpringIndices = new int[100000];
+                int[] lastSpringIndices = new int[10000000];
                 for (int p = 0; p < lastSpringIndices.Length; p++)
                 {
                     lastSpringIndices[p] = -1;
                 }
                 
-                for (int k = 100; k < 150; k++)
+                for (int k = 0; k < ParticlesNum; k++)
                 {
                     
                     // int chunkKey2 = k;
@@ -374,38 +374,48 @@ public class Main : MonoBehaviour
                                 int Index = startIndex; 
                                 while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
                                 {
+
                                     int springIndex = FrameBufferCycle
-                                    ? SpringStartIndices[chunkKe] + pOrder * nearbyCapacity + nNum // +hnumn
-                                    : SpringStartIndices[chunkKe] + pOrder * nearbyCapacity + nNum;
+                                    ? SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum // +hnumn
+                                    : SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum;
 
                                     if (lastSpringIndices[springIndex] == 1)
                                     {
                                         Debug.Log(springIndex);
                                     }
-                                    lastSpringIndices[startIndex] += 1;
+                                    lastSpringIndices[springIndex] += 1;
+                                    if (lastSpringIndices[springIndex] > 0)
+                                    {
+                                        int afwwf = 0;
+                                    }
                                     
                                     Index++;
                                     nNum++;
                                 }
                             }
                         
-                        }
+                        
                         if (nNum > nearbyCapacity)
                         {
                             int oooo = 0;
                         }
-                        // Index2++;
-                    int d = 0;
-                for (int l = 0; l < lastSpringIndices.Length; l++)
+                    }
+            }
+                int d = 0;
+                for (int l = 1; l < lastSpringIndices.Length; l++)
                 {
+                    if(lastSpringIndices[l-1] == -1 && lastSpringIndices[l] != -1)
+                    {
+                        // Debug.Log(lastSpringIndices[l]);
+                        int a22=1;
+                    }
                     if (lastSpringIndices[l] > 0)
                     {
-                        int f = 2;
+                        int a222=1;
                     }
                 }
-                
             }
-            }
+
 
 
 
