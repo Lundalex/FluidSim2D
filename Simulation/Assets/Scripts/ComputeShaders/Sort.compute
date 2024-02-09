@@ -17,7 +17,6 @@
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
 static const int ThreadsNum = 512;
-static const int ThreadsNumChunkDivider = 10;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
@@ -47,8 +46,7 @@ const int Offset;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
-RWStructuredBuffer<int> ChunkSizes;
-RWStructuredBuffer<int> SpringCapacities;
+RWStructuredBuffer<int2> SpringCapacities; // [](baseChunkCapacity, neighboorChunksCapacity)
 RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
 RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
@@ -78,7 +76,6 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
-    int LastPOrder;
     int LastChunkKey;
     int PType;
 };
@@ -181,11 +178,11 @@ int GetNeighboorParticlesNum(int ChunkKey)
             if (ValidChunk(curChunkX, curChunkY))
             {
                 int neighboorChunkKey = curChunkY * ChunkNumW + curChunkX;
-                neighboorParticlesNum += ChunkSizes[neighboorChunkKey];
+                neighboorParticlesNum += SpringCapacities[neighboorChunkKey].x;
             }
         }
     }
-    return neighboorParticlesNum * ChunkSizes[ChunkKey];
+    return neighboorParticlesNum * SpringCapacities[ChunkKey].x;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -239,7 +236,7 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNumChunkDivider,1,1)]
+[numthreads(ThreadsNum,1,1)]
 void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
     int ChunkKey = id.x - 1;
@@ -253,20 +250,20 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
         Index += 1;
         neighboorCount += 1;
     }
-    ChunkSizes[ChunkKey] = neighboorCount;
+    SpringCapacities[ChunkKey].x = neighboorCount;
 }
 
-[numthreads(ThreadsNumChunkDivider,1,1)]
+[numthreads(ThreadsNum,1,1)]
 void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     int ChunkKey = id.x;
 
     int SpringCapacity = GetNeighboorParticlesNum(ChunkKey);
 
-    SpringCapacities[ChunkKey] = SpringCapacity;
+    SpringCapacities[ChunkKey].y = SpringCapacity;
 }
 
-[numthreads(ThreadsNumChunkDivider,1,1)]
+[numthreads(ThreadsNum,1,1)]
 void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     // Copying both should be unnecessary
@@ -275,16 +272,16 @@ void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
     {
         if (FrameBufferCycle)
         {
-            SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey];
+            SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey].y;
         }
         else
         {
-            SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey];
+            SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey].y;
         }
     }
 }
 
-[numthreads(ThreadsNumChunkDivider,1,1)]
+[numthreads(ThreadsNum,1,1)]
 void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -339,7 +336,7 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNumChunkDivider,1,1)]
+[numthreads(ThreadsNum,1,1)]
 void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;

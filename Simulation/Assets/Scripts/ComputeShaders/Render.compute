@@ -52,7 +52,6 @@ struct PDataStruct
     float Density;
     float NearDensity;
     int POrder;
-    int LastPOrder;
     int LastChunkKey;
     int PType;
 };
