@@ -42,9 +42,7 @@ const int SRblocksNum;
 
 const bool FrameBufferCycle;
 const bool StepBufferCycle;
-const int IndexOffset;
-const int HalfOffset;
-const int TotIndicesToProcess;
+const int Offset;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
@@ -283,84 +281,60 @@ void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
         {
             SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey];
         }
-        SpringStartIndices_dbC[ChunkKey] = SpringCapacities[ChunkKey];
     }
 }
 
 [numthreads(ThreadsNumChunkDivider,1,1)]
 void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x <= (uint)TotIndicesToProcess)
+    int i = id.x;
+    if (i >= ChunkNum) { return; }
+    // A <-> C
+    if (FrameBufferCycle)
     {
-        int i = id.x + IndexOffset;
-
-        if (i >= ChunkNum) { return; }
-
-        if (FrameBufferCycle)
+        // A -> C
+        if (StepBufferCycle)
         {
-            // A -> C
-            if (StepBufferCycle)
+            int curVal = SpringStartIndices_dbA[i];
+            if (i >= Offset)
             {
-                int storedVal = SpringStartIndices_dbA[i] + SpringStartIndices_dbA[i - IndexOffset];
-                SpringStartIndices_dbC[i] = storedVal;
+                curVal += SpringStartIndices_dbA[i - Offset];
             }
-            // C -> A
-            else
-            {
-                int storedVal = SpringStartIndices_dbC[i] + SpringStartIndices_dbC[i - IndexOffset];
-                SpringStartIndices_dbA[i] = storedVal;
-            }
+            SpringStartIndices_dbC[i] = curVal;
         }
-        // B <-> C 
+        // C -> A
         else
         {
-            // B -> C
-            if (StepBufferCycle)
+            int curVal = SpringStartIndices_dbC[i];
+            if (i >= Offset)
             {
-                int storedVal = SpringStartIndices_dbB[i] + SpringStartIndices_dbB[i - IndexOffset];
-                SpringStartIndices_dbC[i] = storedVal;
+                curVal += SpringStartIndices_dbC[i - Offset];
             }
-            // C -> B
-            else
-            {
-                int storedVal = SpringStartIndices_dbC[i] + SpringStartIndices_dbC[i - IndexOffset];
-                SpringStartIndices_dbB[i] = storedVal;
-            }
+            SpringStartIndices_dbA[i] = curVal;
         }
     }
+    // B <-> C
     else
-    { 
-        int id_x = id.x - TotIndicesToProcess;
-        if (id_x > HalfOffset) { return; }
-
-        int i = id_x + HalfOffset;
-
-        if (FrameBufferCycle)
+    {
+        // B -> C
+        if (StepBufferCycle)
         {
-            // A -> C
-            if (StepBufferCycle)
+            int curVal = SpringStartIndices_dbB[i];
+            if (i >= Offset)
             {
-                SpringStartIndices_dbC[i] = SpringStartIndices_dbA[i];
+                curVal += SpringStartIndices_dbB[i - Offset];
             }
-            // C -> A
-            else
-            {
-                SpringStartIndices_dbA[i] = SpringStartIndices_dbC[i];
-            }
+            SpringStartIndices_dbC[i] = curVal;
         }
-        // B <-> C 
+        // C -> B
         else
         {
-            // B -> C
-            if (StepBufferCycle)
+            int curVal = SpringStartIndices_dbC[i];
+            if (i >= Offset)
             {
-                SpringStartIndices_dbC[i] = SpringStartIndices_dbB[i];
+                curVal += SpringStartIndices_dbC[i - Offset];
             }
-            // C -> B
-            else
-            {
-                SpringStartIndices_dbB[i] = SpringStartIndices_dbC[i];
-            }
+            SpringStartIndices_dbB[i] = curVal;
         }
     }
 }
