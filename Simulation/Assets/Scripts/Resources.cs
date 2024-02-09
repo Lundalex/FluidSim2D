@@ -38,7 +38,6 @@ namespace Resources
         public float Density;
         public float NearDensity;
         public int POrder;
-        public int LastPOrder;
         public int LastChunkKey;
         public int PType;
     }

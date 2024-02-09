@@ -22,7 +22,6 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(2, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
             pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(3, "ChunkSizes", m.ChunkSizesBuffer);
             pSimShader.SetBuffer(3, "SpringCapacities", m.SpringCapacitiesBuffer);
             pSimShader.SetBuffer(3, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
             pSimShader.SetBuffer(3, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
@@ -113,9 +112,8 @@ public class ShaderHelper : MonoBehaviour
 
         sortShader.SetBuffer(4, "SpatialLookup", m.SpatialLookupBuffer);
         sortShader.SetBuffer(4, "StartIndices", m.StartIndicesBuffer);
-        sortShader.SetBuffer(4, "ChunkSizes", m.ChunkSizesBuffer);
+        sortShader.SetBuffer(4, "SpringCapacities", m.SpringCapacitiesBuffer);
 
-        sortShader.SetBuffer(5, "ChunkSizes", m.ChunkSizesBuffer);
         sortShader.SetBuffer(5, "SpringCapacities", m.SpringCapacitiesBuffer);
 
         sortShader.SetBuffer(6, "SpringCapacities", m.SpringCapacitiesBuffer);
