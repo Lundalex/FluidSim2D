@@ -121,6 +121,7 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetBuffer(6, "SpringCapacities", m.SpringCapacitiesBuffer);
         sortShader.SetBuffer(6, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
         sortShader.SetBuffer(6, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
+        sortShader.SetBuffer(6, "SpringStartIndices_dbC", m.SpringStartIndicesBuffer_dbC);
 
         sortShader.SetBuffer(7, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
         sortShader.SetBuffer(7, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
@@ -216,6 +217,7 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         sortShader.SetInt("ChunkNumW", m.ChunkNumW);
         sortShader.SetInt("ChunkNumH", m.ChunkNumH);
+        sortShader.SetInt("ChunkNum", m.ChunkNum);
         sortShader.SetInt("ChunkNumNextPow2", m.ChunkNumNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("IOOR", m.IOOR);
