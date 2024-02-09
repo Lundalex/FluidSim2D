@@ -141,12 +141,20 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 {
     PDataStruct PData_i = PData[pIndex];
 
-    int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
-    int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+    if (TransferSpringData)
+    {
+        int newChunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
+        int newChunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+        int newChunkKey = newChunkY * ChunkNumW + newChunkX;
+        PData[pIndex].LastChunkKey = newChunkKey;
+        PData_i.LastChunkKey = newChunkKey;
+    }
+
+    int chunkX = PData_i.LastChunkKey % ChunkNumW;
+    int chunkY = (int)(PData_i.LastChunkKey / ChunkNumW);
 
     float totDensity = 0.0;
     float totNearDensity = 0.0;
-    // int springSkips = 0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -169,12 +177,15 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
                 if (TransferSpringData)
                 {
-                    if (pIndex == otherPIndex)
+                    if (x == 0 && y == 0)
                     {
-                        int pOrder = Index - startIndex;
-                        PData[pIndex].LastPOrder = PData_i.POrder;
-                        PData[pIndex].POrder = pOrder;
-                        PData_i.POrder = pOrder;
+                        if (pIndex == otherPIndex)
+                        {
+                            int pOrder = Index - startIndex;
+                            PData[pIndex].LastPOrder = PData_i.POrder;
+                            PData[pIndex].POrder = pOrder;
+                            PData_i.POrder = pOrder;
+                        }
                     }
                 }
 
@@ -487,8 +498,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     PTypeStruct PType_i = PTypes[PData_i.PType];
     int pOrder = PData_i.POrder;
 
-    int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
-    int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+    int chunkX = PData_i.LastChunkKey % ChunkNumW;
+    int chunkY = (int)(PData_i.LastChunkKey / ChunkNumW);
     int baseChunkBase = chunkY * ChunkNumW + chunkX;
 
     float2 totPressureForce = float2(0.0, 0.0);
@@ -553,15 +564,6 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
 
 
     // -- Spring handling --
-
-    // if (TransferSpringData)
-    // {
-    //     int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
-    //     int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
-    //     int chunkKey = chunkY * ChunkNumW + chunkX;
-    //     PData[i].LastChunkKey = chunkKey;
-    //     // PData[i].LastPOrder = PData_i.POrder * SpringCapacities[chunkKey-1];
-    // }
 
 
     // -- Update positions --
