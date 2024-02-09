@@ -241,6 +241,57 @@ public class Main : MonoBehaviour
                 SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
             }
 
+
+
+            // int pIndex = 10;
+            // PDataStruct PData_i = PData[pIndex];
+
+            // int chunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
+            // int chunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+
+            // for (int x = -1; x <= 1; x++)
+            // {
+            //     for (int y = -1; y <= 1; y++)
+            //     {
+            //         int curChunkX = chunkX + x;
+            //         int curChunkY = chunkY + y;
+
+            //         if (!(chunkX >= 0 && chunkX < ChunkNumW && chunkY >= 0 && chunkY < ChunkNumH)) {continue;}
+
+            //         int chunkKey = curChunkY * ChunkNumW + curChunkX;
+            //         int startIndex = StartIndices[chunkKey];
+
+            //         int Index = startIndex;
+            //         while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
+            //         {
+            //             int otherPIndex = SpatialLookup[Index].x;
+
+
+            //             // -- Spring handling --
+
+            //             if (i == 0)
+            //             {
+            //                 if (x == 0 && y == 0)
+            //                 {
+            //                     if (pIndex == otherPIndex)
+            //                     {
+            //                         int pOrder = Index - startIndex;
+            //                         PData[pIndex].LastPOrder = PData_i.POrder;
+            //                         PData[pIndex].POrder = pOrder;
+            //                         PData_i.POrder = pOrder;
+            //                     }
+            //                 }
+            //             }
+
+            //             Index += 1;
+            //         }
+            //     }
+            // }
+
+
+
+
+
             // Debug.Log("Frame");
             // for (int j = 0; j < ParticleSpringsCombined.Length; j++)
             // {
@@ -268,49 +319,92 @@ public class Main : MonoBehaviour
             //     }
             // }
 
-            // if (frameCounter == 500 && i == 0)
-            // {
-            //     for (int pIndex = 0; pIndex < PData.Length; pIndex++)
-            //     {
-            //         PDataStruct PData_i = PData[pIndex];
-            //         int baseX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
-            //         int baseY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
-            //         int pOrder = PData_i.POrder;
+            // THIS IS PROGRESS __________________________________________________
+            
+            if (frameCounter == 200 && i == 0)
+            {
+                int[] lastSpringIndices = new int[100000000];
+                for (int p = 0; p < lastSpringIndices.Length; p++)
+                {
+                    lastSpringIndices[p] = -1;
+                }
+                int nNum = 0;
+                // int lastSpringIndex = -1;
 
-            //         int nNum = 0;
-            //         int chunkKe = baseY * ChunkNumW + baseX;
-            //         for (int x = -1; x <= 1; x++)
-            //         {
-            //             for (int y = -1; y <= 1; y++)
-            //             {
-            //                 int curChunkX = baseX + x;
-            //                 int curChunkY = baseY + y;
+                for (int k = 100; k < 1000; k++)
+                {
+                
+                    // int chunkKey2 = k;
+                    // int startIndex2 = StartIndices[chunkKey2];
 
-            //                 if (!(curChunkX >= 0 && curChunkX < ChunkNumW && curChunkY >= 0 && curChunkY < ChunkNumH)) { continue; }
-
-            //                 int chunkKey = curChunkY * ChunkNumW + curChunkX;
-            //                 int startIndex = StartIndices[chunkKey];
-
-            //                 int Index = startIndex; 
-            //                 while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
-            //                 {
-
-            //                     int springIndex = FrameBufferCycle
-            //                     ? SpringStartIndices[chunkKe-1] + pOrder * SpringCapacities[chunkKe] + nNum + ParticleSpringsCombinedHalfLength
-            //                     : SpringStartIndices[chunkKe-1] + pOrder * SpringCapacities[chunkKe] + nNum;
-
-            //                     Debug.Log(springIndex);
-                                
-            //                     Index++;
-            //                     nNum++;
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     int a = 0;
-            // }
+                    // int Index2 = startIndex2;
+                    // while (Index2 < ParticlesNum && chunkKey2 == SpatialLookup[Index2].y)
+                    // {
+                        int pIndex = k;
 
 
+                        PDataStruct PData_i = PData[pIndex];
+                        int baseX = PData_i.LastChunkKey % ChunkNumW;
+                        int baseY = (int)(PData_i.LastChunkKey / ChunkNumW);
+                        int pOrder = PData_i.POrder;
+
+                        int chunkKe = baseY * ChunkNumW + baseX;
+                        int b = SpringCapacities[chunkKe];
+                        int c = ChunkSizes[chunkKe];
+                        if (ChunkSizes[chunkKe] == 0)
+                        {
+                            continue;
+                        }
+                        int nearbyCapacity = SpringCapacities[chunkKe] / ChunkSizes[chunkKe];
+
+                        nNum = 0;
+                        for (int x = -1; x <= 1; x++)
+                        {
+                            for (int y = -1; y <= 1; y++)
+                            {
+                                int curChunkX = baseX + x;
+                                int curChunkY = baseY + y;
+
+                                if (!(curChunkX >= 0 && curChunkX < ChunkNumW && curChunkY >= 0 && curChunkY < ChunkNumH)) { continue; }
+
+                                int chunkKey = curChunkY * ChunkNumW + curChunkX;
+                                int startIndex = StartIndices[chunkKey];
+
+                                int Index = startIndex; 
+                                while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
+                                {
+                                    int springIndex = FrameBufferCycle
+                                    ? SpringStartIndices[chunkKe] + pOrder * nearbyCapacity + nNum // +hnumn
+                                    : SpringStartIndices[chunkKe] + pOrder * nearbyCapacity + nNum;
+
+                                    if (lastSpringIndices[springIndex] == 1)
+                                    {
+                                        Debug.Log(springIndex);
+                                    }
+                                    lastSpringIndices[springIndex] += 1;
+                                    
+                                    Index++;
+                                    nNum++;
+                                }
+                            }
+                        
+                        }
+                        if (nNum > nearbyCapacity)
+                        {
+                            int oooo = 0;
+                        }
+                        // Index2++;
+                
+            }
+                int d = 0;
+                for (int l = 0; l < lastSpringIndices.Length; l++)
+                {
+                    if (lastSpringIndices[l] > 0)
+                    {
+                        int f = 2;
+                    }
+                }
+            }
 
 
 

@@ -167,20 +167,21 @@ void PinkSort(int lowRef)
 
 int GetNeighboorParticlesNum(int ChunkKey)
 {
-    int chunkX = (uint)ChunkKey % ChunkNumW;
-    int chunkY = (int)((float)ChunkKey / (float)ChunkNumW);
+    int chunkX = ChunkKey % ChunkNumW;
+    int chunkY = (int)(ChunkKey / ChunkNumW);
 
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
     {
         int curChunkX = chunkX + x;
+
         for (int y = -1; y <= 1; y++)
         {
             int curChunkY = chunkY + y;
 
             if (ValidChunk(curChunkX, curChunkY))
             {
-                int neighboorChunkKey = curChunkX + curChunkY * ChunkNumW;
+                int neighboorChunkKey = curChunkY * ChunkNumW + curChunkX;
                 neighboorParticlesNum += ChunkSizes[neighboorChunkKey];
             }
         }
@@ -335,7 +336,7 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
             }
         }
     }
-    // B <-> C
+    // B <-> C 
     else
     {
         // B -> C
