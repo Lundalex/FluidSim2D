@@ -209,18 +209,9 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
-            if (i == 0)
-            {
-                pSimShader.SetBool("TransferSpringData", true);
-            }
-            else
-            {
-                pSimShader.SetBool("TransferSpringData", false);
-            }
+            pSimShader.SetBool("TransferSpringData", i == 0);
 
             RunPSimShader(i);
-
-
 
 
 
@@ -926,74 +917,24 @@ public class Main : MonoBehaviour
 
     void GPUSortSpringLookUp()
     {
-        // // Spring buffer kernels
-        // int ThreadSizeChunkSizes = (int)Math.Ceiling((float)ChunkNum / 10);
-        // sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
-        // sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
-
-        // sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
-
-        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
-        // SpringCapacitiesBuffer.GetData(SpringCapacities);
-
-        // // Calculate prefix sums (SpringStartIndices)
-        // int offset = -1;
-        // bool StepBufferCycle = false;
-        // for (int iteration = 1; iteration < ChunksNumLog2+1; iteration++)
-        // {
-        //     StepBufferCycle = !StepBufferCycle;
-        //     offset = offset == -1 ? 1 : 2*offset; // offset *= 2, offset_1 = 1
-        //     int halfOffset = offset == 1 ? 0 : offset / 2;
-        //     int totIndicesToProcess = ChunkNum - offset;
-
-        //     sortShader.SetBool("StepBufferCycle", StepBufferCycle);
-        //     sortShader.SetInt("IndexOffset", offset);
-        //     sortShader.SetInt("HalfOffset", halfOffset);
-        //     sortShader.SetInt("TotIndicesToProcess", totIndicesToProcess);
-
-        //     int ThreadSizeChunkSizes2 = (int)Math.Ceiling((float)totIndicesToProcess / 10);
-
-        //     sortShader.Dispatch(7, ThreadSizeChunkSizes2, 1, 1);
-        // }
-        // if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
-
-        // SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
-        // SpringCapacitiesBuffer.GetData(SpringCapacities);
-        // int a = 0;
-
         // Spring buffer kernels
         int ThreadSizeChunkSizes = (int)Math.Ceiling((float)ChunkNum / 10);
         sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
         sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
-
         sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
 
-        SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
-    
-        // Assuming SpringStartIndices is already populated
-        int[] SpringStartIndices2 = new int[SpringStartIndices.Length];
-
-        // Perform the prefix sum operation
+        // Calculate prefix sums (SpringStartIndices)
+        bool StepBufferCycle = false;
         for (int offset = 1; offset < SpringStartIndices.Length; offset *= 2)
         {
-            for (int i = 0; i < SpringStartIndices.Length; i++)
-            {
-                SpringStartIndices2[i] = SpringStartIndices[i];
-                if (i >= offset)
-                {
-                    SpringStartIndices2[i] += SpringStartIndices[i - offset];
-                }
-            }
-            // Copy back for the next iteration
-            Array.Copy(SpringStartIndices2, SpringStartIndices, SpringStartIndices.Length);
+            StepBufferCycle = !StepBufferCycle;
+
+            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
+            sortShader.SetInt("Offset", offset);
+
+            sortShader.Dispatch(7, ThreadSizeChunkSizes, 1, 1);
         }
-
-        // if (StepBufferCycle == true) { for (int i = 0; i < ChunkNum; i++)
-        // {
-        //     SpringStartIndices[i] = SpringStartIndices2[i];
-        // } } // copy to result buffer if necessary
-
-        int a = 0;
+        if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
     }
 
     void CPUSortChunkData()
