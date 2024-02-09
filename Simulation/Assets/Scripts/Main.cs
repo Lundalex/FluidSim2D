@@ -320,20 +320,21 @@ public class Main : MonoBehaviour
             // }
 
             // THIS IS PROGRESS __________________________________________________
-            
+            // There is probably a problem with startIndices mapping onto the same value for particles in different chunks
+
             if (frameCounter == 200 && i == 0)
             {
-                int[] lastSpringIndices = new int[100000000];
+                int nNum = 0;
+                // int lastSpringIndex = -1;
+                int[] lastSpringIndices = new int[100000];
                 for (int p = 0; p < lastSpringIndices.Length; p++)
                 {
                     lastSpringIndices[p] = -1;
                 }
-                int nNum = 0;
-                // int lastSpringIndex = -1;
-
-                for (int k = 100; k < 1000; k++)
-                {
                 
+                for (int k = 100; k < 150; k++)
+                {
+                    
                     // int chunkKey2 = k;
                     // int startIndex2 = StartIndices[chunkKey2];
 
@@ -381,7 +382,7 @@ public class Main : MonoBehaviour
                                     {
                                         Debug.Log(springIndex);
                                     }
-                                    lastSpringIndices[springIndex] += 1;
+                                    lastSpringIndices[startIndex] += 1;
                                     
                                     Index++;
                                     nNum++;
@@ -394,9 +395,7 @@ public class Main : MonoBehaviour
                             int oooo = 0;
                         }
                         // Index2++;
-                
-            }
-                int d = 0;
+                    int d = 0;
                 for (int l = 0; l < lastSpringIndices.Length; l++)
                 {
                     if (lastSpringIndices[l] > 0)
@@ -404,6 +403,8 @@ public class Main : MonoBehaviour
                         int f = 2;
                     }
                 }
+                
+            }
             }
 
 
