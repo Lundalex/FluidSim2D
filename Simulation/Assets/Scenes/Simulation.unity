@@ -248,7 +248,7 @@ MonoBehaviour:
   MaxChunkSearchSafety: 1
   SpringSafety: 1024
   ChunkStorageSafety: 0.2
-  SpringCapacitySafety: 90
+  SpringCapacitySafety: 120
   TriStorageLength: 4
   radii: 15
   Width: 300
@@ -259,7 +259,7 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.01
   ProgramSpeed: 1
-  VisualParticleRadii: 1
+  VisualParticleRadii: 0.4
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41
@@ -269,7 +269,7 @@ MonoBehaviour:
   MarchW: 100
   MarchH: 66
   MaxInteractionRadius: 70
-  InteractionAttractionPower: 25
+  InteractionAttractionPower: 30
   InteractionFountainPower: 0
   shaderHelper: {fileID: 486544}
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
