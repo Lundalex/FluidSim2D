@@ -241,7 +241,7 @@ MonoBehaviour:
   LookAheadFactor: 0.02
   Viscocity: 3
   LiquidElasticity: 2
-  Plasticity: 20
+  Plasticity: 200
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
