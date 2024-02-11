@@ -248,7 +248,7 @@ MonoBehaviour:
   MaxChunkSearchSafety: 1
   SpringSafety: 1024
   ChunkStorageSafety: 0.2
-  SpringCapacitySafety: 120
+  SpringCapacitySafety: 200
   TriStorageLength: 4
   radii: 15
   Width: 300
