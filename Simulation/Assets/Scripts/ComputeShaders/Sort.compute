@@ -241,7 +241,9 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
     int ChunkKey = id.x - 1;
 
-    int startIndex = StartIndices[ChunkKey];
+    int startIndex = ChunkKey == -1
+    ? 0
+    : StartIndices[ChunkKey];
 
     int neighboorCount = 0;
     int Index = startIndex; 
