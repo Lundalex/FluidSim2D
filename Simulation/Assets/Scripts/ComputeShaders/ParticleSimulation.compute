@@ -314,7 +314,7 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
 
 float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 normDst, int springIndex)
 {
-    // NEXT - CHECK SPRING DELETION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     SpringStruct spring = ParticleSpringsCombined[springIndex];
 
     // if spring is not already initialized, initialize a new one
@@ -545,7 +545,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 PDataStruct PData_otherPIndex = PData[otherPIndex];
                 PTypeStruct PType_otherPIndex = PTypes[PData_otherPIndex.PType];
 
-                float2 dst = PData_otherPIndex.PredPosition - PData_i.PredPosition;
+                float2 dst = PData_otherPIndex.Position - PData_i.Position;
                 float sqrDst = dot(dst, dst);
 
                 if (sqrDst > MaxInfluenceRadiusSqr) { Index += 1; nNum += 1; continue; }
@@ -589,6 +589,8 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     // -- Update positions --
 
     PData_i.Position += PData_i.Velocity * DeltaTime;
+
+    if (LMousePressed && i == 999) { PData[i].Position += 0.1; PData_i.Position += 0.1; } // temporary!!!!!!!!!!!!!!!!
 
     float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[PData_i.PType].Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);

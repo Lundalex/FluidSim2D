@@ -207,21 +207,22 @@ public class Main : MonoBehaviour
             RunPSimShader(i);
 
 
-            // StartIndicesBuffer.GetData(StartIndices);
-            // PDataBuffer.GetData(PData);
-            // SpatialLookupBuffer.GetData(SpatialLookup);
-            // SpringCapacitiesBuffer.GetData(SpringCapacities);
-            // ParticleSpringsCombinedBuffer.GetData(ParticleSpringsCombined);
+            StartIndicesBuffer.GetData(StartIndices);
+            PDataBuffer.GetData(PData);
+            SpatialLookupBuffer.GetData(SpatialLookup);
+            SpringCapacitiesBuffer.GetData(SpringCapacities);
+            ParticleSpringsCombinedBuffer.GetData(ParticleSpringsCombined);
 
-            // if (FrameBufferCycle)
-            // {
-            //     SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
-            // }
-            // else
-            // {
-            //     SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
-            // }
+            if (FrameBufferCycle)
+            {
+                SpringStartIndicesBuffer_dbA.GetData(SpringStartIndices);
+            }
+            else
+            {
+                SpringStartIndicesBuffer_dbB.GetData(SpringStartIndices);
+            }
 
+            bool sprFound = false;
             // for (int id_x = 0; id_x < 2*ParticlesNum; id_x++)
             // {
             //     int ii = FrameBufferCycle
@@ -231,13 +232,13 @@ public class Main : MonoBehaviour
             //     // B is connected to A
             //     SpringStruct lastSpring_i = ParticleSpringsCombined[ii];
             //     if (lastSpring_i.PLinkedA == -1) { continue; }
+            //     bool printNewSpringIndex = false;
             //     if (lastSpring_i.RestLength != MaxInfluenceRadius)
             //     {
             //         if (lastSpring_i.RestLength < -1.5f)
             //         {
             //             int dww222da = 0;
             //         }
-            //         Debug.Log(lastSpring_i.RestLength);
             //     }
                 
             //     PDataStruct PData_A = PData[lastSpring_i.PLinkedA];
@@ -279,7 +280,7 @@ public class Main : MonoBehaviour
             //                 while (Index < ParticlesNum && curChunkKey == SpatialLookup[Index].y)
             //                 {
             //                     int otherPIndex = SpatialLookup[Index].x;
-            //                     if (lastSpring_i.PLinkedB == otherPIndex) { inRangeAB = true; shouldBreak = true; break; }
+            //                     if (lastSpring_i.PLinkedB == otherPIndex) { inRangeAB = true; shouldBreak = true; if(lastSpring_i.PLinkedA == 1000 && lastSpring_i.PLinkedB == 999) { printNewSpringIndex = true; sprFound = true; } break; }
             //                     localSpringBCapacityOrder++;
             //                     Index++;
             //                 }
@@ -296,13 +297,22 @@ public class Main : MonoBehaviour
             //             int newSpringIndex = FrameBufferCycle
             //             ? SpringStartIndices[newChunkKey_A-1] + pOrder_A * nearbyCapacity + newNeighboorCount + ParticleSpringsCombinedHalfLength
             //             : SpringStartIndices[newChunkKey_A-1] + pOrder_A * nearbyCapacity + newNeighboorCount;
+
+            //             if (printNewSpringIndex)
+            //             {
+            //                 Debug.Log(ParticleSpringsCombined[newSpringIndex].RestLength);
+            //             }
                 
             //             // ParticleSpringsCombined[newSpringIndex] = lastSpring_i;
             //         }
             //     }
             // }
+            // if (!sprFound)
+            // {
+            //     Debug.Log("NoSpringFound");
+            // }
 
-
+            // foundParticleB = 999;
             // Debug.Log("Frame");
             // for (int j = 0; j < ParticleSpringsCombined.Length; j++)
             // {
@@ -330,103 +340,107 @@ public class Main : MonoBehaviour
             //     }
             // }
 
-            // if (i != -11)
-            // {
-            //     // int lastSpringIndex = -1;
-            //     int[] lastSpringIndices = new int[10000000];
-            //     for (int p = 0; p < lastSpringIndices.Length; p++)
-            //     {
-            //         lastSpringIndices[p] = -1;
-            //     }
+            if (i != -11)
+            {
+                // int lastSpringIndex = -1;
+                int[] lastSpringIndices = new int[10000000];
+                for (int p = 0; p < lastSpringIndices.Length; p++)
+                {
+                    lastSpringIndices[p] = -1;
+                }
                 
-            //     for (int k = 0; k < ParticlesNum; k++)
-            //     {
-            //             int pIndex = k;
+                for (int k = 0; k < ParticlesNum; k++)
+                {
+                        int pIndex = k;
 
 
-            //             PDataStruct PData_i = PData[pIndex];
-            //             int baseX = PData_i.LastChunkKey % ChunkNumW;
-            //             int baseY = (int)(PData_i.LastChunkKey / ChunkNumW);
-            //             int pOrder = PData_i.POrder;
+                        PDataStruct PData_i = PData[pIndex];
+                        int baseX = PData_i.LastChunkKey % ChunkNumW;
+                        int baseY = (int)(PData_i.LastChunkKey / ChunkNumW);
+                        int pOrder = PData_i.POrder;
 
-            //             int chunkKe = baseY * ChunkNumW + baseX;
-            //             int b = SpringCapacities[chunkKe].y;
-            //             int c = SpringCapacities[chunkKe].x;
-            //             if (SpringCapacities[chunkKe].x == 0 || chunkKe == 0)
-            //             {
-            //                 continue;
-            //             }
-            //             int nearbyCapacity = SpringCapacities[chunkKe].y / SpringCapacities[chunkKe].x;
+                        int chunkKe = baseY * ChunkNumW + baseX;
+                        int b = SpringCapacities[chunkKe].y;
+                        int c = SpringCapacities[chunkKe].x;
+                        if (SpringCapacities[chunkKe].x == 0 || chunkKe == 0)
+                        {
+                            continue;
+                        }
+                        int nearbyCapacity = SpringCapacities[chunkKe].y / SpringCapacities[chunkKe].x;
 
-            //             int nNum = 0;
-            //             for (int x = -1; x <= 1; x++)
-            //             {
-            //                 for (int y = -1; y <= 1; y++)
-            //                 {
-            //                     int curChunkX = baseX + x;
-            //                     int curChunkY = baseY + y;
+                        int nNum = 0;
+                        for (int x = -1; x <= 1; x++)
+                        {
+                            for (int y = -1; y <= 1; y++)
+                            {
+                                int curChunkX = baseX + x;
+                                int curChunkY = baseY + y;
 
-            //                     if (!(curChunkX >= 0 && curChunkX < ChunkNumW && curChunkY >= 0 && curChunkY < ChunkNumH)) { continue; }
+                                if (!(curChunkX >= 0 && curChunkX < ChunkNumW && curChunkY >= 0 && curChunkY < ChunkNumH)) { continue; }
 
-            //                     int chunkKey = curChunkY * ChunkNumW + curChunkX;
-            //                     int startIndex = StartIndices[chunkKey];
+                                int chunkKey = curChunkY * ChunkNumW + curChunkX;
+                                int startIndex = StartIndices[chunkKey];
 
-            //                     int Index = startIndex; 
-            //                     while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
-            //                     {
-            //                         int otherPIndex = SpatialLookup[Index].x;
+                                int Index = startIndex; 
+                                while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
+                                {
+                                    int otherPIndex = SpatialLookup[Index].x;
 
-            //                         int springIndex = FrameBufferCycle
-            //                         ? SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum + ParticleSpringsCombinedHalfLength
-            //                         : SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum;
+                                    int springIndex = FrameBufferCycle
+                                    ? SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum + ParticleSpringsCombinedHalfLength
+                                    : SpringStartIndices[chunkKe-1] + pOrder * nearbyCapacity + nNum;
 
-            //                         SpringStruct springw = ParticleSpringsCombined[springIndex];
+                                    SpringStruct springw = ParticleSpringsCombined[springIndex];
 
-            //                         if (k == 1000 && otherPIndex == 999)
-            //                         {
-            //                             int iiiii = 0;
-            //                         }
+                                    if (k == 1000 && otherPIndex == 999)
+                                    {
+                                        Debug.Log(springw.RestLength);
+                                        sprFound = true;
+                                    }
 
-            //                         if (lastSpringIndices[springIndex] == 1)
-            //                         {
-            //                             Debug.Log(springIndex);
-            //                         }
-            //                         lastSpringIndices[springIndex] += 1;
-            //                         if (lastSpringIndices[springIndex] > 0)
-            //                         {
-            //                             int afwwf = 0;
-            //                         }
+                                    if (lastSpringIndices[springIndex] == 1)
+                                    {
+                                        Debug.Log(springIndex);
+                                    }
+                                    lastSpringIndices[springIndex] += 1;
+                                    if (lastSpringIndices[springIndex] > 0)
+                                    {
+                                        int afwwf = 0;
+                                    }
                                     
-            //                         Index++;
-            //                         nNum++;
-            //                     }
-            //                 }
+                                    Index++;
+                                    nNum++;
+                                }
+                            }
                         
                         
-            //             if (nNum > nearbyCapacity)
-            //             {
-            //                 int oooo = 0;
-            //             }
-            //         }
-            // }
-            //     int d = 0;
-            //     int a1111 = 0;
-            //     for (int l = 1; l < lastSpringIndices.Length; l++)
-            //     {
-            //         if(lastSpringIndices[l-1] == -1 && lastSpringIndices[l] != -1)
-            //         {
-            //             // Debug.Log(lastSpringIndices[l]);
-            //             int a22=1;
-            //             a1111++;
-            //         }
-            //         if (lastSpringIndices[l] > 0)
-            //         {
-            //             int a222=1;
-            //             d++;
-            //         }
-            //     }
-            //     int dwwdwddwdwdw = 0;
-            // }
+                        if (nNum > nearbyCapacity)
+                        {
+                            int oooo = 0;
+                        }
+                    }
+            }
+                int d = 0;
+                int a1111 = 0;
+                for (int l = 1; l < lastSpringIndices.Length; l++)
+                {
+                    if(lastSpringIndices[l-1] == -1 && lastSpringIndices[l] != -1)
+                    {
+                        // Debug.Log(lastSpringIndices[l]);
+                        int a22=1;
+                        a1111++;
+                    }
+                    if (lastSpringIndices[l] > 0)
+                    {
+                        int a222=1;
+                        d++;
+                    }
+                }
+                int dwwdwddwdwdw = 0;
+            }
+            if (!sprFound) { Debug.Log("No spring found"); }
+
+
 
 
 
@@ -1010,7 +1024,7 @@ public class Main : MonoBehaviour
         // Particle springs
         if (step == 0)
         {
-            int ThreadSize2 = (int)Math.Ceiling((float)SpringCapacitySafety * ParticlesNum / (2 * 512));
+            int ThreadSize2 = (int)Math.Ceiling((float)ParticleSpringsCombinedHalfLength / 512);
             // Transfer spring data kernel
             if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize2, 1, 1);}
             if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize2, 1, 1);}
