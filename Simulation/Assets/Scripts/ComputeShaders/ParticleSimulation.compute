@@ -327,15 +327,15 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     float diffMng = absDst - spring.RestLength;
     float absDiffMng = abs(diffMng);
     int sgnDiffMng = sign(diffMng);
-    float plasticityConst = 0.5;
+    float plasticityConst = 8;
     float tolDeformation = 0; // = yieldRatio / restLength
 
-    if (spring.PLinkedA == 1000 && spring.PLinkedB == 999)
-    {
-        spring.RestLength -= 0.1;
-    }
+    // if (spring.PLinkedA == 1000 && spring.PLinkedB == 999)
+    // {
+    //     spring.RestLength -= 0.1;
+    // } // temporary!!!!!
     // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
-    // spring.RestLength += LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
+    spring.RestLength += LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
 
     // Elasticity calculations
     float springStiffness = Plasticity;
@@ -350,7 +350,7 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
 
     // -- Return calculated force --
 
-    return -springForce;
+    return (isnan(springForce.x) || isnan(springForce.y)) ? float2(0.0, 0.0) : -springForce;
 }
 
 float2 InteractionForce(int pIndex)
