@@ -102,8 +102,14 @@ namespace Resources
 
             return MousePressed;
         }
+
+        public static int GetThreadGroupsNums(int threadsNum, int threadSize)
+        {
+            int threadGroupsNum = (int)Math.Ceiling((float)threadsNum / threadSize);
+            return threadGroupsNum;
+        }
         
-        public static float2 ParticleSpawnPosition(int pIndex, int maxIndex, int Width, int Height, int SpawnDims)
+        public static float2 GetParticleSpawnPosition(int pIndex, int maxIndex, int Width, int Height, int SpawnDims)
         {
             float x = (Width - SpawnDims) / 2 + Mathf.Floor(pIndex % Mathf.Sqrt(maxIndex)) * (SpawnDims / Mathf.Sqrt(maxIndex));
             float y = (Height - SpawnDims) / 2 + Mathf.Floor(pIndex / Mathf.Sqrt(maxIndex)) * (SpawnDims / Mathf.Sqrt(maxIndex));
@@ -112,6 +118,17 @@ namespace Resources
                 throw new ArgumentException("Particle spawn dimensions larger than either border_width or border_height");
             }
             return new float2(x, y);
+        }
+
+
+    }
+
+    public class Func // Math resources
+    {
+        public static int Log2(int value, bool doCeil = false)
+        {
+            double logValue = Math.Log(value, 2);
+            return doCeil ? (int)Math.Ceiling(logValue) : (int)logValue;
         }
     }
 }

@@ -89,8 +89,7 @@ RWStructuredBuffer<RBVectorStruct> RBVector;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
-    return false;
+    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
 
@@ -199,7 +198,6 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
                     float g = PTypes[PData[pIndex].PType].colorG;
                     float b = max(0.0, 1 - length(PData[pIndex].Velocity)/10);
                     Result[id.xy] = float4(r, g, b, 0.0);
-                    if (pIndex == 1000 || pIndex == 999) { Result[id.xy] = float4(1, 1, 1, 0.0); return; } // temporary!!!!!!!!
                     minDst = dst;
                     particleFound = true;
                 }

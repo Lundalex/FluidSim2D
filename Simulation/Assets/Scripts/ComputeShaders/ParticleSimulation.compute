@@ -31,7 +31,6 @@ const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
-const int SpringSafety;
 const float Plasticity;
 
 // Per-timestep-set constants
@@ -108,8 +107,7 @@ RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
-    return false;
+    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
 bool IsInfluencedChunk(int x, int y, int localPosX, int localPosY)
@@ -314,7 +312,6 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
 
 float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float2 normDst, int springIndex)
 {
-
     SpringStruct spring = ParticleSpringsCombined[springIndex];
 
     // if spring is not already initialized, initialize a new one
@@ -328,12 +325,8 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     float absDiffMng = abs(diffMng);
     int sgnDiffMng = sign(diffMng);
     float plasticityConst = 8;
-    float tolDeformation = 0; // = yieldRatio / restLength
+    float tolDeformation = 0.0; // = yieldRatio / restLength
 
-    // if (spring.PLinkedA == 1000 && spring.PLinkedB == 999)
-    // {
-    //     spring.RestLength -= 0.1;
-    // } // temporary!!!!!
     // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
     spring.RestLength += LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
 
