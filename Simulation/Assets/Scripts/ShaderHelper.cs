@@ -172,7 +172,6 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
-        pSimShader.SetInt("SpringSafety", m.SpringSafety);
         pSimShader.SetFloat("Plasticity", m.Plasticity);
         
         // Set math resources constants

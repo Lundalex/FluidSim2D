@@ -93,10 +93,23 @@ struct StickynessRequestStruct
 ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
 RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
+void SwapInt2(inout int2 a, inout int2 b)
+{
+    int2 temp = a;
+    a = b;
+    b = temp;
+}
+
+void SwapStickynessRequestStruct(inout StickynessRequestStruct a, inout StickynessRequestStruct b)
+{
+    StickynessRequestStruct temp = a;
+    a = b;
+    b = temp;
+}
+
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
-    return false;
+    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
 int GetChunkKey(int pIndex, float2 pos)
@@ -115,22 +128,16 @@ void BrownSort(int lowRef)
     int lowIndex = relBlock * BlockLen + relPos;
     int highIndex = relBlock * BlockLen + BlockLen - 1 - relPos;
 
-    if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
+    int2 lowValue = SpatialLookup[lowIndex];
+    int2 highValue = SpatialLookup[highIndex];
+
+    if (lowValue.y > highValue.y)
     {
-        int2 highIndexValue = SpatialLookup[highIndex];
-        int2 lowIndexValue = SpatialLookup[lowIndex];
-        SpatialLookup[highIndex] = lowIndexValue;
-        SpatialLookup[lowIndex] = highIndexValue;
+        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
     }
-    else if (SpatialLookup[lowIndex].y == SpatialLookup[highIndex].y)
+    else if (lowValue.y == highValue.y && lowValue.x > highValue.x)
     {
-        if (SpatialLookup[lowIndex].x > SpatialLookup[highIndex].x)
-        {
-            int2 highIndexValue = SpatialLookup[highIndex];
-            int2 lowIndexValue = SpatialLookup[lowIndex];
-            SpatialLookup[highIndex] = lowIndexValue;
-            SpatialLookup[lowIndex] = highIndexValue;
-        }
+        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
     }
 }
 
@@ -142,22 +149,16 @@ void PinkSort(int lowRef)
     int lowIndex = relBlock * BlockLen + relPos;
     int highIndex = relBlock * BlockLen + relPos + (int)(BlockLen * 0.5);
 
-    if (SpatialLookup[lowIndex].y > SpatialLookup[highIndex].y)
+    int2 lowValue = SpatialLookup[lowIndex];
+    int2 highValue = SpatialLookup[highIndex];
+
+    if (lowValue.y > SpatialLookup[highIndex].y)
     {
-        int2 highIndexValue = SpatialLookup[highIndex];
-        int2 lowIndexValue = SpatialLookup[lowIndex];
-        SpatialLookup[highIndex] = lowIndexValue;
-        SpatialLookup[lowIndex] = highIndexValue;
+        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
     }
-    else if (SpatialLookup[lowIndex].y == SpatialLookup[highIndex].y)
+    else if (lowValue.y == highValue.y && lowValue.x > highValue.x)
     {
-        if (SpatialLookup[lowIndex].x > SpatialLookup[highIndex].x)
-        {
-            int2 highIndexValue = SpatialLookup[highIndex];
-            int2 lowIndexValue = SpatialLookup[lowIndex];
-            SpatialLookup[highIndex] = lowIndexValue;
-            SpatialLookup[lowIndex] = highIndexValue;
-        }
+        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
     }
 }
 
@@ -208,7 +209,7 @@ void SortIteration (uint3 id : SV_DispatchThreadID)
     }
 }
 
-// This is unnecessary IF PARTICLESNUM STAYS CONSTANT
+// This is unnecessary if ParticlesNum stays constant
 [numthreads(ThreadsNum,1,1)]
 void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
@@ -364,10 +365,7 @@ void SRBrownSort(int lowRef)
 
     if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
     {
-        StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];
-        StickynessRequestStruct lowIndexValue = SortedStickyRequests[lowIndex];
-        SortedStickyRequests[highIndex] = lowIndexValue;
-        SortedStickyRequests[lowIndex] = highIndexValue;
+        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
     }
 }
 
@@ -381,10 +379,7 @@ void SRPinkSort(int lowRef)
 
     if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
     {
-        StickynessRequestStruct highIndexValue = SortedStickyRequests[highIndex];
-        StickynessRequestStruct lowIndexValue = SortedStickyRequests[lowIndex];
-        SortedStickyRequests[highIndex] = lowIndexValue;
-        SortedStickyRequests[lowIndex] = highIndexValue;
+        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
     }
 }
 
