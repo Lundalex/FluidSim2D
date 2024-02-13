@@ -5,7 +5,7 @@
 
 #include "MathResources.hlsl"
 
-static const int ThreadsNum = 1;
+static const int ThreadsNum = 32;
 
 // Constants
 const int ChunkNumW;
@@ -14,6 +14,7 @@ const int Width;
 const int Height;
 const int ParticlesNum;
 const int RBodiesNum;
+const int RBVectorNum;
 const int MaxInfluenceRadius;
 const int MaxChunkSearchSafety;
 const float Damping;
@@ -54,9 +55,10 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    int POrder;
-    int LastChunkKey;
-    int PType;
+    int LastChunkKey_PType_POrder; // composed 3 int structure
+    // POrder; // POrder is dynamic, 
+    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+    // PType; // 0 <= PType <= PTypeNum
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -106,40 +108,34 @@ AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
-    return false;
+    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
 bool RBBoundraryCheck(float2 Point, float extraPadding)
 {
-    if (Point.x > BorderPadding+extraPadding && Point.x < Width-BorderPadding-extraPadding && Point.y > BorderPadding+extraPadding && Point.y < Height-BorderPadding-extraPadding) { return true; }
-    return false;
+    return Point.x > BorderPadding + extraPadding && Point.x < Width - BorderPadding - extraPadding && Point.y > BorderPadding + extraPadding && Point.y < Height - BorderPadding - extraPadding;
 }
 
-void RBBoundraryCollision(float2 pos, int RBIndex, float extraPadding, float Damping)
-{
+void RBBoundraryCollision(float2 pos, int RBIndex, float extraPadding, float Damping) {
     float totPadding = BorderPadding + extraPadding;
-    float velFactor = 1 - Damping;
+    RBDataStruct rb = RBData[RBIndex];
 
-    if (pos.y > Height - totPadding)
-    {
-        RBData[RBIndex].NextVel.y = -abs(RBData[RBIndex].NextVel.y) * velFactor;
-        RBData[RBIndex].NextPos.y -= pos.y - (Height - totPadding);
-    }
-    else if (pos.y < totPadding)
-    {
-        RBData[RBIndex].NextVel.y = abs(RBData[RBIndex].NextVel.y) * velFactor;
-        RBData[RBIndex].NextPos.y += totPadding - pos.y;
-    }
-    if (pos.x > Width - totPadding)
-    {
-        RBData[RBIndex].NextVel.x = -abs(RBData[RBIndex].NextVel.x) * velFactor;
+    // x
+    if (pos.x > Width - totPadding) {
+        RBData[RBIndex].NextVel.x = -abs(rb.NextVel.x) * Damping;
         RBData[RBIndex].NextPos.x -= pos.x - (Width - totPadding);
-    }
-    else if (pos.x < totPadding)
-    {
-        RBData[RBIndex].NextVel.x = abs(RBData[RBIndex].NextVel.x) * velFactor;
+    } else if (pos.x < totPadding) {
+        RBData[RBIndex].NextVel.x = abs(rb.NextVel.x) * Damping;
         RBData[RBIndex].NextPos.x += totPadding - pos.x;
+    }
+    
+    // y
+    if (pos.y > Height - totPadding) {
+        RBData[RBIndex].NextVel.y = -abs(rb.NextVel.y) * Damping;
+        RBData[RBIndex].NextPos.y -= pos.y - (Height - totPadding);
+    } else if (pos.y < totPadding) {
+        RBData[RBIndex].NextVel.y = abs(rb.NextVel.y) * Damping;
+        RBData[RBIndex].NextPos.y += totPadding - pos.y;
     }
 }
 
@@ -294,6 +290,7 @@ float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct p
 void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
+    if (i >= RBVectorNum) { return; }
 
     RBVectorStruct lineVector = RBVector[i];
 
@@ -306,6 +303,7 @@ void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
 void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
+    if (i >= RBVectorNum + 1) { return; }
 
     RBVectorStruct lineVectorA = RBVector[i];
     RBVectorStruct lineVectorB = RBVector[i+1];
@@ -331,12 +329,16 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
 {
     int randSeed = id.x;
     int3 curChunk = TraversedChunksCONSUME.Consume();
-    int CurChunkX = curChunk.x;
-    int CurChunkY = curChunk.y;
-    int LineIndex = curChunk.z;
+    int curChunkX = curChunk.x;
+    int curChunkY = curChunk.y;
+    int lineIndex = curChunk.z;
 
-    RBVectorStruct lineVectorA = RBVector[LineIndex];
-    RBVectorStruct lineVectorB = RBVector[LineIndex+1];
+    RBVectorStruct lineVectorA = RBVector[lineIndex];
+    RBVectorStruct lineVectorB = RBVector[lineIndex+1];
+
+    // if (!valid line || !valid chunk || !line vectors have the same parent) { return; }
+    if ((curChunkX == 0 && curChunkY == 0 && lineIndex == 0) || !ValidChunk(curChunkX, curChunkY) || lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) { return; }
+
     RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
     
     float2 NextPos = parentRBData.NextPos;
@@ -344,11 +346,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     float2 NextVel = parentRBData.NextVel;
     float NextAngImpulse = parentRBData.NextAngImpulse;
 
-    // check the default value for data!!!!!
-    if (CurChunkX == 0 && CurChunkY == 0 && LineIndex == 0) {return;}
-    if (!ValidChunk(CurChunkX, CurChunkY)) {return;}
-
-    int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+    int ChunkKey = curChunkY * ChunkNumW + curChunkX;
     int startIndex = StartIndices[ChunkKey];
 
     // centerImpulse, rotaryImpulse
@@ -370,13 +368,13 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         {
             float2 dstToLine = dstToLineSegment(C, D, A);
             float absDstToLineSqr = dot(dstToLine, dstToLine);
-            AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, LineIndex, parentRBData, randSeed);
+            AddRBPStickyness(absDstToLineSqr, dstToLine, pIndex, lineIndex, parentRBData, randSeed);
         }
 
         if (CheckLinesIntersect(A, B, C, D))
         {
             // Particle velocity is currently reflecting off of last-frame line position!
-            float2 LineVectorNorm = normalize(RBVector[LineIndex+1].Position - RBVector[LineIndex].Position);
+            float2 LineVectorNorm = normalize(lineVectorB.Position - lineVectorA.Position);
             totLineImpulse += ResolveCollision(PData_i, PType_i, parentRBData, LineVectorNorm, pIndex, NextPosChange, NextVel, NextAngImpulse);
         }
 
@@ -385,10 +383,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     }
 
     // Add totLineImpulse to current line's parent RB
-    RBVector[LineIndex].ParentImpulse = totLineImpulse;
-
-    // Could delete other impulse data if they write to the same line at the same time.
-    // LineCollisionImpulses[LineIndex] += totLineImpulse;
+    RBVector[lineIndex].ParentImpulse = totLineImpulse;
 }
 
 float3 RBImpulse(RBDataStruct RBData_i)
@@ -409,24 +404,16 @@ void RBForces(uint3 id : SV_DispatchThreadID)
     int i = id.x;
 
     RBDataStruct RBData_i = RBData[i];
-    if (RBData_i.Stationary) { return; }
+    if (RBData_i.Stationary || i >= RBodiesNum) { return; }
 
     float3 totRBImpulse = RBImpulse(RBData_i);
 
-    RBData[i].Velocity = RBData[i].NextVel;
-    RBData[i].AngularImpulse = RBData[i].NextAngImpulse;
-    RBData[i].Position = RBData[i].NextPos;
-
-    // // Temporary!
-    // if (RBData[i].NextAngImpulse == 3.14) {
-    //     RBData[i].NextAngImpulse = 0;
-    // }
-
-    // RBData[i].NextAngImpulse += totRBImpulse.z * 0.0001 / RBData_i.Mass;
-    // RBData[i].NextAngImpulse = 0.05 * DeltaTime;
+    RBData[i].Velocity = RBData_i.NextVel;
+    RBData[i].AngularImpulse = RBData_i.NextAngImpulse;
+    RBData[i].Position = RBData_i.NextPos;
 
     RBData[i].NextPos += RBData[i].Velocity * DeltaTime;
-    RBData[i].NextVel += float2(totRBImpulse.x, totRBImpulse.y) / RBData[i].Mass;
+    RBData[i].NextVel += float2(totRBImpulse.x, totRBImpulse.y) / RBData_i.Mass;
     RBData[i].NextVel.y -= Gravity * 0.15 * DeltaTime;
 
     int startIndex = RBData_i.LineIndices.x;

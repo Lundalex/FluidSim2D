@@ -5,13 +5,8 @@ const float SmoothLiquidNearFactor;
 const float SmoothLiquidNearDerFactor;
 const float SmoothViscosityLaplacianFactor;
 
-// Geogebra: https://www.geogebra.org/calculator/bsyseckq
-
-// http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf#page10
-// https://iquilezles.org/articles/distfunctions/ SDFs Not used yet
-
 // Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
-// some/all Last-values for PData may be unnecessary!!!
+
 float InteractionInfluence(float dst, float radius)
 {
 	if (dst < radius)

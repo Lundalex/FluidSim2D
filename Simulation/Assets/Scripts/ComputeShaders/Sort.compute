@@ -16,12 +16,13 @@
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
-static const int ThreadsNum = 512;
+static const int ThreadsNum = 1024;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;
 const int ChunkNumH;
 const int ChunkNum;
+const int PTypesNum;
 const int ChunkNumNextPow2;
 const int ParticlesNum;
 
@@ -75,9 +76,10 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    int POrder;
-    int LastChunkKey;
-    int PType;
+    int LastChunkKey_PType_POrder; // composed 3 int structure
+    // POrder; // POrder is dynamic, 
+    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+    // PType; // 0 <= PType <= PTypeNum
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -112,7 +114,7 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
-int GetChunkKey(int pIndex, float2 pos)
+int GetChunkKeyFromPosition(int pIndex, float2 pos)
 {
     int chunkX = (int)(pos.x / MaxInfluenceRadius);
     int chunkY = (int)(pos.y / MaxInfluenceRadius);
@@ -120,52 +122,10 @@ int GetChunkKey(int pIndex, float2 pos)
     return chunkKey;
 }
 
-void BrownSort(int lowRef)
+int GetNeighboorParticlesNum(int chunkKey)
 {
-    int relBlock = (int)(2 * lowRef / (uint)BlockLen);
-    int relPos = lowRef % (0.5 * BlockLen);
-
-    int lowIndex = relBlock * BlockLen + relPos;
-    int highIndex = relBlock * BlockLen + BlockLen - 1 - relPos;
-
-    int2 lowValue = SpatialLookup[lowIndex];
-    int2 highValue = SpatialLookup[highIndex];
-
-    if (lowValue.y > highValue.y)
-    {
-        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
-    }
-    else if (lowValue.y == highValue.y && lowValue.x > highValue.x)
-    {
-        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
-    }
-}
-
-void PinkSort(int lowRef)
-{
-    int relBlock = (int)(2 * lowRef / (uint)BlockLen);
-    int relPos = lowRef % (0.5 * BlockLen);
-
-    int lowIndex = relBlock * BlockLen + relPos;
-    int highIndex = relBlock * BlockLen + relPos + (int)(BlockLen * 0.5);
-
-    int2 lowValue = SpatialLookup[lowIndex];
-    int2 highValue = SpatialLookup[highIndex];
-
-    if (lowValue.y > SpatialLookup[highIndex].y)
-    {
-        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
-    }
-    else if (lowValue.y == highValue.y && lowValue.x > highValue.x)
-    {
-        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
-    }
-}
-
-int GetNeighboorParticlesNum(int ChunkKey)
-{
-    int chunkX = (uint)ChunkKey % ChunkNumW;
-    int chunkY = (int)((uint)ChunkKey / ChunkNumW);
+    int chunkX = (uint)chunkKey % ChunkNumW;
+    int chunkY = (int)((uint)chunkKey / ChunkNumW);
 
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
@@ -183,7 +143,7 @@ int GetNeighboorParticlesNum(int ChunkKey)
             }
         }
     }
-    return neighboorParticlesNum * SpringCapacities[ChunkKey].x;
+    return neighboorParticlesNum * SpringCapacities[chunkKey].x;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -191,7 +151,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    int chunkKey = GetChunkKey(i, PData[i].Position);
+    int chunkKey = GetChunkKeyFromPosition(i, PData[i].Position);
     SpatialLookup[i] = int2(i, chunkKey);
 }
 
@@ -199,13 +159,22 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 void SortIteration (uint3 id : SV_DispatchThreadID)
 {
     int lowRef = id.x;
-    if (BrownPinkSort)
+
+    int relBlock = (int)(2 * lowRef / (uint)BlockLen);
+    int relPos = lowRef % (0.5 * BlockLen);
+
+    int lowIndex = relBlock * BlockLen + relPos;
+
+    int highIndex = BrownPinkSort
+    ? relBlock * BlockLen + BlockLen - 1 - relPos
+    :relBlock * BlockLen + relPos + (int)(BlockLen * 0.5);
+
+    int2 lowValue = SpatialLookup[lowIndex];
+    int2 highValue = SpatialLookup[highIndex];
+
+    if (lowValue.y > highValue.y || (lowValue.y == highValue.y && lowValue.x > highValue.x))
     {
-        BrownSort(lowRef);
-    }
-    else
-    {
-        PinkSort(lowRef);
+        SwapInt2(SpatialLookup[highIndex], SpatialLookup[lowIndex]);
     }
 }
 
@@ -223,7 +192,7 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
     
-    int ChunkKey = SpatialLookup[i].y;
+    int chunkKey = SpatialLookup[i].y;
     int LastChunkKey = IOOR;
 
     if (i != 0)
@@ -231,55 +200,55 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
         LastChunkKey = SpatialLookup[i-1].y;
     }
 
-    if (ChunkKey != LastChunkKey)
+    if (chunkKey != LastChunkKey)
     {
-        StartIndices[ChunkKey] = i;
+        StartIndices[chunkKey] = i;
     }
 }
 
 [numthreads(ThreadsNum,1,1)]
 void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
-    int ChunkKey = id.x - 1;
+    int chunkKey = id.x - 1;
 
-    int startIndex = ChunkKey == -1
+    int startIndex = chunkKey == -1
     ? 0
-    : StartIndices[ChunkKey];
+    : StartIndices[chunkKey];
 
     int neighboorCount = 0;
     int Index = startIndex; 
-    while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+    while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
     {
         Index += 1;
         neighboorCount += 1;
     }
-    SpringCapacities[ChunkKey].x = neighboorCount;
+    SpringCapacities[chunkKey].x = neighboorCount;
 }
 
 [numthreads(ThreadsNum,1,1)]
 void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
 {
-    int ChunkKey = id.x;
+    int chunkKey = id.x;
 
-    int SpringCapacity = GetNeighboorParticlesNum(ChunkKey);
+    int SpringCapacity = GetNeighboorParticlesNum(chunkKey);
 
-    SpringCapacities[ChunkKey].y = SpringCapacity;
+    SpringCapacities[chunkKey].y = SpringCapacity;
 }
 
 [numthreads(ThreadsNum,1,1)]
 void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     // Copying both should be unnecessary
-    int ChunkKey = id.x;
-    if (ChunkKey < ChunkNum)
+    int chunkKey = id.x;
+    if (chunkKey < ChunkNum)
     {
         if (FrameBufferCycle)
         {
-            SpringStartIndices_dbA[ChunkKey] = SpringCapacities[ChunkKey].y;
+            SpringStartIndices_dbA[chunkKey] = SpringCapacities[chunkKey].y;
         }
         else
         {
-            SpringStartIndices_dbB[ChunkKey] = SpringCapacities[ChunkKey].y;
+            SpringStartIndices_dbB[chunkKey] = SpringCapacities[chunkKey].y;
         }
     }
 }
@@ -355,35 +324,7 @@ void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
     }
 }
 
-void SRBrownSort(int lowRef)
-{
-    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
-    int relPos = lowRef % (0.5 * SRBlockLen);
-
-    int lowIndex = relBlock * SRBlockLen + relPos;
-    int highIndex = relBlock * SRBlockLen + SRBlockLen - 1 - relPos;
-
-    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
-    {
-        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
-    }
-}
-
-void SRPinkSort(int lowRef)
-{
-    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
-    int relPos = lowRef % (0.5 * SRBlockLen);
-
-    int lowIndex = relBlock * SRBlockLen + relPos;
-    int highIndex = relBlock * SRBlockLen + relPos + (int)(SRBlockLen * 0.5);
-
-    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
-    {
-        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
-    }
-}
-
-[numthreads(ThreadsNum,1,1)]
+[numthreads(512,1,1)]
 void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -393,16 +334,22 @@ void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
     SortedStickyRequests[i] = stickynessRequest;
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(512,1,1)]
 void SRSortIteration (uint3 id : SV_DispatchThreadID)
 {
     int lowRef = id.x;
-    if (SRBrownPinkSort)
+
+    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
+    int relPos = lowRef % (0.5 * SRBlockLen);
+
+    int lowIndex = relBlock * SRBlockLen + relPos;
+
+    int highIndex = SRBrownPinkSort
+    ? relBlock * SRBlockLen + SRBlockLen - 1 - relPos
+    : relBlock * SRBlockLen + relPos + (int)(SRBlockLen * 0.5);
+    
+    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
     {
-        SRBrownSort(lowRef);
-    }
-    else
-    {
-        SRPinkSort(lowRef);
+        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
     }
 }

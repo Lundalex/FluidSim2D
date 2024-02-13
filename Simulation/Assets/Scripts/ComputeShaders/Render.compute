@@ -1,4 +1,4 @@
-#pragma kernel RenderParticles;
+#pragma kernel Render;
 
 #include "MathResources.hlsl"
 
@@ -19,10 +19,6 @@ const int ParticlesNum;
 const int RBodiesNum;
 
 RWTexture2D<float4> Result;
-
-// RWStructuredBuffer<float2> RBPositions;
-// RWStructuredBuffer<float2> RBVelocities;
-// RWStructuredBuffer<float2> RBProperties;
 
 RWStructuredBuffer<int2> SpatialLookup;
 RWStructuredBuffer<int> StartIndices;
@@ -51,9 +47,10 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    int POrder;
-    int LastChunkKey;
-    int PType;
+    int LastChunkKey_PType_POrder; // flat 3 int structure
+    // POrder; // POrder is dynamic, 
+    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+    // PType; // 0 <= PType <= PTypeNum
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -94,7 +91,7 @@ bool ValidChunk(int ChunkX, int ChunkY)
 
 
 [numthreads(ThreadsNum,ThreadsNum,1)]
-void RenderParticles (uint3 id : SV_DispatchThreadID)
+void Render (uint3 id : SV_DispatchThreadID)
 {
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
     float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
@@ -102,7 +99,7 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
     int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
 
-    // Render RB line segments
+    // Render rigid bodies
     int rayHits = 0;
     float rayY = pixelPos.y;
     float2 rayCoordA = float2(0, rayY);
@@ -134,45 +131,9 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
         if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
     }
 
-    // // Render particles - Cheap
-    // for (int x = -1; x <= 1; x++)
-    // {
-    //     for (int y = -1; y <= 1; y++)
-    //     {
-    //         int CurChunkX = ChunkX + x;
-    //         int CurChunkY = ChunkY + y;
-            
-    //         if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
-
-    //         int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
-    //         int startIndex = StartIndices[ChunkKey];
-
-    //         int Index = startIndex; 
-    //         while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
-    //         {
-    //             int otherPIndex = SpatialLookup[Index].x;
-
-    //             float dst = length(pixelPos - PData[otherPIndex].Position);
-
-    //             if (dst < VisualParticleRadii)
-    //             {
-    //                 float r = min(1.0, length(PData[otherPIndex].Velocity)/10);
-    //                 float g = PTypes[PData[otherPIndex].PType].colorG;
-    //                 float b = max(0.0, 1 - length(PData[otherPIndex].Velocity)/10);
-    //                 Result[id.xy] = float4(r, g, b, 0.0);
-    //                 return;
-    //             }
-
-    //             // Increment Index each iteration - Chunk particle search algorithm
-    //             Index += 1;
-    //         }
-    //     }
-    // }
-
-    // Render particles - Seamless
+    // Render particle liquids
     float minDst = VisualParticleRadii;
     bool particleFound;
-
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -209,5 +170,6 @@ void RenderParticles (uint3 id : SV_DispatchThreadID)
     }
     if (particleFound) { return; }
 
+    // Background color is r,g,b,o = 0,0,0,0 (black)
     Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 }
