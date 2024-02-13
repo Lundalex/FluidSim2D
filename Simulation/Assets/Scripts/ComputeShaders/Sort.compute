@@ -13,6 +13,7 @@
 #pragma kernel SRSortIteration // 10
 
 #include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
