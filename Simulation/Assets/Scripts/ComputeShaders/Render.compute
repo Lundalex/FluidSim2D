@@ -1,6 +1,7 @@
 #pragma kernel Render;
 
 #include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 static const int ThreadsNum = 32;
 

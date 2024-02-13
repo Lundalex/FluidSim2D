@@ -7,6 +7,7 @@
 #pragma kernel ConsumeStickynessRequests
 
 #include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 static const int ThreadsNum = 1024;
 
@@ -117,19 +118,18 @@ int GetChunkKey(int chunkX, int chunkY)
     return chunkY * ChunkNumW + chunkX;
 }
 
-int3 Get_LastChunkKey_PType_POrder(int LastChunkKey_PType_POrder)
+int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
 {
-    int POrder = (int)((float)LastChunkKey_PType_POrder / (ChunkNum * PTypesNum));
+    int POrderValue = POrder * ChunkNum * PTypesNum;
 
-    int PType = (LastChunkKey_PType_POrder % (ChunkNum * PTypesNum)) / ChunkNum;
+    int PTypeValue = PType * ChunkNum;
 
-    int LastChunkKey = LastChunkKey_PType_POrder % ChunkNum;
+    int LastChunkKeyValue = LastChunkKey;
 
-    return int3(LastChunkKey, PType, POrder);
+    int Composed_LastChunkKey_PType_POrder = POrderValue + PTypeValue + LastChunkKeyValue;
+
+    return Composed_LastChunkKey_PType_POrder;
 }
-
-
-LastChunkKey_PType_POrder
 
 int2 Get_POrder_ChunkKey(int POrder_ChunkKey)
 {
