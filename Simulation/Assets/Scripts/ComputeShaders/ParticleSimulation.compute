@@ -8,12 +8,13 @@
 
 #include "MathResources.hlsl"
 
-static const int ThreadsNum = 512;
+static const int ThreadsNum = 1024;
 
 // Constants
 const int ChunkNumW;
 const int ChunkNumH;
 const int ChunkNum;
+const int PTypesNum;
 const int IOOR;
 const int Width;
 const int Height;
@@ -88,9 +89,10 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
-    int POrder;
-    int LastChunkKey;
-    int PType;
+    int LastChunkKey_PType_POrder; // composed 3 int structure
+    // POrder; // POrder is dynamic, 
+    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+    // PType; // 0 <= PType <= PTypeNum
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -110,22 +112,24 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
-bool IsInfluencedChunk(int x, int y, int localPosX, int localPosY)
+int GetChunkKey(int chunkX, int chunkY)
 {
-    if (x != 0 && y != 0)
-    {
-        int xUse = 0;
-        int yUse = 0;
-        if (x == 1 && y == 1) { xUse = 1; yUse = 1; }
-        else if (x == -1 && y == -1) { xUse = 0; yUse = 0; }
-        else if (x == 1 && y == -1) { xUse = 1; yUse = 0; }
-        else if (x == -1 && y == 1) { xUse = 0; yUse = 1; }
-        float2 dst = float2(localPosX - xUse, localPosY - yUse);
-        float absDstSqr = dot(dst, dst);
-        if (absDstSqr > MaxInfluenceRadiusSqr) { return false; }
-    }
-    return true;
+    return chunkY * ChunkNumW + chunkX;
 }
+
+int3 Get_LastChunkKey_PType_POrder(int LastChunkKey_PType_POrder)
+{
+    int POrder = (int)((float)LastChunkKey_PType_POrder / (ChunkNum * PTypesNum));
+
+    int PType = (LastChunkKey_PType_POrder % (ChunkNum * PTypesNum)) / ChunkNum;
+
+    int LastChunkKey = LastChunkKey_PType_POrder % ChunkNum;
+
+    return int3(LastChunkKey, PType, POrder);
+}
+
+
+LastChunkKey_PType_POrder
 
 int2 Get_POrder_ChunkKey(int POrder_ChunkKey)
 {
@@ -142,7 +146,7 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
     {
         int newChunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
         int newChunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
-        int newChunkKey = newChunkY * ChunkNumW + newChunkX;
+        int newChunkKey = GetChunkKey(newChunkX, newChunkY);
         PData[pIndex].LastChunkKey = newChunkKey;
         PData_i.LastChunkKey = newChunkKey;
     }
@@ -161,7 +165,7 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
             if (!ValidChunk(curChunkX, curChunkY)) {continue;}
 
-            int chunkKey = curChunkY * ChunkNumW + curChunkX;
+            int chunkKey = GetChunkKey(curChunkX, curChunkY);
             int startIndex = StartIndices[chunkKey];
 
             int Index = startIndex;
@@ -207,25 +211,24 @@ float4 BoundraryCheck(float2 pos, float2 vel, float extraPadding, float Damping)
     float totPadding = BorderPadding + extraPadding;
     float velFactor = 1 - Damping;
 
-    if (pos.y > Height - totPadding)
-    {
-        vel.y = -abs(vel.y) * velFactor;
-        pos.y = Height - totPadding;
-    }
-    else if (pos.y < totPadding)
-    {
-        vel.y = abs(vel.y) * velFactor;
-        pos.y = totPadding;
-    }
+    // x
     if (pos.x > Width - totPadding)
     {
         vel.x = -abs(vel.x) * velFactor;
         pos.x = Width - totPadding;
-    }
-    else if (pos.x < totPadding)
-    {
+    } else if (pos.x < totPadding) {
         vel.x = abs(vel.x) * velFactor;
         pos.x = totPadding;
+    }
+
+    // y
+    if (pos.y > Height - totPadding)
+    {
+        vel.y = -abs(vel.y) * velFactor;
+        pos.y = Height - totPadding;
+    } else if (pos.y < totPadding) {
+        vel.y = abs(vel.y) * velFactor;
+        pos.y = totPadding;
     }
     
     return float4(pos.x, pos.y, vel.x, vel.y);
@@ -266,7 +269,7 @@ float2 PressureForce(float densityA, float densityB, float nearDensityA, float n
 
     if (absDst == 0) {
         // semirandom direction, not normalized
-        float2 randVector = float2(randSeed % 0.2842, randSeed % 0.1827);
+        float2 randVector = float2(randSeed % 0.28, randSeed % 0.18);
 
         pressureGradient = 0.05 * randVector * absPressureGradient;
         nearPressureGradient = 0.05 * randVector * absNearPressureGradient;
@@ -291,6 +294,36 @@ float2 ViscocityForce(float2 LastVelocityA, float2 LastVelocityB, PTypeStruct PT
     float2 viscocityForce = (LastVelocityB - LastVelocityA) * SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
 
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
+}
+
+float2 InteractionForce(int pIndex)
+{
+    if (!LMousePressed && !RMousePressed) {return float2(0.0, 0.0);}
+    int dir = 0;
+    if (LMousePressed) {dir = -1;}
+    else if (RMousePressed) {dir = 1;}
+
+    float2 dst = PData[pIndex].PredPosition - float2(MouseX, MouseY);
+
+    float absDst = length(dst);
+
+    if (absDst > MaxInteractionRadius) {return float2(0.0, 0.0);}
+
+    float absInteractionGradient = SmoothLiquid(absDst, MaxInteractionRadius);
+
+    if (absDst == 0) {return float2(0.0, 0.0);}
+
+    float2 interactionGradient = normalize(dst) * absInteractionGradient;
+
+    float2 baseInteractionForce = interactionGradient * InteractionAttractionPower * dir;
+    float fountainInteractionForce = 0;
+    if (dir == -1)
+    {
+        float dstX = MaxInteractionRadius - abs(dst.x);
+        fountainInteractionForce = InteractionFountainPower * absInteractionGradient * dstX;
+    }
+
+    return baseInteractionForce + float2(0.0, fountainInteractionForce);
 }
 
 float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessRequestStruct stickynessRequest)
@@ -346,45 +379,16 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     return (isnan(springForce.x) || isnan(springForce.y)) ? float2(0.0, 0.0) : -springForce;
 }
 
-float2 InteractionForce(int pIndex)
-{
-    if (!LMousePressed && !RMousePressed) {return float2(0.0, 0.0);}
-    int dir = 0;
-    if (LMousePressed) {dir = -1;}
-    else if (RMousePressed) {dir = 1;}
-
-    float2 dst = PData[pIndex].PredPosition - float2(MouseX, MouseY);
-
-    float absDst = length(dst);
-
-    if (absDst > MaxInteractionRadius) {return float2(0.0, 0.0);}
-
-    float absInteractionGradient = SmoothLiquid(absDst, MaxInteractionRadius);
-
-    if (absDst == 0) {return float2(0.0, 0.0);}
-
-    float2 interactionGradient = normalize(dst) * absInteractionGradient;
-
-    float2 baseInteractionForce = interactionGradient * InteractionAttractionPower * dir;
-    float fountainInteractionForce = 0;
-    if (dir == -1)
-    {
-        float dstX = MaxInteractionRadius - abs(dst.x);
-        fountainInteractionForce = InteractionFountainPower * absInteractionGradient * dstX;
-    }
-
-    return baseInteractionForce + float2(0.0, fountainInteractionForce);
-}
-
 [numthreads(ThreadsNum,1,1)]
 void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
     PData[i].PredPosition = PData[i].Position + PData[i].Velocity * LookAheadFactor;
+
     // Make sure PredPositions[i] is within the world boundrary
-    PData[i].PredPosition.x = max(min(PData[i].PredPosition.x, Width - 0.1), 0.1);
-    PData[i].PredPosition.y = max(min(PData[i].PredPosition.y, Height - 0.1), 0.1);
+    PData[i].PredPosition.x = clamp(PData[i].PredPosition.x, BorderPadding, Width - BorderPadding);
+    PData[i].PredPosition.y = clamp(PData[i].PredPosition.y, BorderPadding, Height - BorderPadding);
 
     // LastVelocities
     PData[i].LastVelocity = PData[i].Velocity;
@@ -424,10 +428,10 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     // this is not a solution for adding springs - default spring data should be set before this shader pass
 
     // B is connected to A
-    SpringStruct lastSpring_i = ParticleSpringsCombined[i];
-    if (lastSpring_i.PLinkedA == -1) { return; }
-    PDataStruct PData_A = PData[lastSpring_i.PLinkedA];
-    PDataStruct PData_B = PData[lastSpring_i.PLinkedB];
+    SpringStruct lastSpring = ParticleSpringsCombined[i];
+    if (lastSpring.PLinkedA == -1) { return; }
+    PDataStruct PData_A = PData[lastSpring.PLinkedA];
+    PDataStruct PData_B = PData[lastSpring.PLinkedB];
 
     float2 PosDiff = PData_A.Position - PData_B.Position;
     float absPosDiffSqr = dot(PosDiff, PosDiff);
@@ -455,42 +459,27 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
             for (int y = -1; y <= 1 && !shouldBreak; y++)
             {
                 int curChunkY = newChunkY_A + y;
-                int curChunkKey = curChunkY * ChunkNumW + curChunkX;
-                
-                int startIndex = StartIndices[curChunkKey];
 
-                if(!ValidChunk(curChunkX, curChunkY)) { continue; }
-
-                int Index = startIndex; 
-                while (Index < ParticlesNum && curChunkKey == SpatialLookup[Index].y)
+                if (ValidChunk(curChunkX, curChunkY))
                 {
-                    int otherPIndex = SpatialLookup[Index].x;
-                    if (lastSpring_i.PLinkedB == otherPIndex) { inRangeAB = true; shouldBreak = true; break; }
-                    localSpringBCapacityOrder++;
-                    Index++;
+                    if (curChunkX == newChunkX_B && curChunkY == newChunkY_B) { inRangeAB = true; shouldBreak = true; break; }
+                    int curChunkKey = GetChunkKey(curChunkX, curChunkY);
+                    localSpringBCapacityOrder += SpringCapacities[curChunkKey].x;
                 }
-                // int curChunkY = newChunkY_A + y;
-                // if (ValidChunk(curChunkX, curChunkY))
-                // {
-                //     if (curChunkX == newChunkX_B && curChunkY == newChunkY_B) { inRangeAB = true; shouldBreak = true; break; }
-                //     int curChunkKey = curChunkY * ChunkNumW + curChunkX;
-                //     localSpringBCapacityOrder += SpringCapacities[curChunkKey].x;
-                // }
             }
         }
         if (inRangeAB)
         {
-            int newNeighboorNum = localSpringBCapacityOrder;
+            int newNeighboorNum = localSpringBCapacityOrder + pOrder_B;
 
-            int newChunkKey_A = newChunkY_A * ChunkNumW + newChunkX_A;
-            if (newChunkKey_A == 0 || SpringCapacities[newChunkKey_A].x == 0) { return; } // avoid [-1] error
+            int newChunkKey_A = GetChunkKey(newChunkX_A, newChunkY_A);
 
             int nearSpringCapacity = (uint)SpringCapacities[newChunkKey_A].y / SpringCapacities[newChunkKey_A].x;
             int newSpringIndex = FrameBufferCycle
             ? SpringStartIndices_dbA[max(newChunkKey_A-1, 0)] + pOrder_A * nearSpringCapacity + newNeighboorNum + ParticleSpringsCombinedHalfLength
             : SpringStartIndices_dbB[max(newChunkKey_A-1, 0)] + pOrder_A * nearSpringCapacity + newNeighboorNum;
 
-            ParticleSpringsCombined[newSpringIndex] = lastSpring_i;
+            ParticleSpringsCombined[newSpringIndex] = lastSpring;
         }
     }
 }
@@ -502,15 +491,13 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     // Can probably be optimised by using if (i > otherPIndex) to avoid calculating each pair twice, or by using data links (springs)
 
-    // Int type conversion removes decimals, effectively doing a Floor() operation
     PDataStruct PData_i = PData[i];
     PTypeStruct PType_i = PTypes[PData_i.PType];
     int pOrder = PData_i.POrder;
 
     int chunkX = (uint)PData_i.LastChunkKey % ChunkNumW;
     int chunkY = (int)((uint)PData_i.LastChunkKey / ChunkNumW);
-    int baseChunkKey = chunkY * ChunkNumW + chunkX;
-    if (SpringCapacities[baseChunkKey].x == 0) { return; } // SpringCapacities[baseChunkKey].x == 0 will cause /0 error
+    int baseChunkKey = GetChunkKey(chunkX, chunkY);
 
     int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;
 
@@ -520,14 +507,15 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     int nNum = 0;
     for (int x = -1; x <= 1; x++)
     {
+        int curChunkX = chunkX + x;
+
         for (int y = -1; y <= 1; y++)
         {
-            int curChunkX = chunkX + x;
             int curChunkY = chunkY + y;
 
             if (!ValidChunk(curChunkX, curChunkY)) { continue; }
 
-            int chunkKey = curChunkY * ChunkNumW + curChunkX;
+            int chunkKey = GetChunkKey(curChunkX, curChunkY);
             int startIndex = StartIndices[chunkKey];
 
             int Index = startIndex; 
@@ -549,9 +537,6 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 ? SpringStartIndices_dbA[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nNum + ParticleSpringsCombinedHalfLength
                 : SpringStartIndices_dbB[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nNum;
 
-
-                // -- Forces --
-                
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst);
                 totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst, springIndex);
@@ -578,19 +563,14 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
 
     PDataStruct PData_i = PData[i];
 
-
-    // -- Update positions --
-
     PData_i.Position += PData_i.Velocity * DeltaTime;
-
-    if (LMousePressed && i == 999) { PData[i].Position += 0.1; PData_i.Position += 0.1; } // temporary!!!!!!!!!!!!!!!!
 
     float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[PData_i.PType].Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(512,1,1)]
 void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -598,7 +578,7 @@ void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
     StickynessRequestStruct stickynessRequest = SortedStickyRequests[i];
     int pIndex = stickynessRequest.pIndex;
 
-    // This does many "unnecessary" iterations for every id.x, but since thread management complexity is reduced, performance is higher
+    // This does many "unnecessary" iterations for every thread, but thread management complexity gets reduced
     float smallestDstSqr = 100;
     for (int offset = -3; offset <= 3; offset++) {
         if (offset == 0) continue;

@@ -37,9 +37,10 @@ namespace Resources
         public float2 LastVelocity;
         public float Density;
         public float NearDensity;
-        public int POrder;
-        public int LastChunkKey;
-        public int PType;
+        public int LastChunkKey_PType_POrder; // composed 3 int structure
+        // POrder; // POrder is dynamic, 
+        // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+        // PType; // 0 <= PType <= PTypeNum
     }
     public struct PTypeStruct
     {

@@ -80,15 +80,15 @@ public class Main : MonoBehaviour
     public ComputeShader sortShader;
     public ComputeShader marchingSquaresShader;
 
-    // ThreadNums settings for compute shaders
-    public int renderShaderThreadNums = 512;
-    public int pSimShaderThreadNums = 512;
-    public int rbSimShaderThreadNums = 512;
-    public int sortShaderThreadNums = 512;
-    public int marchingSquaresShaderThreadNums = 512;
+    // ThreadSize settings for compute shaders
+    [NonSerialized] public int renderShaderThreadSize = 32; // AxA thread groups
+    [NonSerialized] public int pSimShaderThreadSize = 1024;
+    [NonSerialized] public int rbSimShaderThreadSize = 32;
+    [NonSerialized] public int sortShaderThreadSize = 1024;
+    [NonSerialized] public int marchingSquaresShaderThreadSize = 512;
 
     // Marching Squares - Buffers
-    [System.NonSerialized]
+    [NonSerialized]
     public ComputeBuffer VerticesBuffer;
     public ComputeBuffer TrianglesBuffer;
     public ComputeBuffer ColorsBuffer;
@@ -127,6 +127,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ChunkNumW;
     [NonSerialized] public int ChunkNumH;
     [NonSerialized] public int ChunkNum;
+    [NonSerialized] public int PTypesNum;
     [NonSerialized] public int ChunksNumLog2;
     [NonSerialized] public int ChunkNumNextPow2;
     [NonSerialized] public int IOOR; // Index Out Of Range
@@ -201,7 +202,7 @@ public class Main : MonoBehaviour
     {
         UpdateShaderTimeStep();
 
-        // GPUSortSpringLookUp() have to be called directly after GPUSortChunkLookUp()
+        // GPUSortSpringLookUp() have to be called in succession to GPUSortChunkLookUp()
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
 
@@ -216,8 +217,8 @@ public class Main : MonoBehaviour
                 DoCalcStickyRequests = true;
                 rbSimShader.SetInt("DoCalcStickyRequests", 1);
                 GPUSortStickynessRequests(); 
-                int ThreadSize = Utils.GetThreadGroupsNums(4096, 512);
-                pSimShader.Dispatch(6, ThreadSize, 1, 1);
+                int ThreadNums = Utils.GetThreadGroupsNums(4096, 512);
+                pSimShader.Dispatch(6, ThreadNums, 1, 1);
             }
             else {
                 DoCalcStickyRequests = false;
@@ -226,8 +227,8 @@ public class Main : MonoBehaviour
 
             RunRbSimShader();
 
-            int ThreadSize2 = Utils.GetThreadGroupsNums(ParticlesNum, 512);
-            if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadSize2, 1, 1);}
+            int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
+            if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
             
             if (RenderMarchingSquares)
             {
@@ -386,6 +387,7 @@ public class Main : MonoBehaviour
             Gravity = Gravity,
             colorG = 1f
         };
+        PTypesNum = PTypes.Length;
 
         RBData = new RBDataStruct[2];
         RBData[0] = new RBDataStruct
@@ -538,9 +540,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    POrder = 0,
-                    LastChunkKey = 0,
-                    PType = 0
+                    LastChunkKey_PType_POrder = 0,
                 };
             }
             else
@@ -553,7 +553,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    PType = 1
+                    LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
                 };
             }
 
@@ -595,7 +595,7 @@ public class Main : MonoBehaviour
     {
         if (ParticlesNum != 0)
         {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 3);
+            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 10 + sizeof(int) * 1);
             PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 10 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
@@ -645,10 +645,10 @@ public class Main : MonoBehaviour
         int StickyRequestsCount = 4096;
 
         if (StickyRequestsCount == 0) {return;}
-        int ThreadSize = Utils.GetThreadGroupsNums(StickyRequestsCount, 512);
-        int ThreadSizeHLen = (int)((float)ThreadSize/2);
+        int ThreadNums = Utils.GetThreadGroupsNums(StickyRequestsCount, 512);
+        int ThreadSizeHLen = (int)((float)ThreadNums/2);
 
-        sortShader.Dispatch(9, ThreadSize, 1, 1);
+        sortShader.Dispatch(9, ThreadNums, 1, 1);
 
         int len = StickyRequestsCount;
         int lenLog2 = Func.Log2(len);
@@ -679,10 +679,10 @@ public class Main : MonoBehaviour
     void GPUSortChunkLookUp()
     {
         if (ParticlesNum == 0) {return;}
-        int ThreadSize = Utils.GetThreadGroupsNums(ParticlesNum, 512);
-        int ThreadSizeHLen = (int)((float)ThreadSize/2);
+        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, sortShaderThreadSize);
+        int ThreadSizeHLen = (int)((float)ThreadNums/2);
 
-        sortShader.Dispatch(0, ThreadSize, 1, 1);
+        sortShader.Dispatch(0, ThreadNums, 1, 1);
 
         int len = ParticlesNum;
         int lenLog2 = Func.Log2(len);
@@ -710,15 +710,15 @@ public class Main : MonoBehaviour
         }
 
         // This is unnecessary if particlesNum stays constant, disabled
-        // sortShader.Dispatch(2, ThreadSize, 1, 1);
+        // sortShader.Dispatch(2, ThreadNums, 1, 1);
 
-        sortShader.Dispatch(3, ThreadSize, 1, 1);
+        sortShader.Dispatch(3, ThreadNums, 1, 1);
     }
 
     void GPUSortSpringLookUp()
     {
         // Spring buffer kernels
-        int ThreadSizeChunkSizes = Utils.GetThreadGroupsNums(ChunkNum, 512);
+        int ThreadSizeChunkSizes = Utils.GetThreadGroupsNums(ChunkNum, sortShaderThreadSize);
         sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
         sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
         sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
@@ -739,45 +739,50 @@ public class Main : MonoBehaviour
 
     void RunPSimShader(int step)
     {
-        int ThreadSize = Utils.GetThreadGroupsNums(ParticlesNum, 512);
+        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
 
-        if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadSize, 1, 1);}
-        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadSize, 1, 1);} // CalculateDensities
+        if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadNums, 1, 1);}
+        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadNums, 1, 1);} // CalculateDensities
 
         // Particle springs
         if (step == 0)
         {
-            int ThreadSize2 = Utils.GetThreadGroupsNums(ParticleSpringsCombinedHalfLength, 512);
+            int ThreadSize2 = Utils.GetThreadGroupsNums(ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
             // Transfer spring data kernel
             if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize2, 1, 1);}
             if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize2, 1, 1);}
         }
 
-        if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadSize, 1, 1);} // ParticleForces
+        if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadNums, 1, 1);} // ParticleForces
     }
 
     void RunRbSimShader()
     {
         if (RBVectorNum > 1 && ParticlesNum != 0) 
         {
-                rbSimShader.Dispatch(0, RBVectorNum, 1, 1);
+            int ThreadNums_A = Utils.GetThreadGroupsNums(RBVectorNum, rbSimShaderThreadSize);
+            int ThreadNums_B = Utils.GetThreadGroupsNums(RBVectorNum-1, rbSimShaderThreadSize);
 
-                TraversedChunks_AC_Buffer.SetCounterValue(0);
-                rbSimShader.Dispatch(1, RBVectorNum-1, 1, 1);
+            rbSimShader.Dispatch(0, ThreadNums_A, 1, 1);
 
-                if (TraversedChunksCount == 0)
-                {
-                    Debug.Log("TraversedChunksCount updated");
-                    ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
-                    TCCountBuffer.GetData(TCCount);
-                    TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+StickynessCapacitySafety));
-                }
+            TraversedChunks_AC_Buffer.SetCounterValue(0);
+            rbSimShader.Dispatch(1, ThreadNums_B, 1, 1);
 
-                if (DoCalcStickyRequests) {
-                    StickynessReqs_AC_Buffer.SetCounterValue(0);
-                }
-                rbSimShader.Dispatch(2, TraversedChunksCount, 1, 1);
-                rbSimShader.Dispatch(3, RBodiesNum, 1, 1);
+            if (TraversedChunksCount == 0)
+            {
+                Debug.Log("TraversedChunksCount updated");
+                ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
+                TCCountBuffer.GetData(TCCount);
+                TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+StickynessCapacitySafety));
+            }
+
+            int ThreadNums_C = Utils.GetThreadGroupsNums(TraversedChunksCount, rbSimShaderThreadSize);
+
+            if (DoCalcStickyRequests) {
+                StickynessReqs_AC_Buffer.SetCounterValue(0);
+            }
+            rbSimShader.Dispatch(2, ThreadNums_C, 1, 1);
+            rbSimShader.Dispatch(3, ThreadNums_A, 1, 1);
         }
     }
 
@@ -801,9 +806,6 @@ public class Main : MonoBehaviour
 
     void RunRenderShader()
     {
-
-        int ThreadSize = 32;
-
         if (renderTexture == null)
         {
             renderTexture = new RenderTexture(ResolutionX, ResolutionY, 24)
@@ -814,9 +816,7 @@ public class Main : MonoBehaviour
         }
 
         renderShader.SetTexture(0, "Result", renderTexture);
-        if (ParticlesNum != 0) {renderShader.Dispatch(0, renderTexture.width / ThreadSize, renderTexture.height / ThreadSize, 1);}
-        // Render rigid bodies - not implemented
-        // if (RBodiesNum != 0) {pSimShader.Dispatch(1, RBodiesNum, 1, 1);}
+        if (ParticlesNum != 0) {renderShader.Dispatch(0, renderTexture.width / renderShaderThreadSize, renderTexture.height / renderShaderThreadSize, 1);}
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)

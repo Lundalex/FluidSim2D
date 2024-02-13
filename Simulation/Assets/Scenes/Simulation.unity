@@ -246,11 +246,9 @@ MonoBehaviour:
   RbPStickyRadius: 2
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
-  SpringSafety: 1024
-  ChunkStorageSafety: 0.2
+  StickynessCapacitySafety: 0
   SpringCapacitySafety: 200
   TriStorageLength: 4
-  radii: 15
   Width: 300
   Height: 200
   SpawnDims: 170
