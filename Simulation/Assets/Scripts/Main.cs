@@ -82,7 +82,7 @@ public class Main : MonoBehaviour
 
     // ThreadSize settings for compute shaders
     [NonSerialized] public int renderShaderThreadSize = 32; // AxA thread groups
-    [NonSerialized] public int pSimShaderThreadSize = 1024;
+    [NonSerialized] public int pSimShaderThreadSize = 512;
     [NonSerialized] public int rbSimShaderThreadSize = 32;
     [NonSerialized] public int sortShaderThreadSize = 1024;
     [NonSerialized] public int marchingSquaresShaderThreadSize = 512;

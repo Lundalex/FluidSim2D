@@ -1,7 +1,7 @@
 static const float MaxInfluenceRadius_copy = 2.0; // MaxInfluenceRadius is an int
 static const float MaxInfluenceRadius6 = 64.0; // 2^6
 static const float InvMaxInfluenceRadius_copy = 1.0 / MaxInfluenceRadius_copy;
-static const float PI = 3.14159;
+static const float PI = 3.14;
 
 static const float InteractionInfluenceFactor; // not in use
 static const float SmoothLiquidFactor; // not in use
@@ -10,7 +10,7 @@ static const float SmoothLiquidNearFactor; // not in use
 static const float SmoothLiquidNearDerFactor = -3 * InvMaxInfluenceRadius_copy;
 static const float SmoothViscosityLaplacianFactor = 45 / (PI * MaxInfluenceRadius6);
 
-static const int AltSqrtAccuracy = 5;
+static const int AltSqrtAccuracy = 3;
 
 // test alt / optimised functions!
 
