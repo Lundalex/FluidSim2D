@@ -358,7 +358,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         int pIndex = SpatialLookup[Index].x;
 
         PDataStruct PData_i = PData[pIndex];
-        PTypeStruct PType_i = PTypes[PData_i.PType];
+        PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
 
         float2 A = PData_i.Position;
         float2 B = rotate2d(((PData_i.Position + PData_i.Velocity * DeltaTime - NextPosChange) - parentRBData.Position), -NextAngImpulse) + parentRBData.Position;

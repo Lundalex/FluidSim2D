@@ -151,14 +151,15 @@ void Render (uint3 id : SV_DispatchThreadID)
             while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int pIndex = SpatialLookup[Index].x;
+                PDataStruct PData_i = PData[pIndex];
 
-                float dst = length(pixelPos - PData[pIndex].Position);
+                float dst = length(pixelPos - PData_i.Position);
 
                 if (dst < minDst)
                 {
-                    float r = min(1.0, length(PData[pIndex].Velocity)/10);
-                    float g = PTypes[PData[pIndex].PType].colorG;
-                    float b = max(0.0, 1 - length(PData[pIndex].Velocity)/10);
+                    float r = min(1.0, length(PData_i.Velocity)/10);
+                    float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
+                    float b = max(0.0, 1 - length(PData_i.Velocity)/10);
                     Result[id.xy] = float4(r, g, b, 0.0);
                     minDst = dst;
                     particleFound = true;
