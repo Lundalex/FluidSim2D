@@ -12,19 +12,6 @@ static const float SmoothViscosityLaplacianFactor = 45 / (PI * MaxInfluenceRadiu
 
 static const int AltSqrtAccuracy = 3;
 
-// test alt / optimised functions!
-
-float alt_sqrt(float val)
-{
-    float x = val * 0.5;
-    // limit set to 5 for better performance
-    for (int i = 0; i < AltSqrtAccuracy; ++i)
-    {
-        x = 0.5 * (x + val / x);
-    }
-    return x;
-}
-
 
 // -- Optimised SPH kernel functions --
 
@@ -32,7 +19,7 @@ float InteractionInfluence_optimised(float dst)
 {
 	if (dst < MaxInfluenceRadius_copy)
 	{
-		return alt_sqrt(MaxInfluenceRadius_copy - dst);
+		return sqrt(MaxInfluenceRadius_copy - dst);
 	}
 	return 0;
 }
