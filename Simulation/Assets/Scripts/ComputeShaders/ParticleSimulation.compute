@@ -118,26 +118,6 @@ int GetChunkKey(int chunkX, int chunkY)
     return chunkY * ChunkNumW + chunkX;
 }
 
-int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
-{
-    int POrderValue = POrder * ChunkNum * PTypesNum;
-
-    int PTypeValue = PType * ChunkNum;
-
-    int LastChunkKeyValue = LastChunkKey;
-
-    int Composed_LastChunkKey_PType_POrder = POrderValue + PTypeValue + LastChunkKeyValue;
-
-    return Composed_LastChunkKey_PType_POrder;
-}
-
-int2 Get_POrder_ChunkKey(int POrder_ChunkKey)
-{
-    int pOrder = (int)(POrder_ChunkKey / ChunkNum);
-    int chunkKey = POrder_ChunkKey % ChunkNum;
-    return int2(pOrder, chunkKey);
-}
-
 float2 CalcDensity(int pIndex) // (density, nearDensity)
 {
     PDataStruct PData_i = PData[pIndex];
@@ -147,12 +127,14 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
         int newChunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
         int newChunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
         int newChunkKey = GetChunkKey(newChunkX, newChunkY);
-        PData[pIndex].LastChunkKey = newChunkKey;
-        PData_i.LastChunkKey = newChunkKey;
+        Set_LastChunkKey(PData_i.LastChunkKey_PType_POrder, newChunkKey);
+        PData[pIndex].LastChunkKey_PType_POrder = PData_i.LastChunkKey_PType_POrder;
     }
 
-    int chunkX = (uint)PData_i.LastChunkKey % ChunkNumW;
-    int chunkY = (int)((uint)PData_i.LastChunkKey / ChunkNumW);
+    int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
+
+    int chunkX = (uint)lastChunkKey % ChunkNumW;
+    int chunkY = (int)((uint)lastChunkKey / ChunkNumW);
 
     float totDensity = 0.0;
     float totNearDensity = 0.0;
@@ -183,8 +165,8 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
                         if (pIndex == otherPIndex)
                         {
                             int pOrder = Index - startIndex;
-                            PData[pIndex].POrder = pOrder;
-                            PData_i.POrder = pOrder;
+                            Set_POrder(PData_i.LastChunkKey_PType_POrder, pOrder);
+                            PData[pIndex].LastChunkKey_PType_POrder = PData_i.LastChunkKey_PType_POrder;
                         }
                     }
                 }
@@ -439,14 +421,16 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     // If A and B are in range of each other, transfer data. Otherwise, do not (spring data is deleted)
     if (absPosDiffSqr <= MaxInfluenceRadiusSqr)
     {
-        int pOrder_A = PData_A.POrder;
-        int pOrder_B = PData_B.POrder;
+        int pOrder_A = Extract_POrder(PData_A.LastChunkKey_PType_POrder);
+        int pOrder_B = Extract_POrder(PData_B.LastChunkKey_PType_POrder);
+        int lastChunkKey_A = Extract_LastChunkKey(PData_A.LastChunkKey_PType_POrder);
+        int lastChunkKey_B = Extract_LastChunkKey(PData_B.LastChunkKey_PType_POrder);
     
-        int newChunkX_A = (uint)PData_A.LastChunkKey % ChunkNumW;
-        int newChunkY_A = (int)((float)PData_A.LastChunkKey / ChunkNumW);
+        int newChunkX_A = (uint)lastChunkKey_A % ChunkNumW;
+        int newChunkY_A = (int)((float)lastChunkKey_A / ChunkNumW);
 
-        int newChunkX_B = (uint)PData_B.LastChunkKey % ChunkNumW;
-        int newChunkY_B = (int)((float)PData_B.LastChunkKey / ChunkNumW);
+        int newChunkX_B = (uint)lastChunkKey_B % ChunkNumW;
+        int newChunkY_B = (int)((float)lastChunkKey_B / ChunkNumW);
 
         // not optimal since the same calculations are performed by multiple threads (many springs in each chunk)
         int localSpringBCapacityOrder = 0;
@@ -492,11 +476,12 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     // Can probably be optimised by using if (i > otherPIndex) to avoid calculating each pair twice, or by using data links (springs)
 
     PDataStruct PData_i = PData[i];
-    PTypeStruct PType_i = PTypes[PData_i.PType];
-    int pOrder = PData_i.POrder;
+    PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
+    int pOrder = Extract_POrder(PData_i.LastChunkKey_PType_POrder);
+    int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
 
-    int chunkX = (uint)PData_i.LastChunkKey % ChunkNumW;
-    int chunkY = (int)((uint)PData_i.LastChunkKey / ChunkNumW);
+    int chunkX = (uint)lastChunkKey % ChunkNumW;
+    int chunkY = (int)((uint)lastChunkKey / ChunkNumW);
     int baseChunkKey = GetChunkKey(chunkX, chunkY);
 
     int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;
@@ -524,7 +509,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 int otherPIndex = SpatialLookup[Index].x;
                 if (i == otherPIndex) { Index += 1; nNum += 1; continue; }
                 PDataStruct PData_otherPIndex = PData[otherPIndex];
-                PTypeStruct PType_otherPIndex = PTypes[PData_otherPIndex.PType];
+                PTypeStruct PType_otherPIndex = PTypes[Extract_PType(PData_otherPIndex.LastChunkKey_PType_POrder)];
 
                 float2 dst = PData_otherPIndex.Position - PData_i.Position;
                 float sqrDst = dot(dst, dst);
@@ -565,7 +550,7 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
 
     PData_i.Position += PData_i.Velocity * DeltaTime;
 
-    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[PData_i.PType].Damping);
+    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
 }
@@ -595,7 +580,7 @@ void ConsumeStickynessRequests (uint3 id : SV_DispatchThreadID)
 
     if (stickynessRequest.absDstToLineSqr <= smallestDstSqr) {
         PDataStruct PData_i = PData[pIndex];
-        PTypeStruct PType_i = PTypes[PData_i.PType];
+        PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
         float2 stickynessForce = StickynessForce(PData_i, PType_i, stickynessRequest);
     
         PData[pIndex].Velocity += stickynessForce * DeltaTime;  
