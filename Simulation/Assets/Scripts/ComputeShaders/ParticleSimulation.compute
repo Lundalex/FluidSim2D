@@ -9,7 +9,7 @@
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
 
-static const int ThreadsNum = 1024;
+static const int ThreadsNum = 512;
 
 // Constants
 const int ChunkNumW;
@@ -379,7 +379,10 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 [numthreads(ThreadsNum,1,1)]
 void CalculateDensities (uint3 id : SV_DispatchThreadID)
 {
-    int i = id.x;
+    if (id.x >= (uint)ParticlesNum) { return; }
+    // Index SpatialLookup to improve memory access coherency
+    int i = SpatialLookup[id.x].x;
+
     // density
     float2 Dns = CalcDensity(i);
     PData[i].Density = Dns.x;
@@ -471,7 +474,9 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
 [numthreads(ThreadsNum,1,1)]
 void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
-    int i = id.x;
+    if (id.x >= (uint)ParticlesNum) { return; }
+    // Index SpatialLookup to improve memory access coherency
+    int i = SpatialLookup[id.x].x;
 
     // Can probably be optimised by using if (i > otherPIndex) to avoid calculating each pair twice, or by using data links (springs)
 
