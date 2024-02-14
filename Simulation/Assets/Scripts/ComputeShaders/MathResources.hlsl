@@ -10,16 +10,16 @@ static const float SmoothLiquidNearFactor; // not in use
 static const float SmoothLiquidNearDerFactor = -3 * InvMaxInfluenceRadius_copy;
 static const float SmoothViscosityLaplacianFactor = 45 / (PI * MaxInfluenceRadius6);
 
-static const int AltSqrtAccuracy = 3;
-
 
 // -- Optimised SPH kernel functions --
 
-float InteractionInfluence_optimised(float dst)
+// InteractionInfluence_optimised() is equivelant to InteractionInfluence()
+// Using a fast sqrt() had worse performance results than the regular sqrt()
+float InteractionInfluence_optimised(float dst, float radius)
 {
-	if (dst < MaxInfluenceRadius_copy)
+	if (dst < radius)
 	{
-		return sqrt(MaxInfluenceRadius_copy - dst);
+		return sqrt(radius - dst);
 	}
 	return 0;
 }

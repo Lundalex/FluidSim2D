@@ -23,7 +23,6 @@ const int MaxInfluenceRadius;
 const int ChunkNumW;
 const int ChunkNumH;
 const int ChunkNum;
-const int PTypesNum;
 const int ChunkNumNextPow2;
 const int ParticlesNum;
 
@@ -239,7 +238,6 @@ void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
 [numthreads(ThreadsNum,1,1)]
 void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
-    // Copying both should be unnecessary
     int chunkKey = id.x;
     if (chunkKey < ChunkNum)
     {

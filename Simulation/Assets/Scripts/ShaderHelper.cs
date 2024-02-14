@@ -158,8 +158,6 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         pSimShader.SetInt("ChunkNumW", m.ChunkNumW);
         pSimShader.SetInt("ChunkNumH", m.ChunkNumH);
-        pSimShader.SetInt("ChunkNum", m.ChunkNum);
-        pSimShader.SetInt("PTypesNum", m.PTypesNum);
         pSimShader.SetInt("IOOR", m.IOOR);
         pSimShader.SetInt("Width", m.Width);
         pSimShader.SetInt("Height", m.Height);
@@ -219,7 +217,6 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("ChunkNumW", m.ChunkNumW);
         sortShader.SetInt("ChunkNumH", m.ChunkNumH);
         sortShader.SetInt("ChunkNum", m.ChunkNum);
-        sortShader.SetInt("PTypesNum", m.PTypesNum);
         sortShader.SetInt("ChunkNumNextPow2", m.ChunkNumNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("IOOR", m.IOOR);
