@@ -175,8 +175,8 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
                 // -- Calculate densities --
 
                 float dst = length(PData_i.PredPosition - PData[otherPIndex].PredPosition);
-                totDensity += SmoothLiquid(dst, MaxInfluenceRadius);
-                totNearDensity += SmoothLiquidNear(dst, MaxInfluenceRadius);
+                totDensity += SmoothLiquid_optimised(dst);
+                totNearDensity += SmoothLiquidNear_optimised(dst);
 
                 // -- Increment Index each iteration - Chunk particle search algorithm --
 
@@ -243,8 +243,8 @@ float SharedNearPressure(float nearDensityA, float nearDensityB, float NearPress
 
 float2 PressureForce(float densityA, float densityB, float nearDensityA, float nearDensityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst, float2 normDst, int randSeed)
 {
-    float absPressureGradient = SmoothLiquidDer(absDst, MaxInfluenceRadius);
-    float absNearPressureGradient = SmoothLiquidNearDer(absDst, MaxInfluenceRadius);
+    float absPressureGradient = SmoothLiquidDer_optimised(absDst);
+    float absNearPressureGradient = SmoothLiquidNearDer_optimised(absDst);
 
     float2 pressureGradient = float2(0.0, 0.0);
     float2 nearPressureGradient = float2(0.0, 0.0);
@@ -273,7 +273,7 @@ float2 PressureForce(float densityA, float densityB, float nearDensityA, float n
 
 float2 ViscocityForce(float2 LastVelocityA, float2 LastVelocityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst)
 {
-    float2 viscocityForce = (LastVelocityB - LastVelocityA) * SmoothViscosityLaplacian(absDst, MaxInfluenceRadius);
+    float2 viscocityForce = (LastVelocityB - LastVelocityA) * SmoothViscosityLaplacian_optimised(absDst);
 
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
 }
@@ -291,7 +291,7 @@ float2 InteractionForce(int pIndex)
 
     if (absDst > MaxInteractionRadius) {return float2(0.0, 0.0);}
 
-    float absInteractionGradient = SmoothLiquid(absDst, MaxInteractionRadius);
+    float absInteractionGradient = SmoothLiquid_optimised(absDst);
 
     if (absDst == 0) {return float2(0.0, 0.0);}
 
