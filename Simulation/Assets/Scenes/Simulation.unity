@@ -241,7 +241,7 @@ MonoBehaviour:
   LookAheadFactor: 0.02
   Viscocity: 3
   LiquidElasticity: 2
-  Plasticity: 200
+  Plasticity: 20
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
@@ -256,7 +256,7 @@ MonoBehaviour:
   FixedTimeStep: 1
   RenderMarchingSquares: 0
   TimeStep: 0.01
-  ProgramSpeed: 1.96
+  ProgramSpeed: 2
   VisualParticleRadii: 1
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3

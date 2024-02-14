@@ -141,6 +141,19 @@ float SmoothViscosityLaplacian(float dst, float radius)
 
 // -- General math functions --
 
+
+// ΔQ_ij = Δt * avg_k * diff_T * W_ij / dst_ij 
+// where:
+// avg_k: average thermal conductivity
+// W: contact area between the liquids (W(absDst))
+// diff_T: difference in temperature
+// dst: absDst
+// Δt: DeltaTime
+float LiquidTemperatureExchangeModel(float avg_k, float diff_T, float W, float dst, float DeltaTime)
+{
+    return DeltaTime * avg_k * diff_T * W / dst;
+}
+
 float LiquidSpringForceModel(float springStiffness, float restLen, float maxLen, float curLen)
 {
     return springStiffness * (restLen - curLen); // * (1 - curLen/maxLen)?

@@ -37,6 +37,8 @@ namespace Resources
         public float2 LastVelocity;
         public float Density;
         public float NearDensity;
+        public float Temperature; // kelvin
+        public float TemperatureExchangeBuffer;
         public int LastChunkKey_PType_POrder; // composed 3 int structure
         // POrder; // POrder is dynamic, 
         // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
@@ -53,6 +55,8 @@ namespace Resources
         public float Elasticity;
         public float Plasticity;
         public float Stickyness;
+        public float ThermalConductivity;
+        public float SpecificHeatCapacity;
         public float Gravity;
         public float colorG;
     };
@@ -108,6 +112,11 @@ namespace Resources
         {
             int threadGroupsNum = (int)Math.Ceiling((float)threadsNum / threadSize);
             return threadGroupsNum;
+        }
+
+        public static float CelciusToKelvin(float celciusTemp)
+        {
+            return 273.15f + celciusTemp;
         }
         
         public static float2 GetParticleSpawnPosition(int pIndex, int maxIndex, int Width, int Height, int SpawnDims)

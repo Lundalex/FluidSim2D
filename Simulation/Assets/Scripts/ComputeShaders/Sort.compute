@@ -52,22 +52,6 @@ RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
 RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
 
-struct PTypeStruct
-{
-    float TargetDensity;
-    int MaxInfluenceRadius;
-    float Pressure;
-    float NearPressure;
-    float Damping;
-    float Viscocity;
-    float Elasticity;
-    float Plasticity;
-    float Stickyness;
-    float Gravity;
-    float colorG;
-};
-RWStructuredBuffer<PTypeStruct> PTypes;
-
 struct PDataStruct
 {
     float2 PredPosition;
@@ -76,6 +60,8 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float Temperature; // kelvin
+    float TemperatureExchangeBuffer;
     int LastChunkKey_PType_POrder; // composed 3 int structure
     // POrder; // POrder is dynamic, 
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
