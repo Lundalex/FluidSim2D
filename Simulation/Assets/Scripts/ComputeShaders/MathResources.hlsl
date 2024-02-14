@@ -1,11 +1,96 @@
-const float InteractionInfluenceFactor;
-const float SmoothLiquidFactor;
-const float SmoothLiquidDerFactor;
-const float SmoothLiquidNearFactor;
-const float SmoothLiquidNearDerFactor;
-const float SmoothViscosityLaplacianFactor;
+static const float MaxInfluenceRadius_copy = 2.0; // MaxInfluenceRadius is an int
+static const float MaxInfluenceRadius6 = 64.0; // 2^6
+static const float InvMaxInfluenceRadius_copy = 1.0 / MaxInfluenceRadius_copy;
+static const float PI = 3.14159;
 
-// Neither math functions or math constants have been configured. Set constants in Main.cs - SetSimShaderSettings()
+static const float InteractionInfluenceFactor; // not in use
+static const float SmoothLiquidFactor; // not in use
+static const float SmoothLiquidDerFactor = -2 * InvMaxInfluenceRadius_copy;
+static const float SmoothLiquidNearFactor; // not in use
+static const float SmoothLiquidNearDerFactor = -3 * InvMaxInfluenceRadius_copy;
+static const float SmoothViscosityLaplacianFactor = 45 / (PI * MaxInfluenceRadius6);
+
+static const int AltSqrtAccuracy = 5;
+
+// test alt / optimised functions!
+
+float alt_sqrt(float val)
+{
+    float x = val * 0.5;
+    // limit set to 5 for better performance
+    for (int i = 0; i < AltSqrtAccuracy; ++i)
+    {
+        x = 0.5 * (x + val / x);
+    }
+    return x;
+}
+
+
+// -- Optimised SPH kernel functions --
+
+float InteractionInfluence_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+		return alt_sqrt(MaxInfluenceRadius_copy - dst);
+	}
+	return 0;
+}
+
+float SmoothLiquid_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+        float dstR = dst * InvMaxInfluenceRadius_copy;
+        float dstR_1 = 1 - dstR;
+		return dstR_1 * dstR_1;
+	}
+	return 0;
+}
+
+float SmoothLiquidDer_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+        float dstR = dst * InvMaxInfluenceRadius_copy;
+		return SmoothLiquidDerFactor * (1 - dstR);
+	}
+	return 0;
+}
+
+float SmoothLiquidNear_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+        float dstR = dst * InvMaxInfluenceRadius_copy;
+        float dstR_1 = 1 - dstR;
+		return dstR_1 * dstR_1 * dstR_1;
+	}
+	return 0;
+}
+
+float SmoothLiquidNearDer_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+        float dstR = dst * InvMaxInfluenceRadius_copy;
+        float dstR_1 = 1 - dstR;
+		return SmoothLiquidNearDerFactor * dstR_1 * dstR_1;
+	}
+	return 0;
+}
+
+float SmoothViscosityLaplacian_optimised(float dst)
+{
+	if (dst < MaxInfluenceRadius_copy)
+	{
+		return SmoothViscosityLaplacianFactor * (MaxInfluenceRadius_copy - dst);
+	}
+	return 0;
+}
+
+
+// -- Non-optimised SPH kernel functions --
 
 float InteractionInfluence(float dst, float radius)
 {
@@ -20,7 +105,8 @@ float SmoothLiquid(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return (1 - dst/radius)*(1-dst/radius);
+        float dstR = dst / radius;
+		return (1 - dstR)*(1 - dstR);
 	}
 	return 0;
 }
@@ -29,7 +115,8 @@ float SmoothLiquidDer(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return -2 * (1 - dst / radius) / radius;
+        float dstR = dst / radius;
+		return -2 * (1 - dstR) / radius;
 	}
 	return 0;
 }
@@ -38,7 +125,8 @@ float SmoothLiquidNear(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return (1 - dst/radius)*(1 - dst/radius)*(1 - dst/radius);
+        float dstR = dst / radius;
+		return (1 - dstR)*(1 - dstR)*(1 - dstR);
 	}
 	return 0;
 }
@@ -47,7 +135,8 @@ float SmoothLiquidNearDer(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		return -3 * (1 - dst/radius)*(1 - dst/radius) / radius;
+        float dstR = dst / radius;
+		return -3 * (1 - dstR)*(1 - dstR) / radius;
 	}
 	return 0;
 }
@@ -57,10 +146,13 @@ float SmoothViscosityLaplacian(float dst, float radius)
 	if (dst < radius)
 	{
 	    float radius6 = radius*radius*radius*radius*radius*radius;
-		return 45 / (3.14 * radius6) * (radius - dst);
+		return 45 / (PI * radius6) * (radius - dst);
 	}
 	return 0;
 }
+
+
+// -- General math functions --
 
 float LiquidSpringForceModel(float springStiffness, float restLen, float maxLen, float curLen)
 {

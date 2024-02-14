@@ -1,5 +1,9 @@
 static const int ChunkNum_copy = 15000;
 static const int PTypesNum_copy = 2;
+static const int ParticlesNum_copy = 32768;
+
+
+// -- LastChunkKey_PType_POrder --
 
 int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
 {
@@ -34,31 +38,38 @@ void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType)
 {
     int pOrderVal = ((uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy)) * (ChunkNum_copy * PTypesNum_copy);
     int lastChunkKeyVal = LastChunkKey_PType_POrder % ChunkNum_copy;
+
     LastChunkKey_PType_POrder = pOrderVal + (NewPType * ChunkNum_copy) + lastChunkKeyVal;
 }
 
 void Set_POrder(inout int LastChunkKey_PType_POrder, int NewPOrder)
 {
     int pType_lastChunkKey_Val = (uint)LastChunkKey_PType_POrder % (ChunkNum_copy * PTypesNum_copy);
+
     LastChunkKey_PType_POrder = (NewPOrder * (ChunkNum_copy * PTypesNum_copy)) + pType_lastChunkKey_Val;
 }
 
 
+// // -- LinkedA_LinkedB --
 
-
-// void Set_LastChunkKey(inout int LastChunkKey_PType_POrder, int NewLastChunkKey) {
-//     int POrder = LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy);
-//     int PType = (LastChunkKey_PType_POrder % (ChunkNum_copy * PTypesNum_copy)) / ChunkNum_copy;
-//     LastChunkKey_PType_POrder = POrder * (ChunkNum_copy * PTypesNum_copy) + PType * ChunkNum_copy + NewLastChunkKey;
+// int Compose_LinkedA_LinkedB(int LinkedA, int LinkedB)
+// {
+//     return LinkedB * ParticlesNum_copy + LinkedA;
 // }
 
-// void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType) {
-//     int POrder = LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy);
-//     int LastChunkKey = LastChunkKey_PType_POrder % ChunkNum_copy;
-//     LastChunkKey_PType_POrder = POrder * (ChunkNum_copy * PTypesNum_copy) + NewPType * ChunkNum_copy + LastChunkKey;
+// int Extract_LinkedA(int LinkedA_LinkedB)
+// {
+//     return (uint)LinkedA_LinkedB % ParticlesNum_copy;
 // }
 
-// void Set_POrder(inout int LastChunkKey_PType_POrder, int NewPOrder) {
-//     int withoutPOrder = LastChunkKey_PType_POrder % (ChunkNum_copy * PTypesNum_copy);
-//     LastChunkKey_PType_POrder = NewPOrder * (ChunkNum_copy * PTypesNum_copy) + withoutPOrder;
+// int Extract_LinkedB(int LinkedA_LinkedB)
+// {
+//     return (uint)LinkedA_LinkedB / ParticlesNum_copy;
+// }
+
+// void Set_LinkedA_LinkedB(inout int LinkedA_LinkedB, int newLinkedA, int newLinkedB)
+// {
+//     int LinkedA_LinkedB_Val = newLinkedB * ParticlesNum_copy + newLinkedA;
+
+//     LinkedA_LinkedB = LinkedA_LinkedB_Val;
 // }
