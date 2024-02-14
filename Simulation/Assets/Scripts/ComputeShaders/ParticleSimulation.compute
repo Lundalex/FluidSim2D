@@ -14,8 +14,6 @@ static const int ThreadsNum = 512;
 // Constants
 const int ChunkNumW;
 const int ChunkNumH;
-const int ChunkNum;
-const int PTypesNum;
 const int IOOR;
 const int Width;
 const int Height;
@@ -291,7 +289,7 @@ float2 InteractionForce(int pIndex)
 
     if (absDst > MaxInteractionRadius) {return float2(0.0, 0.0);}
 
-    float absInteractionGradient = SmoothLiquid_optimised(absDst);
+    float absInteractionGradient = InteractionInfluence_optimised(absDst, MaxInteractionRadius);
 
     if (absDst == 0) {return float2(0.0, 0.0);}
 
@@ -380,7 +378,7 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 void CalculateDensities (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)ParticlesNum) { return; }
-    // Index SpatialLookup to improve memory access coherency
+    // Index from SpatialLookup to improve memory access coherency
     int i = SpatialLookup[id.x].x;
 
     // density
@@ -475,7 +473,7 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
 void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)ParticlesNum) { return; }
-    // Index SpatialLookup to improve memory access coherency
+    // Index from SpatialLookup to improve memory access coherency
     int i = SpatialLookup[id.x].x;
 
     // Can probably be optimised by using if (i > otherPIndex) to avoid calculating each pair twice, or by using data links (springs)

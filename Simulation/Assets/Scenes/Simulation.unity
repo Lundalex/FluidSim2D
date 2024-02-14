@@ -266,8 +266,8 @@ MonoBehaviour:
   MSResolution: 3
   MarchW: 100
   MarchH: 66
-  MaxInteractionRadius: 70
-  InteractionAttractionPower: 30
+  MaxInteractionRadius: 40
+  InteractionAttractionPower: 3.5
   InteractionFountainPower: 0
   shaderHelper: {fileID: 486544}
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
