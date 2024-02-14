@@ -43,6 +43,8 @@ struct PTypeStruct
     float Elasticity;
     float Plasticity;
     float Stickyness;
+    float ThermalConductivity;
+    float SpecificHeatCapacity;
     float Gravity;
     float colorG;
 };
@@ -56,6 +58,8 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float Temperature; // kelvin
+    float TemperatureExchangeBuffer;
     int LastChunkKey_PType_POrder; // composed 3 int structure
     // POrder; // POrder is dynamic, 
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum

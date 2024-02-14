@@ -17,7 +17,7 @@ https://iquilezles.org/articles/distfunctions/ SDFs Not used yet
 // Geogebra: https://www.geogebra.org/calculator/bsyseckq (not updated)
 
 
--- Strain test --
+-- Strain test (w unoptimised GPU memory usage and performance) --
  - Maximum allowed particle count (before crash): 524288
  - Required dedicated GPU memory: ~1.2 GB
  - Framerate (with inter-particle springs): 56FPS (-> 112 simulation steps)

@@ -26,7 +26,6 @@ const int SpawnDims;
 const int TimeStepsPerRender;
 
 const float LookAheadFactor;
-const float RBodyElasticity;
 const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
@@ -75,6 +74,8 @@ struct PTypeStruct
     float Elasticity;
     float Plasticity;
     float Stickyness;
+    float ThermalConductivity;
+    float SpecificHeatCapacity;
     float Gravity;
     float colorG;
 };
@@ -88,10 +89,12 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float Temperature; // kelvin
+    float TemperatureExchangeBuffer;
     int LastChunkKey_PType_POrder; // composed 3 int structure
-    // POrder; // POrder is dynamic, 
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
-    // PType; // 0 <= PType <= PTypeNum
+    // POrder is dynamic, 
+    // 0 <= LastChunkKey <= ChunkNum
+    // 0 <= PType <= PTypesNum
 };
 RWStructuredBuffer<PDataStruct> PData;
 
@@ -214,26 +217,26 @@ float4 BoundraryCheck(float2 pos, float2 vel, float extraPadding, float Damping)
     return float4(pos.x, pos.y, vel.x, vel.y);
 }
 
-float DensityToPressure(float density, float TargetDensity, float Pressure)
+float DensityToPressure(float density, float targetDensity, float pressure)
 {
-    float densityError = density - TargetDensity;
-    float pressure = densityError * Pressure;
-    return pressure;
+    float densityError = density - targetDensity;
+    float Pressure = densityError * pressure;
+    return Pressure;
 }
 
-float SharedPressure(float densityA, float densityB, float TargetDensityA, float TargetDensityB, float PressureA, float PressureB)
+float SharedPressure(float densityA, float densityB, float targetDensityA, float targetDensityB, float pressureA, float pressureB)
 {
-    float pressureA = DensityToPressure(densityA, TargetDensityA, PressureA);
-    float pressureB = DensityToPressure(densityB, TargetDensityB, PressureB);
-    float sharedPressure = avg(pressureA, pressureB);
+    float PressureA = DensityToPressure(densityA, targetDensityA, pressureA);
+    float PressureB = DensityToPressure(densityB, targetDensityB, pressureB);
+    float sharedPressure = avg(PressureA, PressureB);
 
     return sharedPressure;
 }
 
-float SharedNearPressure(float nearDensityA, float nearDensityB, float NearPressureMultiplierA, float NearPressureMultiplierB)
+float SharedNearPressure(float nearDensityA, float nearDensityB, float nearPressureMultiplierA, float nearPressureMultiplierB)
 {
-    float nearPressureA = nearDensityA * NearPressureMultiplierA;
-    float nearPressureB = nearDensityB * NearPressureMultiplierB;
+    float nearPressureA = nearDensityA * nearPressureMultiplierA;
+    float nearPressureB = nearDensityB * nearPressureMultiplierB;
     float sharedNearPressure = avg(nearPressureA, nearPressureB);
 
     return sharedNearPressure;
@@ -269,9 +272,9 @@ float2 PressureForce(float densityA, float densityB, float nearDensityA, float n
     return pressureForce;
 }
 
-float2 ViscocityForce(float2 LastVelocityA, float2 LastVelocityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float absDst)
+float2 ViscocityForce(float2 lastVelocityA, float2 lastVelocityB, PTypeStruct PType_i, PTypeStruct PType_otherPIndex, float viscocityLaplacian)
 {
-    float2 viscocityForce = (LastVelocityB - LastVelocityA) * SmoothViscosityLaplacian_optimised(absDst);
+    float2 viscocityForce = viscocityLaplacian * (lastVelocityB - lastVelocityA);
 
     return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
 }
@@ -359,10 +362,19 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     return (isnan(springForce.x) || isnan(springForce.y)) ? float2(0.0, 0.0) : -springForce;
 }
 
+float TemperatureExchange(float viscocityLaplacian, float TemperatureA, float TemperatureB, float ThermalConductivityA, float ThermalConductivityB, float absDst, float DeltaTime)
+{
+    float temperatureDiff = TemperatureB - TemperatureA;
+    float avgThermalConductivity = avg(ThermalConductivityA, ThermalConductivityB);
+
+    return LiquidTemperatureExchangeModel(avgThermalConductivity, temperatureDiff, viscocityLaplacian, max(absDst, 0.1), DeltaTime);
+}
+
 [numthreads(ThreadsNum,1,1)]
 void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
+    if (id.x >= (uint)ParticlesNum) { return; }
 
     PData[i].PredPosition = PData[i].Position + PData[i].Velocity * LookAheadFactor;
 
@@ -482,6 +494,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
     int pOrder = Extract_POrder(PData_i.LastChunkKey_PType_POrder);
     int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
+    float startTemperature = PData_i.Temperature;
 
     int chunkX = (uint)lastChunkKey % ChunkNumW;
     int chunkY = (int)((uint)lastChunkKey / ChunkNumW);
@@ -492,6 +505,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 totPressureForce = float2(0.0, 0.0);
     float2 totViscocityForce = float2(0.0, 0.0);
     float2 totSpringForce = float2(0.0, 0.0);
+    float totTemperatureExchange = 0.0;
     int nNum = 0;
     for (int x = -1; x <= 1; x++)
     {
@@ -506,7 +520,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
             int chunkKey = GetChunkKey(curChunkX, curChunkY);
             int startIndex = StartIndices[chunkKey];
 
-            int Index = startIndex; 
+            int Index = startIndex;
             while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
             {
                 int otherPIndex = SpatialLookup[Index].x;
@@ -521,14 +535,17 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 float absDst = sqrt(sqrDst);
                 float2 normDst = normalize(dst);
 
+                float viscocityLaplacian = SmoothViscosityLaplacian_optimised(absDst);
+
                 int springIndex = FrameBufferCycle
                 ? SpringStartIndices_dbA[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nNum + ParticleSpringsCombinedHalfLength
                 : SpringStartIndices_dbB[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nNum;
 
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, PType_i, PType_otherPIndex, absDst, normDst, otherPIndex);
-                totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, absDst);
+                totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, viscocityLaplacian);
                 totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, normDst, springIndex);
 
+                totTemperatureExchange += TemperatureExchange(viscocityLaplacian, PData_i.Temperature, PData_otherPIndex.Temperature, PType_i.ThermalConductivity, PType_otherPIndex.ThermalConductivity, absDst, DeltaTime);
 
                 // -- Increment Index each iteration - particle chunks algorithm, particle springs algorithm --
 
@@ -540,8 +557,9 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     float2 interactionForce = InteractionForce(i);
 
-    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce + float2(0, -PType_i.Gravity);
+    float2 totForce = totPressureForce + totViscocityForce + totSpringForce + interactionForce - float2(0, PType_i.Gravity);
     PData[i].Velocity += totForce * DeltaTime;
+    PData[i].TemperatureExchangeBuffer = totTemperatureExchange;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -550,12 +568,16 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     int i = id.x;
 
     PDataStruct PData_i = PData[i];
+    PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
 
+    // Update particle position and velocity
     PData_i.Position += PData_i.Velocity * DeltaTime;
-
-    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].Damping);
+    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
     PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
+
+    // Update particle temperature
+    PData[i].Temperature += PData_i.TemperatureExchangeBuffer / PType_i.SpecificHeatCapacity;
 }
 
 [numthreads(512,1,1)]

@@ -35,6 +35,8 @@ struct PTypeStruct
     float Elasticity;
     float Plasticity;
     float Stickyness;
+    float ThermalConductivity;
+    float SpecificHeatCapacity;
     float Gravity;
     float colorG;
 };
@@ -48,6 +50,8 @@ struct PDataStruct
     float2 LastVelocity;
     float Density;
     float NearDensity;
+    float Temperature; // kelvin
+    float TemperatureExchangeBuffer;
     int LastChunkKey_PType_POrder; // flat 3 int structure
     // POrder; // POrder is dynamic, 
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
@@ -157,9 +161,16 @@ void Render (uint3 id : SV_DispatchThreadID)
 
                 if (dst < minDst)
                 {
-                    float r = min(1.0, length(PData_i.Velocity)/10);
-                    float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
-                    float b = max(0.0, 1 - length(PData_i.Velocity)/10);
+                    // visualize velocity
+                    // float r = min(1.0, length(PData_i.Velocity)/10);
+                    // float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
+                    // float b = max(0.0, 1 - length(PData_i.Velocity)/10);
+
+                    // visualize temperature
+                    float r = min(1.0, (PData_i.Temperature - 293.15)/30);
+                    float g = 0.0;
+                    float b = max(0.0, (323.15 - PData_i.Temperature)/30);
+
                     Result[id.xy] = float4(r, g, b, 0.0);
                     minDst = dst;
                     particleFound = true;
