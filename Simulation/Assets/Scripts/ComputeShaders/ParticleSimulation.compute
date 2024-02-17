@@ -70,7 +70,7 @@ struct PTypeStruct
     float Pressure;
     float NearPressure;
     float Damping;
-    float Viscocity;
+    float Viscosity;
     float Elasticity;
     float Plasticity;
     float Stickyness;
@@ -276,7 +276,7 @@ float2 ViscocityForce(float2 lastVelocityA, float2 lastVelocityB, PTypeStruct PT
 {
     float2 viscocityForce = viscocityLaplacian * (lastVelocityB - lastVelocityA);
 
-    return viscocityForce * avg(PType_i.Viscocity, PType_otherPIndex.Viscocity);
+    return viscocityForce * avg(PType_i.Viscosity, PType_otherPIndex.Viscosity);
 }
 
 float2 InteractionForce(int pIndex)

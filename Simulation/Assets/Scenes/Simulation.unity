@@ -257,7 +257,7 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.01
   ProgramSpeed: 2
-  VisualParticleRadii: 1
+  VisualParticleRadii: 0.4
   RBRenderThickness: 0.5
   TimeStepsPerRender: 3
   MSvalMin: 0.41

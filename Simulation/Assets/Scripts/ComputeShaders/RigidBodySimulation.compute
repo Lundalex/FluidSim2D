@@ -19,7 +19,7 @@ const int RBVectorNum;
 const int MaxInfluenceRadius;
 const int MaxChunkSearchSafety;
 const float Damping;
-// const float Viscocity;
+// const float Viscosity;
 const float Gravity;
 const float RbElasticity;
 const float BorderPadding;
@@ -39,7 +39,7 @@ struct PTypeStruct
     float Pressure;
     float NearPressure;
     float Damping;
-    float Viscocity;
+    float Viscosity;
     float Elasticity;
     float Plasticity;
     float Stickyness;

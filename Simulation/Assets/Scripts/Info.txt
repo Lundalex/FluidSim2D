@@ -23,3 +23,5 @@ https://iquilezles.org/articles/distfunctions/ SDFs Not used yet
  - Framerate (with inter-particle springs): 56FPS (-> 112 simulation steps)
  - Framerate (without inter-particle springs): 78FPS (-> 156 simulation steps)
  - SimulationSteps per frame: 2 steps
+A probable cause for the crash was the length of the spring buffer causing the designated threadgroups for processing the whole buffer, to exceed the maximum count of ~65000.
+This issue could be avoided by splitting the processing the buffer(s) into chunks, at the expense of overhead inefficiencies.

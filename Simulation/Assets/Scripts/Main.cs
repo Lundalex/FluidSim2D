@@ -22,7 +22,6 @@ using UnityEngine.Rendering;
 // Import utils from Resources.cs
 using Resources;
 // Usage: Utils.(functionName)()
-
 public class Main : MonoBehaviour
 {
     [Header("Simulation settings")]
@@ -34,7 +33,7 @@ public class Main : MonoBehaviour
     [Range(0, 1)] public float Damping;
     [Range(0, 1)] public float RbElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
-    public float Viscocity;
+    public float Viscosity;
     public float LiquidElasticity;
     public float Plasticity;
     public float Gravity;
@@ -259,7 +258,7 @@ public class Main : MonoBehaviour
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
-            Viscocity = Viscocity,
+            Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
             Stickyness = 5f,
@@ -273,7 +272,7 @@ public class Main : MonoBehaviour
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
-            Viscocity = Viscocity,
+            Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
             Stickyness = 12f,
@@ -398,7 +397,7 @@ public class Main : MonoBehaviour
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
-            Viscocity = Viscocity,
+            Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
             Stickyness = 5f,
@@ -414,7 +413,7 @@ public class Main : MonoBehaviour
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
-            Viscocity = Viscocity,
+            Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
             Stickyness = 12f,

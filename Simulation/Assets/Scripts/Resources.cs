@@ -51,7 +51,7 @@ namespace Resources
         public float Pressure;
         public float NearPressure;
         public float Damping;
-        public float Viscocity;
+        public float Viscosity;
         public float Elasticity;
         public float Plasticity;
         public float Stickyness;
