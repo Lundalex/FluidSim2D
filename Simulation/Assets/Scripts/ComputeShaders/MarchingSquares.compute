@@ -34,7 +34,7 @@ struct PTypeStruct
     float Pressure;
     float NearPressure;
     float Damping;
-    float Viscocity;
+    float Viscosity;
     float Elasticity;
     float Plasticity;
     float Stickyness;
