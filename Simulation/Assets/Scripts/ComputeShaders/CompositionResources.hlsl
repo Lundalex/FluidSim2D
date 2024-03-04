@@ -1,4 +1,4 @@
-static const int ChunkNum_copy = 200 * 150;
+static const int ChunkNum_copy = 100 * 150;
 static const int PTypesNum_copy = 2;
 static const int ParticlesNum_copy = 32768;
 
