@@ -96,7 +96,7 @@ bool ValidChunk(int ChunkX, int ChunkY)
 
 
 [numthreads(ThreadsNum,ThreadsNum,1)]
-void Render (uint3 id : SV_DispatchThreadID)
+void Render(uint3 id : SV_DispatchThreadID)
 {
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
     float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
