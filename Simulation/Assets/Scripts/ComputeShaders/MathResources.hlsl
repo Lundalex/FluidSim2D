@@ -1,14 +1,5 @@
-static const float MaxInfluenceRadius_copy = 2.0; // MaxInfluenceRadius is an int
-static const float MaxInfluenceRadius6 = 64.0; // 2^6
-static const float InvMaxInfluenceRadius_copy = 1.0 / MaxInfluenceRadius_copy;
 static const float PI = 3.14;
-
-static const float InteractionInfluenceFactor; // not in use
-static const float SmoothLiquidFactor; // not in use
-static const float SmoothLiquidDerFactor = -2 * InvMaxInfluenceRadius_copy;
-static const float SmoothLiquidNearFactor; // not in use
-static const float SmoothLiquidNearDerFactor = -3 * InvMaxInfluenceRadius_copy;
-static const float SmoothViscosityLaplacianFactor = 45 / (PI * MaxInfluenceRadius6);
+static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
 
 // -- Optimised SPH kernel functions --
@@ -24,54 +15,55 @@ float InteractionInfluence_optimised(float dst, float radius)
 	return 0;
 }
 
-float SmoothLiquid_optimised(float dst)
+float SmoothLiquid_optimised(float dst, float radius)
 {
-	if (dst < MaxInfluenceRadius_copy)
+	if (dst < radius)
 	{
-        float dstR = dst * InvMaxInfluenceRadius_copy;
+        float dstR = dst / radius;
         float dstR_1 = 1 - dstR;
 		return dstR_1 * dstR_1;
 	}
 	return 0;
 }
 
-float SmoothLiquidDer_optimised(float dst)
+float SmoothLiquidNear_optimised(float dst, float radius)
 {
-	if (dst < MaxInfluenceRadius_copy)
+	if (dst < radius)
 	{
-        float dstR = dst * InvMaxInfluenceRadius_copy;
-		return SmoothLiquidDerFactor * (1 - dstR);
-	}
-	return 0;
-}
-
-float SmoothLiquidNear_optimised(float dst)
-{
-	if (dst < MaxInfluenceRadius_copy)
-	{
-        float dstR = dst * InvMaxInfluenceRadius_copy;
+        float dstR = dst / radius;
         float dstR_1 = 1 - dstR;
 		return dstR_1 * dstR_1 * dstR_1;
 	}
 	return 0;
 }
 
-float SmoothLiquidNearDer_optimised(float dst)
+float SmoothLiquidDer_optimised(float dst, float radius)
 {
-	if (dst < MaxInfluenceRadius_copy)
+	if (dst < radius)
 	{
-        float dstR = dst * InvMaxInfluenceRadius_copy;
-        float dstR_1 = 1 - dstR;
-		return SmoothLiquidNearDerFactor * dstR_1 * dstR_1;
+        float dstR = dst / radius;
+		return -2 * (1 - dstR) / radius;
 	}
 	return 0;
 }
 
-float SmoothViscosityLaplacian_optimised(float dst)
+float SmoothLiquidNearDer_optimised(float dst, float radius)
 {
-	if (dst < MaxInfluenceRadius_copy)
+	if (dst < radius)
 	{
-		return SmoothViscosityLaplacianFactor * (MaxInfluenceRadius_copy - dst);
+        float dstR = dst / radius;
+        float dstR_1 = 1 - dstR;
+		return -3 * dstR_1 * dstR_1 / radius;
+	}
+	return 0;
+}
+
+float SmoothViscosityLaplacian_optimised(float dst, float radius)
+{
+	if (dst < radius)
+	{
+		float radius6 = radius*radius*radius*radius*radius*radius;
+		return SmoothViscosityLaplacianFactor * (radius - dst) / radius6;
 	}
 	return 0;
 }
@@ -172,6 +164,11 @@ float RBPStickynessModel(float stickyness, float dst, float maxDst)
 float avg(float a, float b)
 {
     return (a + b) / 2;
+}
+
+float sqr(float a)
+{
+	return a * a;
 }
 
 float rand(float n)

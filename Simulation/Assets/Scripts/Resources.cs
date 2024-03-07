@@ -47,8 +47,8 @@ namespace Resources
     public struct PTypeStruct
     {
         public float TargetDensity;
-        public int MaxInfluenceRadius;
         public float Pressure;
+        public float InfluenceRadius;
         public float NearPressure;
         public float Damping;
         public float Viscosity;

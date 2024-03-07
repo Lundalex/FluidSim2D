@@ -242,44 +242,15 @@ public class Main : MonoBehaviour
     {
         if (ProgramStarted)
         {
-            CallOnInspectorUpdate();
+            SetConstants();
+            UpdateSettings();
         }
     }
 
     // Doesn't work
-    public void CallOnInspectorUpdate()
+    public void UpdateSettings()
     {
-        SetConstants();
-        PTypes = new PTypeStruct[2];
-        PTypes[0] = new PTypeStruct
-        {
-            TargetDensity = TargetDensity,
-            MaxInfluenceRadius = 1,
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
-            Damping = Damping,
-            Viscosity = Viscosity,
-            Elasticity = LiquidElasticity,
-            Plasticity = Plasticity,
-            Stickyness = 5f,
-            Gravity = Gravity,
-            colorG = 0f
-        };
-        PTypes[1] = new PTypeStruct
-        {
-            TargetDensity = TargetDensity * 1.5f,
-            MaxInfluenceRadius = 1,
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
-            Damping = Damping,
-            Viscosity = Viscosity,
-            Elasticity = LiquidElasticity,
-            Plasticity = Plasticity,
-            Stickyness = 12f,
-            Gravity = Gravity,
-            colorG = 1f
-        };
-        PTypesNum = PTypes.Length;
+        SetPTypesData();
         PTypesBuffer.SetData(PTypes);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
@@ -387,42 +358,49 @@ public class Main : MonoBehaviour
         }
     }
 
-    void InitializeSetArrays()
+    void SetPTypesData()
     {
         PTypes = new PTypeStruct[2];
+        float IR_1 = 2f;
+        float IR_2 = 2.0f;
         PTypes[0] = new PTypeStruct
         {
             TargetDensity = TargetDensity,
-            MaxInfluenceRadius = 1,
             Pressure = PressureMultiplier,
+            InfluenceRadius = IR_1,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
             Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
-            Stickyness = 5f,
-            ThermalConductivity = 10.0f,
-            SpecificHeatCapacity = 2.0f,
+            Stickyness = 2f,
+            ThermalConductivity = 1.0f,
+            SpecificHeatCapacity = 10.0f,
             Gravity = Gravity,
             colorG = 0f
         };
         PTypes[1] = new PTypeStruct
         {
             TargetDensity = TargetDensity * 1.5f,
-            MaxInfluenceRadius = 1,
             Pressure = PressureMultiplier,
+            InfluenceRadius = IR_2,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
             Viscosity = Viscosity,
             Elasticity = LiquidElasticity,
             Plasticity = Plasticity,
-            Stickyness = 12f,
-            ThermalConductivity = 2.0f,
+            Stickyness = 4f,
+            ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
             Gravity = Gravity,
             colorG = 1f
         };
         PTypesNum = PTypes.Length;
+    }
+
+    void InitializeSetArrays()
+    {
+        SetPTypesData();
 
         RBData = new RBDataStruct[2];
         RBData[0] = new RBDataStruct
@@ -433,8 +411,8 @@ public class Main : MonoBehaviour
             NextVel = new float2(0.0f, 0.0f),
             NextAngImpulse = 0f,
             AngularImpulse = 0.0f,
-            Stickyness = 22f,
-            StickynessRange = 5f,
+            Stickyness = 6f,
+            StickynessRange = 6f,
             StickynessRangeSqr = 16f,
             Mass = 200f,
             WallCollision = 0,
@@ -589,8 +567,8 @@ public class Main : MonoBehaviour
                     Velocity = new float2(0.0f, 0.0f),
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
-                    NearDensity = 273.15f + 20.0f,
-                    Temperature = Utils.CelciusToKelvin(50.0f),
+                    NearDensity = 0.0f,
+                    Temperature = Utils.CelciusToKelvin(80.0f),
                     TemperatureExchangeBuffer = 0.0f,
                     LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
                 };
@@ -635,7 +613,7 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 12 + sizeof(int) * 1);
-            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 12 + sizeof(int) * 1);
+            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 13);
 
             PDataBuffer.SetData(PData);
             PTypesBuffer.SetData(PTypes);
