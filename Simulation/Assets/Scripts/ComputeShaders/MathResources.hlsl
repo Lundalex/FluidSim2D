@@ -146,14 +146,14 @@ float LiquidTemperatureExchangeModel(float avg_k, float diff_T, float W, float d
     return DeltaTime * avg_k * diff_T * W / dst;
 }
 
-float LiquidSpringForceModel(float springStiffness, float restLen, float maxLen, float curLen)
+float LiquidSpringForceModel(float stiffness, float restLen, float maxLen, float curLen)
 {
-    return springStiffness * (restLen - curLen); // * (1 - curLen/maxLen)?
+    return stiffness * (restLen - curLen); // * (1 - curLen/maxLen)?
 }
 
-float LiquidSpringPlasticityModel(float plasticityConst, int sgnDiffMng, float absDiffMng, float tolDeformation, float DeltaTime)
+float LiquidSpringPlasticityModel(float plasticity, int sgnDiffMng, float absDiffMng, float tolDeformation, float DeltaTime)
 {
-    return plasticityConst * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
+    return plasticity * sgnDiffMng * max(0, absDiffMng - tolDeformation) * DeltaTime;
 }
 
 float RBPStickynessModel(float stickyness, float dst, float maxDst)
@@ -163,7 +163,7 @@ float RBPStickynessModel(float stickyness, float dst, float maxDst)
 
 float avg(float a, float b)
 {
-    return (a + b) / 2;
+    return (a + b) * 0.5;
 }
 
 float sqr(float a)
