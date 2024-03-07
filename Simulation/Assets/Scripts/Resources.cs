@@ -49,17 +49,22 @@ namespace Resources
         public float SpringTolDeformation;
         public float SpringStiffness;
 
-        public float TargetDensity;
+        public float ThermalConductivity;
+        public float SpecificHeatCapacity;
+        public float FreezeThreshold;
+        public float VaporizeThreshold;
+
         public float Pressure;
-        public float InfluenceRadius;
         public float NearPressure;
+
+        public float TargetDensity;
         public float Damping;
         public float PassiveDamping;
         public float Viscosity;
         public float Stickyness;
-        public float ThermalConductivity;
-        public float SpecificHeatCapacity;
         public float Gravity;
+
+        public float InfluenceRadius;
         public float colorG;
     };
     public struct RBDataStruct

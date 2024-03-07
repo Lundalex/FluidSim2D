@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ShaderHelper : MonoBehaviour
@@ -167,6 +165,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("SpawnDims", m.SpawnDims);
         pSimShader.SetInt("TimeStepsPerRender", m.TimeStepsPerRender);
         pSimShader.SetFloat("LookAheadFactor", m.LookAheadFactor);
+        pSimShader.SetFloat("StateThresholdPadding", m.StateThresholdPadding);
         pSimShader.SetFloat("BorderPadding", m.BorderPadding);
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);

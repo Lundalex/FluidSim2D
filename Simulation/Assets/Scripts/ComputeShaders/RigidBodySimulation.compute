@@ -40,17 +40,22 @@ struct PTypeStruct
     float SpringTolDeformation;
     float SpringStiffness;
 
-    float TargetDensity;
+    float ThermalConductivity;
+    float SpecificHeatCapacity;
+    float FreezeThreshold;
+    float VaporizeThreshold;
+
     float Pressure;
-    float InfluenceRadius;
     float NearPressure;
+
+    float TargetDensity;
     float Damping;
     float PassiveDamping;
     float Viscosity;
     float Stickyness;
-    float ThermalConductivity;
-    float SpecificHeatCapacity;
     float Gravity;
+
+    float InfluenceRadius;
     float colorG;
 };
 RWStructuredBuffer<PTypeStruct> PTypes;

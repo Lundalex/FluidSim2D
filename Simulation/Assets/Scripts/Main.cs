@@ -31,9 +31,10 @@ public class Main : MonoBehaviour
     public float PressureMultiplier;
     public float NearPressureMultiplier;
     [Range(0, 1)] public float Damping;
-    [Range(0, 1)] public float PassiveDamping;
+    [Range(0, 3.0f)] public float PassiveDamping;
     [Range(0, 1)] public float RbElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
+    [Range(0, 5.0f)] public float StateThresholdPadding;
     public float Viscosity;
     public float SpringStiffness;
     public float TolDeformation;
@@ -167,7 +168,7 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
-    private int CalcStickyRequestsFrequency = 3;
+    private const int CalcStickyRequestsFrequency = 3;
     private bool DoCalcStickyRequests = true;
     private bool ProgramStarted = false;
 
@@ -362,10 +363,10 @@ public class Main : MonoBehaviour
 
     void SetPTypesData()
     {
-        PTypes = new PTypeStruct[2];
+        PTypes = new PTypeStruct[6];
         float IR_1 = 2.0f;
         float IR_2 = 2.0f;
-        PTypes[0] = new PTypeStruct
+        PTypes[0] = new PTypeStruct // Solid
         {
             FluidSpringsGroup = 1,
 
@@ -373,20 +374,78 @@ public class Main : MonoBehaviour
             SpringTolDeformation = TolDeformation,
             SpringStiffness = SpringStiffness,
 
-            TargetDensity = TargetDensity,
+            ThermalConductivity = 1.0f,
+            SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+
             Pressure = PressureMultiplier,
-            InfluenceRadius = IR_1,
             NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity,
             Damping = Damping,
             PassiveDamping = PassiveDamping,
             Viscosity = Viscosity,
-            Stickyness = 2f,
+            Stickyness = 2.0f,
+            Gravity = Gravity,
+
+            InfluenceRadius = IR_1,
+            colorG = 0.1f
+        };
+        PTypes[1] = new PTypeStruct // Liquid
+        {
+            FluidSpringsGroup = 1,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity,
+            Damping = Damping,
+            PassiveDamping = PassiveDamping,
+            Viscosity = Viscosity,
+            Stickyness = 2.0f,
             Gravity = Gravity,
-            colorG = 0f
+
+            InfluenceRadius = IR_1,
+            colorG = 0.0f
         };
-        PTypes[1] = new PTypeStruct
+        PTypes[2] = new PTypeStruct // Gas
+        {
+            FluidSpringsGroup = 1,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
+            ThermalConductivity = 1.0f,
+            SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity,
+            Damping = Damping,
+            PassiveDamping = PassiveDamping,
+            Viscosity = Viscosity,
+            Stickyness = 2.0f,
+            Gravity = Gravity,
+
+            InfluenceRadius = IR_1,
+            colorG = 0.1f
+        };
+
+        PTypes[3] = new PTypeStruct // Solid
         {
             FluidSpringsGroup = 2,
 
@@ -394,18 +453,75 @@ public class Main : MonoBehaviour
             SpringTolDeformation = TolDeformation,
             SpringStiffness = SpringStiffness,
 
-            TargetDensity = TargetDensity * 1.5f,
+            ThermalConductivity = 1.0f,
+            SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(999.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(-999.0f),
+
             Pressure = PressureMultiplier,
-            InfluenceRadius = IR_2,
             NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity * 1.5f,
             Damping = Damping,
             PassiveDamping = PassiveDamping,
             Viscosity = Viscosity,
-            Stickyness = 4f,
+            Stickyness = 4.0f,
+            Gravity = Gravity,
+
+            InfluenceRadius = IR_2,
+            colorG = 0.9f
+        };
+        PTypes[4] = new PTypeStruct // Liquid
+        {
+            FluidSpringsGroup = 2,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
+
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity * 1.5f,
+            Damping = Damping,
+            PassiveDamping = PassiveDamping,
+            Viscosity = Viscosity,
+            Stickyness = 4.0f,
             Gravity = Gravity,
-            colorG = 1f
+
+            InfluenceRadius = IR_2,
+            colorG = 1.0f
+        };
+        PTypes[5] = new PTypeStruct // Gas
+        {
+            FluidSpringsGroup = 2,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
+            ThermalConductivity = 1.0f,
+            SpecificHeatCapacity = 10.0f,
+            FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
+            VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
+
+            Pressure = PressureMultiplier,
+            NearPressure = NearPressureMultiplier,
+
+            TargetDensity = TargetDensity * 1.5f,
+            Damping = Damping,
+            PassiveDamping = PassiveDamping,
+            Viscosity = Viscosity,
+            Stickyness = 4.0f,
+            Gravity = Gravity,
+
+            InfluenceRadius = IR_2,
+            colorG = 0.9f
         };
         PTypesNum = PTypes.Length;
     }
@@ -567,7 +683,7 @@ public class Main : MonoBehaviour
                     NearDensity = 0.0f,
                     Temperature = Utils.CelciusToKelvin(20.0f),
                     TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = 0,
+                    LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
                 };
             }
             else
@@ -582,7 +698,7 @@ public class Main : MonoBehaviour
                     NearDensity = 0.0f,
                     Temperature = Utils.CelciusToKelvin(80.0f),
                     TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
+                    LastChunkKey_PType_POrder = (3 + 1) * ChunkNum // flattened equivelant to PType = 3+1
                 };
             }
 
@@ -625,7 +741,7 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 12 + sizeof(int) * 1);
-            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 15 + sizeof(int) * 1);
+            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 17 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
             PTypesBuffer.SetData(PTypes);

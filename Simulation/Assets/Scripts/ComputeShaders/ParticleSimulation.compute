@@ -26,6 +26,7 @@ const int SpawnDims;
 const int TimeStepsPerRender;
 
 const float LookAheadFactor;
+const float StateThresholdPadding;
 const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
@@ -67,17 +68,22 @@ struct PTypeStruct
     float SpringTolDeformation;
     float SpringStiffness;
 
-    float TargetDensity;
+    float ThermalConductivity;
+    float SpecificHeatCapacity;
+    float FreezeThreshold;
+    float VaporizeThreshold;
+
     float Pressure;
-    float InfluenceRadius;
     float NearPressure;
+
+    float TargetDensity;
     float Damping;
     float PassiveDamping;
     float Viscosity;
     float Stickyness;
-    float ThermalConductivity;
-    float SpecificHeatCapacity;
     float Gravity;
+
+    float InfluenceRadius;
     float colorG;
 };
 RWStructuredBuffer<PTypeStruct> PTypes;
@@ -577,16 +583,54 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     int i = id.x;
 
     PDataStruct PData_i = PData[i];
-    PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
+    int pTypeIndex = Extract_PType(PData_i.LastChunkKey_PType_POrder);
+    PTypeStruct PType_i = PTypes[pTypeIndex];
 
     // Update particle position and velocity
     PData_i.Position += PData_i.Velocity * DeltaTime;
     float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
-    PData[i].Velocity = float2(PosVelData.z, PosVelData.w) * (1 - PType_i.PassiveDamping * DeltaTime);
+    float2 newVelocity = float2(PosVelData.z, PosVelData.w);
+
+    // Decrease velocity vector length with respect to the passive damping factor
+    newVelocity *= max(length(newVelocity) - PType_i.PassiveDamping * DeltaTime, 0) / length(newVelocity);
+    PData[i].Velocity = newVelocity;
 
     // Update particle temperature
     PData[i].Temperature += PData_i.TemperatureExchangeBuffer / PType_i.SpecificHeatCapacity;
+
+    // State changes
+    int stateKey = (uint)pTypeIndex % 3;
+    switch(stateKey)
+    {
+        // Solid
+        case 0:
+            if (PData[i].Temperature > PType_i.FreezeThreshold + StateThresholdPadding)
+            {
+                Set_PType(PData[i].LastChunkKey_PType_POrder, (int)((uint)pTypeIndex / 3) + 1); // Solid -> Liquid
+            }
+            break;
+
+        // Liquid
+        case 1:
+            if (PData[i].Temperature < PType_i.FreezeThreshold - StateThresholdPadding)
+            {
+                Set_PType(PData[i].LastChunkKey_PType_POrder, (int)((uint)pTypeIndex / 3) + 0); // Liquid -> Solid
+            }
+            else if (PData[i].Temperature > PType_i.VaporizeThreshold + StateThresholdPadding)
+            {
+                Set_PType(PData[i].LastChunkKey_PType_POrder, (int)((uint)pTypeIndex / 3) + 2); // Liquid -> Gas
+            }
+            break;
+
+        // Gas
+        case 2:
+            if (PData[i].Temperature < PType_i.VaporizeThreshold - StateThresholdPadding)
+            {
+                Set_PType(PData[i].LastChunkKey_PType_POrder, (int)((uint)pTypeIndex / 3) + 1); // Gas -> Liquid
+            }
+            break;
+    }
 }
 
 [numthreads(512,1,1)]
