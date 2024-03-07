@@ -31,10 +31,12 @@ public class Main : MonoBehaviour
     public float PressureMultiplier;
     public float NearPressureMultiplier;
     [Range(0, 1)] public float Damping;
+    [Range(0, 1)] public float PassiveDamping;
     [Range(0, 1)] public float RbElasticity;
     [Range(0, 0.1f)] public float LookAheadFactor;
     public float Viscosity;
-    public float LiquidElasticity;
+    public float SpringStiffness;
+    public float TolDeformation;
     public float Plasticity;
     public float Gravity;
     public float RbPStickyRadius;
@@ -80,11 +82,11 @@ public class Main : MonoBehaviour
     public ComputeShader marchingSquaresShader;
 
     // ThreadSize settings for compute shaders
-    [NonSerialized] public int renderShaderThreadSize = 32; // AxA thread groups
-    [NonSerialized] public int pSimShaderThreadSize = 512;
-    [NonSerialized] public int rbSimShaderThreadSize = 32;
-    [NonSerialized] public int sortShaderThreadSize = 1024;
-    [NonSerialized] public int marchingSquaresShaderThreadSize = 512;
+    [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
+    [NonSerialized] public int pSimShaderThreadSize = 512; // /1024
+    [NonSerialized] public int rbSimShaderThreadSize = 32; // /1024
+    [NonSerialized] public int sortShaderThreadSize = 1024; // /1024
+    [NonSerialized] public int marchingSquaresShaderThreadSize = 512; // /1024
 
     // Marching Squares - Buffers
     [NonSerialized]
@@ -361,18 +363,23 @@ public class Main : MonoBehaviour
     void SetPTypesData()
     {
         PTypes = new PTypeStruct[2];
-        float IR_1 = 2f;
+        float IR_1 = 2.0f;
         float IR_2 = 2.0f;
         PTypes[0] = new PTypeStruct
         {
+            FluidSpringsGroup = 1,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
             TargetDensity = TargetDensity,
             Pressure = PressureMultiplier,
             InfluenceRadius = IR_1,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
+            PassiveDamping = PassiveDamping,
             Viscosity = Viscosity,
-            Elasticity = LiquidElasticity,
-            Plasticity = Plasticity,
             Stickyness = 2f,
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
@@ -381,14 +388,19 @@ public class Main : MonoBehaviour
         };
         PTypes[1] = new PTypeStruct
         {
+            FluidSpringsGroup = 2,
+
+            SpringPlasticity = Plasticity,
+            SpringTolDeformation = TolDeformation,
+            SpringStiffness = SpringStiffness,
+
             TargetDensity = TargetDensity * 1.5f,
             Pressure = PressureMultiplier,
             InfluenceRadius = IR_2,
             NearPressure = NearPressureMultiplier,
             Damping = Damping,
+            PassiveDamping = PassiveDamping,
             Viscosity = Viscosity,
-            Elasticity = LiquidElasticity,
-            Plasticity = Plasticity,
             Stickyness = 4f,
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
@@ -613,7 +625,7 @@ public class Main : MonoBehaviour
         if (ParticlesNum != 0)
         {
             PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 12 + sizeof(int) * 1);
-            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 13);
+            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 15 + sizeof(int) * 1);
 
             PDataBuffer.SetData(PData);
             PTypesBuffer.SetData(PTypes);

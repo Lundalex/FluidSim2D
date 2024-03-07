@@ -34,14 +34,19 @@ RWStructuredBuffer<int> StartIndices;
 
 struct PTypeStruct
 {
+    int FluidSpringsGroup;
+
+    float SpringPlasticity;
+    float SpringTolDeformation;
+    float SpringStiffness;
+
     float TargetDensity;
     float Pressure;
     float InfluenceRadius;
     float NearPressure;
     float Damping;
+    float PassiveDamping;
     float Viscosity;
-    float Elasticity;
-    float Plasticity;
     float Stickyness;
     float ThermalConductivity;
     float SpecificHeatCapacity;

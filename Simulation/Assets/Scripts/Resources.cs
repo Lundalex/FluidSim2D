@@ -16,9 +16,6 @@ namespace Resources
         public int PLinkedA;
         public int PLinkedB;
         public float RestLength;
-        // public float yieldLen;
-        // public float plasticity;
-        // public float stiffness;
     };
     public struct StickynessRequestStruct
     {
@@ -46,14 +43,19 @@ namespace Resources
     }
     public struct PTypeStruct
     {
+        public int FluidSpringsGroup;
+
+        public float SpringPlasticity;
+        public float SpringTolDeformation;
+        public float SpringStiffness;
+
         public float TargetDensity;
         public float Pressure;
         public float InfluenceRadius;
         public float NearPressure;
         public float Damping;
+        public float PassiveDamping;
         public float Viscosity;
-        public float Elasticity;
-        public float Plasticity;
         public float Stickyness;
         public float ThermalConductivity;
         public float SpecificHeatCapacity;

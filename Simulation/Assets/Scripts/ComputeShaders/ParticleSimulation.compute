@@ -30,7 +30,6 @@ const float BorderPadding;
 const float MaxInteractionRadius;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
-const float Plasticity;
 
 // Per-timestep-set constants
 const float DeltaTime;
@@ -51,11 +50,8 @@ struct SpringStruct
     int PLinkedA;
     int PLinkedB;
     float RestLength;
-    // float yieldLen;
-    // float plasticity;
-    // float stiffness;
 };
-RWStructuredBuffer<SpringStruct> ParticleSpringsCombined; // Result A
+RWStructuredBuffer<SpringStruct> ParticleSpringsCombined; // Buffer_A / Buffer_B
 
 const bool FrameBufferCycle;
 RWStructuredBuffer<int> ChunkSizes;
@@ -65,14 +61,19 @@ RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 
 struct PTypeStruct
 {
+    int FluidSpringsGroup;
+
+    float SpringPlasticity;
+    float SpringTolDeformation;
+    float SpringStiffness;
+
     float TargetDensity;
     float Pressure;
     float InfluenceRadius;
     float NearPressure;
     float Damping;
+    float PassiveDamping;
     float Viscosity;
-    float Elasticity;
-    float Plasticity;
     float Stickyness;
     float ThermalConductivity;
     float SpecificHeatCapacity;
@@ -329,7 +330,7 @@ float2 StickynessForce(PDataStruct PData_i, PTypeStruct PType_i, StickynessReque
     return stickynessForce;
 }
 
-float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, float absDst, float avgInfluenceRadius, float2 normDst, int springIndex)
+float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int pIndex, int otherPIndex, int springIndex, float absDst, float avgInfluenceRadius, float2 normDst)
 {
     SpringStruct spring = ParticleSpringsCombined[springIndex];
 
@@ -343,15 +344,15 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     float diffMng = absDst - spring.RestLength;
     float absDiffMng = abs(diffMng);
     int sgnDiffMng = sign(diffMng);
-    float plasticityConst = 8;
-    float tolDeformation = 0.0; // = yieldRatio / restLength
+    float plasticity = avg(PType_i.SpringPlasticity, PType_otherPIndex.SpringPlasticity);
+    float tolDeformation = avg(PType_i.SpringTolDeformation, PType_otherPIndex.SpringTolDeformation);
 
-    // ∆L = ∆t * α * sign(r − L) * max(0,|r −L| − γL)
-    spring.RestLength += LiquidSpringPlasticityModel(plasticityConst, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
+    // ∆L = ∆t * α * sign(r − L) * max(0,|r − L| − γL)
+    spring.RestLength += LiquidSpringPlasticityModel(plasticity, sgnDiffMng, absDiffMng, tolDeformation, DeltaTime);
 
     // Elasticity calculations
-    float springStiffness = Plasticity;
-    float absSpringForce = LiquidSpringForceModel(springStiffness, spring.RestLength, avgInfluenceRadius, absDst);
+    float stiffness = avg(PType_i.SpringStiffness, PType_otherPIndex.SpringStiffness);
+    float absSpringForce = LiquidSpringForceModel(stiffness, spring.RestLength, avgInfluenceRadius, absDst);
     float2 springForce = absSpringForce * normDst;
 
 
@@ -533,11 +534,11 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 float2 dst = PData_otherPIndex.Position - PData_i.Position;
                 float sqrDst = dot(dst, dst);
+                float avgInfluenceRadius = avg(PType_i.InfluenceRadius, PType_otherPIndex.InfluenceRadius);
 
-                if (sqrDst > MaxInfluenceRadiusSqr || sqrDst > sqr(PType_i.InfluenceRadius) || sqrDst > sqr(PType_otherPIndex.InfluenceRadius)) { Index += 1; nNum += 1; continue; }
+                if (sqrDst > MaxInfluenceRadiusSqr || sqrDst > sqr(avgInfluenceRadius)) { Index += 1; nNum += 1; continue; }
                 float absDst = sqrt(sqrDst);
                 float2 normDst = normalize(dst);
-                float avgInfluenceRadius = avg(PType_i.InfluenceRadius, PType_otherPIndex.InfluenceRadius);
                 float avgTemperature = 0.0033 * avg(PData_i.Temperature, PData_otherPIndex.Temperature);
 
                 float viscocityLaplacian = SmoothViscosityLaplacian_optimised(absDst, avgInfluenceRadius);
@@ -548,7 +549,10 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 totPressureForce += PressureForce(PData_i.Density, PData_otherPIndex.Density, PData_i.NearDensity, PData_otherPIndex.NearDensity, avgTemperature, PType_i, PType_otherPIndex, absDst, avgInfluenceRadius, normDst, otherPIndex);
                 totViscocityForce += ViscocityForce(PData_i.LastVelocity, PData_otherPIndex.LastVelocity, PType_i, PType_otherPIndex, viscocityLaplacian);
-                totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, absDst, avgInfluenceRadius, normDst, springIndex);
+                if (PType_i.FluidSpringsGroup != 0 && PType_i.FluidSpringsGroup == PType_otherPIndex.FluidSpringsGroup)
+                {
+                    totSpringForce += LiquidSpringForce(PType_i, PType_otherPIndex, i, otherPIndex, springIndex, absDst, avgInfluenceRadius, normDst);
+                }
 
                 totTemperatureExchange += TemperatureExchange(viscocityLaplacian, PData_i.Temperature, PData_otherPIndex.Temperature, PType_i.ThermalConductivity, PType_otherPIndex.ThermalConductivity, absDst, DeltaTime);
 
@@ -579,7 +583,7 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     PData_i.Position += PData_i.Velocity * DeltaTime;
     float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
     PData[i].Position = float2(PosVelData.x, PosVelData.y);
-    PData[i].Velocity = float2(PosVelData.z, PosVelData.w);
+    PData[i].Velocity = float2(PosVelData.z, PosVelData.w) * (1 - PType_i.PassiveDamping * DeltaTime);
 
     // Update particle temperature
     PData[i].Temperature += PData_i.TemperatureExchangeBuffer / PType_i.SpecificHeatCapacity;
