@@ -1,6 +1,6 @@
 static const float MIR = 2.0; // MaxInfluenceRadius
 static const int ChunkNum_copy = ceil(300 / MIR) * ceil(200 / MIR);
-static const int PTypesNum_copy = 2;
+static const int PTypesNum_copy = 2 * 3;
 static const int ParticlesNum_copy = 32768;
 
 
@@ -38,7 +38,7 @@ void Set_LastChunkKey(inout int LastChunkKey_PType_POrder, int NewLastChunkKey)
 void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType)
 {
     int pOrderVal = ((uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy)) * (ChunkNum_copy * PTypesNum_copy);
-    int lastChunkKeyVal = LastChunkKey_PType_POrder % ChunkNum_copy;
+    int lastChunkKeyVal = (uint)LastChunkKey_PType_POrder % ChunkNum_copy;
 
     LastChunkKey_PType_POrder = pOrderVal + (NewPType * ChunkNum_copy) + lastChunkKeyVal;
 }
@@ -49,28 +49,3 @@ void Set_POrder(inout int LastChunkKey_PType_POrder, int NewPOrder)
 
     LastChunkKey_PType_POrder = (NewPOrder * (ChunkNum_copy * PTypesNum_copy)) + pType_lastChunkKey_Val;
 }
-
-
-// // -- LinkedA_LinkedB --
-
-// int Compose_LinkedA_LinkedB(int LinkedA, int LinkedB)
-// {
-//     return LinkedB * ParticlesNum_copy + LinkedA;
-// }
-
-// int Extract_LinkedA(int LinkedA_LinkedB)
-// {
-//     return (uint)LinkedA_LinkedB % ParticlesNum_copy;
-// }
-
-// int Extract_LinkedB(int LinkedA_LinkedB)
-// {
-//     return (uint)LinkedA_LinkedB / ParticlesNum_copy;
-// }
-
-// void Set_LinkedA_LinkedB(inout int LinkedA_LinkedB, int newLinkedA, int newLinkedB)
-// {
-//     int LinkedA_LinkedB_Val = newLinkedB * ParticlesNum_copy + newLinkedA;
-
-//     LinkedA_LinkedB = LinkedA_LinkedB_Val;
-// }
