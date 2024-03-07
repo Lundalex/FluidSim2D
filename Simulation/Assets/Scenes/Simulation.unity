@@ -247,7 +247,7 @@ MonoBehaviour:
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
   StickynessCapacitySafety: 0
-  SpringCapacitySafety: 200
+  SpringCapacitySafety: 150
   TriStorageLength: 4
   Width: 300
   Height: 200
