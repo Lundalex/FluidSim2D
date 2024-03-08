@@ -20,6 +20,7 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(2, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
             pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
+            pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
             pSimShader.SetBuffer(3, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(3, "StartIndices", m.StartIndicesBuffer);
             pSimShader.SetBuffer(3, "SpringCapacities", m.SpringCapacitiesBuffer);

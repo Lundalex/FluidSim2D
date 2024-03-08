@@ -40,6 +40,7 @@ struct PTypeStruct
     float Pressure;
     float NearPressure;
 
+    float Mass;
     float TargetDensity;
     float Damping;
     float PassiveDamping;

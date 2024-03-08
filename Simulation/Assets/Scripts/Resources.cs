@@ -57,6 +57,7 @@ namespace Resources
         public float Pressure;
         public float NearPressure;
 
+        public float Mass;
         public float TargetDensity;
         public float Damping;
         public float PassiveDamping;
