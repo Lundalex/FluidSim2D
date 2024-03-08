@@ -1,4 +1,4 @@
-static const float MIR = 3.0; // MaxInfluenceRadius
+static const float MIR = 2.0; // MaxInfluenceRadius
 static const int ChunkNum_copy = ceil(300 / MIR) * ceil(200 / MIR);
 static const int PTypesNum_copy = 2 * 3;
 

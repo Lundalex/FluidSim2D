@@ -72,6 +72,7 @@ public class Main : MonoBehaviour
     public float MaxInteractionRadius;
     public float InteractionAttractionPower;
     public float InteractionFountainPower;
+    public float InteractionTemperaturePower;
 
     [Header("References")]
     public ShaderHelper shaderHelper;
@@ -434,10 +435,10 @@ public class Main : MonoBehaviour
             FreezeThreshold = Utils.CelciusToKelvin(0.0f),
             VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
 
-            Pressure = 100,
+            Pressure = 200,
             NearPressure = 0,
 
-            Mass = 1,
+            Mass = 0.1f,
             TargetDensity = 0,
             Damping = Damping,
             PassiveDamping = PassiveDamping,
@@ -445,7 +446,7 @@ public class Main : MonoBehaviour
             Stickyness = 2.0f,
             Gravity = Gravity * 0.1f,
 
-            InfluenceRadius = 3,
+            InfluenceRadius = IR_1,
             colorG = 0.3f
         };
 
@@ -457,8 +458,8 @@ public class Main : MonoBehaviour
             SpringTolDeformation = TolDeformation,
             SpringStiffness = SpringStiffness,
 
-            ThermalConductivity = 1.0f,
-            SpecificHeatCapacity = 10.0f,
+            ThermalConductivity = 7.0f,
+            SpecificHeatCapacity = 15.0f,
             FreezeThreshold = Utils.CelciusToKelvin(999.0f),
             VaporizeThreshold = Utils.CelciusToKelvin(-999.0f),
 
@@ -484,8 +485,8 @@ public class Main : MonoBehaviour
             SpringTolDeformation = TolDeformation,
             SpringStiffness = SpringStiffness,
 
-            ThermalConductivity = 1.0f,
-            SpecificHeatCapacity = 10.0f,
+            ThermalConductivity = 7.0f,
+            SpecificHeatCapacity = 15.0f,
             FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
             VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
 
@@ -511,8 +512,8 @@ public class Main : MonoBehaviour
             SpringTolDeformation = TolDeformation,
             SpringStiffness = SpringStiffness,
 
-            ThermalConductivity = 1.0f,
-            SpecificHeatCapacity = 10.0f,
+            ThermalConductivity = 7.0f,
+            SpecificHeatCapacity = 15.0f,
             FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
             VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
 
@@ -678,7 +679,7 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            if (i < ParticlesNum * 0.5f)
+            if (i < ParticlesNum * 0.8f)
             {
                 PData[i] = new PDataStruct
                 {
@@ -688,7 +689,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    Temperature = Utils.CelciusToKelvin(30.0f),
+                    Temperature = Utils.CelciusToKelvin(20.0f),
                     TemperatureExchangeBuffer = 0.0f,
                     LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
                 };

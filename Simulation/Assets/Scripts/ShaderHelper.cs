@@ -171,6 +171,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
+        pSimShader.SetFloat("InteractionTemperaturePower", m.InteractionTemperaturePower);
     }
 
     public void UpdateRbSimShaderVariables(ComputeShader rbSimShader)

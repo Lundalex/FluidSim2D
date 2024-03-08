@@ -105,6 +105,30 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
+float3 TemperatureToRGB(float temperature)
+{
+    float normalizedTemp = saturate((temperature - 273.0) / (373.0 - 273.0));
+
+    float3 color;
+
+    if (normalizedTemp < 0.1)
+    {
+        // Light blue to dark blue transition
+        color = lerp(float3(0.5, 0.5, 1.0), float3(0.0, 0.0, 1.0), 2.5 * normalizedTemp);
+    }
+    else if (normalizedTemp < 0.5)
+    {
+        // Dark blue to green transition
+        color = lerp(float3(0.0, 0.0, 1.0), float3(0.0, 1.0, 0.0), 2.5 * (normalizedTemp - 0.1));
+    }
+    else
+    {
+        // Green to red transition
+        color = lerp(float3(0.0, 1.0, 0.0), float3(1.0, 0.0, 0.0), 2.5 * (normalizedTemp - 0.5));
+    }
+
+    return color;
+}
 
 [numthreads(ThreadsNum,ThreadsNum,1)]
 void Render(uint3 id : SV_DispatchThreadID)
@@ -173,14 +197,13 @@ void Render(uint3 id : SV_DispatchThreadID)
                 if (dst < minDst)
                 {
                     // visualize velocity
-                    float r = min(1.0, length(PData_i.Velocity)/10);
-                    float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
-                    float b = max(0.0, 1 - length(PData_i.Velocity)/10);
+                    // float r = min(1.0, length(PData_i.Velocity)/10);
+                    // float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
+                    // float b = max(0.0, 1 - length(PData_i.Velocity)/10);
 
-                    // // visualize temperature
-                    // float r = min(1.0, (PData_i.Temperature - 293.15)/30);
-                    // float g = 0.0;
-                    // float b = max(0.0, (323.15 - PData_i.Temperature)/30);
+                    // visualize temperature
+                    float3 rgb = TemperatureToRGB(PData_i.Temperature);
+                    float r = rgb.x; float g = rgb.y; float b = rgb.z;
 
                     Result[id.xy] = float4(r, g, b, 0.0);
                     minDst = dst;
