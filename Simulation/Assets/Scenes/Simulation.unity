@@ -231,8 +231,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParticlesNum: 32768
-  MaxInfluenceRadius: 2
+  ParticlesNum: 30000
+  MaxInfluenceRadius: 3
   TargetDensity: 2
   PressureMultiplier: 3000
   NearPressureMultiplier: 12
@@ -250,7 +250,7 @@ MonoBehaviour:
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
   StickynessCapacitySafety: 0
-  SpringCapacitySafety: 150
+  SpringCapacitySafety: 500
   TriStorageLength: 4
   Width: 300
   Height: 200
@@ -258,7 +258,7 @@ MonoBehaviour:
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.02
+  TimeStep: 0.015
   ProgramSpeed: 2
   VisualParticleRadii: 0.4
   RBRenderThickness: 0.5

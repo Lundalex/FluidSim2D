@@ -76,6 +76,7 @@ struct PTypeStruct
     float Pressure;
     float NearPressure;
 
+    float Mass;
     float TargetDensity;
     float Damping;
     float PassiveDamping;
@@ -341,7 +342,7 @@ float2 LiquidSpringForce(PTypeStruct PType_i, PTypeStruct PType_otherPIndex, int
     SpringStruct spring = ParticleSpringsCombined[springIndex];
 
     // if spring is not already initialized, initialize a new one
-    if (spring.PLinkedA == -1) { spring.PLinkedA = pIndex; spring.PLinkedB = otherPIndex; spring.RestLength = avgInfluenceRadius; }
+    if (spring.PLinkedA == -1) { spring.PLinkedA = pIndex; spring.PLinkedB = otherPIndex; spring.RestLength = avgInfluenceRadius - 0.1; }
 
 
     // -- Modify spring and perform force calculations (plasticity, elasticity) --
@@ -441,8 +442,10 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     float2 PosDiff = PData_A.Position - PData_B.Position;
     float absPosDiffSqr = dot(PosDiff, PosDiff);
 
+    float avgInfluenceRadiusSqr = sqr(avg(PTypes[Extract_PType(PData_A.LastChunkKey_PType_POrder)].InfluenceRadius, PTypes[Extract_PType(PData_B.LastChunkKey_PType_POrder)].InfluenceRadius));
+
     // If A and B are in range of each other, transfer data. Otherwise, do not (spring data is deleted)
-    if (absPosDiffSqr <= MaxInfluenceRadiusSqr)
+    if (absPosDiffSqr <= MaxInfluenceRadiusSqr && absPosDiffSqr <= avgInfluenceRadiusSqr)
     {
         int pOrder_A = Extract_POrder(PData_A.LastChunkKey_PType_POrder);
         int pOrder_B = Extract_POrder(PData_B.LastChunkKey_PType_POrder);
