@@ -215,6 +215,7 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("ChunkNum", m.ChunkNum);
         sortShader.SetInt("ChunkNumNextPow2", m.ChunkNumNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
+        sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
         sortShader.SetInt("IOOR", m.IOOR);
     }
 

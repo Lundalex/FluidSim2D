@@ -138,8 +138,8 @@ public class Main : MonoBehaviour
     [NonSerialized] public int RBVectorNum;
     [NonSerialized] public int TraversedChunksCount;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
-    [NonSerialized] public int ParticlesNumNextPow2;
-    [NonSerialized] public int ParticlesNumNextLog2;
+    [NonSerialized] public int ParticlesNum_NextPow2;
+    [NonSerialized] public int ParticlesNum_NextLog2;
 
     // Private references
     private RenderTexture renderTexture;
@@ -334,12 +334,12 @@ public class Main : MonoBehaviour
         MSLen = MarchW * MarchH * TriStorageLength * 3;
         RBVectorNum = RBVector.Length;
         ParticleSpringsCombinedHalfLength = ParticlesNum * SpringCapacitySafety / 2;
-        ParticlesNumNextPow2 = 1;
-        while (ParticlesNumNextPow2 < ParticlesNum)
+        ParticlesNum_NextPow2 = 1;
+        while (ParticlesNum_NextPow2 < ParticlesNum)
         {
-            ParticlesNumNextPow2 *= 2;
+            ParticlesNum_NextPow2 *= 2;
         }
-        ParticlesNumNextLog2 = Func.Log2(ParticlesNumNextPow2);
+        ParticlesNum_NextLog2 = Func.Log2(ParticlesNum_NextPow2);
 
         for (int i = 0; i < RBodiesNum; i++)
         {
@@ -366,9 +366,11 @@ public class Main : MonoBehaviour
         PTypes = new PTypeStruct[6];
         float IR_1 = 2.0f;
         float IR_2 = 2.0f;
+        int FSG_1 = 1;
+        int FSG_2 = 2;
         PTypes[0] = new PTypeStruct // Solid
         {
-            FluidSpringsGroup = 1,
+            FluidSpringsGroup = FSG_1,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -394,7 +396,7 @@ public class Main : MonoBehaviour
         };
         PTypes[1] = new PTypeStruct // Liquid
         {
-            FluidSpringsGroup = 1,
+            FluidSpringsGroup = FSG_1,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -420,7 +422,7 @@ public class Main : MonoBehaviour
         };
         PTypes[2] = new PTypeStruct // Gas
         {
-            FluidSpringsGroup = 1,
+            FluidSpringsGroup = FSG_1,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -447,7 +449,7 @@ public class Main : MonoBehaviour
 
         PTypes[3] = new PTypeStruct // Solid
         {
-            FluidSpringsGroup = 2,
+            FluidSpringsGroup = FSG_2,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -473,7 +475,7 @@ public class Main : MonoBehaviour
         };
         PTypes[4] = new PTypeStruct // Liquid
         {
-            FluidSpringsGroup = 2,
+            FluidSpringsGroup = FSG_2,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -499,7 +501,7 @@ public class Main : MonoBehaviour
         };
         PTypes[5] = new PTypeStruct // Gas
         {
-            FluidSpringsGroup = 2,
+            FluidSpringsGroup = FSG_2,
 
             SpringPlasticity = Plasticity,
             SpringTolDeformation = TolDeformation,
@@ -654,7 +656,7 @@ public class Main : MonoBehaviour
 
     void InitializeArrays()
     {
-        SpatialLookup = new int2[ParticlesNum];
+        SpatialLookup = new int2[ParticlesNum_NextPow2];
         StartIndices = new int[ChunkNum];
         SpringCapacities = new int2[ChunkNum];
         SpringStartIndices = new int[ChunkNum];
@@ -747,8 +749,8 @@ public class Main : MonoBehaviour
             PTypesBuffer.SetData(PTypes);
         }
 
-        SpatialLookupBuffer = new ComputeBuffer(ParticlesNum, sizeof(int) * 2);
-        StartIndicesBuffer = new ComputeBuffer(ParticlesNum, sizeof(int));
+        SpatialLookupBuffer = new ComputeBuffer(ParticlesNum_NextPow2, sizeof(int) * 2);
+        StartIndicesBuffer = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringCapacitiesBuffer = new ComputeBuffer(ChunkNum, sizeof(int) * 2);
         SpringStartIndicesBuffer_dbA = new ComputeBuffer(ChunkNum, sizeof(int));
         SpringStartIndicesBuffer_dbB = new ComputeBuffer(ChunkNum, sizeof(int));
@@ -824,13 +826,13 @@ public class Main : MonoBehaviour
     void GPUSortChunkLookUp()
     {
         if (ParticlesNum == 0) {return;}
-        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, sortShaderThreadSize);
-        int ThreadSizeHLen = (int)((float)ThreadNums/2);
+        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
+        int ThreadSizeHLen = (int)Math.Ceiling(ThreadNums * 0.5f);
 
         sortShader.Dispatch(0, ThreadNums, 1, 1);
 
-        int len = ParticlesNum;
-        int lenLog2 = Func.Log2(len);
+        int len = ParticlesNum_NextPow2;
+        int lenLog2 = ParticlesNum_NextLog2;
         sortShader.SetInt("SortedSpatialLookupLength", len);
         sortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
 
@@ -840,11 +842,9 @@ public class Main : MonoBehaviour
             int blockLen = basebBlockLen;
             while (blockLen != 1) // BlockLen = 2 is the last inner iteration
             {
-                int blocksNum = len / blockLen;
                 bool BrownPinkSort = blockLen == basebBlockLen;
 
                 sortShader.SetInt("BlockLen", blockLen);
-                sortShader.SetInt("blocksNum", blocksNum);
                 sortShader.SetBool("BrownPinkSort", BrownPinkSort);
 
                 sortShader.Dispatch(1, ThreadSizeHLen, 1, 1);
@@ -853,9 +853,6 @@ public class Main : MonoBehaviour
             }
             basebBlockLen *= 2;
         }
-
-        // This is unnecessary if particlesNum stays constant, disabled
-        // sortShader.Dispatch(2, ThreadNums, 1, 1);
 
         sortShader.Dispatch(3, ThreadNums, 1, 1);
     }

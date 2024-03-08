@@ -25,12 +25,12 @@ const int ChunkNumH;
 const int ChunkNum;
 const int ChunkNumNextPow2;
 const int ParticlesNum;
+const int ParticlesNum_NextPow2;
 
 // Per-iteration-set constants
 const bool BrownPinkSort; // True -> BrownSort, False -> PinkSort
 const int SpatialLookupLog2Length;
 const int BlockLen;
-const int BlocksNum;
 const int IOOR;
 
 const int SortedStickyRequestsLength;
@@ -136,15 +136,23 @@ int GetNeighboorParticlesNum(int chunkKey)
 void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-
-    int chunkKey = GetChunkKeyFromPosition(i, PData[i].Position);
-    SpatialLookup[i] = int2(i, chunkKey);
+    if (i >= ParticlesNum_NextPow2) { return; }
+    if (i < ParticlesNum)
+    {
+        int chunkKey = GetChunkKeyFromPosition(i, PData[i].Position);
+        SpatialLookup[i] = int2(i, chunkKey);
+    }
+    else
+    {
+        SpatialLookup[i] = int2(IOOR, ChunkNum);
+    }
 }
 
 [numthreads(ThreadsNum,1,1)]
 void SortIteration (uint3 id : SV_DispatchThreadID)
 {
     int lowRef = id.x;
+    if (lowRef >= ParticlesNum) { return; }
 
     int relBlock = (int)(2 * lowRef / (uint)BlockLen);
     int relPos = lowRef % (0.5 * BlockLen);
@@ -164,19 +172,19 @@ void SortIteration (uint3 id : SV_DispatchThreadID)
     }
 }
 
-// This is unnecessary if ParticlesNum stays constant
 [numthreads(ThreadsNum,1,1)]
 void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    StartIndices[i] = IOOR;
+    // StartIndices[i] = IOOR;
 }
 
 [numthreads(ThreadsNum,1,1)]
 void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
+    if (i >= ParticlesNum) { return; }
     
     int chunkKey = SpatialLookup[i].y;
     int LastChunkKey = IOOR;
