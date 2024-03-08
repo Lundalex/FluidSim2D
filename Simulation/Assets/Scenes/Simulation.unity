@@ -134,10 +134,10 @@ GameObject:
   - component: {fileID: 486540}
   - component: {fileID: 486541}
   - component: {fileID: 486539}
+  - component: {fileID: 486544}
   - component: {fileID: 486538}
   - component: {fileID: 486542}
   - component: {fileID: 486543}
-  - component: {fileID: 486544}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -232,7 +232,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ParticlesNum: 30000
-  MaxInfluenceRadius: 3
+  MaxInfluenceRadius: 2
   TargetDensity: 2
   PressureMultiplier: 3000
   NearPressureMultiplier: 12
@@ -240,7 +240,7 @@ MonoBehaviour:
   PassiveDamping: 0
   RbElasticity: 0.645
   LookAheadFactor: 0.02
-  StateThresholdPadding: 2
+  StateThresholdPadding: 3
   Viscosity: 1.5
   SpringStiffness: 5
   TolDeformation: 0
@@ -250,7 +250,7 @@ MonoBehaviour:
   RbPStickyness: 1
   MaxChunkSearchSafety: 1
   StickynessCapacitySafety: 0
-  SpringCapacitySafety: 500
+  SpringCapacitySafety: 150
   TriStorageLength: 4
   Width: 300
   Height: 200
@@ -272,6 +272,7 @@ MonoBehaviour:
   MaxInteractionRadius: 40
   InteractionAttractionPower: 3.5
   InteractionFountainPower: 0
+  InteractionTemperaturePower: 0
   shaderHelper: {fileID: 486544}
   ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   renderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
