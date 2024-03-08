@@ -240,9 +240,11 @@ MonoBehaviour:
   PassiveDamping: 0
   RbElasticity: 0.645
   LookAheadFactor: 0.02
-  Viscosity: 0
-  LiquidElasticity: 2
-  Plasticity: 10
+  StateThresholdPadding: 2
+  Viscosity: 1.5
+  SpringStiffness: 5
+  TolDeformation: 0
+  Plasticity: 3
   Gravity: 5
   RbPStickyRadius: 2
   RbPStickyness: 1
