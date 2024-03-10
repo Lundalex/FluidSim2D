@@ -53,7 +53,7 @@ public class Main : MonoBehaviour
     public int SpawnDims; // A x A
     public float BorderPadding;
 
-    [Header("Rendering settings")]
+    [Header("Render settings")]
     public bool FixedTimeStep;
     public bool RenderMarchingSquares;
     public float TimeStep;
