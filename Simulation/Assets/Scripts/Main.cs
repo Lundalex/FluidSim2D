@@ -679,7 +679,7 @@ public class Main : MonoBehaviour
 
         for (int i = 0; i < ParticlesNum; i++)
         {
-            if (i < ParticlesNum * 0.8f)
+            if (i < ParticlesNum * 0.5f)
             {
                 PData[i] = new PDataStruct
                 {
@@ -704,7 +704,7 @@ public class Main : MonoBehaviour
                     LastVelocity = new float2(0.0f, 0.0f),
                     Density = 0.0f,
                     NearDensity = 0.0f,
-                    Temperature = Utils.CelciusToKelvin(300.0f),
+                    Temperature = Utils.CelciusToKelvin(80.0f),
                     TemperatureExchangeBuffer = 0.0f,
                     LastChunkKey_PType_POrder = (3 + 1) * ChunkNum // flattened equivelant to PType = 3+1
                 };

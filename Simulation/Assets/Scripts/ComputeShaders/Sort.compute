@@ -1,14 +1,17 @@
+// Neighboor spatial lookup
 #pragma kernel CalculateChunkKeys // 0
 #pragma kernel SortIteration // 1
 #pragma kernel PrepStartIndices // 2
 #pragma kernel PopulateStartIndices // 3
 
+// Inter-particle springs
 #pragma kernel PopulateChunkSizes // 4
 #pragma kernel PopulateSpringCapacities // 5
 #pragma kernel CopySpringCapacities // 6
 #pragma kernel ParallelPrefixSumScan // 7
 #pragma kernel CopySpringStartIndicesBuffer // 8
 
+// Sticky requests
 #pragma kernel PopulateSortedStickyRequests // 9
 #pragma kernel SRSortIteration // 10
 

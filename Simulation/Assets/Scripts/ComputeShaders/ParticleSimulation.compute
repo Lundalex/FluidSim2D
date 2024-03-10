@@ -1,10 +1,10 @@
-#pragma kernel PreCalculations
-#pragma kernel CalculateDensities
-#pragma kernel PrepSpringData
-#pragma kernel TransferAllSpringData
-#pragma kernel ParticleForces
-#pragma kernel UpdatePositions
-#pragma kernel ConsumeStickynessRequests
+#pragma kernel PreCalculations // 0
+#pragma kernel CalculateDensities // 1
+#pragma kernel PrepSpringData // 2
+#pragma kernel TransferAllSpringData // 3
+#pragma kernel ParticleForces // 4
+#pragma kernel UpdatePositions // 5
+#pragma kernel ConsumeStickynessRequests // 6
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
