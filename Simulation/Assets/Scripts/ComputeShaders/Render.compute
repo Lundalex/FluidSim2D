@@ -1,4 +1,4 @@
-#pragma kernel Render;
+#pragma kernel Render2D; // 0
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
@@ -130,8 +130,19 @@ float3 TemperatureToRGB(float temperature)
     return color;
 }
 
+float3 VelocityToRGB(float2 velocity, float g)
+{
+    // Not really normalized
+    float normalizedVelLength = length(velocity) * 0.1;
+
+    float r = min(1.0, normalizedVelLength);
+    float b = max(0.0, 1 - normalizedVelLength);
+
+    return float3(r, g, b);
+}
+
 [numthreads(ThreadsNum,ThreadsNum,1)]
-void Render(uint3 id : SV_DispatchThreadID)
+void Render2D(uint3 id : SV_DispatchThreadID)
 {
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
     float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
@@ -196,13 +207,10 @@ void Render(uint3 id : SV_DispatchThreadID)
 
                 if (dst < minDst)
                 {
-                    // visualize velocity
-                    // float r = min(1.0, length(PData_i.Velocity)/10);
-                    // float g = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG;
-                    // float b = max(0.0, 1 - length(PData_i.Velocity)/10);
+                    // visualize velocity / temperature
+                    float3 rgb = VelocityToRGB(PData_i.Velocity, PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG);
+                    // float3 rgb = TemperatureToRGB(PData_i.Temperature);
 
-                    // visualize temperature
-                    float3 rgb = TemperatureToRGB(PData_i.Temperature);
                     float r = rgb.x; float g = rgb.y; float b = rgb.z;
 
                     Result[id.xy] = float4(r, g, b, 0.0);

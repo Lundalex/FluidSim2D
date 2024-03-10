@@ -1,7 +1,7 @@
-#pragma kernel ApplyLocalAngularRotation
-#pragma kernel PopulateTraversedChunks
-#pragma kernel ResolveLineCollisions
-#pragma kernel RBForces
+#pragma kernel ApplyLocalAngularRotation // 0
+#pragma kernel PopulateTraversedChunks // 1
+#pragma kernel ResolveLineCollisions // 2
+#pragma kernel RBForces // 3
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"

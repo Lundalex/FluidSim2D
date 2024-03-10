@@ -1,5 +1,5 @@
-#pragma kernel CalculateGridValues
-#pragma kernel GenerateMeshData
+#pragma kernel CalculateGridValues // 0
+#pragma kernel GenerateMeshData // 1
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
