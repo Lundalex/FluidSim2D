@@ -76,7 +76,6 @@ public class Main : MonoBehaviour
 
     [Header("References")]
     public ShaderHelper shaderHelper;
-    public GameObject ParticlePrefab;
     public ComputeShader renderShader;
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
