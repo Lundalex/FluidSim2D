@@ -20,7 +20,7 @@
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
-static const int ThreadsNum = 1024;
+static const int ThreadsNum = 512;
 
 const int MaxInfluenceRadius;
 const int ChunkNumW;

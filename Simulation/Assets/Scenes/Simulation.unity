@@ -239,7 +239,7 @@ MonoBehaviour:
   Damping: 0.7
   PassiveDamping: 0
   RbElasticity: 0.645
-  LookAheadFactor: 0.02
+  LookAheadFactor: 0.017
   StateThresholdPadding: 3
   Viscosity: 1.5
   SpringStiffness: 5
@@ -258,7 +258,7 @@ MonoBehaviour:
   BorderPadding: 4
   FixedTimeStep: 1
   RenderMarchingSquares: 0
-  TimeStep: 0.015
+  TimeStep: 0.02
   ProgramSpeed: 2
   VisualParticleRadii: 0.4
   RBRenderThickness: 0.5
@@ -274,7 +274,6 @@ MonoBehaviour:
   InteractionFountainPower: 0
   InteractionTemperaturePower: 0
   shaderHelper: {fileID: 486544}
-  ParticlePrefab: {fileID: 1723806354275521770, guid: fd7e8bf808ee0664f913e7e09a1dea1f, type: 3}
   renderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
   pSimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
   rbSimShader: {fileID: 7200000, guid: 4d59659466c24004abd1a03885ef1897, type: 3}

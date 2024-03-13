@@ -1,6 +1,6 @@
 SPH SIM INFORMATION:
 
-// MAXIMIZE ALL SIM THREADGROUPSNUM SETTINGS FOR BEST PERFORMANCE
+When increasing time step size, make sure to also lower the look ahead factor (for better simulation stability)
 
 -- Links --
 

@@ -86,7 +86,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
     [NonSerialized] public int pSimShaderThreadSize = 512; // /1024
     [NonSerialized] public int rbSimShaderThreadSize = 32; // /1024
-    [NonSerialized] public int sortShaderThreadSize = 1024; // /1024
+    [NonSerialized] public int sortShaderThreadSize = 512; // /1024
     [NonSerialized] public int marchingSquaresShaderThreadSize = 512; // /1024
 
     // Marching Squares - Buffers
