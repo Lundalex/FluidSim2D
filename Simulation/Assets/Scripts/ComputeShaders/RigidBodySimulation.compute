@@ -250,6 +250,8 @@ float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct p
     // v'_x = (2c^2-1)*a + 2cdb
     // v'_y = 2cda + (2d^2-1)b
     // Mirror vel_diff through normDst
+
+    // reflect() CAN BE USED FOR REFLECTION CALCULATION
     float a = diffVel.x;
     float b = diffVel.y;
     float c = perpNormLineVector.x;
