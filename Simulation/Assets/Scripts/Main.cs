@@ -1,27 +1,11 @@
 using UnityEngine;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
 using Unity.Mathematics;
 using System;
-using System.Runtime.InteropServices;
-using System.Linq;
-using Unity.VisualScripting;
-using System.Numerics;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
-using Quaternion = UnityEngine.Quaternion;
-using Random = UnityEngine.Random;
-using Unity.Jobs;
-using Unity.Collections;
-using Unity.Burst;
-using UnityEngine.Jobs;
-using System.Threading.Tasks;
-using System.Collections;
-using UnityEngine.Rendering;
 
 // Import utils from Resources.cs
 using Resources;
-// Usage: Utils.(functionName)()
 public class Main : MonoBehaviour
 {
     [Header("Simulation settings")]
@@ -762,21 +746,10 @@ public class Main : MonoBehaviour
         SpringStartIndicesBuffer_dbC = new ComputeBuffer(ChunkNum, sizeof(int));
         ParticleSpringsCombinedBuffer = new ComputeBuffer(ParticlesNum * SpringCapacitySafety, sizeof(float) + sizeof(int) * 2);
         
-        SpatialLookupBuffer.SetData(SpatialLookup);
-        StartIndicesBuffer.SetData(StartIndices);
-        SpringCapacitiesBuffer.SetData(SpringCapacities);
-        SpringStartIndicesBuffer_dbA.SetData(SpringStartIndices);
-        SpringStartIndicesBuffer_dbB.SetData(SpringStartIndices);
-        SpringStartIndicesBuffer_dbC.SetData(SpringStartIndices);
-        ParticleSpringsCombinedBuffer.SetData(ParticleSpringsCombined);
-
         VerticesBuffer = new ComputeBuffer(MSLen, sizeof(float) * 3);
         TrianglesBuffer = new ComputeBuffer(MSLen, sizeof(int));
         MSPointsBuffer = new ComputeBuffer(MSLen, sizeof(float));
         ColorsBuffer = new ComputeBuffer(MSLen, sizeof(float) * 4); // 4 floats for RGBA
-        VerticesBuffer.SetData(vertices);
-        TrianglesBuffer.SetData(triangles);
-        MSPointsBuffer.SetData(MSPoints);
 
         // RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
         RBDataBuffer = new ComputeBuffer(RBData.Length, sizeof(float) * 15 + sizeof(int) * 4);
@@ -830,22 +803,18 @@ public class Main : MonoBehaviour
 
     void GPUSortChunkLookUp()
     {
-        if (ParticlesNum == 0) {return;}
         int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
         int ThreadSizeHLen = (int)Math.Ceiling(ThreadNums * 0.5f);
 
         sortShader.Dispatch(0, ThreadNums, 1, 1);
 
         int len = ParticlesNum_NextPow2;
-        int lenLog2 = ParticlesNum_NextLog2;
-        sortShader.SetInt("SortedSpatialLookupLength", len);
-        sortShader.SetInt("SortedSpatialLookupLog2Length", lenLog2);
 
         int basebBlockLen = 2;
-        while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
+        while (basebBlockLen != 2*len) // basebBlockLen == len is the last outer iteration
         {
             int blockLen = basebBlockLen;
-            while (blockLen != 1) // BlockLen = 2 is the last inner iteration
+            while (blockLen != 1) // blockLen == 2 is the last inner iteration
             {
                 bool BrownPinkSort = blockLen == basebBlockLen;
 

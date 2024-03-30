@@ -103,11 +103,10 @@ bool ValidChunk(int ChunkX, int ChunkY)
     return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
 }
 
-int GetChunkKeyFromPosition(int pIndex, float2 pos)
+int GetChunkKeyFromPosition(float2 pos)
 {
-    int chunkX = (int)(pos.x / MaxInfluenceRadius);
-    int chunkY = (int)(pos.y / MaxInfluenceRadius);
-    int chunkKey = chunkY * ChunkNumW + chunkX;
+    int2 chunk = (int2)(pos / MaxInfluenceRadius);
+    int chunkKey = chunk.y * ChunkNumW + chunk.x;
     return chunkKey;
 }
 
@@ -142,7 +141,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
     if (i >= ParticlesNum_NextPow2) { return; }
     if (i < ParticlesNum)
     {
-        int chunkKey = GetChunkKeyFromPosition(i, PData[i].Position);
+        int chunkKey = GetChunkKeyFromPosition(PData[i].Position);
         SpatialLookup[i] = int2(i, chunkKey);
     }
     else
@@ -221,6 +220,8 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
     }
     SpringCapacities[chunkKey].x = neighboorCount;
 }
+
+// -- Inter-particle springs --
 
 [numthreads(ThreadsNum,1,1)]
 void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
