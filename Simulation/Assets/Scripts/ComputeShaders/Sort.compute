@@ -23,10 +23,9 @@
 static const int ThreadsNum = 512;
 
 const int MaxInfluenceRadius;
-const int ChunkNumW;
-const int ChunkNumH;
-const int ChunkNum;
-const int ChunkNumNextPow2;
+const int2 ChunksNum;
+const int ChunksNumAll;
+const int ChunksNumAllNextPow2;
 const int ParticlesNum;
 const int ParticlesNum_NextPow2;
 
@@ -34,7 +33,6 @@ const int ParticlesNum_NextPow2;
 const bool BrownPinkSort; // True -> BrownSort, False -> PinkSort
 const int SpatialLookupLog2Length;
 const int BlockLen;
-const int IOOR;
 
 const int SortedStickyRequestsLength;
 const int SortedStickyRequestsLog2Length;
@@ -67,7 +65,7 @@ struct PDataStruct
     float TemperatureExchangeBuffer;
     int LastChunkKey_PType_POrder; // composed 3 int structure
     // POrder; // POrder is dynamic, 
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
+    // LastChunkKey; // 0 <= LastChunkKey <= ChunksNumAll
     // PType; // 0 <= PType <= PTypeNum
 };
 RWStructuredBuffer<PDataStruct> PData;
@@ -100,20 +98,20 @@ void SwapStickynessRequestStruct(inout StickynessRequestStruct a, inout Stickyne
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
+    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
 }
 
 int GetChunkKeyFromPosition(float2 pos)
 {
     int2 chunk = (int2)(pos / MaxInfluenceRadius);
-    int chunkKey = chunk.y * ChunkNumW + chunk.x;
+    int chunkKey = chunk.y * ChunksNum.x + chunk.x;
     return chunkKey;
 }
 
 int GetNeighboorParticlesNum(int chunkKey)
 {
-    int chunkX = (uint)chunkKey % ChunkNumW;
-    int chunkY = (int)((uint)chunkKey / ChunkNumW);
+    int chunkX = (uint)chunkKey % ChunksNum.x;
+    int chunkY = (int)((uint)chunkKey / ChunksNum.x);
 
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
@@ -126,7 +124,7 @@ int GetNeighboorParticlesNum(int chunkKey)
 
             if (ValidChunk(curChunkX, curChunkY))
             {
-                int neighboorChunkKey = curChunkY * ChunkNumW + curChunkX;
+                int neighboorChunkKey = curChunkY * ChunksNum.x + curChunkX;
                 neighboorParticlesNum += SpringCapacities[neighboorChunkKey].x;
             }
         }
@@ -146,7 +144,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
     }
     else
     {
-        SpatialLookup[i] = int2(IOOR, ChunkNum);
+        SpatialLookup[i] = int2(ParticlesNum, ChunksNumAll);
     }
 }
 
@@ -179,7 +177,7 @@ void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    // StartIndices[i] = IOOR;
+    // StartIndices[i] = ParticlesNum;
 }
 
 [numthreads(ThreadsNum,1,1)]
@@ -189,7 +187,7 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     if (i >= ParticlesNum) { return; }
     
     int chunkKey = SpatialLookup[i].y;
-    int LastChunkKey = IOOR;
+    int LastChunkKey = ParticlesNum;
 
     if (i != 0)
     {
@@ -237,7 +235,7 @@ void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
 void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     int chunkKey = id.x;
-    if (chunkKey < ChunkNum)
+    if (chunkKey < ChunksNumAll)
     {
         if (FrameBufferCycle)
         {
@@ -254,7 +252,7 @@ void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-    if (i >= ChunkNum) { return; }
+    if (i >= ChunksNumAll) { return; }
     // A <-> C
     if (FrameBufferCycle)
     {

@@ -14,8 +14,7 @@ const float MSResolution;
 const float MSvalMin;
 
 const int MaxInfluenceRadius;
-const int ChunkNumW;
-const int ChunkNumH;
+const int2 ChunksNum;
 const int Width;
 const int Height;
 
@@ -400,7 +399,7 @@ void AddTriangle(int TriangleID, float BaseX, float BaseY, float Scale, int TriI
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    if (ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH) {return true;}
+    if (ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y) {return true;}
     return false;
 }
 
@@ -420,7 +419,7 @@ float CalcPointValue(float2 pos)
             
             if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
 
-            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int ChunkKey = CurChunkY * ChunksNum.x + CurChunkX;
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex;

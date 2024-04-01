@@ -74,17 +74,16 @@ public class Main : MonoBehaviour
     [NonSerialized] public int marchingSquaresShaderThreadSize = 512; // /1024
 
     // Marching Squares - Buffers
-    [NonSerialized]
     public ComputeBuffer VerticesBuffer;
     public ComputeBuffer TrianglesBuffer;
     public ComputeBuffer ColorsBuffer;
     public ComputeBuffer MSPointsBuffer;
 
-    // Bitonic Mergesort - Buffers
+    // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
     public ComputeBuffer StartIndicesBuffer;
 
-    // Inter-particle springs - Buffers
+    // Inter-particle springs
     public ComputeBuffer SpringCapacitiesBuffer;
     private bool FrameBufferCycle = true;
     public ComputeBuffer SpringStartIndicesBuffer_dbA; // Result A
@@ -92,11 +91,11 @@ public class Main : MonoBehaviour
     public ComputeBuffer SpringStartIndicesBuffer_dbC; // Support
     public ComputeBuffer ParticleSpringsCombinedBuffer; // [[Last frame springs], [New frame springs]]
 
-    // PData - Buffers
+    // Particle data
     public ComputeBuffer PDataBuffer;
     public ComputeBuffer PTypesBuffer;
 
-    // Rigid Bodies - Buffers
+    // Rigid bodies
     public ComputeBuffer RBVectorBuffer;
     public ComputeBuffer RBDataBuffer;
     public ComputeBuffer TraversedChunks_AC_Buffer;
@@ -110,16 +109,10 @@ public class Main : MonoBehaviour
     [NonSerialized] public int MaxInfluenceRadiusSqr;
     [NonSerialized] public float InvMaxInfluenceRadius;
     [NonSerialized] public float MarchScale;
-    [NonSerialized] public int ChunkNumW;
-    [NonSerialized] public int ChunkNumH;
-    [NonSerialized] public int ChunkNum;
-    [NonSerialized] public int PTypesNum;
-    [NonSerialized] public int ChunksNumLog2;
-    [NonSerialized] public int ChunkNumNextPow2;
-    [NonSerialized] public int IOOR; // Index Out Of Range
+    [NonSerialized] public int2 ChunksNum;
+    [NonSerialized] public int ChunksNumAll;
+    [NonSerialized] public int ChunksNumAllNextPow2;
     [NonSerialized] public int MSLen;
-    [NonSerialized] public int RBodiesNum;
-    [NonSerialized] public int RBVectorNum;
     [NonSerialized] public int TraversedChunksCount;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
     [NonSerialized] public int ParticlesNum_NextPow2;
@@ -129,26 +122,18 @@ public class Main : MonoBehaviour
     private RenderTexture renderTexture;
     private Mesh marchingSquaresMesh;
 
-    // PData - Properties
-    private int2[] SpatialLookup; // [](particleIndex, chunkKey)
-    private int2[] TemplateSpatialLookup;
-    private int[] StartIndices;
-    private int2[] SpringCapacities; // [](baseChunkCapacity, neighboorChunksCapacity)
-    private int[] SpringStartIndices;
-    private SpringStruct[] ParticleSpringsCombined;
+    // Particle data
     private PDataStruct[] PData;
     private PTypeStruct[] PTypes;
 
     // Rigid Bodies - Properties
-    private RBVectorStruct[] RBVector;
-    private RBDataStruct[] RBData;
-    private int[] TCCount = new int[1];
+    public RBVectorStruct[] RBVector;
+    public RBDataStruct[] RBData;
+    private int TCCount;
 
     // Marching Squares - Buffer retrieval
     private Vector3[] vertices;
     private int[] triangles;
-    private Color[] colors;
-    private float[] MSPoints;
 
     // Other
     private float DeltaTime;
@@ -180,6 +165,10 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
         shaderHelper.UpdateMarchingSquaresShaderVariables(marchingSquaresShader);
+
+        renderTexture = TextureHelper.CreateTexture(new int2(ResolutionX, ResolutionY), 3);
+
+        renderShader.SetTexture(0, "Result", renderTexture);
 
         ProgramStarted = true;
     }
@@ -263,12 +252,7 @@ public class Main : MonoBehaviour
 
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
 
-        if (DoCalcStickyRequests) {
-            rbSimShader.SetInt("DoCalcStickyRequests", 1);
-        }
-        else {
-            rbSimShader.SetInt("DoCalcStickyRequests", 0);
-        }
+        rbSimShader.SetInt("DoCalcStickyRequests", DoCalcStickyRequests ? 1 : 0);
 
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
@@ -292,39 +276,25 @@ public class Main : MonoBehaviour
 
     float GetDeltaTime()
     {
-        float DeltaTime;
-        if (FixedTimeStep) {
-            DeltaTime = TimeStep / TimeStepsPerRender;
-        }
-        else {
-            DeltaTime = Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
-        }
-        return DeltaTime;
+        return FixedTimeStep
+        ? TimeStep / TimeStepsPerRender
+        : Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
     }
 
     void SetConstants()
     {
         MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
         InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
-        ChunkNumW = Width / MaxInfluenceRadius;
-        ChunkNumH = Height / MaxInfluenceRadius;
-        ChunkNum = ChunkNumW * ChunkNumH;
-        ChunksNumLog2 = Func.Log2(ChunkNum, true);
-        ChunkNumNextPow2 = (int)Math.Pow(2, ChunksNumLog2);
-        IOOR = ParticlesNum;
+        ChunksNum.x = Width / MaxInfluenceRadius;
+        ChunksNum.y = Height / MaxInfluenceRadius;
+        ChunksNumAll = ChunksNum.x * ChunksNum.y;
         MarchW = Width / MSResolution;
         MarchH = Height / MSResolution;
         MSLen = MarchW * MarchH * TriStorageLength * 3;
-        RBVectorNum = RBVector.Length;
         ParticleSpringsCombinedHalfLength = ParticlesNum * SpringCapacitySafety / 2;
-        ParticlesNum_NextPow2 = 1;
-        while (ParticlesNum_NextPow2 < ParticlesNum)
-        {
-            ParticlesNum_NextPow2 *= 2;
-        }
-        ParticlesNum_NextLog2 = Func.Log2(ParticlesNum_NextPow2);
+        ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
 
-        for (int i = 0; i < RBodiesNum; i++)
+        for (int i = 0; i < RBData.Length; i++)
         {
             RBData[i].StickynessRangeSqr = RBData[i].StickynessRange*RBData[i].StickynessRange;
 
@@ -514,7 +484,6 @@ public class Main : MonoBehaviour
             InfluenceRadius = IR_2,
             colorG = 0.9f
         };
-        PTypesNum = PTypes.Length;
     }
 
     void InitializeSetArrays()
@@ -639,26 +608,11 @@ public class Main : MonoBehaviour
         //     RBVector[i].Position.y *= 0.5f * 1.2f;
         //     RBVector[i].Position.x *= 1.4f * 1.2f;
         // }
-
-        RBodiesNum = RBData.Length;
     }
 
     void InitializeArrays()
     {
-        SpatialLookup = new int2[ParticlesNum_NextPow2];
-        StartIndices = new int[ChunkNum];
-        SpringCapacities = new int2[ChunkNum];
-        SpringStartIndices = new int[ChunkNum];
-        ParticleSpringsCombined = new SpringStruct[ParticlesNum * SpringCapacitySafety];
-
         PData = new PDataStruct[ParticlesNum];
-
-        vertices = new Vector3[MSLen];
-        triangles = new int[MSLen];
-        colors = new Color[MSLen];
-        MSPoints = new float[MSLen];
-
-        TemplateSpatialLookup = new int2[ParticlesNum];
 
         for (int i = 0; i < ParticlesNum; i++)
         {
@@ -674,7 +628,7 @@ public class Main : MonoBehaviour
                     NearDensity = 0.0f,
                     Temperature = Utils.CelciusToKelvin(20.0f),
                     TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = 1 * ChunkNum // flattened equivelant to PType = 1
+                    LastChunkKey_PType_POrder = 1 * ChunksNumAll // flattened equivelant to PType = 1
                 };
             }
             else
@@ -689,91 +643,107 @@ public class Main : MonoBehaviour
                     NearDensity = 0.0f,
                     Temperature = Utils.CelciusToKelvin(80.0f),
                     TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = (3 + 1) * ChunkNum // flattened equivelant to PType = 3+1
+                    LastChunkKey_PType_POrder = (3 + 1) * ChunksNumAll // flattened equivelant to PType = 3+1
                 };
             }
-
-            TemplateSpatialLookup[i] = new int2(0, 0);
-        }
-
-        for (int i = 0; i < MSLen; i++)
-        {
-            vertices[i] = new Vector3(0.0f, 0.0f, 0.0f);
-            triangles[i] = 0;
-            colors[i] = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-        }
-
-        for (int i = 0; i < MSLen; i++)
-        {
-            MSPoints[i] = 0.0f;
-        }
-
-        for (int i = 0; i < ChunkNum; i++)
-        {
-            StartIndices[i] = 0;
-            
-            SpringCapacities[i] = new int2(0, 0);
-            SpringStartIndices[i] = 0;
-        }
-
-        for (int i = 0; i < ParticlesNum * SpringCapacitySafety; i++)
-        {
-            ParticleSpringsCombined[i] = new SpringStruct
-            {
-                PLinkedA = -1,
-                PLinkedB = -1,
-                RestLength = 0
-            };
         }
     }
 
     void InitializeBuffers()
     {
-        if (ParticlesNum != 0)
-        {
-            PDataBuffer = new ComputeBuffer(ParticlesNum, sizeof(float) * 12 + sizeof(int) * 1);
-            PTypesBuffer = new ComputeBuffer(PTypes.Length, sizeof(float) * 18 + sizeof(int) * 1);
+        ComputeHelper.CreateStructuredBuffer<PDataStruct>(ref PDataBuffer, PData);
+        ComputeHelper.CreateStructuredBuffer<PTypeStruct>(ref PTypesBuffer, PTypes);
 
-            PDataBuffer.SetData(PData);
-            PTypesBuffer.SetData(PTypes);
+        ComputeHelper.CreateStructuredBuffer<int2>(ref SpatialLookupBuffer, ParticlesNum_NextPow2);
+        ComputeHelper.CreateStructuredBuffer<int>(ref StartIndicesBuffer, ChunksNumAll);
+        ComputeHelper.CreateStructuredBuffer<int2>(ref SpringCapacitiesBuffer, ChunksNumAll);
+        ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbA, ChunksNumAll);
+        ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbB, ChunksNumAll);
+        ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbC, ChunksNumAll);
+        ComputeHelper.CreateStructuredBuffer<SpringStruct>(ref ParticleSpringsCombinedBuffer, ParticlesNum * SpringCapacitySafety);
+
+        ComputeHelper.CreateStructuredBuffer<int3>(ref VerticesBuffer, MSLen);
+        ComputeHelper.CreateStructuredBuffer<int>(ref TrianglesBuffer, MSLen);
+        ComputeHelper.CreateStructuredBuffer<float>(ref MSPointsBuffer, MSLen);
+        ComputeHelper.CreateStructuredBuffer<float4>(ref ColorsBuffer, MSLen); // float4 for RGBA
+
+        ComputeHelper.CreateStructuredBuffer<RBDataStruct>(ref RBDataBuffer, RBData);
+        ComputeHelper.CreateStructuredBuffer<RBVectorStruct>(ref RBVectorBuffer, RBVector);
+
+
+        ComputeHelper.CreateCountBuffer(ref TCCountBuffer);
+        ComputeHelper.CreateCountBuffer(ref SRCountBuffer);
+
+        ComputeHelper.CreateAppendBuffer<int3>(ref TraversedChunks_AC_Buffer, 4096);
+
+        ComputeHelper.CreateStructuredBuffer<StickynessRequestStruct>(ref SortedStickyRequestsBuffer, 4096);
+        ComputeHelper.CreateAppendBuffer<StickynessRequestStruct>(ref StickynessReqs_AC_Buffer, 4096);
+        ComputeHelper.CreateAppendBuffer<StickynessRequestStruct>(ref StickyRequestsResult_AC_Buffer, 4096);
+    }
+
+    void GPUSortChunkLookUp()
+    {
+        int threadGroupsNum = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
+        int threadGroupsNumHalfCeil = (int)Math.Ceiling(threadGroupsNum * 0.5f);
+
+        ComputeHelper.DispatchKernel (sortShader, "CalculateChunkKeys", threadGroupsNum);
+
+        int len = ParticlesNum_NextPow2;
+
+        int basebBlockLen = 2;
+        while (basebBlockLen != 2*len) // basebBlockLen == len is the last outer iteration
+        {
+            int blockLen = basebBlockLen;
+            while (blockLen != 1) // blockLen == 2 is the last inner iteration
+            {
+                bool BrownPinkSort = blockLen == basebBlockLen;
+
+                sortShader.SetInt("BlockLen", blockLen);
+                sortShader.SetBool("BrownPinkSort", BrownPinkSort);
+
+                ComputeHelper.DispatchKernel (sortShader, "SortIteration", threadGroupsNumHalfCeil);
+
+                blockLen /= 2;
+            }
+            basebBlockLen *= 2;
         }
 
-        SpatialLookupBuffer = new ComputeBuffer(ParticlesNum_NextPow2, sizeof(int) * 2);
-        StartIndicesBuffer = new ComputeBuffer(ChunkNum, sizeof(int));
-        SpringCapacitiesBuffer = new ComputeBuffer(ChunkNum, sizeof(int) * 2);
-        SpringStartIndicesBuffer_dbA = new ComputeBuffer(ChunkNum, sizeof(int));
-        SpringStartIndicesBuffer_dbB = new ComputeBuffer(ChunkNum, sizeof(int));
-        SpringStartIndicesBuffer_dbC = new ComputeBuffer(ChunkNum, sizeof(int));
-        ParticleSpringsCombinedBuffer = new ComputeBuffer(ParticlesNum * SpringCapacitySafety, sizeof(float) + sizeof(int) * 2);
-        
-        VerticesBuffer = new ComputeBuffer(MSLen, sizeof(float) * 3);
-        TrianglesBuffer = new ComputeBuffer(MSLen, sizeof(int));
-        MSPointsBuffer = new ComputeBuffer(MSLen, sizeof(float));
-        ColorsBuffer = new ComputeBuffer(MSLen, sizeof(float) * 4); // 4 floats for RGBA
+        ComputeHelper.DispatchKernel (sortShader, "PopulateStartIndices", threadGroupsNum);
+    }
 
-        // RigidBodyIndicesBuffer = new ComputeBuffer(RigidBodyIndices.Length, sizeof(int) * 2);
-        RBDataBuffer = new ComputeBuffer(RBData.Length, sizeof(float) * 15 + sizeof(int) * 4);
-        RBVectorBuffer = new ComputeBuffer(RBVector.Length, sizeof(float) * 7 + sizeof(int) * 2);
-        RBDataBuffer.SetData(RBData);
-        RBVectorBuffer.SetData(RBVector);
+    void GPUSortSpringLookUp()
+    {
+        // Spring buffer kernels
+        int threadGroupsNum = Utils.GetThreadGroupsNums(ChunksNumAll, sortShaderThreadSize);
 
-        TraversedChunks_AC_Buffer = new ComputeBuffer(4096, sizeof(int) * 3, ComputeBufferType.Append);
-        TCCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-        SRCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-        StickynessReqs_AC_Buffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
-        SortedStickyRequestsBuffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2);
-        StickyRequestsResult_AC_Buffer = new ComputeBuffer(4096, sizeof(float) * 5 + sizeof(int) * 2, ComputeBufferType.Append);
+        ComputeHelper.DispatchKernel (sortShader, "PopulateChunkSizes", threadGroupsNum);
+        ComputeHelper.DispatchKernel (sortShader, "PopulateSpringCapacities", threadGroupsNum);
+        ComputeHelper.DispatchKernel (sortShader, "CopySpringCapacities", threadGroupsNum);
+
+        // Calculate prefix sums (SpringStartIndices)
+        bool StepBufferCycle = false;
+        for (int offset = 1; offset < ChunksNumAll; offset *= 2)
+        {
+            StepBufferCycle = !StepBufferCycle;
+
+            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
+            sortShader.SetInt("Offset", offset);
+
+            ComputeHelper.DispatchKernel (sortShader, "ParallelPrefixSumScan", threadGroupsNum);
+        }
+
+        if (StepBufferCycle == true) { ComputeHelper.DispatchKernel (sortShader, "CopySpringStartIndicesBuffer", threadGroupsNum); } // copy to result buffer if necessary
     }
 
     void GPUSortStickynessRequests()
     {
-        int StickyRequestsCount = 4096;
-
+        int StickyRequestsCount = Func.NextPow2(4096);
         if (StickyRequestsCount == 0) {return;}
-        int ThreadNums = Utils.GetThreadGroupsNums(StickyRequestsCount, 512);
-        int ThreadSizeHLen = (int)((float)ThreadNums/2);
+        
+        int threadGroupsNum = Utils.GetThreadGroupsNums(StickyRequestsCount, 512);
+        int threadGroupsNumHalfCeil = Mathf.CeilToInt(threadGroupsNum * 0.5f);
 
-        sortShader.Dispatch(9, ThreadNums, 1, 1);
+        ComputeHelper.DispatchKernel (sortShader, "PopulateSortedStickyRequests", threadGroupsNum);
 
         int len = StickyRequestsCount;
         int lenLog2 = Func.Log2(len);
@@ -793,112 +763,50 @@ public class Main : MonoBehaviour
                 sortShader.SetInt("SRblocksNum", blocksNum);
                 sortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
 
-                sortShader.Dispatch(10, ThreadSizeHLen, 1, 1);
+                ComputeHelper.DispatchKernel (sortShader, "SRSortIteration", threadGroupsNumHalfCeil);
 
                 blockLen /= 2;
             }
             basebBlockLen *= 2;
         }
-    }
-
-    void GPUSortChunkLookUp()
-    {
-        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
-        int ThreadSizeHLen = (int)Math.Ceiling(ThreadNums * 0.5f);
-
-        sortShader.Dispatch(0, ThreadNums, 1, 1);
-
-        int len = ParticlesNum_NextPow2;
-
-        int basebBlockLen = 2;
-        while (basebBlockLen != 2*len) // basebBlockLen == len is the last outer iteration
-        {
-            int blockLen = basebBlockLen;
-            while (blockLen != 1) // blockLen == 2 is the last inner iteration
-            {
-                bool BrownPinkSort = blockLen == basebBlockLen;
-
-                sortShader.SetInt("BlockLen", blockLen);
-                sortShader.SetBool("BrownPinkSort", BrownPinkSort);
-
-                sortShader.Dispatch(1, ThreadSizeHLen, 1, 1);
-
-                blockLen /= 2;
-            }
-            basebBlockLen *= 2;
-        }
-
-        sortShader.Dispatch(3, ThreadNums, 1, 1);
-    }
-
-    void GPUSortSpringLookUp()
-    {
-        // Spring buffer kernels
-        int ThreadSizeChunkSizes = Utils.GetThreadGroupsNums(ChunkNum, sortShaderThreadSize);
-        sortShader.Dispatch(4, ThreadSizeChunkSizes, 1, 1); // Set ChunkSizes
-        sortShader.Dispatch(5, ThreadSizeChunkSizes, 1, 1); // Set SpringCapacities
-        sortShader.Dispatch(6, ThreadSizeChunkSizes, 1, 1); // Copy SpringCapacities to double buffers
-
-        // Calculate prefix sums (SpringStartIndices)
-        bool StepBufferCycle = false;
-        for (int offset = 1; offset < SpringStartIndices.Length; offset *= 2)
-        {
-            StepBufferCycle = !StepBufferCycle;
-
-            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
-            sortShader.SetInt("Offset", offset);
-
-            sortShader.Dispatch(7, ThreadSizeChunkSizes, 1, 1);
-        }
-        if (StepBufferCycle == true) { sortShader.Dispatch(8, ThreadSizeChunkSizes, 1, 1); } // copy to result buffer if necessary
     }
 
     void RunPSimShader(int step)
     {
-        int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel (pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel (pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
 
-        if (ParticlesNum != 0) {pSimShader.Dispatch(0, ThreadNums, 1, 1);}
-        if (ParticlesNum != 0) {pSimShader.Dispatch(1, ThreadNums, 1, 1);} // CalculateDensities
-
-        // Particle springs
         if (step == 0)
         {
-            int ThreadSize2 = Utils.GetThreadGroupsNums(ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
-            // Transfer spring data kernel
-            if (ParticlesNum != 0) {pSimShader.Dispatch(2, ThreadSize2, 1, 1);}
-            if (ParticlesNum != 0) {pSimShader.Dispatch(3, ThreadSize2, 1, 1);}
+            ComputeHelper.DispatchKernel (pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
+            ComputeHelper.DispatchKernel (pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
         }
 
-        if (ParticlesNum != 0) {pSimShader.Dispatch(4, ThreadNums, 1, 1);} // ParticleForces
+        ComputeHelper.DispatchKernel (pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize);
     }
 
     void RunRbSimShader()
     {
-        if (RBVectorNum > 1 && ParticlesNum != 0) 
+        if (RBVector.Length > 1) 
         {
-            int ThreadNums_A = Utils.GetThreadGroupsNums(RBVectorNum, rbSimShaderThreadSize);
-            int ThreadNums_B = Utils.GetThreadGroupsNums(RBVectorNum-1, rbSimShaderThreadSize);
-
-            rbSimShader.Dispatch(0, ThreadNums_A, 1, 1);
+            ComputeHelper.DispatchKernel (rbSimShader, "ApplyLocalAngularRotation", RBVector.Length, rbSimShaderThreadSize);
 
             TraversedChunks_AC_Buffer.SetCounterValue(0);
-            rbSimShader.Dispatch(1, ThreadNums_B, 1, 1);
+
+            ComputeHelper.DispatchKernel (rbSimShader, "PopulateTraversedChunks", RBVector.Length-1, rbSimShaderThreadSize);
 
             if (TraversedChunksCount == 0)
             {
-                Debug.Log("TraversedChunksCount updated");
-                ComputeBuffer.CopyCount(TraversedChunks_AC_Buffer, TCCountBuffer, 0);
-                TCCountBuffer.GetData(TCCount);
-                TraversedChunksCount = (int)Math.Ceiling(TCCount[0] * (1+StickynessCapacitySafety));
+                TCCount = ComputeHelper.GetAppendBufferCount(TraversedChunks_AC_Buffer, TCCountBuffer);
+                TraversedChunksCount = (int)Math.Ceiling(TCCount * (1+StickynessCapacitySafety));
             }
-
-            int ThreadNums_C = Utils.GetThreadGroupsNums(TraversedChunksCount, rbSimShaderThreadSize);
 
             if (DoCalcStickyRequests) {
                 StickynessReqs_AC_Buffer.SetCounterValue(0);
             }
-            rbSimShader.Dispatch(2, ThreadNums_C, 1, 1);
-            rbSimShader.Dispatch(3, ThreadNums_A, 1, 1);
+
+            ComputeHelper.DispatchKernel (rbSimShader, "ResolveLineCollisions", TraversedChunksCount, rbSimShaderThreadSize);
+            ComputeHelper.DispatchKernel (rbSimShader, "RBForces", RBVector.Length, rbSimShaderThreadSize);
         }
     }
 
@@ -907,74 +815,61 @@ public class Main : MonoBehaviour
         VerticesBuffer.SetData(vertices);
         TrianglesBuffer.SetData(triangles);
 
-        marchingSquaresShader.Dispatch(0, MarchW, MarchH, 1);
-        marchingSquaresShader.Dispatch(1, MarchW-1, MarchH-1, 1);
+        ComputeHelper.DispatchKernel (marchingSquaresShader, "CalculateGridValues", new int2(MarchW, MarchH), 1);
+        ComputeHelper.DispatchKernel (marchingSquaresShader, "GenerateMeshData", new int2(MarchW-1, MarchH-1), 1);
 
         VerticesBuffer.GetData(vertices);
         TrianglesBuffer.GetData(triangles);
-        // ColorsBuffer.GetData(colors);
 
         marchingSquaresMesh.vertices = vertices;
         marchingSquaresMesh.triangles = triangles;
-        // marchingSquaresMesh.colors = colors;
+
         marchingSquaresMesh.RecalculateNormals();
     }
 
     void RunRenderShader()
     {
-        if (renderTexture == null)
-        {
-            renderTexture = new RenderTexture(ResolutionX, ResolutionY, 24)
-            {
-                enableRandomWrite = true
-            };
-            renderTexture.Create();
-        }
-
-        renderShader.SetTexture(0, "Result", renderTexture);
-        if (ParticlesNum != 0) {renderShader.Dispatch(0, renderTexture.width / renderShaderThreadSize, renderTexture.height / renderShaderThreadSize, 1);}
+        ComputeHelper.DispatchKernel (renderShader, "Render2D", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (!RenderMarchingSquares)
+        if (RenderMarchingSquares)
+        {
+            Graphics.Blit(src, dest);
+        }
+        else
         {
             RunRenderShader();
 
             Graphics.Blit(renderTexture, dest);
         }
-        else
-        {
-            Graphics.Blit(src, dest);
-        }
     }
 
     void OnDestroy()
     {
-        SpatialLookupBuffer?.Release();
-        StartIndicesBuffer?.Release();
-
-        VerticesBuffer?.Release();
-        TrianglesBuffer?.Release();
-        ColorsBuffer?.Release();
-        MSPointsBuffer?.Release();
-
-        PDataBuffer?.Release();
-        PTypesBuffer?.Release();
-
-        SpringCapacitiesBuffer?.Release();
-        SpringStartIndicesBuffer_dbA?.Release();
-        SpringStartIndicesBuffer_dbB?.Release();
-        SpringStartIndicesBuffer_dbC?.Release();
-        ParticleSpringsCombinedBuffer?.Release();
-
-        RBDataBuffer?.Release();
-        RBVectorBuffer?.Release();
-        TraversedChunks_AC_Buffer?.Release();
-        TCCountBuffer?.Release();
-        SRCountBuffer?.Release();
-        StickynessReqs_AC_Buffer?.Release();
-        SortedStickyRequestsBuffer?.Release();
-        StickyRequestsResult_AC_Buffer?.Release();
+        ComputeHelper.Release(
+            SpatialLookupBuffer, 
+            StartIndicesBuffer, 
+            VerticesBuffer,
+            TrianglesBuffer,
+            ColorsBuffer,
+            MSPointsBuffer,
+            PDataBuffer,
+            PTypesBuffer,
+            SpringCapacitiesBuffer,
+            SpringStartIndicesBuffer_dbA,
+            SpringStartIndicesBuffer_dbB,
+            SpringStartIndicesBuffer_dbC,
+            ParticleSpringsCombinedBuffer,
+            RBDataBuffer,
+            RBVectorBuffer,
+            TraversedChunks_AC_Buffer,
+            TCCountBuffer,
+            SRCountBuffer,
+            StickynessReqs_AC_Buffer,
+            SortedStickyRequestsBuffer,
+            StickyRequestsResult_AC_Buffer
+        );
     }
 }
