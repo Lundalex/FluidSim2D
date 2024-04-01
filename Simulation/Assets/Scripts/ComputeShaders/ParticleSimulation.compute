@@ -12,12 +12,10 @@
 static const int ThreadsNum = 512;
 
 // Constants
-const int ChunkNumW;
-const int ChunkNumH;
-const int IOOR;
+const int2 ChunksNum;
+const int ParticlesNum;
 const int Width;
 const int Height;
-const int ParticlesNum;
 const int ParticleSpringsCombinedHalfLength;
 const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
@@ -121,12 +119,12 @@ RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
+    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
 }
 
 int GetChunkKey(int chunkX, int chunkY)
 {
-    return chunkY * ChunkNumW + chunkX;
+    return chunkY * ChunksNum.x + chunkX;
 }
 
 float2 CalcDensity(int pIndex) // (density, nearDensity)
@@ -145,8 +143,8 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
     int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
 
-    int chunkX = (uint)lastChunkKey % ChunkNumW;
-    int chunkY = (int)((uint)lastChunkKey / ChunkNumW);
+    int chunkX = (uint)lastChunkKey % ChunksNum.x;
+    int chunkY = (int)((uint)lastChunkKey / ChunksNum.x);
 
     float totDensity = 0.0;
     float totNearDensity = 0.0;
@@ -460,11 +458,11 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
         int lastChunkKey_A = Extract_LastChunkKey(PData_A.LastChunkKey_PType_POrder);
         int lastChunkKey_B = Extract_LastChunkKey(PData_B.LastChunkKey_PType_POrder);
     
-        int newChunkX_A = (uint)lastChunkKey_A % ChunkNumW;
-        int newChunkY_A = (int)((float)lastChunkKey_A / ChunkNumW);
+        int newChunkX_A = (uint)lastChunkKey_A % ChunksNum.x;
+        int newChunkY_A = (int)((float)lastChunkKey_A / ChunksNum.x);
 
-        int newChunkX_B = (uint)lastChunkKey_B % ChunkNumW;
-        int newChunkY_B = (int)((float)lastChunkKey_B / ChunkNumW);
+        int newChunkX_B = (uint)lastChunkKey_B % ChunksNum.x;
+        int newChunkY_B = (int)((float)lastChunkKey_B / ChunksNum.x);
 
         // not optimal since the same calculations are performed by multiple threads (many springs in each chunk)
         int localSpringBCapacityOrder = 0;
@@ -515,8 +513,8 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
     float startTemperature = PData_i.Temperature;
 
-    int chunkX = (uint)lastChunkKey % ChunkNumW;
-    int chunkY = (int)((uint)lastChunkKey / ChunkNumW);
+    int chunkX = (uint)lastChunkKey % ChunksNum.x;
+    int chunkY = (int)((uint)lastChunkKey / ChunksNum.x);
     int baseChunkKey = GetChunkKey(chunkX, chunkY);
 
     int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;

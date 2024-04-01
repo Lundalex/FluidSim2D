@@ -9,8 +9,7 @@
 static const int ThreadsNum = 32;
 
 // Constants
-const int ChunkNumW;
-const int ChunkNumH;
+const int2 ChunksNum;
 const int Width;
 const int Height;
 const int ParticlesNum;
@@ -124,7 +123,7 @@ AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
+    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
 }
 
 bool RBBoundraryCheck(float2 Point, float extraPadding)
@@ -364,7 +363,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     float2 NextVel = parentRBData.NextVel;
     float NextAngImpulse = parentRBData.NextAngImpulse;
 
-    int ChunkKey = curChunkY * ChunkNumW + curChunkX;
+    int ChunkKey = curChunkY * ChunksNum.x + curChunkX;
     int startIndex = StartIndices[ChunkKey];
 
     // centerImpulse, rotaryImpulse

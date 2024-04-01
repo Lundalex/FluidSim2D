@@ -14,8 +14,7 @@ const int ResolutionY;
 const int Width;
 const int Height;
 const int MaxInfluenceRadius;
-const int ChunkNumW;
-const int ChunkNumH;
+const int2 ChunksNum;
 const int ParticlesNum;
 const int RBodiesNum;
 
@@ -102,7 +101,7 @@ RWStructuredBuffer<RBVectorStruct> RBVector;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
-    return ChunkX >= 0 && ChunkX < ChunkNumW && ChunkY >= 0 && ChunkY < ChunkNumH;
+    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
 }
 
 float3 TemperatureToRGB(float temperature)
@@ -194,7 +193,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
 
             if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
 
-            int ChunkKey = CurChunkY * ChunkNumW + CurChunkX;
+            int ChunkKey = CurChunkY * ChunksNum.x + CurChunkX;
             int startIndex = StartIndices[ChunkKey];
 
             int Index = startIndex; 

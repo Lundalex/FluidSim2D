@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// Import utils from Resources.cs
+using Resources;
 public class ShaderHelper : MonoBehaviour
 {
     public Main m;
@@ -52,7 +54,7 @@ public class ShaderHelper : MonoBehaviour
 
     public void SetRbSimShaderBuffers(ComputeShader rbSimShader)
     {
-        if (m.RBodiesNum != 0)
+        if (m.RBData.Length != 0)
         {
             rbSimShader.SetBuffer(0, "RBVector", m.RBVectorBuffer);
             rbSimShader.SetBuffer(0, "RBData", m.RBDataBuffer);
@@ -85,7 +87,7 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(0, "PData", m.PDataBuffer);
             renderShader.SetBuffer(0, "PTypes", m.PTypesBuffer);
         }
-        if (m.RBodiesNum != 0)
+        if (m.RBData.Length != 0)
         {
             renderShader.SetBuffer(0, "RBData", m.RBDataBuffer);
             renderShader.SetBuffer(0, "RBVector", m.RBVectorBuffer);
@@ -155,9 +157,7 @@ public class ShaderHelper : MonoBehaviour
     {
         pSimShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
-        pSimShader.SetInt("ChunkNumW", m.ChunkNumW);
-        pSimShader.SetInt("ChunkNumH", m.ChunkNumH);
-        pSimShader.SetInt("IOOR", m.IOOR);
+        pSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         pSimShader.SetInt("Width", m.Width);
         pSimShader.SetInt("Height", m.Height);
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
@@ -176,13 +176,12 @@ public class ShaderHelper : MonoBehaviour
 
     public void UpdateRbSimShaderVariables(ComputeShader rbSimShader)
     {
-        rbSimShader.SetInt("ChunkNumW", m.ChunkNumW);
-        rbSimShader.SetInt("ChunkNumH", m.ChunkNumH);
+        rbSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         rbSimShader.SetInt("Width", m.Width);
         rbSimShader.SetInt("Height", m.Height);
         rbSimShader.SetInt("ParticlesNum", m.ParticlesNum);
-        rbSimShader.SetInt("RBodiesNum", m.RBodiesNum);
-        rbSimShader.SetInt("RBVectorNum", m.RBVectorNum);
+        rbSimShader.SetInt("RBodiesNum", m.RBData.Length);
+        rbSimShader.SetInt("RBVectorNum", m.RBVector.Length);
         rbSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         rbSimShader.SetInt("MaxChunkSearchSafety", m.MaxChunkSearchSafety);
 
@@ -201,24 +200,21 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("Width", m.Width);
         renderShader.SetInt("Height", m.Height);
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        renderShader.SetInt("ChunkNumW", m.ChunkNumW);
-        renderShader.SetInt("ChunkNumH", m.ChunkNumH);
+        renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
-        renderShader.SetInt("RBodiesNum", m.RBodiesNum);
-        renderShader.SetInt("RBVectorNum", m.RBVectorNum);
+        renderShader.SetInt("RBodiesNum", m.RBData.Length);
+        renderShader.SetInt("RBVectorNum", m.RBVector.Length);
         
     }
 
     public void UpdateSortShaderVariables(ComputeShader sortShader)
     {
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        sortShader.SetInt("ChunkNumW", m.ChunkNumW);
-        sortShader.SetInt("ChunkNumH", m.ChunkNumH);
-        sortShader.SetInt("ChunkNum", m.ChunkNum);
-        sortShader.SetInt("ChunkNumNextPow2", m.ChunkNumNextPow2);
+        sortShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        sortShader.SetInt("ChunksNumAll", m.ChunksNumAll);
+        sortShader.SetInt("ChunkNumNextPow2", m.ChunksNumAllNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
-        sortShader.SetInt("IOOR", m.IOOR);
     }
 
     public void UpdateMarchingSquaresShaderVariables(ComputeShader marchingSquaresShader)
@@ -227,8 +223,7 @@ public class ShaderHelper : MonoBehaviour
         marchingSquaresShader.SetInt("MarchH", m.MarchH);
         marchingSquaresShader.SetFloat("MSResolution", m.MSResolution);
         marchingSquaresShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        marchingSquaresShader.SetInt("ChunkNumW", m.ChunkNumW);
-        marchingSquaresShader.SetInt("ChunkNumH", m.ChunkNumH);
+        marchingSquaresShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         marchingSquaresShader.SetInt("Width", m.Width);
         marchingSquaresShader.SetInt("Height", m.Height);
         marchingSquaresShader.SetInt("ParticlesNum", m.ParticlesNum);
