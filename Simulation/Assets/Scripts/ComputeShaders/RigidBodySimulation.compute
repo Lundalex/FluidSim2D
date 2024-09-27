@@ -396,7 +396,7 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
         }
 
         // Increment Index each iteration - Chunk particle search algorithm
-        Index += 1;
+        Index++;
     }
 
     // Add totLineImpulse to current line's parent RB
