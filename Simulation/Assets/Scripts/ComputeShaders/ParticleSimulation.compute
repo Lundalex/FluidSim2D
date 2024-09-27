@@ -36,6 +36,7 @@ const float InteractionTemperaturePower;
 const float DeltaTime;
 const float SRDeltaTime;
 const bool TransferSpringData;
+const int FrameCount;
 
 const float MouseX;
 const float MouseY;

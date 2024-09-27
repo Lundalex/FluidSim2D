@@ -140,6 +140,7 @@ public class Main : MonoBehaviour
     private const int CalcStickyRequestsFrequency = 3;
     private bool DoCalcStickyRequests = true;
     private bool ProgramStarted = false;
+    private int FrameCount = 0;
 
     void Start()
     {
@@ -209,6 +210,8 @@ public class Main : MonoBehaviour
             {
                 RunMarchingSquaresShader();
             }
+            FrameCount++;
+            pSimShader.SetInt("FrameCount", FrameCount);
         }
 
         // RunRenderShader() is called by OnRenderImage()
