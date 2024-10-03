@@ -843,7 +843,7 @@ public class Simulation_w_jobs : MonoBehaviour
         JobHandle handle_2 = populate_lg_particle_chunks_job.Schedule();
         job_handle_list.Add(handle_2);
 
-        JobHandle.CompleteAll(job_handle_list);
+        JobHandle.CompleteAll(job_handle_list.AsArray());
 
         for (int i = 0; i < Particle_chunks_tot_num; i++)
         {

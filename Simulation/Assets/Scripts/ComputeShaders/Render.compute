@@ -20,7 +20,7 @@ const int RBodiesNum;
 
 RWTexture2D<float4> Result;
 
-RWStructuredBuffer<int2> SpatialLookup;
+RWStructuredBuffer<int2> SpatialLookup; 
 RWStructuredBuffer<int> StartIndices;
 
 struct PTypeStruct
