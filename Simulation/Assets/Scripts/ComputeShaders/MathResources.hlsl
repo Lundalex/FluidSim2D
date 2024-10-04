@@ -1,4 +1,4 @@
-static const float PI = 3.14;
+static const float PI = 3.14159;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
 
@@ -62,8 +62,7 @@ float SmoothViscosityLaplacian_optimised(float dst, float radius)
 {
 	if (dst < radius)
 	{
-		float radius6 = radius*radius*radius*radius*radius*radius;
-		return SmoothViscosityLaplacianFactor * (radius - dst) / radius6;
+		return SmoothViscosityLaplacianFactor * (radius - dst) / pow(radius, 6);
 	}
 	return 0;
 }
