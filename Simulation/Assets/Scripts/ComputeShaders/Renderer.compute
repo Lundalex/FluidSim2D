@@ -23,11 +23,11 @@ RWTexture2D<unorm float4> Result;
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
 
-StructuredBuffer<PTypeStruct> PTypes;
-StructuredBuffer<PDataStruct> PData;
+StructuredBuffer<PType> PTypes;
+StructuredBuffer<PData> PDatas;
 
-StructuredBuffer<RBDataStruct> RBData;
-StructuredBuffer<RBVectorStruct> RBVector;
+StructuredBuffer<RBData> RBDatas;
+StructuredBuffer<RBVector> RBVectors;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -86,7 +86,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
     float2 rayCoordB = float2(Width, rayY);
     for (int RBIndex = 0; RBIndex < RBodiesNum; RBIndex++)
     {
-        RBDataStruct RBData_i = RBData[RBIndex];
+        RBData RBData_i = RBDatas[RBIndex];
         float2 dst = pixelPos - RBData_i.Position;
         float dstSqr = dot(dst, dst);
         if (dstSqr > RBData_i.MaxDstSqr) { continue; }
@@ -98,8 +98,8 @@ void Render2D(uint3 id : SV_DispatchThreadID)
         int endIndex = RBData_i.LineIndices.y;
         for (int lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
         {
-            float2 localVecA = RBVector[lineIndex].Position;
-            float2 localVecB = RBVector[lineIndex+1].Position;
+            float2 localVecA = RBVectors[lineIndex].Position;
+            float2 localVecB = RBVectors[lineIndex+1].Position;
             if (CheckLinesIntersect(localVecA, localVecB, localRayCoordA, localRayCoordB))
             { 
                 if (LineIntersectionPoint(localVecA, localVecB, localRayCoordA, localRayCoordB).x < localRayPosX)
@@ -130,7 +130,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
             while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
             {
                 int pIndex = SpatialLookup[Index].x;
-                PDataStruct PData_i = PData[pIndex];
+                PData PData_i = PDatas[pIndex];
 
                 float dst = length(pixelPos - PData_i.Position);
 

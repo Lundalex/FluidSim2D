@@ -164,7 +164,7 @@ public static class ComputeHelper
 
     /// <summary>Get append buffer count asyncronously (invokes an action)</summary>
     /// <remarks>Does not use a countBuffer</remarks>
-    public static void GetBufferContents<T>(ComputeBuffer buffer, int count, Action<T[]> onComplete) where T : struct
+    public static void GetBufferContents<T>(ComputeBuffer buffer, Action<T[]> onComplete) where T : struct
     {
         // Request an async readback to read the buffer
         AsyncGPUReadback.Request(buffer, (request) =>

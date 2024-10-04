@@ -1,19 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.UIElements;
-using Unity.Mathematics;
 using System;
 using System.Linq;
-using Unity.VisualScripting;
-using System.Numerics;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 using Quaternion = UnityEngine.Quaternion;
-public class Simulation : MonoBehaviour
+public class Simulation_SingleCore : MonoBehaviour
 {
     public GameObject particle_prefab;
     private List<GameObject> particles = new();
-    // Creating a 2D matrix where each element is a List of integers
+    // Creating a 2D matrix where each element is a list of integers
     private List<List<HashSet<int>>> particle_chunks = new();
     private GameObject simulation_boundary;
 

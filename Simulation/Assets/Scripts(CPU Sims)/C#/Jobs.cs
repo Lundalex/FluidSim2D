@@ -1,20 +1,10 @@
 using UnityEngine;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
-using Unity.Mathematics;
-using System;
-using System.Linq;
-using Unity.VisualScripting;
-using System.Numerics;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
-using Quaternion = UnityEngine.Quaternion;
-using Random = UnityEngine.Random;
+using System;
 using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
-using UnityEngine.Jobs;
-using System.Threading.Tasks;
 
 [BurstCompile]
 public struct Populate_particle_chunks_job : IJob {
