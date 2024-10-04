@@ -3,8 +3,8 @@
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
-
-static const int ThreadsNum = 32;
+#include "DataTypes.hlsl"
+#include "Constants.hlsl"
 
 const int MarchW;
 const int MarchH;
@@ -26,50 +26,7 @@ RWStructuredBuffer<float> MSPoints;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
-struct PTypeStruct
-{
-    int FluidSpringsGroup;
-
-    float SpringPlasticity;
-    float SpringTolDeformation;
-    float SpringStiffness;
-
-    float ThermalConductivity;
-    float SpecificHeatCapacity;
-    float FreezeThreshold;
-    float VaporizeThreshold;
-
-    float Pressure;
-    float NearPressure;
-
-    float Mass;
-    float TargetDensity;
-    float Damping;
-    float PassiveDamping;
-    float Viscosity;
-    float Stickyness;
-    float Gravity;
-
-    float InfluenceRadius;
-    float colorG;
-};
 RWStructuredBuffer<PTypeStruct> PTypes;
-
-struct PDataStruct
-{
-    float2 PredPosition;
-    float2 Position;
-    float2 Velocity;
-    float2 LastVelocity;
-    float Density;
-    float NearDensity;
-    float Temperature; // kelvin
-    float TemperatureExchangeBuffer;
-    int LastChunkKey_PType_POrder; // composed 3 int structure
-    // POrder; // POrder is dynamic,
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
-    // PType; // 0 <= PType <= PTypeNum
-};
 RWStructuredBuffer<PDataStruct> PData;
 
 float LerpNorm(float a, float b)
@@ -440,7 +397,7 @@ float CalcPointValue(float2 pos)
     return totValue;
 }
 
-[numthreads(ThreadsNum,ThreadsNum,1)]
+[numthreads(TN_MS,TN_MS,1)]
 void CalculateGridValues (uint3 id : SV_DispatchThreadID)
 {
     int x = id.x;
@@ -456,7 +413,7 @@ void CalculateGridValues (uint3 id : SV_DispatchThreadID)
     MSPoints[index] = val;
 }
 
-[numthreads(ThreadsNum,ThreadsNum,1)]
+[numthreads(TN_MS,TN_MS,1)]
 void GenerateMeshData (uint3 id : SV_DispatchThreadID)
 {
     int x = id.x;

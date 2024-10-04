@@ -5,8 +5,8 @@
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
-
-static const int ThreadsNum = 32;
+#include "DataTypes.hlsl"
+#include "Constants.hlsl"
 
 // Constants
 const int2 ChunksNum;
@@ -28,98 +28,19 @@ const float DeltaTime;
 const int DoCalcStickyRequests;
 
 // Particles - Buffers
-RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
-RWStructuredBuffer<int> StartIndices;
+StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
+StructuredBuffer<int> StartIndices;
 
-struct PTypeStruct
-{
-    int FluidSpringsGroup;
+StructuredBuffer<PTypeStruct> PTypes;
+StructuredBuffer<PDataStruct> PData;
 
-    float SpringPlasticity;
-    float SpringTolDeformation;
-    float SpringStiffness;
-
-    float ThermalConductivity;
-    float SpecificHeatCapacity;
-    float FreezeThreshold;
-    float VaporizeThreshold;
-
-    float Pressure;
-    float NearPressure;
-
-    float Mass;
-    float TargetDensity;
-    float Damping;
-    float PassiveDamping;
-    float Viscosity;
-    float Stickyness;
-    float Gravity;
-
-    float InfluenceRadius;
-    float colorG;
-};
-RWStructuredBuffer<PTypeStruct> PTypes;
-
-struct PDataStruct
-{
-    float2 PredPosition;
-    float2 Position;
-    float2 Velocity;
-    float2 LastVelocity;
-    float Density;
-    float NearDensity;
-    float Temperature; // kelvin
-    float TemperatureExchangeBuffer;
-    int LastChunkKey_PType_POrder; // composed 3 int structure
-    // POrder; // POrder is dynamic, 
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
-    // PType; // 0 <= PType <= PTypeNum
-};
-RWStructuredBuffer<PDataStruct> PData;
-
-struct RBDataStruct
-{
-    float2 Position;
-    float2 Velocity;
-    // radians / second
-    float AngularImpulse;
-    float Stickyness;
-    float StickynessRange;
-    float StickynessRangeSqr;
-    float2 NextPos;
-    float2 NextVel;
-    float NextAngImpulse;
-    float Mass;
-    int2 LineIndices;
-    float MaxDstSqr;
-    int WallCollision;
-    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
-};
 RWStructuredBuffer<RBDataStruct> RBData;
-
-struct RBVectorStruct
-{
-    float2 Position;
-    float2 LocalPosition;
-    float3 ParentImpulse;
-    int ParentRBIndex;
-    int WallCollision;
-};
-RWStructuredBuffer<RBVectorStruct> RBVector;
+RWStructuredBuffer<RBVectorStruct> RBVector; 
 
 AppendStructuredBuffer<int3> TraversedChunksAPPEND;
 ConsumeStructuredBuffer<int3> TraversedChunksCONSUME;
 
-struct StickynessRequestStruct
-{
-    int pIndex;
-    int StickyLineIndex;
-    float2 StickyLineDst;
-    float absDstToLineSqr;
-    float RBStickyness;
-    float RBStickynessRange;
-};
-AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
+// AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -228,7 +149,7 @@ void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int l
     stickynessRequest.RBStickyness = RBData_i.Stickyness;
     stickynessRequest.RBStickynessRange = RBData_i.StickynessRange;
 
-    StickynessReqsAPPEND.Append(stickynessRequest);
+    // StickynessReqsAPPEND.Append(stickynessRequest);
 }
 
 float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct parentRBData, float2 NormLineVector, int pIndex, float2 NextPosChange, float2 NextVel, float NextAngImpulse)
@@ -285,9 +206,9 @@ float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct p
 
     // PData[pIndex].Velocity += exchangedMomentum * 0.5;
     // PData[pIndex].Velocity = float2(0, 0);
-    PData[pIndex].Velocity += exchangedMomentum;
+    // PData[pIndex].Velocity += exchangedMomentum;
     // Slightly offset the particle from the RB surface to minimize the risk of particles glitching through as very low velocities
-    PData[pIndex].Position = rotate2d(((PData[pIndex].Position + NextPosChange + 0.05*perpNormLineVector) - parentRBData.Position), NextAngImpulse) + parentRBData.Position + 0.05*perpNormLineVector;
+    // PData[pIndex].Position = rotate2d(((PData[pIndex].Position + NextPosChange + 0.05*perpNormLineVector) - parentRBData.Position), NextAngImpulse) + parentRBData.Position + 0.05*perpNormLineVector;
 
     // RB Impulse calculations
     float2 RBtotImpulse = -exchangedMomentum;
@@ -303,7 +224,7 @@ float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct p
     return float3(centerImpulse.x, centerImpulse.y, rotaryImpulse);
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_RBS,1,1)]
 void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -316,7 +237,7 @@ void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
     RBVector[i].Position = rotate2d(RBVector[i].Position, rotationAngle);
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_RBS,1,1)]
 void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -341,7 +262,7 @@ void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
     TraverseLineSegment(startChunkPos.x, startChunkPos.y, endChunkPos.x, endChunkPos.y, i, MaxChunkSearchSafety);
 }
 
-[numthreads(ThreadsNum, 1, 1)]
+[numthreads(TN_RBS, 1, 1)]
 void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
 {
     int randSeed = id.x;
@@ -415,7 +336,7 @@ float3 RBImpulse(RBDataStruct RBData_i)
     return totRBImpulse;
 }
 
-[numthreads(ThreadsNum, 1, 1)]
+[numthreads(TN_RBS, 1, 1)]
 void RBForces(uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;

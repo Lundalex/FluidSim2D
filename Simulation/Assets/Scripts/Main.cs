@@ -9,54 +9,55 @@ using Resources;
 public class Main : MonoBehaviour
 {
     [Header("Simulation settings")]
-    public int ParticlesNum; 
-    public int MaxInfluenceRadius;
-    public float TargetDensity;
-    public float PressureMultiplier;
-    public float NearPressureMultiplier;
-    [Range(0, 1)] public float Damping;
-    [Range(0, 3.0f)] public float PassiveDamping;
-    [Range(0, 1)] public float RbElasticity;
-    [Range(0, 0.1f)] public float LookAheadFactor;
-    [Range(0, 5.0f)] public float StateThresholdPadding;
-    public float Viscosity;
-    public float SpringStiffness;
-    public float TolDeformation;
-    public float Plasticity;
-    public float Gravity;
-    public float RbPStickyRadius;
-    public float RbPStickyness;
-    [Range(0, 3)] public int MaxChunkSearchSafety;
-    public float StickynessCapacitySafety; // Avg stickyness requests per particle should not exceed this value
-    public int SpringCapacitySafety; // Avg springs per particle should not exceed this value
-    public int TriStorageLength;
+    public int ParticlesNum = 30000; 
+    public int StartTraversedChunksCount = 100000;
+    public int MaxInfluenceRadius = 2;
+    public float TargetDensity = 2;
+    public float PressureMultiplier = 3000.0f;
+    public float NearPressureMultiplier = 12.0f;
+    [Range(0, 1)] public float Damping = 0.7f;
+    [Range(0, 3.0f)] public float PassiveDamping = 0.0f;
+    [Range(0, 1)] public float RbElasticity = 0.645f;
+    [Range(0, 0.1f)] public float LookAheadFactor = 0.017f;
+    [Range(0, 5.0f)] public float StateThresholdPadding = 3.0f;
+    public float Viscosity = 1.5f;
+    public float SpringStiffness = 5.0f;
+    public float TolDeformation = 0.0f;
+    public float Plasticity = 3.0f;
+    public float Gravity = 5.0f;
+    public float RbPStickyRadius = 2.0f;
+    public float RbPStickyness = 1.0f;
+    [Range(0, 3)] public int MaxChunkSearchSafety = 1;
+    [Range(1, 1.5f)] public float StickynessCapacitySafety = 1.1f; // Avg stickyness requests per particle should not exceed this value
+    public int SpringCapacitySafety = 150; // Avg springs per particle should not exceed this value
+    public int TriStorageLength = 4;
 
-    [Header("Boundrary settings")]
-    public int Width;
-    public int Height;
-    public int SpawnDims; // A x A
-    public float BorderPadding;
+    [Header("Boundary settings")]
+    public int Width = 300;
+    public int Height = 200;
+    public int SpawnDims = 160; // A x A
+    public float BorderPadding = 4.0f;
 
     [Header("Render settings")]
-    public bool FixedTimeStep;
-    public bool RenderMarchingSquares;
-    public float TimeStep;
-    public float ProgramSpeed;
-    public float VisualParticleRadii;
-    public float RBRenderThickness;
-    public int TimeStepsPerRender;
-    public float MSvalMin;
-    public int ResolutionX;
-    public int ResolutionY;
-    public int MSResolution;
-    public int MarchW = 150;
-    public int MarchH = 75;
+    public bool FixedTimeStep = true;
+    public bool RenderMarchingSquares = false;
+    public float TimeStep = 0.02f;
+    public float ProgramSpeed = 2.0f;
+    public float VisualParticleRadii = 0.4f;
+    public float RBRenderThickness = 0.5f;
+    public int TimeStepsPerRender = 3;
+    public float MSvalMin = 0.41f;
+    public int ResolutionX = 1920;
+    public int ResolutionY = 1280;
+    public int MSResolution = 3;
+    public int MarchW = 100;
+    public int MarchH = 66;
 
     [Header("Interaction settings")]
-    public float MaxInteractionRadius;
-    public float InteractionAttractionPower;
-    public float InteractionFountainPower;
-    public float InteractionTemperaturePower;
+    public float MaxInteractionRadius = 40.0f;
+    public float InteractionAttractionPower = 3.5f;
+    public float InteractionFountainPower = 1.0f;
+    public float InteractionTemperaturePower = 1.0f;
 
     [Header("References")]
     public ShaderHelper shaderHelper;
@@ -154,6 +155,8 @@ public class Main : MonoBehaviour
             PData[i].Position = Utils.GetParticleSpawnPosition(i, ParticlesNum, Width, Height, SpawnDims);
         }
 
+        TraversedChunksCount = StartTraversedChunksCount;
+
         InitializeBuffers();
         shaderHelper.SetPSimShaderBuffers(pSimShader);
         shaderHelper.SetRbSimShaderBuffers(rbSimShader);
@@ -181,6 +184,21 @@ public class Main : MonoBehaviour
         // GPUSortSpringLookUp() have to be called in succession to GPUSortChunkLookUp()
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
+
+        ComputeHelper.GetBufferContents<int2>(SpatialLookupBuffer, ParticlesNum_NextPow2, contents => 
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                Debug.Log("SL" + i + ": " + contents[i]);
+            }
+        });
+        ComputeHelper.GetBufferContents<int>(StartIndicesBuffer, ChunksNumAll, contents => 
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                Debug.Log("SI" + i + ": " + contents[i]);
+            }
+        });
 
         for (int i = 0; i < TimeStepsPerRender; i++)
         {
@@ -730,7 +748,7 @@ public class Main : MonoBehaviour
             StepBufferCycle = !StepBufferCycle;
 
             sortShader.SetBool("StepBufferCycle", StepBufferCycle);
-            sortShader.SetInt("Offset", offset);
+            sortShader.SetInt("Offset2", offset);
 
             ComputeHelper.DispatchKernel (sortShader, "ParallelPrefixSumScan", threadGroupsNum);
         }
@@ -798,11 +816,10 @@ public class Main : MonoBehaviour
 
             ComputeHelper.DispatchKernel (rbSimShader, "PopulateTraversedChunks", RBVector.Length-1, rbSimShaderThreadSize);
 
-            if (TraversedChunksCount == 0)
+            ComputeHelper.GetAppendBufferCountAsync(TraversedChunks_AC_Buffer, count => 
             {
-                TCCount = ComputeHelper.GetAppendBufferCount(TraversedChunks_AC_Buffer, TCCountBuffer);
-                TraversedChunksCount = (int)Math.Ceiling(TCCount * (1+StickynessCapacitySafety));
-            }
+                TraversedChunksCount = (int)Math.Ceiling(count * StickynessCapacitySafety);
+            });
 
             if (DoCalcStickyRequests) {
                 StickynessReqs_AC_Buffer.SetCounterValue(0);
@@ -815,14 +832,14 @@ public class Main : MonoBehaviour
 
     void RunMarchingSquaresShader()
     {
-        VerticesBuffer.SetData(vertices);
-        TrianglesBuffer.SetData(triangles);
+        // VerticesBuffer.SetData(vertices);
+        // TrianglesBuffer.SetData(triangles);
 
         ComputeHelper.DispatchKernel (marchingSquaresShader, "CalculateGridValues", new int2(MarchW, MarchH), 1);
         ComputeHelper.DispatchKernel (marchingSquaresShader, "GenerateMeshData", new int2(MarchW-1, MarchH-1), 1);
 
-        VerticesBuffer.GetData(vertices);
-        TrianglesBuffer.GetData(triangles);
+        // VerticesBuffer.GetData(vertices);
+        // TrianglesBuffer.GetData(triangles);
 
         marchingSquaresMesh.vertices = vertices;
         marchingSquaresMesh.triangles = triangles;

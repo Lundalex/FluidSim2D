@@ -17,10 +17,10 @@
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
+#include "DataTypes.hlsl"
+#include "Constants.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
-
-static const int ThreadsNum = 512;
 
 const int MaxInfluenceRadius;
 const int2 ChunksNum;
@@ -43,7 +43,7 @@ const int SRblocksNum;
 
 const bool FrameBufferCycle;
 const bool StepBufferCycle;
-const int Offset;
+const int Offset2;
 
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
@@ -53,32 +53,8 @@ RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
 RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
 
-struct PDataStruct
-{
-    float2 PredPosition;
-    float2 Position;
-    float2 Velocity;
-    float2 LastVelocity;
-    float Density;
-    float NearDensity;
-    float Temperature; // kelvin
-    float TemperatureExchangeBuffer;
-    int LastChunkKey_PType_POrder; // composed 3 int structure
-    // POrder; // POrder is dynamic, 
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunksNumAll
-    // PType; // 0 <= PType <= PTypeNum
-};
 RWStructuredBuffer<PDataStruct> PData;
 
-struct StickynessRequestStruct
-{
-    int pIndex;
-    int StickyLineIndex;
-    float2 StickyLineDst;
-    float absDstToLineSqr;
-    float RBStickyness;
-    float RBStickynessRange;
-};
 ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
 RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
 
@@ -132,7 +108,7 @@ int GetNeighboorParticlesNum(int chunkKey)
     return neighboorParticlesNum * SpringCapacities[chunkKey].x;
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -148,7 +124,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void SortIteration (uint3 id : SV_DispatchThreadID)
 {
     int lowRef = id.x;
@@ -172,7 +148,7 @@ void SortIteration (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void PrepStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -180,7 +156,7 @@ void PrepStartIndices (uint3 id : SV_DispatchThreadID)
     // StartIndices[i] = ParticlesNum;
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -200,7 +176,7 @@ void PopulateStartIndices (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 {
     int chunkKey = id.x - 1;
@@ -221,7 +197,7 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
 
 // -- Inter-particle springs --
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     int chunkKey = id.x;
@@ -231,7 +207,7 @@ void PopulateSpringCapacities (uint3 id : SV_DispatchThreadID)
     SpringCapacities[chunkKey].y = SpringCapacity;
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
 {
     int chunkKey = id.x;
@@ -248,7 +224,7 @@ void CopySpringCapacities (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -260,9 +236,9 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
         if (StepBufferCycle)
         {
             int curVal = SpringStartIndices_dbA[i];
-            if (i >= Offset)
+            if (i >= Offset2)
             {
-                curVal += SpringStartIndices_dbA[i - Offset];
+                curVal += SpringStartIndices_dbA[i - Offset2];
             }
             SpringStartIndices_dbC[i] = curVal;
         }
@@ -270,9 +246,9 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
         else
         {
             int curVal = SpringStartIndices_dbC[i];
-            if (i >= Offset)
+            if (i >= Offset2)
             {
-                curVal += SpringStartIndices_dbC[i - Offset];
+                curVal += SpringStartIndices_dbC[i - Offset2];
             }
             SpringStartIndices_dbA[i] = curVal;
         }
@@ -284,9 +260,9 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
         if (StepBufferCycle)
         {
             int curVal = SpringStartIndices_dbB[i];
-            if (i >= Offset)
+            if (i >= Offset2)
             {
-                curVal += SpringStartIndices_dbB[i - Offset];
+                curVal += SpringStartIndices_dbB[i - Offset2];
             }
             SpringStartIndices_dbC[i] = curVal;
         }
@@ -294,16 +270,16 @@ void ParallelPrefixSumScan (uint3 id : SV_DispatchThreadID)
         else
         {
             int curVal = SpringStartIndices_dbC[i];
-            if (i >= Offset)
+            if (i >= Offset2)
             {
-                curVal += SpringStartIndices_dbC[i - Offset];
+                curVal += SpringStartIndices_dbC[i - Offset2];
             }
             SpringStartIndices_dbB[i] = curVal;
         }
     }
 }
 
-[numthreads(ThreadsNum,1,1)]
+[numthreads(TN_S,1,1)]
 void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -319,7 +295,7 @@ void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
     }
 }
 
-[numthreads(512,1,1)]
+[numthreads(TN_S,1,1)]
 void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
@@ -329,7 +305,7 @@ void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
     SortedStickyRequests[i] = stickynessRequest;
 }
 
-[numthreads(512,1,1)]
+[numthreads(TN_S,1,1)]
 void SRSortIteration (uint3 id : SV_DispatchThreadID)
 {
     int lowRef = id.x;

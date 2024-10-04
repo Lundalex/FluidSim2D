@@ -4,6 +4,7 @@ using System;
 
 // Import utils from Resources.cs
 using Resources;
+using UnityEngine.Experimental.Rendering;
 public class TextureHelper : MonoBehaviour
 {
     public ComputeShader ngShader;
@@ -170,7 +171,7 @@ public class TextureHelper : MonoBehaviour
         }
         else // channels == 3
         {
-            texture = texture != null ? texture : new RenderTexture(resolution.x, resolution.y, 24)
+            texture = texture != null ? texture : new RenderTexture(resolution.x, resolution.y, 0, GraphicsFormat.R8G8B8A8_UNorm)
             {
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,

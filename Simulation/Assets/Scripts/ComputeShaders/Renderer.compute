@@ -2,8 +2,8 @@
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
-
-static const int ThreadsNum = 32;
+#include "DataTypes.hlsl"
+#include "Constants.hlsl"
 
 const float VisualParticleRadii;
 const float RBRenderThickness;
@@ -18,86 +18,16 @@ const int2 ChunksNum;
 const int ParticlesNum;
 const int RBodiesNum;
 
-RWTexture2D<float4> Result;
+RWTexture2D<unorm float4> Result;
 
-RWStructuredBuffer<int2> SpatialLookup; 
-RWStructuredBuffer<int> StartIndices;
+StructuredBuffer<int2> SpatialLookup; 
+StructuredBuffer<int> StartIndices;
 
-struct PTypeStruct
-{
-    int FluidSpringsGroup;
+StructuredBuffer<PTypeStruct> PTypes;
+StructuredBuffer<PDataStruct> PData;
 
-    float SpringPlasticity;
-    float SpringTolDeformation;
-    float SpringStiffness;
-
-    float ThermalConductivity;
-    float SpecificHeatCapacity;
-    float FreezeThreshold;
-    float VaporizeThreshold;
-
-    float Pressure;
-    float NearPressure;
-
-    float Mass;
-    float TargetDensity;
-    float Damping;
-    float PassiveDamping;
-    float Viscosity;
-    float Stickyness;
-    float Gravity;
-
-    float InfluenceRadius;
-    float colorG;
-};
-RWStructuredBuffer<PTypeStruct> PTypes;
-
-struct PDataStruct
-{
-    float2 PredPosition;
-    float2 Position;
-    float2 Velocity;
-    float2 LastVelocity;
-    float Density;
-    float NearDensity;
-    float Temperature; // kelvin
-    float TemperatureExchangeBuffer;
-    int LastChunkKey_PType_POrder; // flat 3 int structure
-    // POrder; // POrder is dynamic, 
-    // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
-    // PType; // 0 <= PType <= PTypeNum
-};
-RWStructuredBuffer<PDataStruct> PData;
-
-struct RBDataStruct
-{
-    float2 Position;
-    float2 Velocity;
-    // radians / second
-    float AngularImpulse;
-    float Stickyness;
-    float StickynessRange;
-    float StickynessRangeSqr;
-    float2 NextPos;
-    float2 NextVel;
-    float NextAngImpulse;
-    float Mass;
-    int2 LineIndices;
-    float MaxDstSqr;
-    int WallCollision;
-    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
-};
-RWStructuredBuffer<RBDataStruct> RBData;
-
-struct RBVectorStruct
-{
-    float2 Position;
-    float2 LocalPosition;
-    float3 ParentImpulse;
-    int ParentRBIndex;
-    int WallCollision;
-};
-RWStructuredBuffer<RBVectorStruct> RBVector;
+StructuredBuffer<RBDataStruct> RBData;
+StructuredBuffer<RBVectorStruct> RBVector;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -140,7 +70,7 @@ float3 VelocityToRGB(float2 velocity, float g)
     return float3(r, g, b);
 }
 
-[numthreads(ThreadsNum,ThreadsNum,1)]
+[numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
     float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
@@ -183,7 +113,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
 
     // Render particle liquids
     float minDst = VisualParticleRadii;
-    bool particleFound;
+    bool particleFound = false;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -218,7 +148,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                 }
 
                 // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
+                Index ++;
             }
         }
     }
