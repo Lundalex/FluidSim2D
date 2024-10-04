@@ -1,21 +1,14 @@
 using UnityEngine;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
-using Unity.Mathematics;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 using System;
 using System.Linq;
 using Unity.VisualScripting;
-using System.Numerics;
-using Vector2 = UnityEngine.Vector2;
-using Vector3 = UnityEngine.Vector3;
 using Quaternion = UnityEngine.Quaternion;
-using Random = UnityEngine.Random;
 using Unity.Jobs;
 using Unity.Collections;
-using Unity.Burst;
 using UnityEngine.Jobs;
-using System.Threading.Tasks;
-public class Simulation_w_jobs : MonoBehaviour
+public class Simulation_MultiCore : MonoBehaviour
 {
     [Header("Simulation settings")]
     public int particles_num = 1000;
@@ -95,7 +88,6 @@ public class Simulation_w_jobs : MonoBehaviour
     private float[] near_density;
     private int[] particle_chunks;
     private int[] particle_chunks_template;
-    private int[] chunk_data_template;
     private float delta_time;
 
     Mesh mesh;
@@ -153,7 +145,6 @@ public class Simulation_w_jobs : MonoBehaviour
 
         particle_chunks_template = new int[Particle_chunks_tot_num];
         lg_particle_chunks_template = new int[Lg_particle_chunks_tot_num];
-        chunk_data_template = new int[Chunk_capacity];
         Array.Fill(particle_chunks_template, -1);
         Array.Fill(lg_particle_chunks_template, -1);
 
@@ -982,7 +973,7 @@ public class Simulation_w_jobs : MonoBehaviour
     void Create_particle(int particle_index)
     {
         GameObject particle = Instantiate(particle_prefab, new(0,0,0), Quaternion.identity);
-        particle.transform.localScale = new Vector3(0.2f * Particle_visual_size, 0.2f * Particle_visual_size, 0.2f * Particle_visual_size);
+        particle.transform.localScale = new Vector3(Particle_visual_size, Particle_visual_size, Particle_visual_size);
         particle.transform.parent = transform;
         particles[particle_index] = particle.transform;
         if (velocity_visuals)

@@ -26,8 +26,8 @@ RWStructuredBuffer<float> MSPoints;
 RWStructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 RWStructuredBuffer<int> StartIndices;
 
-RWStructuredBuffer<PTypeStruct> PTypes;
-RWStructuredBuffer<PDataStruct> PData;
+RWStructuredBuffer<PType> PTypes;
+RWStructuredBuffer<PData> PDatas;
 
 float LerpNorm(float a, float b)
 {
@@ -384,12 +384,12 @@ float CalcPointValue(float2 pos)
             {
                 int PIndex = SpatialLookup[Index].x;
 
-                float dst = length(pos - PData[PIndex].Position);
+                float dst = length(pos - PDatas[PIndex].Position);
 
                 totValue += SmoothLiquid(dst / 2, MaxInfluenceRadius);
 
                 // Increment Index each iteration - Chunk particle search algorithm
-                Index += 1;
+                Index++;
             }
         }
     }

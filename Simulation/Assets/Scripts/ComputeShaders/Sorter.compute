@@ -53,10 +53,10 @@ RWStructuredBuffer<int> SpringStartIndices_dbA; // Result A
 RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
 
-RWStructuredBuffer<PDataStruct> PData;
+RWStructuredBuffer<PData> PDatas;
 
-ConsumeStructuredBuffer<StickynessRequestStruct> StickynessReqsCONSUME;
-RWStructuredBuffer<StickynessRequestStruct> SortedStickyRequests;
+ConsumeStructuredBuffer<StickynessRequest> StickynessReqsCONSUME;
+RWStructuredBuffer<StickynessRequest> SortedStickyRequests;
 
 void SwapInt2(inout int2 a, inout int2 b)
 {
@@ -65,9 +65,9 @@ void SwapInt2(inout int2 a, inout int2 b)
     b = temp;
 }
 
-void SwapStickynessRequestStruct(inout StickynessRequestStruct a, inout StickynessRequestStruct b)
+void SwapStickynessRequestStruct(inout StickynessRequest a, inout StickynessRequest b)
 {
-    StickynessRequestStruct temp = a;
+    StickynessRequest temp = a;
     a = b;
     b = temp;
 }
@@ -115,7 +115,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
     if (i >= ParticlesNum_NextPow2) { return; }
     if (i < ParticlesNum)
     {
-        int chunkKey = GetChunkKeyFromPosition(PData[i].Position);
+        int chunkKey = GetChunkKeyFromPosition(PDatas[i].Position);
         SpatialLookup[i] = int2(i, chunkKey);
     }
     else
@@ -189,8 +189,8 @@ void PopulateChunkSizes (uint3 id : SV_DispatchThreadID)
     int Index = startIndex; 
     while (Index < ParticlesNum && chunkKey == SpatialLookup[Index].y)
     {
-        Index += 1;
-        neighboorCount += 1;
+        Index++;
+        neighboorCount++;
     }
     SpringCapacities[chunkKey].x = neighboorCount;
 }
@@ -300,7 +300,7 @@ void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    StickynessRequestStruct stickynessRequest = StickynessReqsCONSUME.Consume();
+    StickynessRequest stickynessRequest = StickynessReqsCONSUME.Consume();
 
     SortedStickyRequests[i] = stickynessRequest;
 }

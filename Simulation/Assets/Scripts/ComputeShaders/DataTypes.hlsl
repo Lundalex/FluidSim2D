@@ -1,6 +1,6 @@
 // --- Particle Simulation structs ---
 
-struct PTypeStruct
+struct PType 
 {
     int FluidSpringsGroup;
 
@@ -27,7 +27,7 @@ struct PTypeStruct
     float InfluenceRadius;
     float colorG;
 };
-struct PDataStruct
+struct PData 
 {
     float2 PredPosition;
     float2 Position;
@@ -42,13 +42,13 @@ struct PDataStruct
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
     // PType; // 0 <= PType <= PTypeNum
 };
-struct SpringStruct
+struct Spring 
 {
     int PLinkedA;
     int PLinkedB;
     float RestLength;
 };
-struct StickynessRequestStruct
+struct StickynessRequest 
 {
     int pIndex;
     int StickyLineIndex;
@@ -60,7 +60,7 @@ struct StickynessRequestStruct
 
 // --- Rigid Body structs ---
 
-struct RBDataStruct
+struct RBData 
 {
     float2 Position;
     float2 Velocity;
@@ -78,7 +78,7 @@ struct RBDataStruct
     int WallCollision;
     int Stationary; // 1 -> Stationary, 0 -> Non-stationary
 };
-struct RBVectorStruct
+struct RBVector 
 {
     float2 Position;
     float2 LocalPosition;

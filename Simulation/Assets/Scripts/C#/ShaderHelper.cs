@@ -9,20 +9,20 @@ public class ShaderHelper : MonoBehaviour
     {
         if (m.ParticlesNum != 0) {
             // Kernel PreCalculations
-            pSimShader.SetBuffer(0, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(0, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
         
             // Kernel PreCalculations
             pSimShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(1, "StartIndices", m.StartIndicesBuffer);
 
-            pSimShader.SetBuffer(1, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(1, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(1, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
 
             pSimShader.SetBuffer(2, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
-            pSimShader.SetBuffer(3, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(3, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(3, "PTypes", m.PTypeBuffer);
             pSimShader.SetBuffer(3, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(3, "StartIndices", m.StartIndicesBuffer);
             pSimShader.SetBuffer(3, "SpringCapacities", m.SpringCapacitiesBuffer);
@@ -34,47 +34,47 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(4, "SpatialLookup", m.SpatialLookupBuffer);
             pSimShader.SetBuffer(4, "StartIndices", m.StartIndicesBuffer);
 
-            pSimShader.SetBuffer(4, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(4, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(4, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(4, "PTypes", m.PTypeBuffer);
 
             pSimShader.SetBuffer(4, "SpringCapacities", m.SpringCapacitiesBuffer);
             pSimShader.SetBuffer(4, "SpringStartIndices_dbA", m.SpringStartIndicesBuffer_dbA);
             pSimShader.SetBuffer(4, "SpringStartIndices_dbB", m.SpringStartIndicesBuffer_dbB);
             pSimShader.SetBuffer(4, "ParticleSpringsCombined", m.ParticleSpringsCombinedBuffer);
 
-            pSimShader.SetBuffer(5, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(5, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(5, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(5, "PTypes", m.PTypeBuffer);
             pSimShader.SetBuffer(5, "SpringCapacities", m.SpringCapacitiesBuffer);
 
-            pSimShader.SetBuffer(6, "PData", m.PDataBuffer);
-            pSimShader.SetBuffer(6, "PTypes", m.PTypesBuffer);
+            pSimShader.SetBuffer(6, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(6, "PTypes", m.PTypeBuffer);
             pSimShader.SetBuffer(6, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
         }
     }
 
     public void SetRbSimShaderBuffers(ComputeShader rbSimShader)
     {
-        if (m.RBData.Length != 0)
+        if (m.RBDatas.Length != 0)
         {
-            rbSimShader.SetBuffer(0, "RBVector", m.RBVectorBuffer);
-            rbSimShader.SetBuffer(0, "RBData", m.RBDataBuffer);
+            rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
+            rbSimShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
 
-            rbSimShader.SetBuffer(1, "RBVector", m.RBVectorBuffer);
-            rbSimShader.SetBuffer(1, "RBData", m.RBDataBuffer);
+            rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
+            rbSimShader.SetBuffer(1, "RBDatas", m.RBDataBuffer);
             rbSimShader.SetBuffer(1, "TraversedChunksAPPEND", m.TraversedChunks_AC_Buffer);
 
             // Maximum reached! (8)
-            rbSimShader.SetBuffer(2, "PData", m.PDataBuffer);
-            rbSimShader.SetBuffer(2, "PTypes", m.PTypesBuffer);
-            rbSimShader.SetBuffer(2, "RBData", m.RBDataBuffer);
-            rbSimShader.SetBuffer(2, "RBVector", m.RBVectorBuffer);
+            rbSimShader.SetBuffer(2, "PDatas", m.PDataBuffer);
+            rbSimShader.SetBuffer(2, "PTypes", m.PTypeBuffer);
+            rbSimShader.SetBuffer(2, "RBDatas", m.RBDataBuffer);
+            rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
             rbSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
             rbSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
             rbSimShader.SetBuffer(2, "TraversedChunksCONSUME", m.TraversedChunks_AC_Buffer);
             rbSimShader.SetBuffer(2, "StickynessReqsAPPEND", m.StickynessReqs_AC_Buffer);
 
-            rbSimShader.SetBuffer(3, "RBData", m.RBDataBuffer);
-            rbSimShader.SetBuffer(3, "RBVector", m.RBVectorBuffer);
+            rbSimShader.SetBuffer(3, "RBDatas", m.RBDataBuffer);
+            rbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
         }
     }
 
@@ -84,13 +84,13 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
             renderShader.SetBuffer(0, "StartIndices", m.StartIndicesBuffer);
 
-            renderShader.SetBuffer(0, "PData", m.PDataBuffer);
-            renderShader.SetBuffer(0, "PTypes", m.PTypesBuffer);
+            renderShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+            renderShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
         }
-        if (m.RBData.Length != 0)
+        if (m.RBDatas.Length != 0)
         {
-            renderShader.SetBuffer(0, "RBData", m.RBDataBuffer);
-            renderShader.SetBuffer(0, "RBVector", m.RBVectorBuffer);
+            renderShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
+            renderShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
         }
     }
 
@@ -98,20 +98,20 @@ public class ShaderHelper : MonoBehaviour
     {
         sortShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
 
-        sortShader.SetBuffer(0, "PData", m.PDataBuffer);
-        sortShader.SetBuffer(0, "PTypes", m.PTypesBuffer);
+        sortShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+        sortShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
 
         sortShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
 
-        sortShader.SetBuffer(1, "PData", m.PDataBuffer);
-        sortShader.SetBuffer(1, "PTypes", m.PTypesBuffer);
+        sortShader.SetBuffer(1, "PDatas", m.PDataBuffer);
+        sortShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
 
         sortShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
 
         sortShader.SetBuffer(3, "SpatialLookup", m.SpatialLookupBuffer);
         sortShader.SetBuffer(3, "StartIndices", m.StartIndicesBuffer);
-        sortShader.SetBuffer(3, "PTypes", m.PTypesBuffer);
-        sortShader.SetBuffer(3, "PData", m.PDataBuffer);
+        sortShader.SetBuffer(3, "PTypes", m.PTypeBuffer);
+        sortShader.SetBuffer(3, "PDatas", m.PDataBuffer);
 
         sortShader.SetBuffer(4, "SpatialLookup", m.SpatialLookupBuffer);
         sortShader.SetBuffer(4, "StartIndices", m.StartIndicesBuffer);
@@ -144,8 +144,8 @@ public class ShaderHelper : MonoBehaviour
         marchingSquaresShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
         marchingSquaresShader.SetBuffer(0, "StartIndices", m.StartIndicesBuffer);
 
-        marchingSquaresShader.SetBuffer(0, "PData", m.PDataBuffer);
-        marchingSquaresShader.SetBuffer(0, "PTypes", m.PTypesBuffer);
+        marchingSquaresShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+        marchingSquaresShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
         
         marchingSquaresShader.SetBuffer(1, "Vertices", m.VerticesBuffer);
         marchingSquaresShader.SetBuffer(1, "Triangles", m.TrianglesBuffer);
@@ -180,8 +180,8 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("Width", m.Width);
         rbSimShader.SetInt("Height", m.Height);
         rbSimShader.SetInt("ParticlesNum", m.ParticlesNum);
-        rbSimShader.SetInt("RBodiesNum", m.RBData.Length);
-        rbSimShader.SetInt("RBVectorNum", m.RBVector.Length);
+        rbSimShader.SetInt("RBodiesNum", m.RBDatas.Length);
+        rbSimShader.SetInt("RBVectorsNum", m.RBVectors.Length);
         rbSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         rbSimShader.SetInt("MaxChunkSearchSafety", m.MaxChunkSearchSafety);
 
@@ -202,8 +202,8 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
-        renderShader.SetInt("RBodiesNum", m.RBData.Length);
-        renderShader.SetInt("RBVectorNum", m.RBVector.Length);
+        renderShader.SetInt("RBodiesNum", m.RBDatas.Length);
+        renderShader.SetInt("RBVectorsNum", m.RBVectors.Length);
         
     }
 

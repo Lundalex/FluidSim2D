@@ -31,16 +31,16 @@ const int DoCalcStickyRequests;
 StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 StructuredBuffer<int> StartIndices;
 
-StructuredBuffer<PTypeStruct> PTypes;
-StructuredBuffer<PDataStruct> PData;
+StructuredBuffer<PType> PTypes;
+RWStructuredBuffer<PData> PDatas;
 
-RWStructuredBuffer<RBDataStruct> RBData;
-RWStructuredBuffer<RBVectorStruct> RBVector; 
+RWStructuredBuffer<RBData> RBDatas;
+RWStructuredBuffer<RBVector> RBVectors;
 
 AppendStructuredBuffer<int3> TraversedChunksAPPEND;
 ConsumeStructuredBuffer<int3> TraversedChunksCONSUME;
 
-// AppendStructuredBuffer<StickynessRequestStruct> StickynessReqsAPPEND;
+AppendStructuredBuffer<StickynessRequest > StickynessReqsAPPEND;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -54,24 +54,24 @@ bool RBBoundraryCheck(float2 Point, float extraPadding)
 
 void RBBoundraryCollision(float2 pos, int RBIndex, float extraPadding, float Damping) {
     float totPadding = BorderPadding + extraPadding;
-    RBDataStruct rb = RBData[RBIndex];
+    RBData  rb = RBDatas[RBIndex];
 
     // x
     if (pos.x > Width - totPadding) {
-        RBData[RBIndex].NextVel.x = -abs(rb.NextVel.x) * Damping;
-        RBData[RBIndex].NextPos.x -= pos.x - (Width - totPadding);
+        RBDatas[RBIndex].NextVel.x = -abs(rb.NextVel.x) * Damping;
+        RBDatas[RBIndex].NextPos.x -= pos.x - (Width - totPadding);
     } else if (pos.x < totPadding) {
-        RBData[RBIndex].NextVel.x = abs(rb.NextVel.x) * Damping;
-        RBData[RBIndex].NextPos.x += totPadding - pos.x;
+        RBDatas[RBIndex].NextVel.x = abs(rb.NextVel.x) * Damping;
+        RBDatas[RBIndex].NextPos.x += totPadding - pos.x;
     }
     
     // y
     if (pos.y > Height - totPadding) {
-        RBData[RBIndex].NextVel.y = -abs(rb.NextVel.y) * Damping;
-        RBData[RBIndex].NextPos.y -= pos.y - (Height - totPadding);
+        RBDatas[RBIndex].NextVel.y = -abs(rb.NextVel.y) * Damping;
+        RBDatas[RBIndex].NextPos.y -= pos.y - (Height - totPadding);
     } else if (pos.y < totPadding) {
-        RBData[RBIndex].NextVel.y = abs(rb.NextVel.y) * Damping;
-        RBData[RBIndex].NextPos.y += totPadding - pos.y;
+        RBDatas[RBIndex].NextVel.y = abs(rb.NextVel.y) * Damping;
+        RBDatas[RBIndex].NextPos.y += totPadding - pos.y;
     }
 }
 
@@ -136,12 +136,12 @@ bool CheckCollision(float2 nextFramePosDisplacement, float2 dstToLine) {
     return projectionLength > uLength;
 }
 
-void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBDataStruct RBData_i, int randSeed)
+void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int lineIndex, RBData  RBData_i, int randSeed)
 {
     // StickynessRange should stay smaller than ~chunksearchDst to avoid visual artifacts
     if (absDstToLineSqr > RBData_i.StickynessRangeSqr) { return; }
 
-    StickynessRequestStruct stickynessRequest;
+    StickynessRequest  stickynessRequest;
     stickynessRequest.pIndex = pIndex;
     stickynessRequest.StickyLineIndex = lineIndex;
     stickynessRequest.StickyLineDst = dstToLine;
@@ -149,10 +149,10 @@ void AddRBPStickyness(float absDstToLineSqr, float2 dstToLine, int pIndex, int l
     stickynessRequest.RBStickyness = RBData_i.Stickyness;
     stickynessRequest.RBStickynessRange = RBData_i.StickynessRange;
 
-    // StickynessReqsAPPEND.Append(stickynessRequest);
+    StickynessReqsAPPEND.Append(stickynessRequest);
 }
 
-float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct parentRBData, float2 NormLineVector, int pIndex, float2 NextPosChange, float2 NextVel, float NextAngImpulse)
+float3 ResolveCollision(PData  PData_i, PType  PType_i, RBData  parentRBData, float2 NormLineVector, int pIndex, float2 NextPosChange, float2 NextVel, float NextAngImpulse)
 {
     // is wallDir pointing IN or OUT, and does it matter? Is is probably the result of a 90 degree turn a (clockwise or anticlockwise) direction
     float2 perpNormLineVector = float2(NormLineVector.y, -NormLineVector.x);
@@ -202,13 +202,13 @@ float3 ResolveCollision(PDataStruct PData_i, PTypeStruct PType_i, RBDataStruct p
 
     // float2 relCollisionPos = RBProperties[i].x * normDst;
     // float2 newParticlePos = RBPositions[i] + relCollisionPos;
-    // PData[particleIndex].Position = newParticlePos;
+    // PDatas[particleIndex].Position = newParticlePos;
 
-    // PData[pIndex].Velocity += exchangedMomentum * 0.5;
-    // PData[pIndex].Velocity = float2(0, 0);
-    // PData[pIndex].Velocity += exchangedMomentum;
+    // PDatas[pIndex].Velocity += exchangedMomentum * 0.5;
+    // PDatas[pIndex].Velocity = float2(0, 0);
+    PDatas[pIndex].Velocity += exchangedMomentum;
     // Slightly offset the particle from the RB surface to minimize the risk of particles glitching through as very low velocities
-    // PData[pIndex].Position = rotate2d(((PData[pIndex].Position + NextPosChange + 0.05*perpNormLineVector) - parentRBData.Position), NextAngImpulse) + parentRBData.Position + 0.05*perpNormLineVector;
+    PDatas[pIndex].Position = rotate2d(((PDatas[pIndex].Position + NextPosChange + 0.05*perpNormLineVector) - parentRBData.Position), NextAngImpulse) + parentRBData.Position + 0.05*perpNormLineVector;
 
     // RB Impulse calculations
     float2 RBtotImpulse = -exchangedMomentum;
@@ -230,11 +230,11 @@ void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
     int i = id.x;
     if (i >= RBVectorNum) { return; }
 
-    RBVectorStruct lineVector = RBVector[i];
+    RBVector  lineVector =  RBVectors[i];
 
-    float rotationAngle = RBData[lineVector.ParentRBIndex].AngularImpulse;
+    float rotationAngle = RBDatas[lineVector.ParentRBIndex].AngularImpulse;
     if (rotationAngle == 0) {return;}
-    RBVector[i].Position = rotate2d(RBVector[i].Position, rotationAngle);
+     RBVectors[i].Position = rotate2d( RBVectors[i].Position, rotationAngle);
 }
 
 [numthreads(TN_RBS,1,1)]
@@ -243,21 +243,21 @@ void PopulateTraversedChunks (uint3 id : SV_DispatchThreadID)
     int i = id.x;
     if (i >= RBVectorNum + 1) { return; }
 
-    RBVectorStruct lineVectorA = RBVector[i];
-    RBVectorStruct lineVectorB = RBVector[i+1];
+    RBVector  lineVectorA =  RBVectors[i];
+    RBVector  lineVectorB =  RBVectors[i+1];
 
     if (lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) { return; }
 
-    float2 parentPos = RBData[lineVectorA.ParentRBIndex].Position; // A and B have the same parent
+    float2 parentPos = RBDatas[lineVectorA.ParentRBIndex].Position; // A and B have the same parent
     float2 startWorldPos = lineVectorA.Position + parentPos;
     float2 endWorldPos = lineVectorB.Position + parentPos;
     float2 startChunkPos = startWorldPos / (float)MaxInfluenceRadius;
     float2 endChunkPos = endWorldPos / (float)MaxInfluenceRadius;
     if (!RBBoundraryCheck(startWorldPos, 0))
     {
-        RBVector[i].WallCollision = 1;
+         RBVectors[i].WallCollision = 1;
         int ogv;
-        InterlockedAdd(RBData[lineVectorA.ParentRBIndex].WallCollision, 1, ogv);
+        InterlockedAdd(RBDatas[lineVectorA.ParentRBIndex].WallCollision, 1, ogv);
     }
     TraverseLineSegment(startChunkPos.x, startChunkPos.y, endChunkPos.x, endChunkPos.y, i, MaxChunkSearchSafety);
 }
@@ -271,13 +271,13 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     int curChunkY = curChunk.y;
     int lineIndex = curChunk.z;
 
-    RBVectorStruct lineVectorA = RBVector[lineIndex];
-    RBVectorStruct lineVectorB = RBVector[lineIndex+1];
+    RBVector  lineVectorA =  RBVectors[lineIndex];
+    RBVector  lineVectorB =  RBVectors[lineIndex+1];
 
     // if (!valid line || !valid chunk || !line vectors have the same parent) { return; }
     if ((curChunkX == 0 && curChunkY == 0 && lineIndex == 0) || !ValidChunk(curChunkX, curChunkY) || lineVectorA.ParentRBIndex != lineVectorB.ParentRBIndex) { return; }
 
-    RBDataStruct parentRBData = RBData[lineVectorA.ParentRBIndex]; // A and B have the same parent
+    RBData  parentRBData = RBDatas[lineVectorA.ParentRBIndex]; // A and B have the same parent
     
     float2 NextPos = parentRBData.NextPos;
     float2 NextPosChange = NextPos - parentRBData.Position;
@@ -294,8 +294,8 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     {
         int pIndex = SpatialLookup[Index].x;
 
-        PDataStruct PData_i = PData[pIndex];
-        PTypeStruct PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
+        PData  PData_i = PDatas[pIndex];
+        PType  PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
 
         float2 A = PData_i.Position;
         float2 B = rotate2d(((PData_i.Position + PData_i.Velocity * DeltaTime - NextPosChange) - parentRBData.Position), -NextAngImpulse) + parentRBData.Position;
@@ -321,17 +321,17 @@ void ResolveLineCollisions(uint3 id : SV_DispatchThreadID)
     }
 
     // Add totLineImpulse to current line's parent RB
-    RBVector[lineIndex].ParentImpulse = totLineImpulse;
+     RBVectors[lineIndex].ParentImpulse = totLineImpulse;
 }
 
-float3 RBImpulse(RBDataStruct RBData_i)
+float3 RBImpulse(RBData  RBData_i)
 {
     int startIndex = RBData_i.LineIndices.x;
     int endIndex = RBData_i.LineIndices.y;
     float3 totRBImpulse = float3(0.0, 0.0, 0.0);
     for (int lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
     {
-        totRBImpulse += RBVector[lineIndex].ParentImpulse;
+        totRBImpulse +=  RBVectors[lineIndex].ParentImpulse;
     }
     return totRBImpulse;
 }
@@ -341,30 +341,30 @@ void RBForces(uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
 
-    RBDataStruct RBData_i = RBData[i];
+    RBData  RBData_i = RBDatas[i];
     if (RBData_i.Stationary || i >= RBodiesNum) { return; }
 
     float3 totRBImpulse = RBImpulse(RBData_i);
 
-    RBData[i].Velocity = RBData_i.NextVel;
-    RBData[i].AngularImpulse = RBData_i.NextAngImpulse;
-    RBData[i].Position = RBData_i.NextPos;
+    RBDatas[i].Velocity = RBData_i.NextVel;
+    RBDatas[i].AngularImpulse = RBData_i.NextAngImpulse;
+    RBDatas[i].Position = RBData_i.NextPos;
 
-    RBData[i].NextPos += RBData[i].Velocity * DeltaTime;
-    RBData[i].NextVel += float2(totRBImpulse.x, totRBImpulse.y) / RBData_i.Mass;
-    RBData[i].NextVel.y -= Gravity * 0.15 * DeltaTime;
+    RBDatas[i].NextPos += RBDatas[i].Velocity * DeltaTime;
+    RBDatas[i].NextVel += float2(totRBImpulse.x, totRBImpulse.y) / RBData_i.Mass;
+    RBDatas[i].NextVel.y -= Gravity * 0.15 * DeltaTime;
 
     int startIndex = RBData_i.LineIndices.x;
     int endIndex = RBData_i.LineIndices.y;
     if (RBData_i.WallCollision)
     {
         int WallCollisions = RBData_i.WallCollision;
-        RBData[i].WallCollision = 0;
+        RBDatas[i].WallCollision = 0;
         for (int lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
         {
-            if (RBVector[lineIndex].WallCollision)
+            if ( RBVectors[lineIndex].WallCollision)
             {
-                float2 collPoint = RBData[i].Position + RBVector[lineIndex].Position;
+                float2 collPoint = RBDatas[i].Position +  RBVectors[lineIndex].Position;
                 RBBoundraryCollision(collPoint, i, 0, 0.3);
 
                 WallCollisions--;

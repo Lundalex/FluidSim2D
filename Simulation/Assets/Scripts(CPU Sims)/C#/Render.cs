@@ -5,7 +5,7 @@ using UnityEngine;
 public class Render : MonoBehaviour
 {
     public GameObject Sim;
-    public Simulation_w_jobs MainScript;
+    public Simulation_MultiCore MainScript;
     public ComputeShader computeShader;
     public RenderTexture renderTexture;
     private ComputeBuffer ParticlePositionBuffer;
@@ -13,7 +13,7 @@ public class Render : MonoBehaviour
 
     void Start()
     {
-        MainScript = Sim.GetComponent<Simulation_w_jobs>();
+        MainScript = Sim.GetComponent<Simulation_MultiCore>();
 
         ParticlePositionBuffer = new ComputeBuffer(MainScript.particles_num, sizeof(float) * 2);
         int ChunkBufferTotNum = MainScript.border_width / MainScript.Lg_chunk_dims * MainScript.border_height / MainScript.Lg_chunk_dims * MainScript.Lg_chunk_capacity;
@@ -22,11 +22,6 @@ public class Render : MonoBehaviour
         renderTexture = new RenderTexture(800, 400, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
-    }
-
-    void Update()
-    {
-
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)

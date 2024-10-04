@@ -27,3 +27,12 @@ Geogebra: https://www.geogebra.org/m/dquhjvqc (not updated)
  - Simulation steps per frame: 3 steps
 
 Dispatch size issue could be avoided by splitting the processing the buffer(s) into groups
+
+// ComputeHelper.GetBufferContents<int2>(SpatialLookupBuffer, ParticlesNum_NextPow2, contents => 
+// {
+//     for (int i = 0; i < 100; i++)
+//     {
+//         Debug.Log("SL" + i + ": " + contents[i]);
+//     }
+// });
+float avgInfluenceRadius = PType_otherPIndex.InfluenceRadius; // InfluenceRadius_i SEEMS UNDEFINED OR SOMETHING
