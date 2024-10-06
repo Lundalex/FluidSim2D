@@ -8,14 +8,14 @@ public class SceneManager : MonoBehaviour
     Main main;
     public Vector2[] GenerateSpawnPoints(int maxParticlesNum, float offset = 0)
     {
-        Polygon[] allPolygons = new Polygon[1]{ GameObject.Find("PolygonTest").GetComponent<Polygon>() }; // Replace with a general solution
+        SceneFluid[] allPolygons = new SceneFluid[1]{ GameObject.Find("Fluid").GetComponent<SceneFluid>() }; // Replace with a general solution
         List<Vector2> spawnPoints = new();
 
         Vector2 pointOffset;
         pointOffset.x = transform.localScale.x * 0.5f - transform.position.x;
         pointOffset.y = transform.localScale.y * 0.5f - transform.position.y;
 
-        foreach (Polygon polygon in allPolygons)
+        foreach (SceneFluid polygon in allPolygons)
         {
             Vector2[] points = polygon.GeneratePoints(offset);
 
