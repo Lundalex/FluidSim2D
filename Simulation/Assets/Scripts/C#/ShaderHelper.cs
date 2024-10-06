@@ -138,21 +138,6 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetBuffer(10, "SortedStickyRequests", m.SortedStickyRequestsBuffer);
     }
 
-    public void SetMarchingSquaresShaderBuffers(ComputeShader marchingSquaresShader)
-    {
-        marchingSquaresShader.SetBuffer(0, "MSPoints", m.MSPointsBuffer);
-        marchingSquaresShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
-        marchingSquaresShader.SetBuffer(0, "StartIndices", m.StartIndicesBuffer);
-
-        marchingSquaresShader.SetBuffer(0, "PDatas", m.PDataBuffer);
-        marchingSquaresShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
-        
-        marchingSquaresShader.SetBuffer(1, "Vertices", m.VerticesBuffer);
-        marchingSquaresShader.SetBuffer(1, "Triangles", m.TrianglesBuffer);
-        marchingSquaresShader.SetBuffer(1, "Colors", m.ColorsBuffer);
-        marchingSquaresShader.SetBuffer(1, "MSPoints", m.MSPointsBuffer);
-    }
-
     public void UpdatePSimShaderVariables(ComputeShader pSimShader)
     {
         pSimShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
@@ -215,19 +200,5 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("ChunkNumNextPow2", m.ChunksNumAllNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
-    }
-
-    public void UpdateMarchingSquaresShaderVariables(ComputeShader marchingSquaresShader)
-    {   
-        marchingSquaresShader.SetInt("MarchW", m.MarchW);
-        marchingSquaresShader.SetInt("MarchH", m.MarchH);
-        marchingSquaresShader.SetFloat("MSResolution", m.MSResolution);
-        marchingSquaresShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        marchingSquaresShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
-        marchingSquaresShader.SetInt("Width", m.Width);
-        marchingSquaresShader.SetInt("Height", m.Height);
-        marchingSquaresShader.SetInt("ParticlesNum", m.ParticlesNum);
-        marchingSquaresShader.SetFloat("MSvalMin", m.MSvalMin);
-        marchingSquaresShader.SetFloat("TriStorageLength", m.TriStorageLength);
     }
 }

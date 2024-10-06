@@ -51,8 +51,6 @@ public class Main : MonoBehaviour
     public int ResolutionX = 1920;
     public int ResolutionY = 1280;
     public int MSResolution = 3;
-    public int MarchW = 100;
-    public int MarchH = 66;
 
     [Header("Interaction settings")]
     public float MaxInteractionRadius = 40.0f;
@@ -67,7 +65,6 @@ public class Main : MonoBehaviour
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
     public ComputeShader sortShader;
-    public ComputeShader marchingSquaresShader;
 
     // ThreadSize settings for compute shaders
     [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
@@ -75,12 +72,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int rbSimShaderThreadSize = 32; // /32
     [NonSerialized] public int sortShaderThreadSize = 512; // /1024
     [NonSerialized] public int marchingSquaresShaderThreadSize = 32; // /32
-
-    // Marching Squares - Buffers
-    public ComputeBuffer VerticesBuffer;
-    public ComputeBuffer TrianglesBuffer;
-    public ComputeBuffer ColorsBuffer;
-    public ComputeBuffer MSPointsBuffer;
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -116,7 +107,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int2 ChunksNum;
     [NonSerialized] public int ChunksNumAll;
     [NonSerialized] public int ChunksNumAllNextPow2;
-    [NonSerialized] public int MSLen;
     [NonSerialized] public int TraversedChunksCount;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
     [NonSerialized] public int ParticlesNum_NextPow2;
@@ -124,7 +114,6 @@ public class Main : MonoBehaviour
 
     // Private references
     private RenderTexture renderTexture;
-    private Mesh marchingSquaresMesh;
 
     // Particle data
     private PData[] PDatas;
@@ -133,10 +122,6 @@ public class Main : MonoBehaviour
     // Rigid Bodies - Properties
     public RBVector[] RBVectors;
     public RBData[] RBDatas;
-
-    // Marching Squares - Buffer retrieval
-    private Vector3[] vertices;
-    private int[] triangles;
 
     // Other
     private float DeltaTime;
@@ -169,13 +154,11 @@ public class Main : MonoBehaviour
         shaderHelper.SetRbSimShaderBuffers(rbSimShader);
         shaderHelper.SetRenderShaderBuffers(renderShader);
         shaderHelper.SetSortShaderBuffers(sortShader);
-        shaderHelper.SetMarchingSquaresShaderBuffers(marchingSquaresShader);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
         shaderHelper.UpdateRbSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
-        shaderHelper.UpdateMarchingSquaresShaderVariables(marchingSquaresShader);
 
         renderTexture = TextureHelper.CreateTexture(new int2(ResolutionX, ResolutionY), 3);
 
@@ -226,10 +209,6 @@ public class Main : MonoBehaviour
                 int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
                 if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
                 
-                if (RenderMarchingSquares)
-                {
-                    RunMarchingSquaresShader();
-                }
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
             }
@@ -264,7 +243,6 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRbSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
-        shaderHelper.UpdateMarchingSquaresShaderVariables(marchingSquaresShader);
     }
     
     public void UpdateShaderTimeStep()
@@ -293,24 +271,19 @@ public class Main : MonoBehaviour
 
     void SceneSetup()
     {
-        while (Height % MaxInfluenceRadius != 0) {
-            Height += 1;
-        }
-        while (Width % MaxInfluenceRadius != 0) {
-            Width += 1;
-        }
+        // Make sure the simulation bounds is a multiple of MaxInfluenceRadius
+        Height += MaxInfluenceRadius - Height % MaxInfluenceRadius;
+        Width += MaxInfluenceRadius - Width % MaxInfluenceRadius;
 
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
-
-        marchingSquaresMesh = GetComponent<MeshFilter>().mesh;
     }
 
     float GetDeltaTime()
     {
-        return FixedTimeStep
-        ? TimeStep / SubTimeStepsPerFrame
-        : Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame;
+        float deltaTime = TimeStep / SubTimeStepsPerFrame;
+        if (!FixedTimeStep) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
+        return deltaTime;
     }
 
     void SetConstants()
@@ -320,9 +293,6 @@ public class Main : MonoBehaviour
         ChunksNum.x = Width / MaxInfluenceRadius;
         ChunksNum.y = Height / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
-        MarchW = Width / MSResolution;
-        MarchH = Height / MSResolution;
-        MSLen = MarchW * MarchH * TriStorageLength * 3;
         ParticleSpringsCombinedHalfLength = ParticlesNum * SpringCapacitySafety / 2;
         ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
 
@@ -694,11 +664,6 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbC, ChunksNumAll);
         ComputeHelper.CreateStructuredBuffer<Spring>(ref ParticleSpringsCombinedBuffer, ParticlesNum * SpringCapacitySafety);
 
-        ComputeHelper.CreateStructuredBuffer<int3>(ref VerticesBuffer, MSLen);
-        ComputeHelper.CreateStructuredBuffer<int>(ref TrianglesBuffer, MSLen);
-        ComputeHelper.CreateStructuredBuffer<float>(ref MSPointsBuffer, MSLen);
-        ComputeHelper.CreateStructuredBuffer<float4>(ref ColorsBuffer, MSLen); // float4 for RGBA
-
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
 
@@ -841,23 +806,6 @@ public class Main : MonoBehaviour
         }
     }
 
-    void RunMarchingSquaresShader()
-    {
-        // VerticesBuffer.SetData(vertices);
-        // TrianglesBuffer.SetData(triangles);
-
-        ComputeHelper.DispatchKernel (marchingSquaresShader, "CalculateGridValues", new int2(MarchW, MarchH), 1);
-        ComputeHelper.DispatchKernel (marchingSquaresShader, "GenerateMeshData", new int2(MarchW-1, MarchH-1), 1);
-
-        // VerticesBuffer.GetData(vertices);
-        // TrianglesBuffer.GetData(triangles);
-
-        marchingSquaresMesh.vertices = vertices;
-        marchingSquaresMesh.triangles = triangles;
-
-        marchingSquaresMesh.RecalculateNormals();
-    }
-
     void RunRenderShader()
     {
         ComputeHelper.DispatchKernel (renderShader, "Render2D", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
@@ -880,12 +828,8 @@ public class Main : MonoBehaviour
     void OnDestroy()
     {
         ComputeHelper.Release(
-            SpatialLookupBuffer, 
-            StartIndicesBuffer, 
-            VerticesBuffer,
-            TrianglesBuffer,
-            ColorsBuffer,
-            MSPointsBuffer,
+            SpatialLookupBuffer,
+            StartIndicesBuffer,
             PDataBuffer,
             PTypeBuffer,
             SpringCapacitiesBuffer,
