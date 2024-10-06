@@ -6,10 +6,20 @@ public class SceneManager : MonoBehaviour
     Vector2 sceneMin;
     Vector2 sceneMax;
     Main main;
-    public Vector2[] GenerateSpawnPoints(int maxParticlesNum, float offset = 0)
+    public (int, int) GetBounds(int maxInfluenceRadius)
+    {
+        Vector2Int bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
+
+        bounds.x += maxInfluenceRadius - bounds.x % maxInfluenceRadius;
+        bounds.y += maxInfluenceRadius - bounds.y % maxInfluenceRadius;
+
+        return (bounds.x, bounds.y);
+    }
+
+    public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)
     {
         SceneFluid[] allPolygons = new SceneFluid[1]{ GameObject.Find("Fluid").GetComponent<SceneFluid>() }; // Replace with a general solution
-        List<Vector2> spawnPoints = new();
+        List<PData> allPDatas = new();
 
         Vector2 pointOffset;
         pointOffset.x = transform.localScale.x * 0.5f - transform.position.x;
@@ -17,16 +27,21 @@ public class SceneManager : MonoBehaviour
 
         foreach (SceneFluid polygon in allPolygons)
         {
-            Vector2[] points = polygon.GeneratePoints(offset);
+            PData[] pDatas = polygon.GenerateParticles(pointOffset, gridDensity);
 
-            foreach (var point in points)
+            foreach (var pData in pDatas)
             {
-                spawnPoints.Add(point + pointOffset);
-                if (maxParticlesNum-- <= 0) return spawnPoints.ToArray();
+                allPDatas.Add(pData);
+                if (maxParticlesNum-- <= 0) return allPDatas.ToArray();
             }
         }
 
-        return spawnPoints.ToArray();
+        return allPDatas.ToArray();
+    }
+
+    public (RBData[], RBVector[]) GenerateRigidBodies()
+    {
+        return (new RBData[1], new RBVector[1]);
     }
 
     public bool IsPointInsideBounds(Vector2 point)

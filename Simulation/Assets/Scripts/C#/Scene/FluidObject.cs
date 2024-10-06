@@ -4,22 +4,43 @@ using System;
 using Resources;
 using System.Linq;
 using UnityEditor;
+using Unity.Mathematics;
+using Unity.Collections;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
-    [Range(0.1f, 10.0f)] public float pointOffset = 2.0f;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
-    // public customMaterial;
+    [Header("Simulation Settings")]
+    [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
+    public int pTypeIndex;
+    [Header("Preview Values")]
+    [ReadOnly] public int currentNumParticles;
     [NonSerialized] public Vector2[] Points;
-    protected SceneManager sceneManager;
+    private SceneManager sceneManager;
+    private Main main;
 
-    public Vector2[] GeneratePoints(float offset = 0)
+    public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
+    {
+        if (main == null) main = GameObject.Find("Main Camera").GetComponent<Main>();
+
+        Vector2[] generatedPoints = GeneratePoints(gridDensity);
+
+        PData[] pDatas = new PData[generatedPoints.Length];
+        for (int i = 0; i < pDatas.Length; i++)
+        {
+            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), 20.0f);
+        }
+
+        return pDatas;
+    }
+
+    public Vector2[] GeneratePoints(float gridDensity = 0)
     {
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
-        bool editorView = offset == -1;
-        if (offset == 0 || offset == -1) offset = pointOffset;
+        bool editorView = gridDensity == -1;
+        if (gridDensity == 0 || gridDensity == -1) gridDensity = defaultGridDensity;
 
         List<Vector2> generatedPoints = new();
 
@@ -29,9 +50,9 @@ public class SceneFluid : Polygon
 
         // Generate grid points within the bounding box
         int iterationCount = 0;
-        for (float x = min.x; x <= max.x; x += offset)
+        for (float x = min.x; x <= max.x; x += gridDensity)
         {
-            for (float y = min.y; y <= max.y; y += offset)
+            for (float y = min.y; y <= max.y; y += gridDensity)
             {
                 if (iterationCount++ > MaxGizmosIterations && editorView) return generatedPoints.ToArray();
 
@@ -45,5 +66,21 @@ public class SceneFluid : Polygon
         }
 
         return generatedPoints.ToArray();
+    }
+
+    PData InitPData(Vector2 pos, Vector2 vel, float tempCelsius)
+    {
+        return new PData
+        {
+            PredPosition = new float2(0.0f, 0.0f),
+            Position = pos,
+            Velocity = vel,
+            LastVelocity = new float2(0.0f, 0.0f),
+            Density = 0.0f,
+            NearDensity = 0.0f,
+            Temperature = Utils.CelsiusToKelvin(tempCelsius),
+            TemperatureExchangeBuffer = 0.0f,
+            LastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll // flattened equivelant to PType = 1
+        };
     }
 }

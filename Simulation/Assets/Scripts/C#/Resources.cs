@@ -50,7 +50,7 @@ namespace Resources
             return new(threadGroupsNumX, threadGroupsNumY, threadGroupsNumZ);
         }
 
-        public static float CelciusToKelvin(float celciusTemp)
+        public static float CelsiusToKelvin(float celciusTemp)
         {
             return 273.15f + celciusTemp;
         }
