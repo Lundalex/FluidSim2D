@@ -164,7 +164,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
         pSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         pSimShader.SetInt("SpawnDims", m.SpawnDims);
-        pSimShader.SetInt("TimeStepsPerRender", m.TimeStepsPerRender);
+        pSimShader.SetInt("SubTimeStepsPerFrame", m.SubTimeStepsPerFrame);
         pSimShader.SetFloat("LookAheadFactor", m.LookAheadFactor);
         pSimShader.SetFloat("StateThresholdPadding", m.StateThresholdPadding);
         pSimShader.SetFloat("BorderPadding", m.BorderPadding);

@@ -21,7 +21,7 @@ const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
 const float InvMaxInfluenceRadius;
 const int SpawnDims;
-const int TimeStepsPerRender;
+const int SubTimeStepsPerFrame;
 
 const float LookAheadFactor;
 const float StateThresholdPadding;

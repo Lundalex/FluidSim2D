@@ -361,7 +361,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particles_num: 2000
-  rigid_bodies_num: 0
+  rigid_bodies_num: 1
   Gravity_force: 4
   Max_influence_radius: 2
   Lg_chunk_dims: 2
@@ -378,7 +378,7 @@ MonoBehaviour:
   Chunk_capacity: 80
   Lg_chunk_capacity: 20
   Program_speed: 1
-  Time_step: 0.02
+  Time_step: 0.035
   Particle_visual_size: 1
   velocity_visuals: 1
   Render_with_shader: 0
