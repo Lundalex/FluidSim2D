@@ -136,16 +136,17 @@ public class Main : MonoBehaviour
     {
         SceneSetup();
 
-        Vector2[] points = sceneManager.GenerateSpawnPoints(MaxParticlesNum);
-        ParticlesNum = points.Length;
+        ChunksNum.x = Width / MaxInfluenceRadius;
+        ChunksNum.y = Height / MaxInfluenceRadius;
+        ChunksNumAll = ChunksNum.x * ChunksNum.y;
+
+        PDatas = sceneManager.GenerateParticles(MaxParticlesNum);
+        ParticlesNum = PDatas.Length;
+
+        (Width, Height) = sceneManager.GetBounds(MaxInfluenceRadius);
 
         InitializeSetArrays();
         SetConstants();
-
-        InitializeArrays();
-
-        Debug.Log("Simulation started with " + ParticlesNum + " particles");
-        for (int i = 0; i < points.Length; i++) PDatas[i].Position = points[i];
 
         TraversedChunksCount = StartTraversedChunksCount;
 
@@ -164,6 +165,7 @@ public class Main : MonoBehaviour
 
         renderShader.SetTexture(0, "Result", renderTexture);
 
+        Debug.Log("Simulation started with " + ParticlesNum + " particles");
         ProgramStarted = true;
     }
 
@@ -271,10 +273,6 @@ public class Main : MonoBehaviour
 
     void SceneSetup()
     {
-        // Make sure the simulation bounds is a multiple of MaxInfluenceRadius
-        Height += MaxInfluenceRadius - Height % MaxInfluenceRadius;
-        Width += MaxInfluenceRadius - Width % MaxInfluenceRadius;
-
         Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
     }
@@ -290,9 +288,6 @@ public class Main : MonoBehaviour
     {
         MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
         InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
-        ChunksNum.x = Width / MaxInfluenceRadius;
-        ChunksNum.y = Height / MaxInfluenceRadius;
-        ChunksNumAll = ChunksNum.x * ChunksNum.y;
         ParticleSpringsCombinedHalfLength = ParticlesNum * SpringCapacitySafety / 2;
         ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
 
@@ -333,8 +328,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
 
             Pressure = 3000,
             NearPressure = 5,
@@ -360,8 +355,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 1.0f,
             SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
             
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
@@ -387,8 +382,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 3.0f,
             SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(100.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
 
             Pressure = 200,
             NearPressure = 0,
@@ -415,8 +410,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 7.0f,
             SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(999.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(-999.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(999.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(-999.0f),
 
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
@@ -442,8 +437,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 7.0f,
             SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(-999.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
 
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
@@ -469,8 +464,8 @@ public class Main : MonoBehaviour
 
             ThermalConductivity = 7.0f,
             SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelciusToKelvin(-999.0f),
-            VaporizeThreshold = Utils.CelciusToKelvin(999.0f),
+            FreezeThreshold = Utils.CelsiusToKelvin(-999.0f),
+            VaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
 
             Pressure = PressureMultiplier,
             NearPressure = NearPressureMultiplier,
@@ -491,8 +486,14 @@ public class Main : MonoBehaviour
     void InitializeSetArrays()
     {
         SetPTypesData();
+        
+        (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
 
-        RBDatas = new RBData[2];
+        bool temp = false;
+
+        if (temp)
+        {
+        RBDatas = new RBData[1];
         RBDatas[0] = new RBData
         {
             Position = new float2(140f, 100f),
@@ -509,22 +510,22 @@ public class Main : MonoBehaviour
             Stationary = 1,
             LineIndices = new int2(0, 8)
         };
-        RBDatas[1] = new RBData
-        {
-            Position = new float2(50f, 100f),
-            Velocity = new float2(0.0f, 0.0f),
-            NextPos = new float2(50f, 100f),
-            NextVel = new float2(0.0f, 0.0f),
-            NextAngImpulse = 0f,
-            AngularImpulse = 0.0f,
-            Stickyness = 16f,
-            StickynessRange = 4f,
-            StickynessRangeSqr = 16f,
-            Mass = 200f,
-            WallCollision = 0,
-            Stationary = 1,
-            LineIndices = new int2(9, 17)
-        };
+        // RBDatas[1] = new RBData
+        // {
+        //     Position = new float2(50f, 100f),
+        //     Velocity = new float2(0.0f, 0.0f),
+        //     NextPos = new float2(50f, 100f),
+        //     NextVel = new float2(0.0f, 0.0f),
+        //     NextAngImpulse = 0f,
+        //     AngularImpulse = 0.0f,
+        //     Stickyness = 16f,
+        //     StickynessRange = 4f,
+        //     StickynessRangeSqr = 16f,
+        //     Mass = 200f,
+        //     WallCollision = 0,
+        //     Stationary = 1,
+        //     LineIndices = new int2(9, 17)
+        // };
         // RBDatas[1] = new RBData
         // {
         //     Position = new float2(30f, 100f),
@@ -558,17 +559,19 @@ public class Main : MonoBehaviour
         RBVectors[6] = new RBVector { Position = new float2(20f, 50f) * 1.5f, ParentRBIndex = 0 };
         RBVectors[7] = new RBVector { Position = new float2(10f, 50f) * 1.5f, ParentRBIndex = 0 };
         RBVectors[8] = new RBVector { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 0 };
+        }
+        
 
-        // BUCKET
-        RBVectors[9] = new RBVector { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[10] = new RBVector { Position = new float2(50f, 20f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[11] = new RBVector { Position = new float2(50f, 50f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[12] = new RBVector { Position = new float2(40f, 50f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[13] = new RBVector { Position = new float2(39f, 30f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[14] = new RBVector { Position = new float2(21f, 30f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[15] = new RBVector { Position = new float2(20f, 50f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[16] = new RBVector { Position = new float2(10f, 50f) * 1.5f, ParentRBIndex = 1 };
-        RBVectors[17] = new RBVector { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
+        // // BUCKET
+        // RBVectors[9] = new RBVector { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[10] = new RBVector { Position = new float2(50f, 20f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[11] = new RBVector { Position = new float2(50f, 50f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[12] = new RBVector { Position = new float2(40f, 50f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[13] = new RBVector { Position = new float2(39f, 30f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[14] = new RBVector { Position = new float2(21f, 30f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[15] = new RBVector { Position = new float2(20f, 50f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[16] = new RBVector { Position = new float2(10f, 50f) * 1.5f, ParentRBIndex = 1 };
+        // RBVectors[17] = new RBVector { Position = new float2(10f, 20f) * 1.5f, ParentRBIndex = 1 };
         // // HEXAGON
         // RBVectors = new RBVector[9];
         // RBVectors[8] = new RBVector { Position = new float2(2f, 1f) * 5, ParentRBIndex = 0 };
@@ -610,45 +613,6 @@ public class Main : MonoBehaviour
         //     RBVectors[i].Position.y *= 0.5f * 1.2f;
         //     RBVectors[i].Position.x *= 1.4f * 1.2f;
         // }
-    }
-
-    void InitializeArrays()
-    {
-        PDatas = new PData[ParticlesNum];
-
-        for (int i = 0; i < ParticlesNum; i++)
-        {
-            if (i < ParticlesNum * 0.5f)
-            {
-                PDatas[i] = new PData
-                {
-                    PredPosition = new float2(0.0f, 0.0f),
-                    Position = new float2(0.0f, 0.0f),
-                    Velocity = new float2(0.0f, 0.0f),
-                    LastVelocity = new float2(0.0f, 0.0f),
-                    Density = 0.0f,
-                    NearDensity = 0.0f,
-                    Temperature = Utils.CelciusToKelvin(20.0f),
-                    TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = 1 * ChunksNumAll // flattened equivelant to PType = 1
-                };
-            }
-            else
-            {
-                PDatas[i] = new PData
-                {
-                    PredPosition = new float2(0.0f, 0.0f),
-                    Position = new float2(0.0f, 0.0f),
-                    Velocity = new float2(0.0f, 0.0f),
-                    LastVelocity = new float2(0.0f, 0.0f),
-                    Density = 0.0f,
-                    NearDensity = 0.0f,
-                    Temperature = Utils.CelciusToKelvin(80.0f),
-                    TemperatureExchangeBuffer = 0.0f,
-                    LastChunkKey_PType_POrder = (3 + 1) * ChunksNumAll // flattened equivelant to PType = 3+1
-                };
-            }
-        }
     }
 
     void InitializeBuffers()

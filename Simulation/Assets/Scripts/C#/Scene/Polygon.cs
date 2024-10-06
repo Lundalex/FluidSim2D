@@ -4,6 +4,7 @@ using System;
 
 public class Polygon : MonoBehaviour
 {
+    [Header("Editor Settings")]
     public int MaxGizmosIterations = 20000;
     public bool DoDrawBody = true;
     public Color LineColor;

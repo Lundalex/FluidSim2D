@@ -252,10 +252,10 @@ MonoBehaviour:
   Height: 200
   SpawnDims: 160
   BorderPadding: 4
-  FixedTimeStep: 1
+  FixedTimeStep: 0
   RenderMarchingSquares: 0
   TimeStep: 0.03
-  ProgramSpeed: 2
+  ProgramSpeed: 6
   VisualParticleRadii: 0.9
   RBRenderThickness: 0.5
   TimeStepsPerFrame: 2
@@ -531,7 +531,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 122.57
+      value: 82.66
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.z
@@ -650,12 +650,28 @@ PrefabInstance:
       value: 1.2938036
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: DoDrawBody
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: pTypeIndex
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: pointOffset
-      value: 1.11
+      value: 0.86
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: editorPointRadius
-      value: 0.677
+      value: 0.725
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: defaultGridDensity
+      value: 1.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: currentNumParticles
+      value: 2199
       objectReference: {fileID: 0}
     - target: {fileID: 7844964519482188911, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Name

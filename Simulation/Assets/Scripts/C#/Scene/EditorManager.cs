@@ -24,7 +24,8 @@ public class EditorManager : Editor
         // Draw points
         if (fluid.DoDrawBody)
         {
-            fluid.Points = fluid.GeneratePoints();
+            fluid.Points = fluid.GeneratePoints(-1);
+            fluid.currentNumParticles = fluid.Points.Length;
 
             int iterationCount = 0;
             Gizmos.color = fluid.BodyColor;
