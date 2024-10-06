@@ -116,5 +116,43 @@ namespace Resources
         {
             a = Log2(NextPow2(a));
         }
+
+        public static float MaxFloat(params float[] inputArray)
+        {
+            float max = float.MinValue;
+            for (int i = 0; i < inputArray.Length; i++)
+            {
+                max = Mathf.Max(max, inputArray[i]);
+            }
+            return max;
+        }
+        public static float MinFloat(params float[] inputArray)
+        {
+            float min = float.MaxValue;
+            for (int i = 0; i < inputArray.Length; i++)
+            {
+                min = Mathf.Min(min, inputArray[i]);
+            }
+            return min;
+        }
+
+        public static Vector2 MaxVector2(params Vector2[] inputArray)
+        {
+            Vector2 max = new(float.MinValue, float.MinValue);
+            for (int i = 0; i < inputArray.Length; i++)
+            {
+                max = new(Mathf.Max(max.x, inputArray[i].x), Mathf.Max(max.y, inputArray[i].y));
+            }
+            return max;
+        }
+        public static Vector2 MinVector2(params Vector2[] inputArray)
+        {
+            Vector2 min = new(float.MaxValue, float.MaxValue);
+            for (int i = 0; i < inputArray.Length; i++)
+            {
+                min = new(Mathf.Min(min.x, inputArray[i].x), Mathf.Min(min.y, inputArray[i].y));
+            }
+            return min;
+        }
     }
 }

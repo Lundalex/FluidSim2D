@@ -9,7 +9,7 @@ using Resources;
 public class Main : MonoBehaviour
 {
     [Header("Simulation settings")]
-    public int ParticlesNum = 20000; 
+    public int MaxParticlesNum = 20000; 
     public int StartTraversedChunksCount = 80000;
     public int MaxInfluenceRadius = 2;
     public float TargetDensity = 2;
@@ -45,7 +45,8 @@ public class Main : MonoBehaviour
     public float ProgramSpeed = 2.0f;
     public float VisualParticleRadii = 0.4f;
     public float RBRenderThickness = 0.5f;
-    public int TimeStepsPerRender = 3;
+    public int TimeStepsPerFrame = 3;
+    public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
     public int ResolutionX = 1920;
     public int ResolutionY = 1280;
@@ -60,6 +61,7 @@ public class Main : MonoBehaviour
     public float InteractionTemperaturePower = 1.0f;
 
     [Header("References")]
+    public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
     public ComputeShader renderShader;
     public ComputeShader pSimShader;
@@ -107,6 +109,7 @@ public class Main : MonoBehaviour
     public ComputeBuffer SRCountBuffer;
 
     // Constants
+    [NonSerialized] public int ParticlesNum;
     [NonSerialized] public int MaxInfluenceRadiusSqr;
     [NonSerialized] public float InvMaxInfluenceRadius;
     [NonSerialized] public float MarchScale;
@@ -141,16 +144,23 @@ public class Main : MonoBehaviour
     private bool DoCalcStickyRequests = true;
     private bool ProgramStarted = false;
     private int FrameCount = 0;
+    private bool ProgramPaused = false;
+    private bool FrameStep = false;
 
     void Start()
     {
         SceneSetup();
 
+        Vector2[] points = sceneManager.GenerateSpawnPoints(MaxParticlesNum);
+        ParticlesNum = points.Length;
+
         InitializeSetArrays();
         SetConstants();
+
         InitializeArrays();
 
-        for (int i = 0; i < ParticlesNum; i++) PDatas[i].Position = Utils.GetParticleSpawnPosition(i, ParticlesNum, Width, Height, SpawnDims);
+        Debug.Log("Simulation started with " + ParticlesNum + " particles");
+        for (int i = 0; i < points.Length; i++) PDatas[i].Position = points[i];
 
         TraversedChunksCount = StartTraversedChunksCount;
 
@@ -176,43 +186,64 @@ public class Main : MonoBehaviour
 
     void Update()
     {
-        UpdateShaderTimeStep();
+        PauseControls();
 
-        // GPUSortSpringLookUp() have to be called in succession to GPUSortChunkLookUp()
-        GPUSortChunkLookUp();
-        GPUSortSpringLookUp();
+        bool simulateThisFrame = false;
+        if (!ProgramPaused || FrameStep) simulateThisFrame = true;
+        if (ProgramPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
+        
+        if (!simulateThisFrame) return;
 
-        for (int i = 0; i < TimeStepsPerRender; i++)
+        for (int _ = 0; _ < TimeStepsPerFrame; _++)
         {
-            pSimShader.SetBool("TransferSpringData", i == 0);
+            UpdateShaderTimeStep();
 
-            RunPSimShader(i);
+            // GPUSortSpringLookUp() have to be called in succession to GPUSortChunkLookUp()
+            GPUSortChunkLookUp();
+            GPUSortSpringLookUp();
 
-            // Stickyness requests
-            if (i == 1) {
-                DoCalcStickyRequests = true;
-                rbSimShader.SetInt("DoCalcStickyRequests", 1);
-                GPUSortStickynessRequests(); 
-                int ThreadNums = Utils.GetThreadGroupsNums(4096, 512);
-                pSimShader.Dispatch(6, ThreadNums, 1, 1);
-            }
-            else {
-                DoCalcStickyRequests = false;
-                rbSimShader.SetInt("DoCalcStickyRequests", 0);
-            }
-
-            RunRbSimShader();
-
-            int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
-            if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
-            
-            if (RenderMarchingSquares)
+            for (int i = 0; i < SubTimeStepsPerFrame; i++)
             {
-                RunMarchingSquaresShader();
+                pSimShader.SetBool("TransferSpringData", i == 0);
+
+                RunPSimShader(i);
+
+                // Stickyness requests
+                if (i == 1) {
+                    DoCalcStickyRequests = true;
+                    rbSimShader.SetInt("DoCalcStickyRequests", 1);
+                    GPUSortStickynessRequests(); 
+                    int ThreadNums = Utils.GetThreadGroupsNums(4096, 512);
+                    pSimShader.Dispatch(6, ThreadNums, 1, 1);
+                }
+                else {
+                    DoCalcStickyRequests = false;
+                    rbSimShader.SetInt("DoCalcStickyRequests", 0);
+                }
+
+                RunRbSimShader();
+
+                int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
+                if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
+                
+                if (RenderMarchingSquares)
+                {
+                    RunMarchingSquaresShader();
+                }
+                FrameCount++;
+                pSimShader.SetInt("FrameCount", FrameCount);
             }
-            FrameCount++;
-            pSimShader.SetInt("FrameCount", FrameCount);
         }
+    }
+
+    private void PauseControls()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            ProgramPaused = !ProgramPaused;
+            Debug.Log("Program paused");
+        }
+        if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
     private void OnValidate()
@@ -278,8 +309,8 @@ public class Main : MonoBehaviour
     float GetDeltaTime()
     {
         return FixedTimeStep
-        ? TimeStep / TimeStepsPerRender
-        : Time.deltaTime * ProgramSpeed / TimeStepsPerRender;
+        ? TimeStep / SubTimeStepsPerFrame
+        : Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame;
     }
 
     void SetConstants()
