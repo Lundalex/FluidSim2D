@@ -32,6 +32,6 @@ Use google chrome version 119 (or later)
 --- Debug (the following steps might be unnecessary) ---
 
 Browser WebGPU status:
- - Navigate to chrome://gpu in the address bar.
+ - Navigate to "chrome://gpu" in the address bar.
  - Scroll down to the WebGPU section.
  - Verify that WebGPU status is enabled.
