@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,7 +24,6 @@ public class EditorManager : Editor
         if (fluid.DoDrawBody)
         {
             fluid.Points = fluid.GeneratePoints(-1);
-            fluid.currentNumParticles = fluid.Points.Length;
 
             int iterationCount = 0;
             Gizmos.color = fluid.BodyColor;

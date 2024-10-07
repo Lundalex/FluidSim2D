@@ -70,6 +70,11 @@ float3 VelocityToRGB(float2 velocity, float g)
     return float3(r, g, b);
 }
 
+uint WrapUint(uint a, uint start, uint end)
+{
+    return start + (a - start) % (end - start);
+}
+
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
@@ -87,19 +92,18 @@ void Render2D(uint3 id : SV_DispatchThreadID)
     for (int RBIndex = 0; RBIndex < RBodiesNum; RBIndex++)
     {
         RBData RBData_i = RBDatas[RBIndex];
-        float2 dst = pixelPos - RBData_i.Position;
-        float dstSqr = dot(dst, dst);
-        if (dstSqr > RBData_i.MaxDstSqr) { continue; }
+        float dstSqr = dot2(pixelPos - RBData_i.pos);
+        if (dstSqr > RBData_i.maxRadiusSqr) continue;
 
-        float2 localRayCoordA = rayCoordA - RBData_i.Position;
-        float2 localRayCoordB = rayCoordB - RBData_i.Position;
-        float localRayPosX = pixelPos.x - RBData_i.Position.x;
-        int startIndex = RBData_i.LineIndices.x;
-        int endIndex = RBData_i.LineIndices.y;
-        for (int lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
+        float2 localRayCoordA = rayCoordA - RBData_i.pos;
+        float2 localRayCoordB = rayCoordB - RBData_i.pos;
+        float localRayPosX = pixelPos.x - RBData_i.pos.x;
+        uint startIndex = RBData_i.startIndex;
+        uint endIndex = RBData_i.endIndex;
+        for (uint lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
         {
-            float2 localVecA = RBVectors[lineIndex].Position;
-            float2 localVecB = RBVectors[lineIndex+1].Position;
+            float2 localVecA = RBVectors[lineIndex].pos;
+            float2 localVecB = RBVectors[WrapUint(lineIndex+1, startIndex, endIndex)].pos;
             if (CheckLinesIntersect(localVecA, localVecB, localRayCoordA, localRayCoordB))
             { 
                 if (LineIntersectionPoint(localVecA, localVecB, localRayCoordA, localRayCoordB).x < localRayPosX)
@@ -121,7 +125,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
             int CurChunkX = ChunkX + x;
             int CurChunkY = ChunkY + y;
 
-            if (!ValidChunk(CurChunkX, CurChunkY)) {continue;}
+            if (!ValidChunk(CurChunkX, CurChunkY)) continue;
 
             int ChunkKey = CurChunkY * ChunksNum.x + CurChunkX;
             int startIndex = StartIndices[ChunkKey];
@@ -132,7 +136,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                 int pIndex = SpatialLookup[Index].x;
                 PData PData_i = PDatas[pIndex];
 
-                float dst = length(pixelPos - PData_i.Position);
+                float dst = length(pixelPos - PData_i.pos);
 
                 if (dst < minDst)
                 {
@@ -140,9 +144,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                     float3 rgb = VelocityToRGB(PData_i.Velocity, PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG);
                     // float3 rgb = TemperatureToRGB(PData_i.Temperature);
 
-                    float r = rgb.x; float g = rgb.y; float b = rgb.z;
-
-                    Result[id.xy] = float4(r, g, b, 0.0);
+                    Result[id.xy] = float4(rgb.x, rgb.y, rgb.z, 0.0);
                     minDst = dst;
                     particleFound = true;
                 }
@@ -152,7 +154,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
             }
         }
     }
-    if (particleFound) { return; }
+    if (particleFound) return;
 
     // Background color is r,g,b,o = 0,0,0,0 (black)
     Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);

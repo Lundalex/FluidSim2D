@@ -30,7 +30,7 @@ struct PType
 struct PData 
 {
     float2 PredPosition;
-    float2 Position;
+    float2 pos;
     float2 Velocity;
     float2 LastVelocity;
     float Density2;
@@ -40,7 +40,7 @@ struct PData
     int LastChunkKey_PType_POrder; // composed 3 int structure
     // POrder; // POrder is dynamic,
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
-    // PType; // 0 <= PType <= PTypeNum
+    // PType; // 0 <= PType <= PTypesNum
 };
 struct Spring 
 {
@@ -62,27 +62,16 @@ struct StickynessRequest
 
 struct RBData 
 {
-    float2 Position;
-    float2 Velocity;
-    // radians / second
-    float AngularImpulse;
-    float Stickyness;
-    float StickynessRange;
-    float StickynessRangeSqr;
-    float2 NextPos;
-    float2 NextVel;
-    float NextAngImpulse;
-    float Mass;
-    int2 LineIndices;
-    float MaxDstSqr;
-    int WallCollision;
-    int Stationary; // 1 -> Stationary, 0 -> Non-stationary
+    float2 pos;
+    float2 vel;
+    float2 nextPos;
+    float2 nextVel;
+    float mass; // 0 -> Stationary
+    float maxRadiusSqr;
+    int startIndex;
+    int endIndex;
 };
 struct RBVector 
 {
-    float2 Position;
-    float2 LocalPosition;
-    float3 ParentImpulse;
-    int ParentRBIndex;
-    int WallCollision;
+    float2 pos;
 };

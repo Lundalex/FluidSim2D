@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class SceneManager : MonoBehaviour
@@ -18,16 +19,15 @@ public class SceneManager : MonoBehaviour
 
     public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)
     {
-        SceneFluid[] allPolygons = new SceneFluid[1]{ GameObject.Find("Fluid").GetComponent<SceneFluid>() }; // Replace with a general solution
+        SceneFluid[] allFluids = new SceneFluid[1]{ GameObject.Find("Fluid").GetComponent<SceneFluid>() }; // Replace with a general solution
         List<PData> allPDatas = new();
 
-        Vector2 pointOffset;
-        pointOffset.x = transform.localScale.x * 0.5f - transform.position.x;
-        pointOffset.y = transform.localScale.y * 0.5f - transform.position.y;
+        Vector2 offset = GetBoundsOffset();
 
-        foreach (SceneFluid polygon in allPolygons)
+        // Get the particle positions for each fluid object in the scene
+        foreach (SceneFluid fluid in allFluids)
         {
-            PData[] pDatas = polygon.GenerateParticles(pointOffset, gridDensity);
+            PData[] pDatas = fluid.GenerateParticles(offset, gridDensity);
 
             foreach (var pData in pDatas)
             {
@@ -41,8 +41,63 @@ public class SceneManager : MonoBehaviour
 
     public (RBData[], RBVector[]) GenerateRigidBodies()
     {
-        return (new RBData[1], new RBVector[1]);
+        SceneRigidBody[] allRigidBodies = new SceneRigidBody[1]{ GameObject.Find("RigidBody").GetComponent<SceneRigidBody>() }; // Replace with a general solution
+
+        Vector2 offset = GetBoundsOffset();
+
+        // Get the rigidBody data for each rigidBody
+        List<RBData> allRBData = new();
+        List<RBVector> allRBVectors = new();
+        foreach (SceneRigidBody rigidBody in allRigidBodies)
+        {
+            // Transform points to local space
+            Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
+            Vector2[] points = GetTransformedPoints(rigidBody, offset, transformedRBPos);
+
+            // Initialize the rigid body data
+            allRBData.Add(InitRBData(rigidBody.RBInput, GetMaxRadiusSqr(points), allRBVectors.Count, allRBVectors.Count + points.Length, transformedRBPos));
+            
+            // Initialize the rigid body vector datas
+            foreach (Vector2 point in points) allRBVectors.Add(new RBVector(point));
+        }
+
+        return (allRBData.ToArray(), allRBVectors.ToArray());
     }
+
+    public Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
+    {
+        Vector2[] points = rigidBody.GetComponent<PolygonCollider2D>().points;
+
+        for (int i = 0; i < points.Length; i++) points[i] = rigidBody.transform.TransformPoint(points[i]);
+        for (int i = 0; i < points.Length; i++) points[i] += offset - transformedRBPos;
+        
+        return points;
+    }
+
+    public float GetMaxRadiusSqr(Vector2[] points)
+    {
+        float maxRadiusSqr = 0;
+        foreach (Vector2 point in points) maxRadiusSqr = Mathf.Max(maxRadiusSqr, point.sqrMagnitude);
+
+        return maxRadiusSqr;
+    }
+
+    public RBData InitRBData(RBInput rbInput, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
+    {
+        return new RBData
+        {
+            pos = pos,
+            vel = rbInput.velocity,
+            nextPos = 0,
+            nextVel = 0,
+            mass = rbInput.isStationary ? 0 : rbInput.mass,
+            maxRadiusSqr = maxRadiusSqr,
+            startIndex = startIndex,
+            endIndex = endIndex
+        };
+    }
+
+    public Vector2 GetBoundsOffset() => new(transform.localScale.x * 0.5f - transform.position.x, transform.localScale.y * 0.5f - transform.position.y);
 
     public bool IsPointInsideBounds(Vector2 point)
     {

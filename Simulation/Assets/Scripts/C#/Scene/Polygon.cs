@@ -13,8 +13,10 @@ public class Polygon : MonoBehaviour
 
     protected virtual void Awake() => SetPolygonData();
 
-    public void SetPolygonData()
+    public void SetPolygonData(Vector2? offsetInput = null)
     {
+        Vector2 offset = offsetInput ?? Vector2.zero;
+
         Edges = new List<Edge>();
         Vector2[] points = GetComponent<PolygonCollider2D>().points;
 
@@ -23,7 +25,7 @@ public class Polygon : MonoBehaviour
             Vector2 startPoint = transform.TransformPoint(points[i]);
             Vector2 endPoint = transform.TransformPoint(points[(i + 1) % points.Length]);
 
-            Edge edge = new(startPoint, endPoint);
+            Edge edge = new(startPoint + offset, endPoint + offset);
             Edges.Add(edge);
         }
     }

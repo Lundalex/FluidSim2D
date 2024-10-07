@@ -1,1 +1,3 @@
 Make the simulation look the same in the editor as during runtime.
+
+Rename PData properties with shortened versions, with first character in lower case

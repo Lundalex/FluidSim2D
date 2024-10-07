@@ -115,7 +115,7 @@ void CalculateChunkKeys (uint3 id : SV_DispatchThreadID)
     if (i >= ParticlesNum_NextPow2) { return; }
     if (i < ParticlesNum)
     {
-        int chunkKey = GetChunkKeyFromPosition(PDatas[i].Position);
+        int chunkKey = GetChunkKeyFromPosition(PDatas[i].pos);
         SpatialLookup[i] = int2(i, chunkKey);
     }
     else
