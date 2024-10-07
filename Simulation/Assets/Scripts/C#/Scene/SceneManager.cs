@@ -68,8 +68,7 @@ public class SceneManager : MonoBehaviour
     {
         Vector2[] points = rigidBody.GetComponent<PolygonCollider2D>().points;
 
-        for (int i = 0; i < points.Length; i++) points[i] = rigidBody.transform.TransformPoint(points[i]);
-        for (int i = 0; i < points.Length; i++) points[i] += offset - transformedRBPos;
+        for (int i = 0; i < points.Length; i++) points[i] = (Vector2)rigidBody.transform.TransformPoint(points[i]) + offset - transformedRBPos;
         
         return points;
     }
