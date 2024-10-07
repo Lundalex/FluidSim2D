@@ -52,29 +52,29 @@ public class ShaderHelper : MonoBehaviour
         }
     }
 
-    public void SetRbSimShaderBuffers(ComputeShader rbSimShader)
+    public void SetRbSimShaderBuffers(ComputeShader oldRbSimShader)
     {
         if (m.RBDatas.Length != 0)
         {
-            rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
-            rbSimShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
+            oldRbSimShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
 
-            rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
-            rbSimShader.SetBuffer(1, "RBDatas", m.RBDataBuffer);
-            rbSimShader.SetBuffer(1, "TraversedChunksAPPEND", m.TraversedChunks_AC_Buffer);
+            oldRbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
+            oldRbSimShader.SetBuffer(1, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(1, "TraversedChunksAPPEND", m.TraversedChunks_AC_Buffer);
 
             // Maximum reached! (8)
-            rbSimShader.SetBuffer(2, "PDatas", m.PDataBuffer);
-            rbSimShader.SetBuffer(2, "PTypes", m.PTypeBuffer);
-            rbSimShader.SetBuffer(2, "RBDatas", m.RBDataBuffer);
-            rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
-            rbSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
-            rbSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
-            rbSimShader.SetBuffer(2, "TraversedChunksCONSUME", m.TraversedChunks_AC_Buffer);
-            rbSimShader.SetBuffer(2, "StickynessReqsAPPEND", m.StickynessReqs_AC_Buffer);
+            oldRbSimShader.SetBuffer(2, "PDatas", m.PDataBuffer);
+            oldRbSimShader.SetBuffer(2, "PTypes", m.PTypeBuffer);
+            oldRbSimShader.SetBuffer(2, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
+            oldRbSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
+            oldRbSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
+            oldRbSimShader.SetBuffer(2, "TraversedChunksCONSUME", m.TraversedChunks_AC_Buffer);
+            oldRbSimShader.SetBuffer(2, "StickynessReqsAPPEND", m.StickynessReqs_AC_Buffer);
 
-            rbSimShader.SetBuffer(3, "RBDatas", m.RBDataBuffer);
-            rbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
+            oldRbSimShader.SetBuffer(3, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
         }
     }
 
@@ -159,21 +159,21 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InteractionTemperaturePower", m.InteractionTemperaturePower);
     }
 
-    public void UpdateRbSimShaderVariables(ComputeShader rbSimShader)
+    public void UpdateRbSimShaderVariables(ComputeShader oldRbSimShader)
     {
-        rbSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
-        rbSimShader.SetInt("Width", m.Width);
-        rbSimShader.SetInt("Height", m.Height);
-        rbSimShader.SetInt("ParticlesNum", m.ParticlesNum);
-        rbSimShader.SetInt("RBodiesNum", m.RBDatas.Length);
-        rbSimShader.SetInt("RBVectorsNum", m.RBVectors.Length);
-        rbSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        rbSimShader.SetInt("MaxChunkSearchSafety", m.MaxChunkSearchSafety);
+        oldRbSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        oldRbSimShader.SetInt("Width", m.Width);
+        oldRbSimShader.SetInt("Height", m.Height);
+        oldRbSimShader.SetInt("ParticlesNum", m.ParticlesNum);
+        oldRbSimShader.SetInt("RBodiesNum", m.RBDatas.Length);
+        oldRbSimShader.SetInt("RBVectorsNum", m.RBVectors.Length);
+        oldRbSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
+        oldRbSimShader.SetInt("MaxChunkSearchSafety", m.MaxChunkSearchSafety);
 
-        rbSimShader.SetFloat("Damping", m.Damping);
-        rbSimShader.SetFloat("Gravity", m.Gravity);
-        rbSimShader.SetFloat("RbElasticity", m.RbElasticity);
-        rbSimShader.SetFloat("BorderPadding", m.BorderPadding);
+        oldRbSimShader.SetFloat("Damping", m.Damping);
+        oldRbSimShader.SetFloat("Gravity", m.Gravity);
+        oldRbSimShader.SetFloat("RbElasticity", m.RbElasticity);
+        oldRbSimShader.SetFloat("BorderPadding", m.BorderPadding);
     }
 
     public void UpdateRenderShaderVariables(ComputeShader renderShader)
@@ -200,5 +200,17 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("ChunkNumNextPow2", m.ChunksNumAllNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
+    }
+
+    // --- Ner RB shader ---
+
+    public void SetNewRBSimShaderBuffers(ComputeShader rbSimShader)
+    {
+
+    }
+
+    public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
+    {
+
     }
 }

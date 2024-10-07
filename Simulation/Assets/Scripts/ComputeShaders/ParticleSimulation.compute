@@ -76,8 +76,8 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
     if (TransferSpringData)
     {
-        int newChunkX = (int)(PData_i.Position.x * InvMaxInfluenceRadius);
-        int newChunkY = (int)(PData_i.Position.y * InvMaxInfluenceRadius);
+        int newChunkX = (int)(PData_i.pos.x * InvMaxInfluenceRadius);
+        int newChunkY = (int)(PData_i.pos.y * InvMaxInfluenceRadius);
         int newChunkKey = GetChunkKey(newChunkX, newChunkY);
         Set_LastChunkKey(PData_i.LastChunkKey_PType_POrder, newChunkKey);
         PDatas[pIndex].LastChunkKey_PType_POrder = PData_i.LastChunkKey_PType_POrder;
@@ -336,7 +336,7 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
     int i = id.x;
     if (id.x >= (uint)ParticlesNum) { return; }
 
-    PDatas[i].PredPosition = PDatas[i].Position + PDatas[i].Velocity * LookAheadFactor;
+    PDatas[i].PredPosition = PDatas[i].pos + PDatas[i].Velocity * LookAheadFactor;
 
     // Make sure PredPositions[i] is within the world boundrary
     PDatas[i].PredPosition.x = clamp(PDatas[i].PredPosition.x, BorderPadding, Width - BorderPadding);
@@ -388,7 +388,7 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     PData  PData_A = PDatas[lastSpring.PLinkedA];
     PData  PData_B = PDatas[lastSpring.PLinkedB];
 
-    float2 PosDiff = PData_A.Position - PData_B.Position;
+    float2 PosDiff = PData_A.pos - PData_B.pos;
     float absPosDiffSqr = dot(PosDiff, PosDiff);
 
     float avgInfluenceRadiusSqr = sqr(avg(PTypes[Extract_PType(PData_A.LastChunkKey_PType_POrder)].InfluenceRadius, PTypes[Extract_PType(PData_B.LastChunkKey_PType_POrder)].InfluenceRadius));
@@ -489,7 +489,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 PType  PType_otherPIndex = PTypes[Extract_PType(PData_otherPIndex.LastChunkKey_PType_POrder)];
                 float otherPIndex_Mass = PType_otherPIndex.Mass;
 
-                float2 dst = PData_otherPIndex.Position - PData_i.Position;
+                float2 dst = PData_otherPIndex.pos - PData_i.pos;
                 float sqrDst = dot(dst, dst);
                 float avgInfluenceRadius = avg(PType_i.InfluenceRadius, PType_otherPIndex.InfluenceRadius);
 
@@ -537,9 +537,9 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     PType  PType_i = PTypes[pTypeIndex];
 
     // Update particle position and velocity
-    PData_i.Position += PData_i.Velocity * DeltaTime;
-    float4 PosVelData = BoundraryCheck(PData_i.Position, PData_i.Velocity, 0, PType_i.Damping);
-    PDatas[i].Position = float2(PosVelData.x, PosVelData.y);
+    PData_i.pos += PData_i.Velocity * DeltaTime;
+    float4 PosVelData = BoundraryCheck(PData_i.pos, PData_i.Velocity, 0, PType_i.Damping);
+    PDatas[i].pos = float2(PosVelData.x, PosVelData.y);
     float2 newVelocity = float2(PosVelData.z, PosVelData.w);
 
     // Decrease velocity vector length with respect to the passive damping factor

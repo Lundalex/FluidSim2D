@@ -7,7 +7,8 @@ using UnityEngine;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneRigidBody : Polygon
 {
-    [Range(0.1f, 10.0f)] public float pointOffset = 0.5f;
+    [Header("Simulation Object Settings")]
+    public RBInput RBInput;
     [NonSerialized] public Vector2[] Points;
     public Vector2[] GeneratePoints(float offset)
     {

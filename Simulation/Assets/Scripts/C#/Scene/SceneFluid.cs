@@ -5,17 +5,15 @@ using Resources;
 using System.Linq;
 using UnityEditor;
 using Unity.Mathematics;
-using Unity.Collections;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
-    [Header("Simulation Settings")]
+    [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
     public int pTypeIndex;
     [Header("Preview Values")]
-    [ReadOnly] public int currentNumParticles;
     [NonSerialized] public Vector2[] Points;
     private SceneManager sceneManager;
     private Main main;
@@ -54,12 +52,12 @@ public class SceneFluid : Polygon
         {
             for (float y = min.y; y <= max.y; y += gridDensity)
             {
-                if (iterationCount++ > MaxGizmosIterations && editorView) return generatedPoints.ToArray();
-
                 Vector2 point = new(x, y);
 
                 if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point))
                 {
+                    if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints.ToArray();
+
                     generatedPoints.Add(point);
                 }
             }

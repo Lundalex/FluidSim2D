@@ -160,6 +160,11 @@ float RBPStickynessModel(float stickyness, float dst, float maxDst)
 	return stickyness * dst * (1 - dst/maxDst);
 }
 
+float dot2(float2 dst)
+{
+	return dot(dst, dst);
+}
+
 float avg(float a, float b)
 {
     return (a + b) * 0.5;
