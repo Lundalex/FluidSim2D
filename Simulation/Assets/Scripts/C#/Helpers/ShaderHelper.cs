@@ -57,23 +57,23 @@ public class ShaderHelper : MonoBehaviour
         if (m.RBDatas.Length != 0)
         {
             oldRbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
-            oldRbSimShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
 
             oldRbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
-            oldRbSimShader.SetBuffer(1, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
             oldRbSimShader.SetBuffer(1, "TraversedChunksAPPEND", m.TraversedChunks_AC_Buffer);
 
             // Maximum reached! (8)
             oldRbSimShader.SetBuffer(2, "PDatas", m.PDataBuffer);
             oldRbSimShader.SetBuffer(2, "PTypes", m.PTypeBuffer);
-            oldRbSimShader.SetBuffer(2, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
             oldRbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
             oldRbSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
             oldRbSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
             oldRbSimShader.SetBuffer(2, "TraversedChunksCONSUME", m.TraversedChunks_AC_Buffer);
             oldRbSimShader.SetBuffer(2, "StickynessReqsAPPEND", m.StickynessReqs_AC_Buffer);
 
-            oldRbSimShader.SetBuffer(3, "RBDatas", m.RBDataBuffer);
+            oldRbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
             oldRbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
         }
     }
@@ -89,7 +89,7 @@ public class ShaderHelper : MonoBehaviour
         }
         if (m.RBDatas.Length != 0)
         {
-            renderShader.SetBuffer(0, "RBDatas", m.RBDataBuffer);
+            renderShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
             renderShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
         }
     }
@@ -206,11 +206,20 @@ public class ShaderHelper : MonoBehaviour
 
     public void SetNewRBSimShaderBuffers(ComputeShader rbSimShader)
     {
+        rbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
 
+        // StructuredBuffer<PType> PTypes;
+        // RWStructuredBuffer<PData> PDatas;
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
     {
+        rbSimShader.SetInt("Width", m.Width);
+        rbSimShader.SetInt("Height", m.Height);
 
+        rbSimShader.SetFloat("BorderPadding", m.BorderPadding);
+
+        rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
     }
 }

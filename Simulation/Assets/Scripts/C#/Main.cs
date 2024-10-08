@@ -73,6 +73,8 @@ public class Main : MonoBehaviour
     [NonSerialized] public int oldRbSimShaderThreadSize = 32; // /32
     [NonSerialized] public int sortShaderThreadSize = 512; // /1024
     [NonSerialized] public int marchingSquaresShaderThreadSize = 32; // /32
+    [NonSerialized] public int rbSimShaderThreadSize1 = 32; // Rigid Body Simulation
+    [NonSerialized] public int rbSimShaderThreadSize2 = 512; // Rigid Body Simulation
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -211,10 +213,10 @@ public class Main : MonoBehaviour
                 //     oldRbSimShader.SetInt("DoCalcStickyRequests", 0);
                 // }
 
-                RunRbSimShader();
-
                 int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
                 if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
+
+                RunRbSimShader();
                 
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
@@ -267,9 +269,7 @@ public class Main : MonoBehaviour
         pSimShader.SetBool("LMousePressed", mousePressed.x);
         pSimShader.SetBool("RMousePressed", mousePressed.y);
 
-        oldRbSimShader.SetFloat("DeltaTime", DeltaTime);
-
-        oldRbSimShader.SetInt("DoCalcStickyRequests", DoCalcStickyRequests ? 1 : 0);
+        rbSimShader.SetFloat("DeltaTime", DeltaTime);
 
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
@@ -602,9 +602,9 @@ public class Main : MonoBehaviour
 
     void RunRbSimShader()
     {
-        if (RBVectors.Length > 1) 
+        if (RBVectors.Length > 1 && RBDatas.Length > 0) 
         {
-            // ComputeHelper.DispatchKernel (oldRbSimShader, "ApplyLocalAngularRotation", Mathf.Max(RBVectors.Length, 1), oldRbSimShaderThreadSize);
+            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
 
             // TraversedChunks_AC_Buffer.SetCounterValue(0);
 

@@ -60,13 +60,16 @@ struct StickynessRequest
 
 // --- Rigid Body structs ---
 
-struct RBData 
+struct RigidBody 
 {
     float2 pos;
     float2 vel;
     float2 nextPos;
     float2 nextVel;
+    float rot; // (radians)
+    float rotVel; // (radians / second)
     float mass; // 0 -> Stationary
+    float gravity;
     float maxRadiusSqr;
     int startIndex;
     int endIndex;
