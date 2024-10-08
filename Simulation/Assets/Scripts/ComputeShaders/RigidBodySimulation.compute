@@ -1,7 +1,117 @@
-#pragma kernel ApplyLocalAngularRotation // 0
+#pragma kernel SimulateRB_RB // 0
+#pragma kernel DetectParticleRBCollisions // 1
+// #pragma kernel AdjustRigidBodies // (2)
+#pragma kernel AdjustParticles // 2 (3)
 
-[numthreads(512,1,1)]
-void ApplyLocalAngularRotation (uint3 id : SV_DispatchThreadID)
+#include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
+#include "DataTypes.hlsl"
+#include "Constants.hlsl"
+
+const uint Width;
+const uint Height;
+const float BorderPadding;
+
+const uint NumRigidBodies;
+const uint NumParticles;
+
+// Per-timestep-set constants
+const float DeltaTime;
+
+StructuredBuffer<PType> PTypes;
+RWStructuredBuffer<PData> PDatas;
+
+RWStructuredBuffer<RigidBody> RigidBodies;
+StructuredBuffer<RBVector> RBVectors;
+
+bool IsNearBoundary(float2 pos, float maxRadiusDstSqr)
+{
+    float maxRadiusDst = sqrt(maxRadiusDstSqr);
+
+    // Check if the rigid body is near any boundary
+    return pos.x - maxRadiusDst < BorderPadding  // Near left boundary
+        || pos.x + maxRadiusDst > Width - BorderPadding  // Near right boundary
+        || pos.y - maxRadiusDst < BorderPadding  // Near bottom boundary
+        || pos.y + maxRadiusDst > Height - BorderPadding;  // Near top boundary
+}
+
+void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax)
+{
+    // Avoid doing double vertex data fetches (when checking lines)!!!
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
+    {
+        float2 localVec = RBVectors[vecIndex].pos + rb.pos;
+
+        rotate(localVec, rb.rot);
+
+        boundsMin = min(boundsMin, localVec);
+        boundsMax = max(boundsMax, localVec);
+    }
+}
+
+[numthreads(TN_RBS1,1,1)]
+void SimulateRB_RB (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumRigidBodies) return;
+    uint i = id.x;
+
+    RigidBody rb = RigidBodies[i];
+
+    // Gravity
+    rb.vel -= float2(0, rb.gravity * DeltaTime);
+
+    // Update position & rotation
+    rb.pos += rb.vel * DeltaTime;
+    rb.rot += rb.rotVel * DeltaTime;
+
+    float bounciness = 0.5;
+
+    // Make sure rigid body is inside simulation bounds
+    if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
+    {
+        float2 boundsMin = float2(1.#INF, 1.#INF);
+        float2 boundsMax = float2(-1.#INF, -1.#INF);
+        GetRBBounds(rb, boundsMin, boundsMax);
+
+        // X-axis collision
+        if (boundsMin.x < BorderPadding)
+        {
+            rb.pos.x += BorderPadding - boundsMin.x;
+            rb.vel.x = -rb.vel.x * bounciness;
+        }
+        else if (boundsMax.x > Width - BorderPadding)
+        {
+            rb.pos.x -= boundsMax.x - (Width - BorderPadding);
+            rb.vel.x = -rb.vel.x * bounciness;
+        }
+
+        // Y-axis collision
+        if (boundsMin.y < BorderPadding)
+        {
+            rb.pos.y += BorderPadding - boundsMin.y;
+            rb.vel.y = -rb.vel.y * bounciness;
+        }
+        else if (boundsMax.y > Height - BorderPadding)
+        {
+            rb.pos.y -= boundsMax.y - (Height - BorderPadding);
+            rb.vel.y = -rb.vel.y * bounciness;
+        }
+    }
+
+    RigidBodies[i] = rb;
+}
+
+[numthreads(TN_RBS2,1,1)]
+void DetectParticleRBCollisions (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumParticles) return;
+    uint i = id.x;
+}
+
+[numthreads(TN_RBS2,1,1)]
+void AdjustParticles (uint3 id : SV_DispatchThreadID)
 {
 
 }

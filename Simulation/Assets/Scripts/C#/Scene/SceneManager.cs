@@ -89,7 +89,10 @@ public class SceneManager : MonoBehaviour
             vel = rbInput.velocity,
             nextPos = 0,
             nextVel = 0,
+            rot = 0,
+            rotVel = rbInput.rotationVelocity,
             mass = rbInput.isStationary ? 0 : rbInput.mass,
+            gravity = rbInput.gravity,
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex

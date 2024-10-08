@@ -97,7 +97,7 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
             int curChunkX = chunkX + x;
             int curChunkY = chunkY + y;
 
-            if (!ValidChunk(curChunkX, curChunkY)) {continue;}
+            if (!ValidChunk(curChunkX, curChunkY)) continue;
 
             int chunkKey = GetChunkKey(curChunkX, curChunkY);
             int startIndex = StartIndices[chunkKey];
@@ -223,7 +223,7 @@ float2 PressureForce(float densityA, float densityB, float nearDensityA, float n
 
     float avgNearPressure = SharedNearPressure(nearDensityA, nearDensityB, PType_i.NearPressure, PType_otherPIndex.NearPressure);
 
-    if (densityA + densityB == 0) {return float2(0.0, 0.0);}
+    if (densityA + densityB == 0) return float2(0.0, 0.0);
     float2 pressureForce = (avgPressure * pressureGradient + avgNearPressure * nearPressureGradient) / avg(densityA, densityB);
 
     return pressureForce;
@@ -238,7 +238,7 @@ float2 ViscocityForce(float2 lastVelocityA, float2 lastVelocityB, PType  PType_i
 
 float3 InteractionEffects(int pIndex)
 {
-    if (!LMousePressed && !RMousePressed) { return float3(0.0, 0.0, 0.0); }
+    if (!LMousePressed && !RMousePressed) return float3(0.0, 0.0, 0.0);
     int dir = 0;
     if (LMousePressed) {dir = -1;}
     else if (RMousePressed) {dir = 1;}
@@ -247,12 +247,12 @@ float3 InteractionEffects(int pIndex)
 
     float absDst = length(dst);
 
-    if (absDst > MaxInteractionRadius) {return float3(0.0, 0.0, 0.0);}
+    if (absDst > MaxInteractionRadius) return float3(0.0, 0.0, 0.0);
 
     float absInteractionGradient = InteractionInfluence_optimised(absDst, MaxInteractionRadius);
 
     float TemperatureEffect = -dir * InteractionTemperaturePower;
-    if (absDst == 0) {return float3(0.0, 0.0, TemperatureEffect);}
+    if (absDst == 0) return float3(0.0, 0.0, TemperatureEffect);
 
     float2 interactionGradient = normalize(dst) * absInteractionGradient;
 
@@ -278,7 +278,7 @@ float2 StickynessForce(PData  PData_i, PType  PType_i, StickynessRequest  sticky
 
     // If the lenSqr of a vector is 0, normalized(0) does a /0 operation, leading to thread errors
     // Over time, this decreases the amount of available threads, leading to decreased performance!
-    if (dot(stickynessRequest.StickyLineDst, stickynessRequest.StickyLineDst) == 0) { return float2(0, 0); }
+    if (dot(stickynessRequest.StickyLineDst, stickynessRequest.StickyLineDst) == 0) return float2(0, 0);
 
     float2 normDstToLine = normalize(stickynessRequest.StickyLineDst);
     float2 stickynessForce = absStickynessForce * normDstToLine;
@@ -292,7 +292,6 @@ float2 LiquidSpringForce(PType  PType_i, PType  PType_otherPIndex, int pIndex, i
 
     // if spring is not already initialized, initialize a new one
     if (spring.PLinkedA == -1) { spring.PLinkedA = pIndex; spring.PLinkedB = otherPIndex; spring.RestLength = avgInfluenceRadius - 0.1; }
-
 
     // -- Modify spring and perform force calculations (plasticity, elasticity) --
 
@@ -311,11 +310,9 @@ float2 LiquidSpringForce(PType  PType_i, PType  PType_otherPIndex, int pIndex, i
     float absSpringForce = LiquidSpringForceModel(stiffness, spring.RestLength, avgInfluenceRadius, absDst);
     float2 springForce = absSpringForce * normDst;
 
-
     // -- Write new spring data --
 
     ParticleSpringsCombined[springIndex] = spring;
-
 
     // -- Return calculated force --
 
@@ -334,7 +331,7 @@ float TemperatureExchange(float viscocityLaplacian, float TemperatureA, float Te
 void PreCalculations (uint3 id : SV_DispatchThreadID)
 {
     int i = id.x;
-    if (id.x >= (uint)ParticlesNum) { return; }
+    if (id.x >= (uint)ParticlesNum) return;
 
     PDatas[i].PredPosition = PDatas[i].pos + PDatas[i].Velocity * LookAheadFactor;
 
@@ -349,7 +346,7 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
 [numthreads(TN_PS,1,1)]
 void CalculateDensities (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)ParticlesNum) { return; }
+    if (id.x >= (uint)ParticlesNum) return;
     // Index from SpatialLookup to improve memory access coherency
     int i = SpatialLookup[id.x].x;
 
@@ -362,7 +359,7 @@ void CalculateDensities (uint3 id : SV_DispatchThreadID)
 [numthreads(TN_PS,1,1)]
 void PrepSpringData (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)ParticleSpringsCombinedHalfLength) { return; }
+    if (id.x >= (uint)ParticleSpringsCombinedHalfLength) return;
 
     int i = FrameBufferCycle
     ? id.x + ParticleSpringsCombinedHalfLength
@@ -374,17 +371,14 @@ void PrepSpringData (uint3 id : SV_DispatchThreadID)
 [numthreads(TN_PS,1,1)]
 void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)ParticleSpringsCombinedHalfLength) { return; }
+    if (id.x >= (uint)ParticleSpringsCombinedHalfLength) return;
     int i = FrameBufferCycle
     ? id.x
     : id.x + ParticleSpringsCombinedHalfLength;
 
-    // last -> new
-    // this is not a solution for adding springs - default spring data should be set before this shader pass
-
     // B is connected to A
     Spring  lastSpring = ParticleSpringsCombined[i];
-    if (lastSpring.PLinkedA == -1) { return; }
+    if (lastSpring.PLinkedA == -1) return;
     PData  PData_A = PDatas[lastSpring.PLinkedA];
     PData  PData_B = PDatas[lastSpring.PLinkedB];
 

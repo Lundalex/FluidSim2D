@@ -26,7 +26,7 @@ StructuredBuffer<int> StartIndices;
 StructuredBuffer<PType> PTypes;
 StructuredBuffer<PData> PDatas;
 
-StructuredBuffer<RBData> RBDatas;
+StructuredBuffer<RigidBody> RigidBodies;
 StructuredBuffer<RBVector> RBVectors;
 
 bool ValidChunk(int ChunkX, int ChunkY)
@@ -70,11 +70,6 @@ float3 VelocityToRGB(float2 velocity, float g)
     return float3(r, g, b);
 }
 
-uint WrapUint(uint a, uint start, uint end)
-{
-    return start + (a - start) % (end - start);
-}
-
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
@@ -91,19 +86,19 @@ void Render2D(uint3 id : SV_DispatchThreadID)
     float2 rayCoordB = float2(Width, rayY);
     for (int RBIndex = 0; RBIndex < RBodiesNum; RBIndex++)
     {
-        RBData RBData_i = RBDatas[RBIndex];
-        float dstSqr = dot2(pixelPos - RBData_i.pos);
-        if (dstSqr > RBData_i.maxRadiusSqr) continue;
+        RigidBody rb = RigidBodies[RBIndex];
+        float dstSqr = dot2(pixelPos - rb.pos);
+        if (dstSqr > rb.maxRadiusSqr) continue;
 
-        float2 localRayCoordA = rayCoordA - RBData_i.pos;
-        float2 localRayCoordB = rayCoordB - RBData_i.pos;
-        float localRayPosX = pixelPos.x - RBData_i.pos.x;
-        uint startIndex = RBData_i.startIndex;
-        uint endIndex = RBData_i.endIndex;
-        for (uint lineIndex = startIndex; lineIndex < endIndex; lineIndex++)
+        float2 localRayCoordA = rayCoordA - rb.pos;
+        float2 localRayCoordB = rayCoordB - rb.pos;
+        float localRayPosX = pixelPos.x - rb.pos.x;
+        uint startIndex = rb.startIndex;
+        uint endIndex = rb.endIndex;
+        for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
         {
-            float2 localVecA = RBVectors[lineIndex].pos;
-            float2 localVecB = RBVectors[WrapUint(lineIndex+1, startIndex, endIndex)].pos;
+            float2 localVecA = RBVectors[vecIndex].pos;
+            float2 localVecB = RBVectors[wrapUint(vecIndex+1, startIndex, endIndex)].pos;
             if (CheckLinesIntersect(localVecA, localVecB, localRayCoordA, localRayCoordB))
             { 
                 if (LineIntersectionPoint(localVecA, localVecB, localRayCoordA, localRayCoordB).x < localRayPosX)

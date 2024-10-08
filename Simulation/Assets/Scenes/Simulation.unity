@@ -238,7 +238,7 @@ MonoBehaviour:
   LookAheadFactor: 0.017
   StateThresholdPadding: 3
   Viscosity: 1.5
-  SpringStiffness: 198.72
+  SpringStiffness: 1
   TolDeformation: 0
   Plasticity: 3
   Gravity: 5
@@ -462,12 +462,24 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.gravity
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.velocity.y
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: MaxGizmosIterations
       value: 10000
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.isStationary
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.rotationVelocity
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size
@@ -744,7 +756,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: DoDrawBody
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: pTypeIndex

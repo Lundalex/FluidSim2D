@@ -245,13 +245,13 @@ float2 dstToLineSegment(float2 A, float2 B, float2 P)
     float AP_dot_AB = dot(AP, AB);
     float t = AP_dot_AB / ABLengthSquared;
 
-    // Clamp t to the closest point on the line segment
+    // Clamp t to the closest point2 on the line segment
     t = clamp(t, 0.0, 1.0);
 
-    // Closest point on line segment to P
+    // Closest point2 on line segment to P
     float2 closestPoint = A + t * AB;
 
-    // Return the distance vector from P to the closest point
+    // Return the distance vector from P to the closest point2
     return closestPoint - P;
 }
 
@@ -263,4 +263,18 @@ bool SideOfLine(float2 A, float2 B, float2 dstVec) {
     // True if P is on the left side of the line from A to B
     // This means all lines only "block" one side
     return crossProduct > 0;
+}
+
+uint wrapUint(uint a, uint start, uint end)
+{
+    return start + (a - start) % (end - start);
+}
+
+void rotate(inout float2 point2, float angle)
+{
+    float cosTheta = cos(angle);
+    float sinTheta = sin(angle);
+
+    point2 = float2(point2.x * cosTheta - point2.y * sinTheta,
+    			  point2.x * sinTheta + point2.y * cosTheta);
 }
