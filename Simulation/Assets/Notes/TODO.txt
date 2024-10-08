@@ -1,3 +1,21 @@
 Make the simulation look the same in the editor as during runtime.
 
 Rename PData properties with shortened versions, with first character in lower case
+
+Sudo code for RB-P simulation:
+
+Simulate P-P
+Simulate RB-RB
+
+Simulate RB-P:
+- Kernel 1:
+  - For each particle, for each rigidbody, if in range of maxRadius, bool CHECKCOLLISION
+  CHECKCOLLISION -> return (check if inside (ray-line even/odd test))
+  - If (inside): mark particle with flag data, and add impulse to RB (interlocked add + groupshared)
+- Kernel 2:
+  - Move rigid bodies
+- Kernel 3:
+  - Recalculate flagged particles' positions as the closest intersection point for each intersection
+Possible optimisations:
+- Avoid checking for each particle. Instead, use some tree structure
+- Tree-travelsal for inside/outside test (probably useful for RB-RB simula4tion as well)
