@@ -213,10 +213,10 @@ public class Main : MonoBehaviour
                 //     oldRbSimShader.SetInt("DoCalcStickyRequests", 0);
                 // }
 
+                RunRbSimShader();
+
                 int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
                 if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
-
-                RunRbSimShader();
                 
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);

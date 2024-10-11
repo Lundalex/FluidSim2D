@@ -73,7 +73,7 @@ public class SceneManager : MonoBehaviour
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
             Vector2[] points = GetTransformedPoints(rigidBody, offset, transformedRBPos);
 
-            BalanceRB(ref points, transformedRBPos);
+            BalanceRB(ref points, ref transformedRBPos);
 
             // Initialize the rigid body data
             allRBData.Add(InitRBData(rigidBody.RBInput, GetMaxRadiusSqr(points), allRBVectors.Count, allRBVectors.Count + points.Length, transformedRBPos));
@@ -102,7 +102,7 @@ public class SceneManager : MonoBehaviour
         return maxRadiusSqr;
     }
 
-    public void BalanceRB(ref Vector2[] points, Vector2 rbPos)
+    public void BalanceRB(ref Vector2[] points, ref Vector2 rbPos)
     {
         // Find rigid body bounds
         Vector2 min = Func.MinVector2(points);
@@ -111,6 +111,7 @@ public class SceneManager : MonoBehaviour
         Vector2 offsetFromBalancedPos = (min + max) * 0.5f;
 
         // Set new positions
+        rbPos += offsetFromBalancedPos;
         for (int i = 0; i < points.Length; i++)
         {
             points[i] -= offsetFromBalancedPos;

@@ -179,28 +179,107 @@ RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
     }
 
     rbHitInfo.dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
+    rbHitInfo.lineVec = normalize(rbHitInfo.lineVec);
 
     return rbHitInfo;
 }
 
-float3 ResolveCollision(inout PData pData, RigidBody rb)
+RBHitInfo RayRBDstHitInfo(float2 pPos, RigidBody rb)
 {
-    RBHitInfo rbHitInfo = RayRBIntersectHitInfo(pData.pos, normalize(pData.Velocity), rb);
+    // Keep the last vector stored to avoid redundant data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+    RBHitInfo rbHitInfo = InitRBHitInfo();
+
+    float minDstSqr = 1.#INF;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        float2 dst = DstToLineSegment(lastVec.pos + rb.pos, newVec.pos + rb.pos, pPos);
+
+        float dstSqr = dot2(dst);
+        if (dstSqr < minDstSqr)
+        {
+            minDstSqr = dstSqr;
+            rbHitInfo.hitPoint = pPos + dst;
+            rbHitInfo.lineVec = newVec.pos - lastVec.pos;
+        }
+
+        lastVec = newVec;
+    }
+
+    rbHitInfo.dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
+    rbHitInfo.lineVec = normalize(rbHitInfo.lineVec);
+
+    return rbHitInfo;
+}
+
+void SetPosWithSafeGuards(inout float2 pos, float2 newPos, float2 vec)
+{
+    float diffThreshold = 1.0;
+
+    float sqrDst = dot2(newPos - pos);
+    if (sqrDst < diffThreshold)
+    {
+        float2 epsilonOffset = vec * 0.1;
+        pos = newPos + epsilonOffset;
+    }
+}
+
+float3 ResolveCollisionAdvanced(inout PData pData, RigidBody rb)
+{
+    EnsureNonZero(pData.Velocity);
+
+    RBHitInfo rbHitInfo = RayRBDstHitInfo(pData.pos, rb);
 
     float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
 
     // Relative velocity between the particle and the rigid body
     float2 diffVel = pData.Velocity - rb.vel;
-    float2 mirrorDiffVel = -reflect(diffVel, perpNormLineVec);
+    float2 mirrorDiffVel = reflect(diffVel, perpNormLineVec);
 
     float2 impulse = (mirrorDiffVel - diffVel) * rb.elasticity;
 
     // Update the particle's velocity
-    // pData.Velocity += impulse; // / pData.mass NW
-    pData.Velocity = normalize(perpNormLineVec)*10;
+    pData.Velocity += impulse; // / pData.mass
 
     float2 collisionPoint = rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
-    pData.pos = collisionPoint;
+    SetPosWithSafeGuards(pData.pos, collisionPoint, perpNormLineVec);
+
+    // Normalized relative collision position
+    float2 relCollPos = collisionPoint - rb.pos;
+    float2 normRelCollPos = relCollPos.x > EPSILON && relCollPos.y > EPSILON ? normalize(relCollPos) : float2(0, 0);
+
+    // Perpendicular to the normalized relative collision position
+    float2 perpNormLocalCollissionPos = float2(normRelCollPos.y, -normRelCollPos.x);
+
+    float2 centerImpulse = dot(normRelCollPos, -impulse) * normRelCollPos;
+    float rotImpulse = dot(-perpNormLocalCollissionPos, -impulse);
+
+    return float3(centerImpulse.x, centerImpulse.y, rotImpulse);
+}
+
+float3 ResolveCollisionSimple(inout PData pData, RigidBody rb)
+{
+    RBHitInfo rbHitInfo = RayRBDstHitInfo(pData.pos, rb);
+
+    float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
+
+    // Relative velocity between the particle and the rigid body
+    float2 relPos = pData.Velocity - rb.vel;
+    float2 mirrorRelPos = reflect(relPos, perpNormLineVec);
+
+    float2 newPVel = mirrorRelPos * rb.elasticity;
+    float2 velDiff = newPVel - pData.Velocity;
+    float2 impulse = velDiff;
+
+    // Update the particle's velocity
+    pData.Velocity = newPVel; // / pData.mass
+
+    float2 collisionPoint = rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
+    SetPosWithSafeGuards(pData.pos, collisionPoint, perpNormLineVec);
 
     // Normalized relative collision position
     float2 relCollPos = collisionPoint - rb.pos;
@@ -242,7 +321,7 @@ void SimulateRB_P (uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, u
 
             if (isInside)
             {
-                float3 combinedImpulse = ResolveCollision(pData, rb);
+                float3 combinedImpulse = ResolveCollisionSimple(pData, rb);
                 rbImpulses[groupIndex] = InitImpulseData(combinedImpulse, rbIndex);
                 anyCollisionInGroup = true;
             }
