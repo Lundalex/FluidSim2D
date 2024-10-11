@@ -6,10 +6,10 @@
 #pragma kernel UpdatePositions // 5
 #pragma kernel ConsumeStickynessRequests // 6
 
-#include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
+#include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 // Constants
 const int2 ChunksNum;
@@ -47,17 +47,17 @@ const bool LMousePressed;
 StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 StructuredBuffer<int> StartIndices;
 
-RWStructuredBuffer<Spring > ParticleSpringsCombined; // Buffer_A / Buffer_B
+RWStructuredBuffer<Spring> ParticleSpringsCombined; // Buffer_A / Buffer_B
+
+RWStructuredBuffer<PType> PTypes;
+RWStructuredBuffer<PData> PDatas;
 
 const bool FrameBufferCycle;
 StructuredBuffer<int2> SpringCapacities; // [](baseChunkCapacity, neighboorChunksCapacity)
 StructuredBuffer<int> SpringStartIndices_dbA; // Result A
 StructuredBuffer<int> SpringStartIndices_dbB; // Result B
 
-RWStructuredBuffer<PType> PTypes;
-RWStructuredBuffer<PData> PDatas;
-
- StructuredBuffer<StickynessRequest > SortedStickyRequests;
+StructuredBuffer<StickynessRequest > SortedStickyRequests;
 
 bool ValidChunk(int ChunkX, int ChunkY)
 {
@@ -379,8 +379,8 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
     // B is connected to A
     Spring  lastSpring = ParticleSpringsCombined[i];
     if (lastSpring.PLinkedA == -1) return;
-    PData  PData_A = PDatas[lastSpring.PLinkedA];
-    PData  PData_B = PDatas[lastSpring.PLinkedB];
+    PData PData_A = PDatas[lastSpring.PLinkedA];
+    PData PData_B = PDatas[lastSpring.PLinkedB];
 
     float2 PosDiff = PData_A.pos - PData_B.pos;
     float absPosDiffSqr = dot(PosDiff, PosDiff);
@@ -440,12 +440,12 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
 [numthreads(TN_PS,1,1)]
 void ParticleForces (uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)ParticlesNum) { return; }
+    if (id.x >= (uint)ParticlesNum) return;
     // Index from SpatialLookup to improve memory access coherency
     int i = SpatialLookup[id.x].x;
 
-    PData  PData_i = PDatas[i];
-    PType  PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
+    PData PData_i = PDatas[i];
+    PType PType_i = PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)];
     int pOrder = Extract_POrder(PData_i.LastChunkKey_PType_POrder);
     int lastChunkKey = Extract_LastChunkKey(PData_i.LastChunkKey_PType_POrder);
     float startTemperature = PData_i.Temperature;

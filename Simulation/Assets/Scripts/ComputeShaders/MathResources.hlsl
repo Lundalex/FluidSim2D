@@ -1,5 +1,6 @@
 static const float PI = 3.14159;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
+static const float EPSILON = 0.00001;
 
 
 // -- Optimised SPH kernel functions --
@@ -8,63 +9,69 @@ static const float SmoothViscosityLaplacianFactor = 45 / PI;
 // Using a fast sqrt() had worse performance results than the regular sqrt()
 float InteractionInfluence_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
-		return sqrt(radius - dst);
+		result = sqrt(radius - dst);
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquid_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
         float dstR_1 = 1 - dstR;
-		return dstR_1 * dstR_1;
+		result = dstR_1 * dstR_1;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidNear_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
         float dstR_1 = 1 - dstR;
-		return dstR_1 * dstR_1 * dstR_1;
+		result = dstR_1 * dstR_1 * dstR_1;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidDer_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
-		return -2 * (1 - dstR) / radius;
+		result = -2 * (1 - dstR) / radius;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidNearDer_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
         float dstR_1 = 1 - dstR;
-		return -3 * dstR_1 * dstR_1 / radius;
+		result = -3 * dstR_1 * dstR_1 / radius;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothViscosityLaplacian_optimised(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
-		return SmoothViscosityLaplacianFactor * (radius - dst) / pow(radius, 6);
+		result = SmoothViscosityLaplacianFactor * (radius - dst) / pow(radius, 6);
 	}
-	return 0;
+	return result;
 }
 
 
@@ -72,61 +79,66 @@ float SmoothViscosityLaplacian_optimised(float dst, float radius)
 
 float InteractionInfluence(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
-		return sqrt(radius - dst);
+		result = sqrt(radius - dst);
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquid(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
-		return (1 - dstR)*(1 - dstR);
+		result = (1 - dstR)*(1 - dstR);
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidDer(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
-		return -2 * (1 - dstR) / radius;
+		result = -2 * (1 - dstR) / radius;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidNear(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
-		return (1 - dstR)*(1 - dstR)*(1 - dstR);
+		result = (1 - dstR)*(1 - dstR)*(1 - dstR);
 	}
-	return 0;
+	return result;
 }
 
 float SmoothLiquidNearDer(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
         float dstR = dst / radius;
-		return -3 * (1 - dstR)*(1 - dstR) / radius;
+		result = -3 * (1 - dstR)*(1 - dstR) / radius;
 	}
-	return 0;
+	return result;
 }
 
 float SmoothViscosityLaplacian(float dst, float radius)
 {
+	float result = 0;
 	if (dst < radius)
 	{
-	    float radius6 = radius*radius*radius*radius*radius*radius;
-		return 45 / (PI * radius6) * (radius - dst);
+		result = 45 / (PI * pow(radius, 6)) * (radius - dst);
 	}
-	return 0;
+	return result;
 }
 
 
@@ -215,7 +227,8 @@ bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
     return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
 }
 
-float2 LineIntersectionPoint(float2 A, float2 B, float2 C, float2 D) {
+float2 LineIntersectionPoint(float2 A, float2 B, float2 C, float2 D)
+{
     float a1 = B.y - A.y;
     float b1 = A.x - B.x;
     float c1 = a1 * A.x + b1 * A.y;
@@ -225,17 +238,16 @@ float2 LineIntersectionPoint(float2 A, float2 B, float2 C, float2 D) {
     float c2 = a2 * C.x + b2 * C.y;
 
     float delta = a1 * b2 - a2 * b1;
-    if (delta == 0) {
-        // return float2(0, 0);
-		delta = 0.01;
-    }
 
-    float x = (b2 * c1 - b1 * c2) / delta;
-    float y = (a1 * c2 - a2 * c1) / delta;
+	// If there are no intersections, signal an error
+	bool validHit = delta != 0;
+
+    float x = validHit ? (b2 * c1 - b1 * c2) / delta : 1.#INF;
+    float y = validHit ? (a1 * c2 - a2 * c1) / delta : 1.#INF;
     return float2(x, y);
 }
 
-float2 dstToLineSegment(float2 A, float2 B, float2 P)
+float dstToLineSegment(float2 A, float2 B, float2 P)
 {
     float2 AB = B - A;
     float2 AP = P - A;
@@ -252,7 +264,39 @@ float2 dstToLineSegment(float2 A, float2 B, float2 P)
     float2 closestPoint = A + t * AB;
 
     // Return the distance vector from P to the closest point2
-    return closestPoint - P;
+    return dot2(closestPoint - P);
+}
+
+float Cross2D(float2 a, float2 b)
+{
+    return a.x * b.y - a.y * b.x;
+}
+
+float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
+{
+    float2 r = dir;          // Direction vector of the ray
+    float2 s = B - A;        // Direction vector of the line segment
+    float2 qp = A - pos;     // Vector from ray origin to segment start point
+
+    float r_cross_s = Cross2D(r, s);
+    float qp_cross_r = Cross2D(qp, r);
+
+    // Check if lines are parallel (r_cross_s == 0)
+    if (abs(r_cross_s) < 1e-6)
+    {
+        return 1.#INF; // No intersection, lines are parallel
+    }
+
+    float t = Cross2D(qp, s) / r_cross_s; // Distance along the ray
+    float u = Cross2D(qp, r) / r_cross_s; // Parameter along the segment
+
+    // Check if intersection occurs within the ray and the segment
+    if (t >= 0 && u >= 0 && u <= 1)
+    {
+        return t; // Distance to intersection point along the ray
+    }
+
+    return 1.#INF; // No valid intersection
 }
 
 bool SideOfLine(float2 A, float2 B, float2 dstVec) {

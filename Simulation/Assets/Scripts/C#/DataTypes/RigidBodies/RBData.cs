@@ -10,6 +10,7 @@ public struct RBData
     public float rotVel; // (radians / second)
     public float mass; // 0 -> Stationary
     public float gravity;
+    public float elasticity;
     public float maxRadiusSqr;
     public int startIndex;
     public int endIndex;

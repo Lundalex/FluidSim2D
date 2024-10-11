@@ -70,11 +70,80 @@ struct RigidBody
     float rotVel; // (radians / second)
     float mass; // 0 -> Stationary
     float gravity;
+    float elasticity;
     float maxRadiusSqr;
     int startIndex;
     int endIndex;
 };
+
 struct RBVector 
 {
     float2 pos;
 };
+
+struct Ray
+{
+    float2 pos;
+    float2 dir;
+    float2 invDir;
+};
+
+struct RBHitInfo
+{
+    float dst;
+    float2 hitPoint;
+    float2 lineVec;
+};
+
+struct ImpulseData
+{
+    float2 centerImpulse;
+    float rotImpulse;
+    int rbIndex;
+};
+
+Ray InitRay()
+{
+    Ray ray;
+    ray.pos = 0;
+    ray.dir = 0;
+    ray.invDir = 0;
+}
+
+Ray InitRay(float2 pos, float2 dir)
+{
+    Ray ray;
+    ray.pos = pos;
+    ray.dir = dir;
+    ray.invDir = 1 / dir;
+}
+
+RBHitInfo InitRBHitInfo()
+{
+    RBHitInfo rbHitInfo;
+    rbHitInfo.dst = 1.#INF;
+    rbHitInfo.hitPoint = 0;
+    rbHitInfo.lineVec = 0;
+
+    return rbHitInfo;
+}
+
+RBHitInfo InitRBHitInfo(float dst, float2 hitPoint, float2 lineVec)
+{
+    RBHitInfo rbHitInfo;
+    rbHitInfo.dst = dst;
+    rbHitInfo.hitPoint = hitPoint;
+    rbHitInfo.lineVec = lineVec;
+
+    return rbHitInfo;
+}
+
+ImpulseData InitImpulseData(float3 combinedImpulse, int rbIndex)
+{
+    ImpulseData impulseData;
+    impulseData.centerImpulse = combinedImpulse.xy;
+    impulseData.rotImpulse = combinedImpulse.z;
+    impulseData.rbIndex = rbIndex;
+
+    return impulseData;
+}
