@@ -1,6 +1,6 @@
 static const float PI = 3.14159;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
-static const float EPSILON = 0.000000001;
+static const float EPSILON = 0.0001;
 
 
 // -- Optimised SPH kernel functions --
@@ -259,7 +259,7 @@ float2 LineIntersectionPoint(float2 r0, float2 r1, float2 a, float2 b)
 }
 
 
-float dstToLineSegment(float2 A, float2 B, float2 P)
+float DstToLineSegment(float2 A, float2 B, float2 P)
 {
     float2 AB = B - A;
     float2 AP = P - A;
@@ -324,6 +324,12 @@ bool SideOfLine(float2 A, float2 B, float2 dstVec) {
 uint wrapUint(uint a, uint start, uint end)
 {
     return start + (a - start) % (end - start);
+}
+
+void EnsureNonZero(inout float2 a)
+{
+    a.x = (a.x > 0 ? 1 : -1) * max(abs(a.x), EPSILON);
+    a.y = (a.y > 0 ? 1 : -1) * max(abs(a.y), EPSILON);
 }
 
 float2 rotate(float2 point2, float angle)

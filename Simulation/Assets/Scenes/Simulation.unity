@@ -226,18 +226,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f20c516896de6d941af0611e4bca0081, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxParticlesNum: 100
+  MaxParticlesNum: 5000
   StartTraversedChunksCount: 80000
   MaxInfluenceRadius: 2
   TargetDensity: 2
-  PressureMultiplier: 0
-  NearPressureMultiplier: 0
+  PressureMultiplier: 3000
+  NearPressureMultiplier: 12
   Damping: 0.7
   PassiveDamping: 0
   RbElasticity: 0.645
   LookAheadFactor: 0.017
   StateThresholdPadding: 3
-  Viscosity: 0
+  Viscosity: 1.5
   SpringStiffness: 1
   TolDeformation: 0
   Plasticity: 3
@@ -467,7 +467,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.elasticity
-      value: 0.8
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.velocity.y
