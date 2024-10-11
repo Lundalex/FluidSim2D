@@ -15,10 +15,10 @@
 #pragma kernel PopulateSortedStickyRequests // 9
 #pragma kernel SRSortIteration // 10
 
-#include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
+#include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 

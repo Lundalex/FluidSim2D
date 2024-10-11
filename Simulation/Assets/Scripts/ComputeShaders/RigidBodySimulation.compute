@@ -1,12 +1,10 @@
 #pragma kernel SimulateRB_RB // 0
-#pragma kernel DetectParticleRBCollisions // 1
-// #pragma kernel AdjustRigidBodies // (2)
-#pragma kernel AdjustParticles // 2 (3)
+#pragma kernel SimulateRB_P // 1
 
-#include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
+#include "MathResources.hlsl"
+#include "CompositionResources.hlsl"
 
 const uint Width;
 const uint Height;
@@ -18,6 +16,8 @@ const uint NumParticles;
 // Per-timestep-set constants
 const float DeltaTime;
 
+// Particles - Buffers
+StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
 StructuredBuffer<PType> PTypes;
 RWStructuredBuffer<PData> PDatas;
 
@@ -37,7 +37,6 @@ bool IsNearBoundary(float2 pos, float maxRadiusDstSqr)
 
 void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax)
 {
-    // Avoid doing double vertex data fetches (when checking lines)!!!
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
     for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
@@ -103,15 +102,193 @@ void SimulateRB_RB (uint3 id : SV_DispatchThreadID)
     RigidBodies[i] = rb;
 }
 
-[numthreads(TN_RBS2,1,1)]
-void DetectParticleRBCollisions (uint3 id : SV_DispatchThreadID)
+void AddImpulseData(inout ImpulseData a, ImpulseData b, int rbIndex)
 {
-    if (id.x >= NumParticles) return;
-    uint i = id.x;
+    if (a.rbIndex == rbIndex)
+    {
+        a.centerImpulse += b.centerImpulse;
+        a.rotImpulse += b.rotImpulse;
+    }
+    else
+    {
+        a.centerImpulse = b.centerImpulse;
+        a.rotImpulse = b.rotImpulse;
+        a.rbIndex = rbIndex;
+    }
 }
 
-[numthreads(TN_RBS2,1,1)]
-void AdjustParticles (uint3 id : SV_DispatchThreadID)
+bool RayRBIntersect(float2 pPos, RigidBody rb)
 {
+    // Keep the last vector stored to avoid unnecessary data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+    float2 rayEnd = float2(1.#INF, pPos.y);
 
+    uint intersections = 0;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos, newVec.pos);
+
+        if (intersects) intersections++;
+
+        lastVec = newVec;
+    }
+
+    bool isInside = intersections % 2 == 1;
+
+    return isInside;
+}
+
+RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
+{
+    // Keep the last vector stored to avoid redundant data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+    RBHitInfo rbHitInfo = InitRBHitInfo();
+    float2 rayEnd = float2(1.#INF, pPos.y);
+
+    float minDstSqr = 1.#INF;
+    float2 pos_vel_1000 = pPos + pDir * 1000;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos, newVec.pos);
+
+        if (intersects)
+        {
+            float2 hitPoint = LineIntersectionPoint(pPos, pos_vel_1000, lastVec.pos, newVec.pos);
+            if (all(hitPoint) != 1.#INF)
+            {
+                float dstSqr = dot2(pPos - hitPoint);
+                if (dstSqr < minDstSqr)
+                {
+                    minDstSqr = dstSqr;
+                    rbHitInfo.hitPoint = hitPoint;
+                    rbHitInfo.lineVec = newVec.pos - lastVec.pos;
+                }
+            }
+        }
+
+        lastVec = newVec;
+    }
+
+    rbHitInfo.dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
+
+    return rbHitInfo;
+}
+
+float3 ResolveCollision(inout PData pData, RigidBody rb)
+{
+    RBHitInfo rbHitInfo = RayRBIntersectHitInfo(pData.PredPosition, normalize(pData.Velocity), rb);
+
+    float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
+
+    // Relative velocity between the particle and the rigid body
+    float2 diffVel = pData.Velocity - rb.vel;
+    float2 mirrorDiffVel = -reflect(diffVel, perpNormLineVec);
+
+    float2 impulse = (mirrorDiffVel - diffVel) * rb.elasticity;
+
+    // Update the particle's velocity
+    pData.Velocity += impulse; // / pData.mass
+
+    float2 collisionPoint = 0; // rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
+    pData.pos = collisionPoint;
+
+    // Normalized relative collision position
+    float2 relCollPos = collisionPoint - rb.pos;
+    float2 normRelCollPos = all(relCollPos) > EPSILON ? normalize(relCollPos) : float2(0, 0);
+
+    // Perpendicular to the normalized relative collision position
+    float2 perpNormLocalCollissionPos = float2(normRelCollPos.y, -normRelCollPos.x);
+
+    float2 centerImpulse = dot(normRelCollPos, -impulse) * normRelCollPos;
+    float rotImpulse = dot(-perpNormLocalCollissionPos, -impulse);
+
+    return float3(centerImpulse.x, centerImpulse.y, rotImpulse);
+}
+
+groupshared bool anyCollisionInGroup;
+groupshared ImpulseData rbImpulses[TN_RBS2];
+[numthreads(TN_RBS2,1,1)]
+void SimulateRB_P (uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+{
+    if (id.x >= NumParticles) return;
+    uint groupIndex = id.x % TN_RBS2;
+    rbImpulses[groupIndex] = InitImpulseData(0, -1);
+
+    uint pIndex = SpatialLookup[id.x].x;
+    PData pData = PDatas[pIndex];
+
+    for (int rbIndex = 0; rbIndex < (int)NumRigidBodies; rbIndex++)
+    {
+        if (groupIndex == 0) anyCollisionInGroup = false;
+
+        GroupMemoryBarrierWithGroupSync();
+
+        RigidBody rb = RigidBodies[rbIndex];
+
+        // Check P_RB collision
+        if (dot2(rb.pos - pData.pos) <= rb.maxRadiusSqr)
+        {
+            bool isInside = RayRBIntersect(pData.pos, rb);
+
+            if (isInside)
+            {
+                pData.Velocity += DeltaTime * 100! ! ;
+
+                float3 combinedImpulse = ResolveCollision(pData, rb);
+                rbImpulses[groupIndex] = InitImpulseData(combinedImpulse, rbIndex);
+                anyCollisionInGroup = true;
+            }
+        }
+
+        GroupMemoryBarrierWithGroupSync();
+
+        // Sum up all rb impulses from the local thread group
+        if (anyCollisionInGroup)
+        {
+            // Sum up group shared values
+            for (uint offset = TN_RBS2 / 2; offset > 0; offset /= 2)
+            {
+                GroupMemoryBarrierWithGroupSync();
+
+                if (groupIndex < offset && groupIndex + offset < TN_RBS2)
+                {
+                    ImpulseData highImpulseData = rbImpulses[groupIndex + offset];
+                    if (highImpulseData.rbIndex == rbIndex)
+                    {
+                        AddImpulseData(rbImpulses[groupIndex], highImpulseData, rbIndex);
+                    }
+                }
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            
+            // Atomically add to rb
+            if (groupIndex == 0)
+            {
+                ImpulseData totImpulseData = rbImpulses[groupIndex];
+
+                if (totImpulseData.rbIndex == rbIndex)
+                {
+                    // // Atomically add to linear velocity
+                    // InterlockedAdd(RigidBodies[rbIndex].vel.x, totImpulseData.centerImpulse.x);
+                    // InterlockedAdd(RigidBodies[rbIndex].vel.y, totImpulseData.centerImpulse.y);
+
+                    // // Atomically add to rotational velocity
+                    // InterlockedAdd(RigidBodies[rbIndex].rotVel, totImpulseData.rotImpulse);
+                }
+            }
+        }
+
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    PDatas[pIndex] = pData;
 }

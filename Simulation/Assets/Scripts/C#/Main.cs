@@ -602,26 +602,9 @@ public class Main : MonoBehaviour
 
     void RunRbSimShader()
     {
-        if (RBVectors.Length > 1 && RBDatas.Length > 0) 
-        {
-            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
+        if (RBVectors.Length > 1 && RBDatas.Length > 0)  ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
 
-            // TraversedChunks_AC_Buffer.SetCounterValue(0);
-
-            // ComputeHelper.DispatchKernel (oldRbSimShader, "PopulateTraversedChunks", Mathf.Max(RBVectors.Length-1, 1), oldRbSimShaderThreadSize);
-
-            // ComputeHelper.GetAppendBufferCountAsync(TraversedChunks_AC_Buffer, count => 
-            // {
-            //     TraversedChunksCount = (int)Math.Ceiling(count * StickynessCapacitySafety);
-            // });
-
-            // if (DoCalcStickyRequests) {
-            //     StickynessReqs_AC_Buffer.SetCounterValue(0);
-            // }
-
-            // ComputeHelper.DispatchKernel (oldRbSimShader, "ResolveLineCollisions", Mathf.Max(TraversedChunksCount, 1), oldRbSimShaderThreadSize);
-            // ComputeHelper.DispatchKernel (oldRbSimShader, "RBForces", Mathf.Max(RBVectors.Length, 1), oldRbSimShaderThreadSize);
-        }
+        if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize2);
     }
 
     void RunRenderShader()

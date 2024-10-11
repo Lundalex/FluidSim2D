@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using Resources;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -15,6 +17,23 @@ public class SceneManager : MonoBehaviour
         bounds.y += maxInfluenceRadius - bounds.y % maxInfluenceRadius;
 
         return (bounds.x, bounds.y);
+    }
+
+    public bool IsPointInsideBounds(Vector2 point)
+    {
+        if (main == null) main = GameObject.Find("Main Camera").GetComponent<Main>();
+
+        sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.BorderPadding;
+        sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.BorderPadding;
+        sceneMax.x = transform.position.x + transform.localScale.x * 0.5f - main.BorderPadding;
+        sceneMax.y = transform.position.y + transform.localScale.y * 0.5f - main.BorderPadding;
+
+        bool isInsideBounds = point.x > sceneMin.x
+                              && point.y > sceneMin.y
+                              && point.x < sceneMax.x
+                              && point.y < sceneMax.y;
+
+        return isInsideBounds;
     }
 
     public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)
@@ -54,6 +73,8 @@ public class SceneManager : MonoBehaviour
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
             Vector2[] points = GetTransformedPoints(rigidBody, offset, transformedRBPos);
 
+            BalanceRB(ref points, transformedRBPos);
+
             // Initialize the rigid body data
             allRBData.Add(InitRBData(rigidBody.RBInput, GetMaxRadiusSqr(points), allRBVectors.Count, allRBVectors.Count + points.Length, transformedRBPos));
             
@@ -64,7 +85,7 @@ public class SceneManager : MonoBehaviour
         return (allRBData.ToArray(), allRBVectors.ToArray());
     }
 
-    public Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
+    private Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
     {
         Vector2[] points = rigidBody.GetComponent<PolygonCollider2D>().points;
 
@@ -73,7 +94,7 @@ public class SceneManager : MonoBehaviour
         return points;
     }
 
-    public float GetMaxRadiusSqr(Vector2[] points)
+    private float GetMaxRadiusSqr(Vector2[] points)
     {
         float maxRadiusSqr = 0;
         foreach (Vector2 point in points) maxRadiusSqr = Mathf.Max(maxRadiusSqr, point.sqrMagnitude);
@@ -81,7 +102,22 @@ public class SceneManager : MonoBehaviour
         return maxRadiusSqr;
     }
 
-    public RBData InitRBData(RBInput rbInput, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
+    public void BalanceRB(ref Vector2[] points, Vector2 rbPos)
+    {
+        // Find rigid body bounds
+        Vector2 min = Func.MinVector2(points);
+        Vector2 max = Func.MaxVector2(points);
+
+        Vector2 offsetFromBalancedPos = (min + max) * 0.5f;
+
+        // Set new positions
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] -= offsetFromBalancedPos;
+        }
+    }
+
+    private RBData InitRBData(RBInput rbInput, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
     {
         return new RBData
         {
@@ -93,28 +129,12 @@ public class SceneManager : MonoBehaviour
             rotVel = rbInput.rotationVelocity,
             mass = rbInput.isStationary ? 0 : rbInput.mass,
             gravity = rbInput.gravity,
+            elasticity = rbInput.elasticity,
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex
         };
     }
 
-    public Vector2 GetBoundsOffset() => new(transform.localScale.x * 0.5f - transform.position.x, transform.localScale.y * 0.5f - transform.position.y);
-
-    public bool IsPointInsideBounds(Vector2 point)
-    {
-        if (main == null) main = GameObject.Find("Main Camera").GetComponent<Main>();
-
-        sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.BorderPadding;
-        sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.BorderPadding;
-        sceneMax.x = transform.position.x + transform.localScale.x * 0.5f - main.BorderPadding;
-        sceneMax.y = transform.position.y + transform.localScale.y * 0.5f - main.BorderPadding;
-
-        bool isInsideBounds = point.x > sceneMin.x
-                              && point.y > sceneMin.y
-                              && point.x < sceneMax.x
-                              && point.y < sceneMax.y;
-
-        return isInsideBounds;
-    }
+    private Vector2 GetBoundsOffset() => new(transform.localScale.x * 0.5f - transform.position.x, transform.localScale.y * 0.5f - transform.position.y);
 }

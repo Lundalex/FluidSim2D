@@ -209,17 +209,21 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
 
-        // StructuredBuffer<PType> PTypes;
-        // RWStructuredBuffer<PData> PDatas;
+        rbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
+
+        rbSimShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
+        rbSimShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
+        rbSimShader.SetBuffer(1, "PDatas", m.PDataBuffer);
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
     {
         rbSimShader.SetInt("Width", m.Width);
         rbSimShader.SetInt("Height", m.Height);
-
         rbSimShader.SetFloat("BorderPadding", m.BorderPadding);
 
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
+        rbSimShader.SetInt("NumParticles", m.ParticlesNum);
     }
 }
