@@ -130,14 +130,14 @@ bool RayRBIntersect(float2 pPos, RigidBody rb)
     {
         RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
 
-        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos, newVec.pos);
+        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
 
         if (intersects) intersections++;
 
         lastVec = newVec;
     }
 
-    bool isInside = intersections % 2 == 1;
+    bool isInside = intersections % 2 == 1; // intersections % 2 == 1;
 
     return isInside;
 }
@@ -147,22 +147,23 @@ RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
     // Keep the last vector stored to avoid redundant data fetches
     RBVector lastVec = RBVectors[rb.startIndex];
     RBHitInfo rbHitInfo = InitRBHitInfo();
-    float2 rayEnd = float2(1.#INF, pPos.y);
+
+    float2 rayStart = pPos - pDir * 1000;
+    float2 rayEnd = pPos + pDir * 1000;
 
     float minDstSqr = 1.#INF;
-    float2 pos_vel_1000 = pPos + pDir * 1000;
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
     for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
     {
         RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
 
-        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos, newVec.pos);
+        bool intersects = CheckLinesIntersect(rayStart, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
 
         if (intersects)
         {
-            float2 hitPoint = LineIntersectionPoint(pPos, pos_vel_1000, lastVec.pos, newVec.pos);
-            if (all(hitPoint) != 1.#INF)
+            float2 hitPoint = LineIntersectionPoint(rayStart, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
+            if (hitPoint.x != 1.#INF && hitPoint.y != 1.#INF)
             {
                 float dstSqr = dot2(pPos - hitPoint);
                 if (dstSqr < minDstSqr)
@@ -184,7 +185,7 @@ RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
 
 float3 ResolveCollision(inout PData pData, RigidBody rb)
 {
-    RBHitInfo rbHitInfo = RayRBIntersectHitInfo(pData.PredPosition, normalize(pData.Velocity), rb);
+    RBHitInfo rbHitInfo = RayRBIntersectHitInfo(pData.pos, normalize(pData.Velocity), rb);
 
     float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
 
@@ -195,14 +196,15 @@ float3 ResolveCollision(inout PData pData, RigidBody rb)
     float2 impulse = (mirrorDiffVel - diffVel) * rb.elasticity;
 
     // Update the particle's velocity
-    pData.Velocity += impulse; // / pData.mass
+    // pData.Velocity += impulse; // / pData.mass NW
+    pData.Velocity = normalize(perpNormLineVec)*10;
 
-    float2 collisionPoint = 0; // rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
+    float2 collisionPoint = rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
     pData.pos = collisionPoint;
 
     // Normalized relative collision position
     float2 relCollPos = collisionPoint - rb.pos;
-    float2 normRelCollPos = all(relCollPos) > EPSILON ? normalize(relCollPos) : float2(0, 0);
+    float2 normRelCollPos = relCollPos.x > EPSILON && relCollPos.y > EPSILON ? normalize(relCollPos) : float2(0, 0);
 
     // Perpendicular to the normalized relative collision position
     float2 perpNormLocalCollissionPos = float2(normRelCollPos.y, -normRelCollPos.x);
@@ -240,8 +242,6 @@ void SimulateRB_P (uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, u
 
             if (isInside)
             {
-                pData.Velocity += DeltaTime * 100! ! ;
-
                 float3 combinedImpulse = ResolveCollision(pData, rb);
                 rbImpulses[groupIndex] = InitImpulseData(combinedImpulse, rbIndex);
                 anyCollisionInGroup = true;

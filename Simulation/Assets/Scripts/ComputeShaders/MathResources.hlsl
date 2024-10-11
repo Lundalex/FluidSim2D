@@ -1,6 +1,6 @@
 static const float PI = 3.14159;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
-static const float EPSILON = 0.00001;
+static const float EPSILON = 0.000000001;
 
 
 // -- Optimised SPH kernel functions --
@@ -227,25 +227,37 @@ bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
     return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
 }
 
-float2 LineIntersectionPoint(float2 A, float2 B, float2 C, float2 D)
+float2 LineIntersectionPoint(float2 r0, float2 r1, float2 a, float2 b)
 {
-    float a1 = B.y - A.y;
-    float b1 = A.x - B.x;
-    float c1 = a1 * A.x + b1 * A.y;
+    float2 s1 = r1 - r0;
+    float2 s2 = b - a;
 
-    float a2 = D.y - C.y;
-    float b2 = C.x - D.x;
-    float c2 = a2 * C.x + b2 * C.y;
+    float denom = (-s2.x * s1.y + s1.x * s2.y);
 
-    float delta = a1 * b2 - a2 * b1;
+    // Check if lines are parallel or coincident
+    if (abs(denom) < EPSILON)
+    {
+        // Lines are parallel or coincident, no intersection
+        return float2(1.#INF, 1.#INF);
+    }
 
-	// If there are no intersections, signal an error
-	bool validHit = delta != 0;
+    float s = (-s1.y * (r0.x - a.x) + s1.x * (r0.y - a.y)) / denom;
+    float t = ( s2.x * (r0.y - a.y) - s2.y * (r0.x - a.x)) / denom;
 
-    float x = validHit ? (b2 * c1 - b1 * c2) / delta : 1.#INF;
-    float y = validHit ? (a1 * c2 - a2 * c1) / delta : 1.#INF;
-    return float2(x, y);
+    // Check if s and t are within the valid range [0,1] for line segments
+    if (s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0)
+    {
+        // Intersection detected
+        float2 intersectionPoint = r0 + t * s1;
+        return intersectionPoint;
+    }
+    else
+    {
+        // No intersection within the line segments
+        return float2(1.#INF, 1.#INF);
+    }
 }
+
 
 float dstToLineSegment(float2 A, float2 B, float2 P)
 {
@@ -282,7 +294,7 @@ float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
     float qp_cross_r = Cross2D(qp, r);
 
     // Check if lines are parallel (r_cross_s == 0)
-    if (abs(r_cross_s) < 1e-6)
+    if (abs(r_cross_s) < EPSILON)
     {
         return 1.#INF; // No intersection, lines are parallel
     }
@@ -314,11 +326,11 @@ uint wrapUint(uint a, uint start, uint end)
     return start + (a - start) % (end - start);
 }
 
-void rotate(inout float2 point2, float angle)
+float2 rotate(float2 point2, float angle)
 {
     float cosTheta = cos(angle);
     float sinTheta = sin(angle);
 
-    point2 = float2(point2.x * cosTheta - point2.y * sinTheta,
-    			  point2.x * sinTheta + point2.y * cosTheta);
+    return float2(point2.x * cosTheta - point2.y * sinTheta,
+                  point2.x * sinTheta + point2.y * cosTheta);
 }

@@ -122,7 +122,7 @@ RBHitInfo InitRBHitInfo()
 {
     RBHitInfo rbHitInfo;
     rbHitInfo.dst = 1.#INF;
-    rbHitInfo.hitPoint = 0;
+    rbHitInfo.hitPoint = 1.#INF;
     rbHitInfo.lineVec = 0;
 
     return rbHitInfo;
