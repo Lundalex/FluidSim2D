@@ -1,0 +1,35 @@
+// Sum up all rb impulses from the local thread group
+if (anyCollisionInGroup)
+{
+    // Sum up group shared values
+    for (uint offset = TN_RBS2 / 2; offset > 0; offset /= 2)
+    {
+        GroupMemoryBarrierWithGroupSync();
+
+        if (groupIndex < offset && groupIndex + offset < TN_RBS2)
+        {
+            ImpulseData highImpulseData = rbImpulses[groupIndex + offset];
+            if (highImpulseData.rbIndex == rbIndex)
+            {
+                AddImpulseData(rbImpulses[groupIndex], highImpulseData, rbIndex);
+            }
+        }
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+    
+    // Atomically add to rb
+    if (groupIndex == 0)
+    {
+        ImpulseData totImpulseData = rbImpulses[groupIndex];
+
+        if (totImpulseData.rbIndex == rbIndex)
+        {
+            RigidBodyImpulses[groupID.x] = totImpulseData.rbIndex == rbIndex ?
+                                                int3(FloatAsInt(totImpulseData.centerImpulse.x),
+                                                    FloatAsInt(totImpulseData.centerImpulse.y),
+                                                    FloatAsInt(totImpulseData.rotImpulse))
+                                                : 1.#INF;
+        }
+    }
+}

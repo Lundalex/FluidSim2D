@@ -1,52 +1,11 @@
-Make the simulation look the same in the editor as during runtime.
+GENERAL TASKS:
+- Make the simulation look the same in the editor as during runtime.
 
-Rename PData properties with shortened versions, with first character in lower case
+- Fix incorrect usage of any() and all() in both 2d and 3d simulations
 
-Sudo code for RB-P simulation:
+TASKS SPECIFIC TO RB_P-SIMULATION:
+- Improve performance of RB_P collision solver function
 
-Simulate P-P
-Simulate RB-RB
+- Fix "teleporting particles" bug
 
-Simulate RB-P:
-- Kernel 1:
-  - For each particle, for each rigidbody, if in range of maxRadius, bool CHECKCOLLISION
-  CHECKCOLLISION -> return (check if inside (ray-line even/odd test))
-  - If (inside): mark particle with flag data, and add impulse to RB (interlocked add + groupshared)
-- Kernel 2:
-  - Move rigid bodies
-- Kernel 3:
-  - Recalculate flagged particles' positions as the closest intersection point for each intersection
-Possible optimisations:
-- Avoid checking for each particle. Instead, use some tree structure
-- Tree-travelsal for inside/outside test (probably useful for RB-RB simula4tion as well)
-
-GROUPSHARED EXAMPLE:
-
-groupshared int localSum[TN_R*TN_R];
-void calculateGroupSum(uint2 id, uint2 TN, float threadVal)
-{
-    uint localIndex = id.x % TN.x + (id.y % TN.y) * TN.x;
-
-    localSum[localIndex] = threadVal;
-
-    GroupMemoryBarrierWithGroupSync();
-
-    // only perform addition for the first thread in the group
-    if (localIndex == 0)
-    {
-        for (int s = 1; s < TN_R*TN_R; s++)
-        {
-            localSum[0] += localSum[s];
-        }
-
-        // use the sum value
-        Result[id.xy] = float4(localSum[0] > 10, localSum[0] > 100, localSum[0] > 100000, 0);
-    }
-}
-
-// Example use:
-calculateGroupSum(id.xy, uint2(TN_R, TN_R), 1.0);
-
-uint2 TN = uint2(TN_R, TN_R);
-uint localIndex = id.x % TN.x + (id.y % TN.y) * TN.x;
-if (localIndex == 0) return; // return for the first thread
+- Fix glitching line in renderer - MAY BE RELATED TO "EXPLODING PARTICLES"

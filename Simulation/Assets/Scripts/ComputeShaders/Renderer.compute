@@ -1,5 +1,7 @@
 #pragma kernel Render2D; // 0
 
+#pragma multi_compile _ DRAW_RB_CENTROIDS
+
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
 #include "DataTypes.hlsl"
@@ -8,11 +10,10 @@
 const float VisualParticleRadii;
 const float RBRenderThickness;
 const int RBVectorNum;
-const int ResolutionX;
-const int ResolutionY;
+const int2 Resolution;
+const float3 BackgroundColor;
 
-const int Width;
-const int Height;
+const int2 BoundsDims;
 const int MaxInfluenceRadius;
 const int2 ChunksNum;
 const int ParticlesNum;
@@ -29,9 +30,14 @@ StructuredBuffer<PData> PDatas;
 StructuredBuffer<RigidBody> RigidBodies;
 StructuredBuffer<RBVector> RBVectors;
 
-bool ValidChunk(int ChunkX, int ChunkY)
+bool ValidChunk(int2 chunk)
 {
-    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
+    return chunk.x >= 0 && chunk.x < ChunksNum.x && chunk.y >= 0 && chunk.y < ChunksNum.y;
+}
+
+int GetChunkKey(int2 chunk)
+{
+    return chunk.y * ChunksNum.x + chunk.x;
 }
 
 float3 TemperatureToRGB(float temperature)
@@ -70,87 +76,97 @@ float3 VelocityToRGB(float2 velocity, float g)
     return float3(r, g, b);
 }
 
+bool RayRBIntersect(float2 pPos, RigidBody rb)
+{
+    // Keep the last vector stored to avoid unnecessary data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+    float2 rayEnd = float2(1.#INF, pPos.y);
+
+    uint intersections = 0;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
+
+        if (intersects) intersections++;
+
+        lastVec = newVec;
+    }
+
+    bool isInside = intersections % 2 == 1; // intersections % 2 == 1;
+
+    return isInside;
+}
+
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
-    float pixelPosX = (float)id.x * (float)Width / (float)ResolutionX;
-    float pixelPosY = (float)id.y * (float)Height / (float)ResolutionY;
-    float2 pixelPos = float2(pixelPosX, pixelPosY);
-    int ChunkX = (int)((float)pixelPos.x / (float)MaxInfluenceRadius);
-    int ChunkY = (int)((float)pixelPos.y / (float)MaxInfluenceRadius);
+    float2 pixelPos = id.xy * BoundsDims / (float2)Resolution;
+    int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
 
     // Render rigid bodies
-    int rayHits = 0;
-    float rayY = pixelPos.y;
-    float2 rayCoordA = float2(0, rayY);
-    float2 rayCoordB = float2(Width, rayY);
-    for (int RBIndex = 0; RBIndex < RBodiesNum; RBIndex++)
+    for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
     {
-        RigidBody rb = RigidBodies[RBIndex];
-        float dstSqr = dot2(pixelPos - rb.pos);
-        if (dstSqr > rb.maxRadiusSqr) continue;
-
-        float2 localRayCoordA = rayCoordA - rb.pos;
-        float2 localRayCoordB = rayCoordB - rb.pos;
-        float localRayPosX = pixelPos.x - rb.pos.x;
-        uint startIndex = rb.startIndex;
-        uint endIndex = rb.endIndex;
-        for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
-        {
-            float2 localVecA = RBVectors[vecIndex].pos;
-            float2 localVecB = RBVectors[wrapUint(vecIndex+1, startIndex, endIndex)].pos;
-            if (CheckLinesIntersect(localVecA, localVecB, localRayCoordA, localRayCoordB))
-            { 
-                if (LineIntersectionPoint(localVecA, localVecB, localRayCoordA, localRayCoordB).x < localRayPosX)
-                {
-                    rayHits++; 
-                }
+        RigidBody rb = RigidBodies[rbIndex];
+        
+        #if DRAW_RB_CENTROIDS
+            if (dot2(pixelPos - rb.pos) < 2.0)
+            {
+                Result[id.xy] = float4(1, 0, 0, 1.0);
+                return;
             }
+        #endif
+
+        if (RayRBIntersect(pixelPos, rb))
+        {
+            Result[id.xy] = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
+            return;
         }
-        if ((uint)rayHits % 2 == 1) { Result[id.xy] = float4(1, 1, 1, 0.0); return; }
     }
 
-    // Render particle liquids
+    // Render particles
+    int2 curChunk;
     float minDst = VisualParticleRadii;
     bool particleFound = false;
     for (int x = -1; x <= 1; x++)
     {
+        curChunk.x = chunk.x + x;
         for (int y = -1; y <= 1; y++)
         {
-            int CurChunkX = ChunkX + x;
-            int CurChunkY = ChunkY + y;
+            curChunk.y = chunk.y + y;
 
-            if (!ValidChunk(CurChunkX, CurChunkY)) continue;
+            if (!ValidChunk(curChunk)) continue;
 
-            int ChunkKey = CurChunkY * ChunksNum.x + CurChunkX;
-            int startIndex = StartIndices[ChunkKey];
+            int chunkKey = GetChunkKey(curChunk);
+            int startIndex = StartIndices[chunkKey];
 
-            int Index = startIndex; 
-            while (Index < ParticlesNum && ChunkKey == SpatialLookup[Index].y)
+            int index = startIndex; 
+            while (index < ParticlesNum && chunkKey == SpatialLookup[index].y)
             {
-                int pIndex = SpatialLookup[Index].x;
-                PData PData_i = PDatas[pIndex];
+                int pIndex = SpatialLookup[index].x;
+                PData pData = PDatas[pIndex];
 
-                float dst = length(pixelPos - PData_i.pos);
-
+                float dst = length(pixelPos - pData.pos);
                 if (dst < minDst)
                 {
                     // visualize velocity / temperature
-                    float3 rgb = VelocityToRGB(PData_i.Velocity, PTypes[Extract_PType(PData_i.LastChunkKey_PType_POrder)].colorG);
-                    // float3 rgb = TemperatureToRGB(PData_i.Temperature);
+                    float3 rgb = VelocityToRGB(pData.vel, PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)].colorG);
+                    // float3 rgb = TemperatureToRGB(pData.temperature);
 
                     Result[id.xy] = float4(rgb.x, rgb.y, rgb.z, 0.0);
                     minDst = dst;
                     particleFound = true;
                 }
 
-                // Increment Index each iteration - Chunk particle search algorithm
-                Index ++;
+                // Increment index each iteration - Chunk particle search algorithm
+                index++;
             }
         }
     }
     if (particleFound) return;
 
-    // Background color is r,g,b,o = 0,0,0,0 (black)
-    Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+    Result[id.xy] = float4(BackgroundColor.x, BackgroundColor.y, BackgroundColor.z, 1.0);
 }

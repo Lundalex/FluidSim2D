@@ -72,9 +72,14 @@ void SwapStickynessRequestStruct(inout StickynessRequest a, inout StickynessRequ
     b = temp;
 }
 
-bool ValidChunk(int ChunkX, int ChunkY)
+bool ValidChunk(int2 chunk)
 {
-    return ChunkX >= 0 && ChunkX < ChunksNum.x && ChunkY >= 0 && ChunkY < ChunksNum.y;
+    return chunk.x >= 0 && chunk.x < ChunksNum.x && chunk.y >= 0 && chunk.y < ChunksNum.y;
+}
+
+int GetChunkKey(int2 chunk)
+{
+    return chunk.y * ChunksNum.x + chunk.x;
 }
 
 int GetChunkKeyFromPosition(float2 pos)
@@ -86,21 +91,21 @@ int GetChunkKeyFromPosition(float2 pos)
 
 int GetNeighboorParticlesNum(int chunkKey)
 {
-    int chunkX = (uint)chunkKey % ChunksNum.x;
-    int chunkY = (int)((uint)chunkKey / ChunksNum.x);
+    int2 chunk = int2((uint)chunkKey % ChunksNum.x, (int)((uint)chunkKey / ChunksNum.x));
 
+    int2 curChunk;
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
     {
-        int curChunkX = chunkX + x;
+        curChunk.x = chunk.x + x;
 
         for (int y = -1; y <= 1; y++)
         {
-            int curChunkY = chunkY + y;
+            curChunk.y = chunk.y + y;
 
-            if (ValidChunk(curChunkX, curChunkY))
+            if (ValidChunk(curChunk))
             {
-                int neighboorChunkKey = curChunkY * ChunksNum.x + curChunkX;
+                int neighboorChunkKey = GetChunkKey(curChunk);
                 neighboorParticlesNum += SpringCapacities[neighboorChunkKey].x;
             }
         }

@@ -1,6 +1,6 @@
 public struct Spring
 {
-    public int PLinkedA;
-    public int PLinkedB;
-    public float RestLength;
+    public int pLinkedA;
+    public int pLinkedB;
+    public float restLength;
 };

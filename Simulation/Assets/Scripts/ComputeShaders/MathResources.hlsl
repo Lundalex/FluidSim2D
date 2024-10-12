@@ -1,7 +1,11 @@
 static const float PI = 3.14159;
-static const float SmoothViscosityLaplacianFactor = 45 / PI;
 static const float EPSILON = 0.0001;
+static const float LARGE_FLOAT = 1000000000.0;
+static const float int_float_precision = 100000.0;
+static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
+#include "RandGen.hlsl"
+#include "StoreFloat.hlsl"
 
 // -- Optimised SPH kernel functions --
 
@@ -187,11 +191,6 @@ float sqr(float a)
 	return a * a;
 }
 
-float rand(float n)
-{
-    return frac(sin(n) * 43758.5453);
-}
-
 float lerp1D(float posA, float posB, float valA, float valB, float targetVal)
 {
     float t = float(targetVal - valA) / float(valB - valA);
@@ -338,5 +337,5 @@ float2 rotate(float2 point2, float angle)
     float sinTheta = sin(angle);
 
     return float2(point2.x * cosTheta - point2.y * sinTheta,
-                  point2.x * sinTheta + point2.y * cosTheta);
+                    point2.x * sinTheta + point2.y * cosTheta);
 }

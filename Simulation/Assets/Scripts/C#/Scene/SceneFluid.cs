@@ -9,6 +9,7 @@ using Unity.Mathematics;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
+    public Color BodyColor;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
@@ -70,15 +71,15 @@ public class SceneFluid : Polygon
     {
         return new PData
         {
-            PredPosition = new float2(0.0f, 0.0f),
-            Position = pos,
-            Velocity = vel,
-            LastVelocity = new float2(0.0f, 0.0f),
-            Density = 0.0f,
-            NearDensity = 0.0f,
-            Temperature = Utils.CelsiusToKelvin(tempCelsius),
-            TemperatureExchangeBuffer = 0.0f,
-            LastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll // flattened equivelant to PType = 1
+            predPos = new float2(0.0f, 0.0f),
+            pos = pos,
+            vel = vel,
+            lastVel = new float2(0.0f, 0.0f),
+            density = 0.0f,
+            nearDensity = 0.0f,
+            temperature = Utils.CelsiusToKelvin(tempCelsius),
+            temperatureExchangeBuffer = 0.0f,
+            lastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll // flattened equivelant to PType = 1
         };
     }
 }

@@ -1,17 +1,24 @@
 #pragma kernel SimulateRB_RB // 0
 #pragma kernel SimulateRB_P // 1
+#pragma kernel UpdateRBVertices // 2
 
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
 
-const uint Width;
-const uint Height;
-const float BorderPadding;
+const uint2 BoundaryDims;
+const float RigidBodyPadding;
 
 const uint NumRigidBodies;
+const uint NumVectors;
 const uint NumParticles;
+
+const float2 MousePos;
+const bool RMousePressed;
+const bool LMousePressed;
+const float RB_MaxInteractionRadius;
+const float RB_InteractionAttractionPower;
 
 // Per-timestep-set constants
 const float DeltaTime;
@@ -22,80 +29,126 @@ StructuredBuffer<PType> PTypes;
 RWStructuredBuffer<PData> PDatas;
 
 RWStructuredBuffer<RigidBody> RigidBodies;
-StructuredBuffer<RBVector> RBVectors;
+RWStructuredBuffer<RBVector> RBVectors;
 
 bool IsNearBoundary(float2 pos, float maxRadiusDstSqr)
 {
     float maxRadiusDst = sqrt(maxRadiusDstSqr);
 
     // Check if the rigid body is near any boundary
-    return pos.x - maxRadiusDst < BorderPadding  // Near left boundary
-        || pos.x + maxRadiusDst > Width - BorderPadding  // Near right boundary
-        || pos.y - maxRadiusDst < BorderPadding  // Near bottom boundary
-        || pos.y + maxRadiusDst > Height - BorderPadding;  // Near top boundary
+    return pos.x - maxRadiusDst < RigidBodyPadding  // Near left boundary
+        || pos.x + maxRadiusDst > BoundaryDims.x - RigidBodyPadding  // Near right boundary
+        || pos.y - maxRadiusDst < RigidBodyPadding  // Near bottom boundary
+        || pos.y + maxRadiusDst > BoundaryDims.y - RigidBodyPadding;  // Near top boundary
 }
 
-void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax)
+void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax, inout float2 minXVec, inout float2 maxXVec, inout float2 minYVec, inout float2 maxYVec)
 {
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
     for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
     {
-        float2 localVec = RBVectors[vecIndex].pos + rb.pos;
+        float2 worldVec = RBVectors[vecIndex].pos + rb.pos;
 
-        rotate(localVec, rb.rot);
+        boundsMin = min(boundsMin, worldVec);
+        boundsMax = max(boundsMax, worldVec);
 
-        boundsMin = min(boundsMin, localVec);
-        boundsMax = max(boundsMax, localVec);
+        if (worldVec.x < minXVec.x) minXVec = worldVec;
+        if (worldVec.x > maxXVec.x) maxXVec = worldVec;
+        if (worldVec.y < minYVec.y) minYVec = worldVec;
+        if (worldVec.y > maxYVec.y) maxYVec = worldVec;
     }
 }
 
 [numthreads(TN_RBS1,1,1)]
-void SimulateRB_RB (uint3 id : SV_DispatchThreadID)
+void UpdateRBVertices(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumVectors) return;
+    uint i = id.x;
+
+    RBVector rbVector = RBVectors[i];
+
+    float deltaRot = IntToFloat(RigidBodies[rbVector.parentIndex].rotVel_AsInt) * DeltaTime;
+
+    RBVectors[i].pos = rotate(rbVector.pos, deltaRot);
+}
+
+float2 InteractionForce(RigidBody rb)
+{
+    if (!LMousePressed && !RMousePressed) return 0;
+    int dir = 0;
+    if (LMousePressed) {dir = -1;}
+    else if (RMousePressed) {dir = 1;}
+
+    float2 dst = rb.pos - MousePos;
+
+    float absDst = length(dst);
+
+    if (absDst > RB_MaxInteractionRadius) return 0;
+
+    float absInteractionGradient = InteractionInfluence_optimised(absDst, RB_MaxInteractionRadius);
+
+    float2 interactionGradient = normalize(dst) * absInteractionGradient;
+    float2 interactionForce = interactionGradient * RB_InteractionAttractionPower * dir;
+
+    return interactionForce;
+}
+
+[numthreads(TN_RBS2,1,1)]
+void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= NumRigidBodies) return;
     uint i = id.x;
 
     RigidBody rb = RigidBodies[i];
 
-    // Gravity
-    rb.vel -= float2(0, rb.gravity * DeltaTime);
+    // Forces
+    float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
+    rb.vel_AsInt -= Float2AsInt2(totForce * DeltaTime);
 
     // Update position & rotation
-    rb.pos += rb.vel * DeltaTime;
-    rb.rot += rb.rotVel * DeltaTime;
+    rb.pos += Int2ToFloat2(rb.vel_AsInt) * DeltaTime;
 
     float bounciness = 0.5;
+    float horisontalFriction = 0.2;
 
     // Make sure rigid body is inside simulation bounds
     if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
     {
         float2 boundsMin = float2(1.#INF, 1.#INF);
         float2 boundsMax = float2(-1.#INF, -1.#INF);
-        GetRBBounds(rb, boundsMin, boundsMax);
+        float2 minXVec = 1.#INF;
+        float2 minYVec = 1.#INF;
+        float2 maxXVec = -1.#INF;
+        float2 maxYVec = -1.#INF;
+        GetRBBounds(rb, boundsMin, boundsMax, minXVec, minYVec, maxXVec, maxYVec);
 
         // X-axis collision
-        if (boundsMin.x < BorderPadding)
+        if (boundsMin.x < RigidBodyPadding)
         {
-            rb.pos.x += BorderPadding - boundsMin.x;
-            rb.vel.x = -rb.vel.x * bounciness;
+            rb.pos.x += RigidBodyPadding - boundsMin.x;
+            rb.vel_AsInt.x = FloatAsInt(IntToFloat(-rb.vel_AsInt.x) * bounciness);
+            rb.vel_AsInt.y = FloatAsInt(IntToFloat(rb.vel_AsInt.y) * (1 - horisontalFriction));
         }
-        else if (boundsMax.x > Width - BorderPadding)
+        else if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
         {
-            rb.pos.x -= boundsMax.x - (Width - BorderPadding);
-            rb.vel.x = -rb.vel.x * bounciness;
+            rb.pos.x -= boundsMax.x - (BoundaryDims.x - RigidBodyPadding);
+            rb.vel_AsInt.x = FloatAsInt(IntToFloat(-rb.vel_AsInt.x) * bounciness);
+            rb.vel_AsInt.y = FloatAsInt(IntToFloat(rb.vel_AsInt.y) * (1 - horisontalFriction));
         }
 
         // Y-axis collision
-        if (boundsMin.y < BorderPadding)
+        if (boundsMin.y < RigidBodyPadding)
         {
-            rb.pos.y += BorderPadding - boundsMin.y;
-            rb.vel.y = -rb.vel.y * bounciness;
+            rb.pos.y += RigidBodyPadding - boundsMin.y;
+            rb.vel_AsInt.y = FloatAsInt(IntToFloat(-rb.vel_AsInt.y) * bounciness);
+            rb.vel_AsInt.x = FloatAsInt(IntToFloat(rb.vel_AsInt.x) * (1 - horisontalFriction));
         }
-        else if (boundsMax.y > Height - BorderPadding)
+        else if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
         {
-            rb.pos.y -= boundsMax.y - (Height - BorderPadding);
-            rb.vel.y = -rb.vel.y * bounciness;
+            rb.pos.y -= boundsMax.y - (BoundaryDims.y - RigidBodyPadding);
+            rb.vel_AsInt.y = FloatAsInt(IntToFloat(-rb.vel_AsInt.y) * bounciness);
+            rb.vel_AsInt.x = FloatAsInt(IntToFloat(rb.vel_AsInt.x) * (1 - horisontalFriction));
         }
     }
 
@@ -148,8 +201,8 @@ RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
     RBVector lastVec = RBVectors[rb.startIndex];
     RBHitInfo rbHitInfo = InitRBHitInfo();
 
-    float2 rayStart = pPos - pDir * 1000;
-    float2 rayEnd = pPos + pDir * 1000;
+    float2 rayStart = pPos - pDir * LARGE_FLOAT;
+    float2 rayEnd = pPos + pDir * LARGE_FLOAT;
 
     float minDstSqr = 1.#INF;
     uint startIndex = rb.startIndex;
@@ -228,90 +281,67 @@ void SetPosWithSafeGuards(inout float2 pos, float2 newPos, float2 vec)
     }
 }
 
-float3 ResolveCollisionAdvanced(inout PData pData, RigidBody rb)
+// if particles begin to "teleport", use SetPosWithSafeGuards(pData.pos, collisionPoint, collisionNormal)
+float3 ResolveCollision(inout PData pData, float pMass, RigidBody rb)
 {
-    EnsureNonZero(pData.Velocity);
-
+    // Get the hit information
     RBHitInfo rbHitInfo = RayRBDstHitInfo(pData.pos, rb);
 
-    float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
+    // Collision point on the rigid body
+    float2 collisionPoint = rbHitInfo.hitPoint;
+    float2 collisionNormal = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
 
     // Relative velocity between the particle and the rigid body
-    float2 diffVel = pData.Velocity - rb.vel;
-    float2 mirrorDiffVel = reflect(diffVel, perpNormLineVec);
+    float2 rotVelAtCollisionPoint = rotate(normalize(collisionPoint - rb.pos), PI / 2.0) * IntToFloat(rb.rotVel_AsInt) * length(collisionPoint - rb.pos);
+    float2 rbVel = Int2ToFloat2(rb.vel_AsInt) + rotVelAtCollisionPoint;
+    float2 relVel = pData.vel - rbVel;
 
-    float2 impulse = (mirrorDiffVel - diffVel) * rb.elasticity;
+    // Check if the particle is moving towards the rigid body
+    float relVelAlongNormal = dot(relVel, collisionNormal);
+    if (relVelAlongNormal >= 0.0) return 0;
 
-    // Update the particle's velocity
-    pData.Velocity += impulse; // / pData.mass
+    // Reflect the relative velocity across the collision normal with elasticity
+    float2 mirrorRelVel = relVel - (1.0 + rb.elasticity) * relVelAlongNormal * collisionNormal;
+    float2 newPVel = mirrorRelVel + rbVel;
+    float2 oldPVel = pData.vel;
+    pData.vel = newPVel;
 
-    float2 collisionPoint = rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
-    SetPosWithSafeGuards(pData.pos, collisionPoint, perpNormLineVec);
+    // Adjust particle's position to prevent penetration
+    float penetrationDepth = dot(pData.pos - collisionPoint, collisionNormal);
+    if (penetrationDepth < 0.0) pData.pos -= penetrationDepth * collisionNormal - rotVelAtCollisionPoint * DeltaTime;
 
-    // Normalized relative collision position
-    float2 relCollPos = collisionPoint - rb.pos;
-    float2 normRelCollPos = relCollPos.x > EPSILON && relCollPos.y > EPSILON ? normalize(relCollPos) : float2(0, 0);
+    // Return 0 if the rigid body is flagged as stationary
+    if (rb.mass == 0.0) return 0;
 
-    // Perpendicular to the normalized relative collision position
-    float2 perpNormLocalCollissionPos = float2(normRelCollPos.y, -normRelCollPos.x);
+    // Calculate the impulse applied to the particle (change in momentum)
+    float2 pImpulse = pMass * (newPVel - oldPVel);
+    float2 rbImpulse = -pImpulse;
 
-    float2 centerImpulse = dot(normRelCollPos, -impulse) * normRelCollPos;
-    float rotImpulse = dot(-perpNormLocalCollissionPos, -impulse);
+    // Vector from the rigid body's center of mass to the collision point
+    float2 dst = collisionPoint - rb.pos;
 
-    return float3(centerImpulse.x, centerImpulse.y, rotImpulse);
+    // Calculate the torque (scalar in 2D)
+    float rotImpulse = cross2d(dst, rbImpulse);
+    
+    // Calculate delta velocities for the rigid body
+    float2 deltaRBVel = rbImpulse / rb.mass;
+    float deltaRBAngVel = rotImpulse / rb.inertia;
+
+    return float3(deltaRBVel.x, deltaRBVel.y, deltaRBAngVel);
 }
 
-float3 ResolveCollisionSimple(inout PData pData, RigidBody rb)
-{
-    RBHitInfo rbHitInfo = RayRBDstHitInfo(pData.pos, rb);
-
-    float2 perpNormLineVec = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
-
-    // Relative velocity between the particle and the rigid body
-    float2 relPos = pData.Velocity - rb.vel;
-    float2 mirrorRelPos = reflect(relPos, perpNormLineVec);
-
-    float2 newPVel = mirrorRelPos * rb.elasticity;
-    float2 velDiff = newPVel - pData.Velocity;
-    float2 impulse = velDiff;
-
-    // Update the particle's velocity
-    pData.Velocity = newPVel; // / pData.mass
-
-    float2 collisionPoint = rotate(rbHitInfo.hitPoint, rb.rotVel * DeltaTime);
-    SetPosWithSafeGuards(pData.pos, collisionPoint, perpNormLineVec);
-
-    // Normalized relative collision position
-    float2 relCollPos = collisionPoint - rb.pos;
-    float2 normRelCollPos = relCollPos.x > EPSILON && relCollPos.y > EPSILON ? normalize(relCollPos) : float2(0, 0);
-
-    // Perpendicular to the normalized relative collision position
-    float2 perpNormLocalCollissionPos = float2(normRelCollPos.y, -normRelCollPos.x);
-
-    float2 centerImpulse = dot(normRelCollPos, -impulse) * normRelCollPos;
-    float rotImpulse = dot(-perpNormLocalCollissionPos, -impulse);
-
-    return float3(centerImpulse.x, centerImpulse.y, rotImpulse);
-}
-
-groupshared bool anyCollisionInGroup;
-groupshared ImpulseData rbImpulses[TN_RBS2];
-[numthreads(TN_RBS2,1,1)]
-void SimulateRB_P (uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+[numthreads(TN_RBS3,1,1)]
+void SimulateRB_P(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= NumParticles) return;
-    uint groupIndex = id.x % TN_RBS2;
-    rbImpulses[groupIndex] = InitImpulseData(0, -1);
 
     uint pIndex = SpatialLookup[id.x].x;
     PData pData = PDatas[pIndex];
+    PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
+    float pMass = pType.mass;
 
     for (int rbIndex = 0; rbIndex < (int)NumRigidBodies; rbIndex++)
     {
-        if (groupIndex == 0) anyCollisionInGroup = false;
-
-        GroupMemoryBarrierWithGroupSync();
-
         RigidBody rb = RigidBodies[rbIndex];
 
         // Check P_RB collision
@@ -321,52 +351,20 @@ void SimulateRB_P (uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, u
 
             if (isInside)
             {
-                float3 combinedImpulse = ResolveCollisionSimple(pData, rb);
-                rbImpulses[groupIndex] = InitImpulseData(combinedImpulse, rbIndex);
-                anyCollisionInGroup = true;
+                float3 deltaRBVel = ResolveCollision(pData, pMass, rb);
+
+                if (deltaRBVel.x == 1.#INF || deltaRBVel.y == 1.#INF || deltaRBVel.z == 1.#INF) continue;
+
+                // Convert impulses to integers
+                int2 deltaCenterVelInt2 = Float2AsInt2(deltaRBVel.xy);
+                int deltaRotVelInt = FloatAsInt(deltaRBVel.z);
+
+                // Atomically accumulate impulses to avoid race conditions
+                InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.x, deltaCenterVelInt2.x);
+                InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.y, deltaCenterVelInt2.y);
+                InterlockedAdd(RigidBodies[rbIndex].rotVel_AsInt, deltaRotVelInt);
             }
         }
-
-        GroupMemoryBarrierWithGroupSync();
-
-        // Sum up all rb impulses from the local thread group
-        if (anyCollisionInGroup)
-        {
-            // Sum up group shared values
-            for (uint offset = TN_RBS2 / 2; offset > 0; offset /= 2)
-            {
-                GroupMemoryBarrierWithGroupSync();
-
-                if (groupIndex < offset && groupIndex + offset < TN_RBS2)
-                {
-                    ImpulseData highImpulseData = rbImpulses[groupIndex + offset];
-                    if (highImpulseData.rbIndex == rbIndex)
-                    {
-                        AddImpulseData(rbImpulses[groupIndex], highImpulseData, rbIndex);
-                    }
-                }
-            }
-
-            GroupMemoryBarrierWithGroupSync();
-            
-            // Atomically add to rb
-            if (groupIndex == 0)
-            {
-                ImpulseData totImpulseData = rbImpulses[groupIndex];
-
-                if (totImpulseData.rbIndex == rbIndex)
-                {
-                    // // Atomically add to linear velocity
-                    // InterlockedAdd(RigidBodies[rbIndex].vel.x, totImpulseData.centerImpulse.x);
-                    // InterlockedAdd(RigidBodies[rbIndex].vel.y, totImpulseData.centerImpulse.y);
-
-                    // // Atomically add to rotational velocity
-                    // InterlockedAdd(RigidBodies[rbIndex].rotVel, totImpulseData.rotImpulse);
-                }
-            }
-        }
-
-        GroupMemoryBarrierWithGroupSync();
     }
 
     PDatas[pIndex] = pData;
