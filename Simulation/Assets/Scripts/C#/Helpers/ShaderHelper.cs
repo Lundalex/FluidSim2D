@@ -52,32 +52,6 @@ public class ShaderHelper : MonoBehaviour
         }
     }
 
-    public void SetRbSimShaderBuffers(ComputeShader oldRbSimShader)
-    {
-        if (m.RBDatas.Length != 0)
-        {
-            oldRbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
-            oldRbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
-
-            oldRbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
-            oldRbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
-            oldRbSimShader.SetBuffer(1, "TraversedChunksAPPEND", m.TraversedChunks_AC_Buffer);
-
-            // Maximum reached! (8)
-            oldRbSimShader.SetBuffer(2, "PDatas", m.PDataBuffer);
-            oldRbSimShader.SetBuffer(2, "PTypes", m.PTypeBuffer);
-            oldRbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
-            oldRbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
-            oldRbSimShader.SetBuffer(2, "SpatialLookup", m.SpatialLookupBuffer);
-            oldRbSimShader.SetBuffer(2, "StartIndices", m.StartIndicesBuffer);
-            oldRbSimShader.SetBuffer(2, "TraversedChunksCONSUME", m.TraversedChunks_AC_Buffer);
-            oldRbSimShader.SetBuffer(2, "StickynessReqsAPPEND", m.StickynessReqs_AC_Buffer);
-
-            oldRbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
-            oldRbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
-        }
-    }
-
     public void SetRenderShaderBuffers(ComputeShader renderShader)
     {
         if (m.ParticlesNum != 0) {
@@ -143,8 +117,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         pSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
-        pSimShader.SetInt("Width", m.Width);
-        pSimShader.SetInt("Height", m.Height);
+        pSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
         pSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
@@ -159,37 +132,18 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InteractionTemperaturePower", m.InteractionTemperaturePower);
     }
 
-    public void UpdateRbSimShaderVariables(ComputeShader oldRbSimShader)
-    {
-        oldRbSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
-        oldRbSimShader.SetInt("Width", m.Width);
-        oldRbSimShader.SetInt("Height", m.Height);
-        oldRbSimShader.SetInt("ParticlesNum", m.ParticlesNum);
-        oldRbSimShader.SetInt("RBodiesNum", m.RBDatas.Length);
-        oldRbSimShader.SetInt("RBVectorsNum", m.RBVectors.Length);
-        oldRbSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        oldRbSimShader.SetInt("MaxChunkSearchSafety", m.MaxChunkSearchSafety);
-
-        oldRbSimShader.SetFloat("Damping", m.Damping);
-        oldRbSimShader.SetFloat("Gravity", m.Gravity);
-        oldRbSimShader.SetFloat("RbElasticity", m.RbElasticity);
-        oldRbSimShader.SetFloat("BorderPadding", m.BorderPadding);
-    }
-
     public void UpdateRenderShaderVariables(ComputeShader renderShader)
     {
         renderShader.SetFloat("VisualParticleRadii", m.VisualParticleRadii);
         renderShader.SetFloat("RBRenderThickness", m.RBRenderThickness);
-        renderShader.SetInt("ResolutionX", m.ResolutionX);
-        renderShader.SetInt("ResolutionY", m.ResolutionY);
-        renderShader.SetInt("Width", m.Width);
-        renderShader.SetInt("Height", m.Height);
+        renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
+        renderShader.SetVector("BackgroundColor", Func.ColorToVector3(m.BackgroundColor));
+        renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
         renderShader.SetInt("RBodiesNum", m.RBDatas.Length);
         renderShader.SetInt("RBVectorsNum", m.RBVectors.Length);
-        
     }
 
     public void UpdateSortShaderVariables(ComputeShader sortShader)
@@ -215,15 +169,21 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
         rbSimShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
         rbSimShader.SetBuffer(1, "PDatas", m.PDataBuffer);
+
+        rbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
     {
-        rbSimShader.SetInt("Width", m.Width);
-        rbSimShader.SetInt("Height", m.Height);
-        rbSimShader.SetFloat("BorderPadding", m.BorderPadding);
+        rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
+        rbSimShader.SetFloat("RigidBodyPadding", m.BorderPadding + m.RigidBodyPadding);
 
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
+        rbSimShader.SetInt("NumVectors", m.RBVectors.Length);
         rbSimShader.SetInt("NumParticles", m.ParticlesNum);
+
+        rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
+        rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);
     }
 }

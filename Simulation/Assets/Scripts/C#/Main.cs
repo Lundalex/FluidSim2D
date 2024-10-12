@@ -8,23 +8,23 @@ using Vector3 = UnityEngine.Vector3;
 using Resources;
 public class Main : MonoBehaviour
 {
-    [Header("Simulation settings")]
+    [Header("Simulation Settings")]
     public int MaxParticlesNum = 20000; 
     public int StartTraversedChunksCount = 80000;
     public int MaxInfluenceRadius = 2;
-    public float TargetDensity = 2;
+    public float targetDensity = 2;
     public float PressureMultiplier = 3000.0f;
     public float NearPressureMultiplier = 12.0f;
-    [Range(0, 1)] public float Damping = 0.7f;
-    [Range(0, 3.0f)] public float PassiveDamping = 0.0f;
+    [Range(0, 1)] public float damping = 0.7f;
+    [Range(0, 3.0f)] public float passiveDamping = 0.0f;
     [Range(0, 1)] public float RbElasticity = 0.645f;
     [Range(0, 0.1f)] public float LookAheadFactor = 0.017f;
     [Range(0, 5.0f)] public float StateThresholdPadding = 3.0f;
-    public float Viscosity = 1.5f;
-    public float SpringStiffness = 5.0f;
+    public float viscosity = 1.5f;
+    public float springStiffness = 5.0f;
     public float TolDeformation = 0.0f;
     public float Plasticity = 3.0f;
-    public float Gravity = 5.0f;
+    public float gravity = 5.0f;
     public float RbPStickyRadius = 2.0f;
     public float RbPStickyness = 1.0f;
     [Range(0, 3)] public int MaxChunkSearchSafety = 1;
@@ -32,13 +32,13 @@ public class Main : MonoBehaviour
     public int SpringCapacitySafety = 150; // Avg springs per particle should not exceed this value
     public int TriStorageLength = 4;
 
-    [Header("Boundary settings")]
-    public int Width = 300;
-    public int Height = 200;
+    [Header("Boundary Settings")]
+    public int2 BoundaryDims = new(300, 200);
     public int SpawnDims = 160; // A x A
     public float BorderPadding = 4.0f;
+    public float RigidBodyPadding = 2.0f;
 
-    [Header("Render settings")]
+    [Header("Render Settings")]
     public bool FixedTimeStep = true;
     public bool RenderMarchingSquares = false;
     public float TimeStep = 0.02f;
@@ -48,15 +48,18 @@ public class Main : MonoBehaviour
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
-    public int ResolutionX = 1920;
-    public int ResolutionY = 1280;
-    public int MSResolution = 3;
+    public int2 Resolution = new(1920, 1280);
+    public Color BackgroundColor;
+    public bool DoDrawRBCentroids = false;
 
-    [Header("Interaction settings")]
+    [Header("Interaction Settings - Particles")]
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
+    [Header("Interaction Settings - Rigid Bodies")]
+    public float RB_MaxInteractionRadius = 40.0f;
+    public float RB_InteractionAttractionPower = 3.5f;
 
     [Header("References")]
     public SceneManager sceneManager;
@@ -64,17 +67,16 @@ public class Main : MonoBehaviour
     public ComputeShader renderShader;
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
-    public ComputeShader oldRbSimShader;
     public ComputeShader sortShader;
 
     // ThreadSize settings for compute shaders
     [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
     [NonSerialized] public int pSimShaderThreadSize = 512; // /1024
-    [NonSerialized] public int oldRbSimShaderThreadSize = 32; // /32
     [NonSerialized] public int sortShaderThreadSize = 512; // /1024
     [NonSerialized] public int marchingSquaresShaderThreadSize = 32; // /32
-    [NonSerialized] public int rbSimShaderThreadSize1 = 32; // Rigid Body Simulation
-    [NonSerialized] public int rbSimShaderThreadSize2 = 512; // Rigid Body Simulation
+    [NonSerialized] public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
+    [NonSerialized] public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
+    [NonSerialized] public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -139,14 +141,13 @@ public class Main : MonoBehaviour
     {
         SceneSetup();
 
-        ChunksNum.x = Width / MaxInfluenceRadius;
-        ChunksNum.y = Height / MaxInfluenceRadius;
+        ChunksNum = (int2)BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
         PDatas = sceneManager.GenerateParticles(MaxParticlesNum);
         ParticlesNum = PDatas.Length;
 
-        (Width, Height) = sceneManager.GetBounds(MaxInfluenceRadius);
+        BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
 
         SetPTypesData();
         (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
@@ -168,7 +169,7 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
-        renderTexture = TextureHelper.CreateTexture(new int2(ResolutionX, ResolutionY), 3);
+        renderTexture = TextureHelper.CreateTexture(Resolution, 3);
 
         renderShader.SetTexture(0, "Result", renderTexture);
 
@@ -200,19 +201,6 @@ public class Main : MonoBehaviour
 
                 RunPSimShader(i);
 
-                // // Stickyness requests
-                // if (i == 1) {
-                //     DoCalcStickyRequests = true;
-                //     oldRbSimShader.SetInt("DoCalcStickyRequests", 1);
-                //     GPUSortStickynessRequests(); 
-                //     int ThreadNums = Utils.GetThreadGroupsNums(4096, 512);
-                //     pSimShader.Dispatch(6, ThreadNums, 1, 1);
-                // }
-                // else {
-                //     DoCalcStickyRequests = false;
-                //     oldRbSimShader.SetInt("DoCalcStickyRequests", 0);
-                // }
-
                 RunRbSimShader();
 
                 int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
@@ -220,6 +208,7 @@ public class Main : MonoBehaviour
                 
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
+                pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
             }
         }
     }
@@ -249,7 +238,6 @@ public class Main : MonoBehaviour
         PTypeBuffer.SetData(PTypes);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
-        shaderHelper.UpdateRbSimShaderVariables(oldRbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
     }
@@ -258,28 +246,34 @@ public class Main : MonoBehaviour
     {
         DeltaTime = GetDeltaTime();
         
-        Vector2 mouseWorldPos = Utils.GetMouseWorldPos(Width, Height);
+        Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
         // (Left?, Right?)
         bool2 mousePressed = Utils.GetMousePressed();
 
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
-        pSimShader.SetFloat("MouseX", mouseWorldPos.x);
-        pSimShader.SetFloat("MouseY", mouseWorldPos.y);
+        pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         pSimShader.SetBool("LMousePressed", mousePressed.x);
         pSimShader.SetBool("RMousePressed", mousePressed.y);
-
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
+        rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
+        rbSimShader.SetBool("RMousePressed", mousePressed.x);
+        rbSimShader.SetBool("LMousePressed", mousePressed.y);
+
+        // Multi-compilation
+        if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
 
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
         pSimShader.SetBool("FrameBufferCycle", FrameBufferCycle);
+
+        pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
     }
 
     void SceneSetup()
     {
-        Camera.main.transform.position = new Vector3(Width / 2, Height / 2, -1);
-        Camera.main.orthographicSize = Mathf.Max(Width * 0.75f, Height * 1.5f);
+        Camera.main.transform.position = new Vector3(BoundaryDims.x / 2, BoundaryDims.y / 2, -1);
+        Camera.main.orthographicSize = Mathf.Max(BoundaryDims.x * 0.75f, BoundaryDims.y * 1.5f);
     }
 
     float GetDeltaTime()
@@ -306,165 +300,165 @@ public class Main : MonoBehaviour
         int FSG_2 = 2;
         PTypes[0] = new PType // Solid
         {
-            FluidSpringsGroup = 1,
+            fluidSpringGroup = 1,
 
-            SpringPlasticity = 0,
-            SpringTolDeformation = 0.1f,
-            SpringStiffness = 2000,
+            springPlasticity = 0,
+            springTolDeformation = 0.1f,
+            springStiffness = 2000,
 
-            ThermalConductivity = 1.0f,
-            SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
+            thermalConductivity = 1.0f,
+            specificHeatCapacity = 10.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
 
-            Pressure = 3000,
-            NearPressure = 5,
+            pressure = 3000,
+            nearPressure = 5,
 
-            Mass = 1,
-            TargetDensity = TargetDensity,
-            Damping = Damping,
-            PassiveDamping = 0.0f,
-            Viscosity = 5.0f,
-            Stickyness = 2.0f,
-            Gravity = Gravity,
+            mass = 1,
+            targetDensity = targetDensity,
+            damping = damping,
+            passiveDamping = 0.0f,
+            viscosity = 5.0f,
+            stickyness = 2.0f,
+            gravity = gravity,
 
-            InfluenceRadius = 2,
+            influenceRadius = 2,
             colorG = 0.5f
         };
         PTypes[1] = new PType // Liquid
         {
-            FluidSpringsGroup = FSG_1,
+            fluidSpringGroup = FSG_1,
 
-            SpringPlasticity = Plasticity,
-            SpringTolDeformation = TolDeformation,
-            SpringStiffness = SpringStiffness,
+            springPlasticity = Plasticity,
+            springTolDeformation = TolDeformation,
+            springStiffness = springStiffness,
 
-            ThermalConductivity = 1.0f,
-            SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
+            thermalConductivity = 1.0f,
+            specificHeatCapacity = 10.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
             
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
+            pressure = PressureMultiplier,
+            nearPressure = NearPressureMultiplier,
 
-            Mass = 1,
-            TargetDensity = TargetDensity,
-            Damping = Damping,
-            PassiveDamping = PassiveDamping,
-            Viscosity = Viscosity,
-            Stickyness = 2.0f,
-            Gravity = Gravity,
+            mass = 1,
+            targetDensity = targetDensity,
+            damping = damping,
+            passiveDamping = passiveDamping,
+            viscosity = viscosity,
+            stickyness = 2.0f,
+            gravity = gravity,
 
-            InfluenceRadius = IR_1,
+            influenceRadius = IR_1,
             colorG = 0.0f
         };
         PTypes[2] = new PType // Gas
         {
-            FluidSpringsGroup = 0,
+            fluidSpringGroup = 0,
 
-            SpringPlasticity = -1,
-            SpringTolDeformation = -1,
-            SpringStiffness = -1,
+            springPlasticity = -1,
+            springTolDeformation = -1,
+            springStiffness = -1,
 
-            ThermalConductivity = 3.0f,
-            SpecificHeatCapacity = 10.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
+            thermalConductivity = 3.0f,
+            specificHeatCapacity = 10.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
 
-            Pressure = 200,
-            NearPressure = 0,
+            pressure = 200,
+            nearPressure = 0,
 
-            Mass = 0.1f,
-            TargetDensity = 0,
-            Damping = Damping,
-            PassiveDamping = PassiveDamping,
-            Viscosity = Viscosity,
-            Stickyness = 2.0f,
-            Gravity = Gravity * 0.1f,
+            mass = 0.1f,
+            targetDensity = 0,
+            damping = damping,
+            passiveDamping = passiveDamping,
+            viscosity = viscosity,
+            stickyness = 2.0f,
+            gravity = gravity * 0.1f,
 
-            InfluenceRadius = IR_1,
+            influenceRadius = IR_1,
             colorG = 0.3f
         };
 
         PTypes[3] = new PType // Solid
         {
-            FluidSpringsGroup = FSG_2,
+            fluidSpringGroup = FSG_2,
 
-            SpringPlasticity = Plasticity,
-            SpringTolDeformation = TolDeformation,
-            SpringStiffness = SpringStiffness,
+            springPlasticity = Plasticity,
+            springTolDeformation = TolDeformation,
+            springStiffness = springStiffness,
 
-            ThermalConductivity = 7.0f,
-            SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(999.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(-999.0f),
+            thermalConductivity = 7.0f,
+            specificHeatCapacity = 15.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(999.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(-999.0f),
 
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
+            pressure = PressureMultiplier,
+            nearPressure = NearPressureMultiplier,
 
-            Mass = 1,
-            TargetDensity = TargetDensity * 1.5f,
-            Damping = Damping,
-            PassiveDamping = PassiveDamping,
-            Viscosity = Viscosity,
-            Stickyness = 4.0f,
-            Gravity = Gravity,
+            mass = 1,
+            targetDensity = targetDensity * 1.5f,
+            damping = damping,
+            passiveDamping = passiveDamping,
+            viscosity = viscosity,
+            stickyness = 4.0f,
+            gravity = gravity,
 
-            InfluenceRadius = IR_2,
+            influenceRadius = IR_2,
             colorG = 0.9f
         };
         PTypes[4] = new PType // Liquid
         {
-            FluidSpringsGroup = FSG_2,
+            fluidSpringGroup = FSG_2,
 
-            SpringPlasticity = Plasticity,
-            SpringTolDeformation = TolDeformation,
-            SpringStiffness = SpringStiffness,
+            springPlasticity = Plasticity,
+            springTolDeformation = TolDeformation,
+            springStiffness = springStiffness,
 
-            ThermalConductivity = 7.0f,
-            SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(-999.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
+            thermalConductivity = 7.0f,
+            specificHeatCapacity = 15.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(-999.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
 
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
+            pressure = PressureMultiplier,
+            nearPressure = NearPressureMultiplier,
 
-            Mass = 1,
-            TargetDensity = TargetDensity * 1.5f,
-            Damping = Damping,
-            PassiveDamping = PassiveDamping,
-            Viscosity = Viscosity,
-            Stickyness = 4.0f,
-            Gravity = Gravity,
+            mass = 1,
+            targetDensity = targetDensity * 1.5f,
+            damping = damping,
+            passiveDamping = passiveDamping,
+            viscosity = viscosity,
+            stickyness = 4.0f,
+            gravity = gravity,
 
-            InfluenceRadius = IR_2,
+            influenceRadius = IR_2,
             colorG = 1.0f
         };
         PTypes[5] = new PType // Gas
         {
-            FluidSpringsGroup = FSG_2,
+            fluidSpringGroup = FSG_2,
 
-            SpringPlasticity = Plasticity,
-            SpringTolDeformation = TolDeformation,
-            SpringStiffness = SpringStiffness,
+            springPlasticity = Plasticity,
+            springTolDeformation = TolDeformation,
+            springStiffness = springStiffness,
 
-            ThermalConductivity = 7.0f,
-            SpecificHeatCapacity = 15.0f,
-            FreezeThreshold = Utils.CelsiusToKelvin(-999.0f),
-            VaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
+            thermalConductivity = 7.0f,
+            specificHeatCapacity = 15.0f,
+            freezeThreshold = Utils.CelsiusToKelvin(-999.0f),
+            vaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
 
-            Pressure = PressureMultiplier,
-            NearPressure = NearPressureMultiplier,
+            pressure = PressureMultiplier,
+            nearPressure = NearPressureMultiplier,
 
-            Mass = 1,
-            TargetDensity = TargetDensity * 1.5f,
-            Damping = Damping,
-            PassiveDamping = PassiveDamping,
-            Viscosity = Viscosity,
-            Stickyness = 4.0f,
-            Gravity = Gravity,
+            mass = 1,
+            targetDensity = targetDensity * 1.5f,
+            damping = damping,
+            passiveDamping = passiveDamping,
+            viscosity = viscosity,
+            stickyness = 4.0f,
+            gravity = gravity,
 
-            InfluenceRadius = IR_2,
+            influenceRadius = IR_2,
             colorG = 0.9f
         };
     }
@@ -602,9 +596,14 @@ public class Main : MonoBehaviour
 
     void RunRbSimShader()
     {
-        if (RBVectors.Length > 1 && RBDatas.Length > 0)  ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
+        if (RBVectors.Length > 1 && RBDatas.Length > 0)
+        {
+            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
+            
+            ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize2);
+        }
 
-        if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize2);
+        if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
     }
 
     void RunRenderShader()

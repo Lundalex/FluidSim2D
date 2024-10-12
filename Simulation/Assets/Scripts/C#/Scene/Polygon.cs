@@ -8,7 +8,6 @@ public class Polygon : MonoBehaviour
     public int MaxGizmosIterations = 20000;
     public bool DoDrawBody = true;
     public Color LineColor;
-    public Color BodyColor;
     [NonSerialized] public List<Edge> Edges = new();
 
     protected virtual void Awake() => SetPolygonData();

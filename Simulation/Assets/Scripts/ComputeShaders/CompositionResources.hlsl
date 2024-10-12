@@ -2,9 +2,6 @@ static const float MIR = 2.0; // MaxInfluenceRadius
 static const int ChunkNum_copy = ceil(300 / MIR) * ceil(200 / MIR);
 static const int PTypesNum_copy = 2 * 3;
 
-
-// -- LastChunkKey_PType_POrder --
-
 int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
 {
     int composedPOrder = POrder * (ChunkNum_copy * PTypesNum_copy);

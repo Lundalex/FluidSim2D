@@ -65,10 +65,11 @@ public class EditorManager : Editor
         // Draw the filled body using quads for each point
         if (rigidBody.DoDrawBody)
         {
-            rigidBody.Points = rigidBody.GeneratePoints(lineThickness * 0.5f);
+            rigidBody.Points = rigidBody.GeneratePoints(lineThickness * 0.5f, Vector2.zero, true);
 
             int iterationCount = 0;
-            Handles.color = rigidBody.BodyColor;
+            Color bodyColor = rigidBody.RBInput.color;
+            Handles.color = bodyColor;
             foreach (Vector2 point in rigidBody.Points)
             {
                 if (iterationCount++ > rigidBody.MaxGizmosIterations) return;
@@ -84,7 +85,7 @@ public class EditorManager : Editor
                 quadVertices[3] = new Vector3(point.x - halfThickness, point.y + halfThickness, 0); // Top-left
 
                 // Draw the filled rectangle (the body)
-                Handles.DrawSolidRectangleWithOutline(quadVertices, rigidBody.BodyColor, rigidBody.BodyColor);
+                Handles.DrawSolidRectangleWithOutline(quadVertices, bodyColor, bodyColor);
             }
         }
 

@@ -1,22 +1,22 @@
 using System.Collections.Generic;
-using System.Linq;
 using Resources;
 using Unity.Mathematics;
 using UnityEngine;
 
 public class SceneManager : MonoBehaviour
 {
+    public Vector2 TEMP;
     Vector2 sceneMin;
     Vector2 sceneMax;
     Main main;
-    public (int, int) GetBounds(int maxInfluenceRadius)
+    public int2 GetBounds(int maxInfluenceRadius)
     {
-        Vector2Int bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
+        int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
 
         bounds.x += maxInfluenceRadius - bounds.x % maxInfluenceRadius;
         bounds.y += maxInfluenceRadius - bounds.y % maxInfluenceRadius;
 
-        return (bounds.x, bounds.y);
+        return bounds;
     }
 
     public bool IsPointInsideBounds(Vector2 point)
@@ -51,15 +51,17 @@ public class SceneManager : MonoBehaviour
             foreach (var pData in pDatas)
             {
                 allPDatas.Add(pData);
-                if (maxParticlesNum-- <= 0) return allPDatas.ToArray();
+                if (--maxParticlesNum <= 0) return allPDatas.ToArray();
             }
         }
 
         return allPDatas.ToArray();
     }
 
-    public (RBData[], RBVector[]) GenerateRigidBodies()
+    public (RBData[], RBVector[]) GenerateRigidBodies(float? rbCalcGridDensityInput = null)
     {
+        float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
+
         SceneRigidBody[] allRigidBodies = new SceneRigidBody[1]{ GameObject.Find("RigidBody").GetComponent<SceneRigidBody>() }; // Replace with a general solution
 
         Vector2 offset = GetBoundsOffset();
@@ -67,19 +69,21 @@ public class SceneManager : MonoBehaviour
         // Get the rigidBody data for each rigidBody
         List<RBData> allRBData = new();
         List<RBVector> allRBVectors = new();
-        foreach (SceneRigidBody rigidBody in allRigidBodies)
+        for (int i = 0; i < allRigidBodies.Length; i++)
         {
+            SceneRigidBody rigidBody = allRigidBodies[i];
+
             // Transform points to local space
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
-            Vector2[] points = GetTransformedPoints(rigidBody, offset, transformedRBPos);
+            Vector2[] vectors = GetTransformedPoints(rigidBody, offset, transformedRBPos);
 
-            BalanceRB(ref points, ref transformedRBPos);
+            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRB(ref vectors, ref transformedRBPos, offset, rbCalcGridDensity);
 
             // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.RBInput, GetMaxRadiusSqr(points), allRBVectors.Count, allRBVectors.Count + points.Length, transformedRBPos));
+            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
             
             // Initialize the rigid body vector datas
-            foreach (Vector2 point in points) allRBVectors.Add(new RBVector(point));
+            foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
         }
 
         return (allRBData.ToArray(), allRBVectors.ToArray());
@@ -87,53 +91,30 @@ public class SceneManager : MonoBehaviour
 
     private Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
     {
-        Vector2[] points = rigidBody.GetComponent<PolygonCollider2D>().points;
+        Vector2[] vectors = rigidBody.GetComponent<PolygonCollider2D>().points;
 
-        for (int i = 0; i < points.Length; i++) points[i] = (Vector2)rigidBody.transform.TransformPoint(points[i]) + offset - transformedRBPos;
+        for (int i = 0; i < vectors.Length; i++) vectors[i] = (Vector2)rigidBody.transform.TransformPoint(vectors[i]) + offset - transformedRBPos;
         
-        return points;
+        return vectors;
     }
 
-    private float GetMaxRadiusSqr(Vector2[] points)
-    {
-        float maxRadiusSqr = 0;
-        foreach (Vector2 point in points) maxRadiusSqr = Mathf.Max(maxRadiusSqr, point.sqrMagnitude);
-
-        return maxRadiusSqr;
-    }
-
-    public void BalanceRB(ref Vector2[] points, ref Vector2 rbPos)
-    {
-        // Find rigid body bounds
-        Vector2 min = Func.MinVector2(points);
-        Vector2 max = Func.MaxVector2(points);
-
-        Vector2 offsetFromBalancedPos = (min + max) * 0.5f;
-
-        // Set new positions
-        rbPos += offsetFromBalancedPos;
-        for (int i = 0; i < points.Length; i++)
-        {
-            points[i] -= offsetFromBalancedPos;
-        }
-    }
-
-    private RBData InitRBData(RBInput rbInput, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
+    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
     {
         return new RBData
         {
             pos = pos,
-            vel = rbInput.velocity,
+            vel_AsInt = rbInput.isPassive ? 0 : Func.Float2AsInt2(rbInput.velocity),
             nextPos = 0,
             nextVel = 0,
-            rot = 0,
-            rotVel = rbInput.rotationVelocity,
-            mass = rbInput.isStationary ? 0 : rbInput.mass,
+            rotVel_AsInt = rbInput.isPassive ? 0 : Func.FloatAsInt(rbInput.rotationVelocity),
+            mass = rbInput.isPassive ? 0 : rbInput.mass,
+            inertia = inertia,
             gravity = rbInput.gravity,
             elasticity = rbInput.elasticity,
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
-            endIndex = endIndex
+            endIndex = endIndex,
+            col = Func.ColorToFloat3(rbInput.color)
         };
     }
 

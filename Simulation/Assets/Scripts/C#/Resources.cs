@@ -8,10 +8,10 @@ namespace Resources
 {
     public static class Utils
     {
-        public static Vector2 GetMouseWorldPos(int Width, int Height)
+        public static Vector2 GetMouseWorldPos(int2 dims)
         {
             Vector3 MousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x , Input.mousePosition.y , -Camera.main.transform.position.z));
-            Vector2 MouseWorldPos = new(((MousePos.x - Width/2) * 0.55f + Width) / 2, ((MousePos.y - Height/2) * 0.55f + Height) / 2);
+            Vector2 MouseWorldPos = new(((MousePos.x - dims.x/2) * 0.55f + dims.x) / 2, ((MousePos.y - dims.y/2) * 0.55f + dims.y) / 2);
 
             return MouseWorldPos;
         }
@@ -153,6 +153,26 @@ namespace Resources
                 min = new(Mathf.Min(min.x, inputArray[i].x), Mathf.Min(min.y, inputArray[i].y));
             }
             return min;
+        }
+
+        public static int FloatAsInt(float a)
+        {
+            float int_float_precision = 100000.0f;
+            return (int)(a * int_float_precision);
+        }
+
+        public static int2 Float2AsInt2(float2 a)
+        {
+            return new int2(FloatAsInt(a.x), FloatAsInt(a.y));
+        }
+
+        public static float3 ColorToFloat3(Color color)
+        {
+            return new float3(color.r, color.g, color.b);
+        }
+        public static Vector3 ColorToVector3(Color color)
+        {
+            return new Vector3(color.r, color.g, color.b);
         }
     }
 }

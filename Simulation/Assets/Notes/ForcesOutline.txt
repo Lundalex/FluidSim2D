@@ -13,7 +13,6 @@ Gravity
 
 (Damping)
 
-
 -- Liquids --
 
 MaxInfluenceRadius is set LOW
@@ -23,7 +22,6 @@ Viscosity
 Elasticity, Plasticity
 Stickyness - Liquids stick to rigid bodies
 
-
 -- Gases --
 
 MaxInfluenceRadius is set HIGH
@@ -32,14 +30,12 @@ Temperature(dynamic) - As temperature increases, particle friction (Viscosity) a
 Pressure -> repulsive forces ONLY
 Viscosity
 
-
 -- Solids --
 
 MaxInfluenceRadius is set VERY LOW
 Temperature(dynamic) - Temperature has many effects, such as on Viscosity, Elasticity, Plasticity
 Viscosity is set VERY HIGH
 Elasticity and Plasticity vary from material to material
-
 
 -- State changes --
 
