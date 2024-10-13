@@ -75,6 +75,7 @@ struct RigidBody
     int startIndex;
     int endIndex;
     float3 col;
+    int renderPriority;
 };
 
 struct RBVector 
@@ -94,6 +95,7 @@ struct RBHitInfo
 {
     float dst;
     float2 hitPoint;
+    float2 pointPos;
     float2 lineVec;
 };
 
@@ -125,16 +127,18 @@ RBHitInfo InitRBHitInfo()
     RBHitInfo rbHitInfo;
     rbHitInfo.dst = 1.#INF;
     rbHitInfo.hitPoint = 1.#INF;
+    rbHitInfo.pointPos = 1.#INF;
     rbHitInfo.lineVec = 0;
 
     return rbHitInfo;
 }
 
-RBHitInfo InitRBHitInfo(float dst, float2 hitPoint, float2 lineVec)
+RBHitInfo InitRBHitInfo(float dst, float2 hitPoint, float2 pointPos, float2 lineVec)
 {
     RBHitInfo rbHitInfo;
     rbHitInfo.dst = dst;
     rbHitInfo.hitPoint = hitPoint;
+    rbHitInfo.pointPos = pointPos;
     rbHitInfo.lineVec = lineVec;
 
     return rbHitInfo;

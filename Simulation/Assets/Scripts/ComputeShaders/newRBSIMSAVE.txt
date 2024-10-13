@@ -1,0 +1,77 @@
+    // Compute normal and penetration depth from penetration vector
+    float2 normal = normalize(penetration);
+    float penetrationDepth = length(penetration);
+
+    // Positional correction parameters
+    float percent = 0.8; // Correction percentage
+    float slop = 0.01;   // Allowable penetration
+
+    // Compute mass inverses
+    float invMassA = (rbA.mass > 0) ? 1.0 / rbA.mass : 0;
+    float invMassB = (rbB.mass > 0) ? 1.0 / rbB.mass : 0;
+    float totalInvMass = invMassA + invMassB;
+
+    // Avoid division by zero
+    if (totalInvMass == 0)
+        return;
+
+    // Positional correction to resolve interpenetration
+    float penetrationToCorrect = max(penetrationDepth - slop, 0.0);
+    float2 correction = normal * (penetrationToCorrect / totalInvMass) * percent;
+
+    // Apply positional correction
+    if (invMassA > 0)
+        rbA.pos += correction * invMassA;
+    if (invMassB > 0)
+        rbB.pos -= correction * invMassB;
+
+    // Recompute relative positions after positional correction
+    float2 rA = collisionPoint - rbA.pos;
+    float2 rB = collisionPoint - rbB.pos;
+
+    // Compute velocities at point of collision
+    float2 velA = Int2ToFloat2(rbA.vel_AsInt);
+    float2 velB = Int2ToFloat2(rbB.vel_AsInt);
+
+    // Relative velocity
+    float2 relVel = velB - velA;
+
+    // Relative velocity along the normal
+    float relVelAlongNormal = dot(relVel, normal);
+
+    // Proceed only if the bodies are moving towards each other
+    if (relVelAlongNormal >= 0.0)
+        return;
+
+    // Coefficient of restitution (elasticity)
+    float e = min(rbA.elasticity, rbB.elasticity);
+
+    // Compute inverse inertias
+    float invInertiaA = (rbA.inertia > 0) ? 1.0 / rbA.inertia : 0;
+    float invInertiaB = (rbB.inertia > 0) ? 1.0 / rbB.inertia : 0;
+
+    // Compute impulse scalar
+    float rACrossN = cross2d(rA, normal);
+    float rBCrossN = cross2d(rB, normal);
+
+    float denom = totalInvMass + (rACrossN * rACrossN) * invInertiaA + (rBCrossN * rBCrossN) * invInertiaB;
+
+    // Avoid division by zero
+    if (denom == 0)
+        return;
+
+    float j = -(1 + e) * relVelAlongNormal / denom;
+
+    // Apply impulse
+    float2 impulse = j * normal;
+
+    // Compute delta velocities
+    deltaVelA = -impulse * invMassA;
+    deltaVelB = impulse * invMassB;
+
+    // Compute delta angular velocities
+    float torqueA = cross2d(rA, -impulse);
+    float torqueB = cross2d(rB, impulse);
+
+    deltaRotVelA = torqueA * invInertiaA;
+    deltaRotVelB = torqueB * invInertiaB;

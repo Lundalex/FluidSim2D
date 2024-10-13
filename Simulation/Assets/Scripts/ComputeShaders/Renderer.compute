@@ -76,27 +76,30 @@ float3 VelocityToRGB(float2 velocity, float g)
     return float3(r, g, b);
 }
 
-bool RayRBIntersect(float2 pPos, RigidBody rb)
+bool IsPointInsideRB(float2 pos, RigidBody rb)
 {
-    // Keep the last vector stored to avoid unnecessary data fetches
-    RBVector lastVec = RBVectors[rb.startIndex];
-    float2 rayEnd = float2(1.#INF, pPos.y);
+    // Transform the point position into the local coordinate space of the rigid body
+    float2 localPos = pos - rb.pos;
 
     uint intersections = 0;
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
-    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    uint numVertices = endIndex - startIndex + 1;
+
+    float2 lastVec = RBVectors[startIndex].pos;
+    for (uint i = 0; i < numVertices; i++)
     {
-        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+        uint vecIndex = wrapUint(startIndex + i, startIndex, endIndex);
+        float2 newVec = RBVectors[vecIndex].pos;
 
-        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
-
-        if (intersects) intersections++;
+        // Check if the edge from lastVec to newVec intersects the horizontal ray to the right of localPos
+        if (IsPointToTheLeftOfLine(localPos, lastVec, newVec)) intersections++;
 
         lastVec = newVec;
     }
 
-    bool isInside = intersections % 2 == 1; // intersections % 2 == 1;
+    // The point is inside the polygon if the number of intersections is odd
+    bool isInside = (intersections % 2) == 1;
 
     return isInside;
 }
@@ -108,6 +111,9 @@ void Render2D(uint3 id : SV_DispatchThreadID)
     int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
 
     // Render rigid bodies
+    bool rigidBodyFound = false;
+    int highestRenderPriority;
+    float4 result;
     for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
@@ -119,12 +125,21 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                 return;
             }
         #endif
-
-        if (RayRBIntersect(pixelPos, rb))
+        
+        if (rb.renderPriority > highestRenderPriority)
         {
-            Result[id.xy] = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
-            return;
+            if (IsPointInsideRB(pixelPos, rb))
+            {
+                result = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
+                highestRenderPriority = rb.renderPriority;
+                rigidBodyFound = true;
+            }
         }
+    }
+    if (rigidBodyFound)
+    {
+        Result[id.xy] = result;
+        return;
     }
 
     // Render particles

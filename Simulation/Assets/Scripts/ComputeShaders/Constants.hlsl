@@ -1,3 +1,5 @@
+static const uint MAX_RIGIDBODIES_NUM = 10;
+
 // --- Thread Nums ---
 
 static const uint TN_MS = 32; // Marching Squares

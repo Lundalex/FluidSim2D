@@ -598,9 +598,11 @@ public class Main : MonoBehaviour
     {
         if (RBVectors.Length > 1 && RBDatas.Length > 0)
         {
-            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize1);
-            
-            ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize2);
+            ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
+
+            ComputeHelper.DispatchKernel (rbSimShader, "UpdatePositions", RBDatas.Length, rbSimShaderThreadSize2);
+
+            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
         }
 
         if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);

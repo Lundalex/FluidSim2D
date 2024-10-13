@@ -15,4 +15,5 @@ public struct RBData
     public int startIndex;
     public int endIndex;
     public float3 col;
+    public int renderPriority;
 };

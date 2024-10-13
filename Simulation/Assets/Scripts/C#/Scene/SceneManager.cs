@@ -38,7 +38,11 @@ public class SceneManager : MonoBehaviour
 
     public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)
     {
-        SceneFluid[] allFluids = new SceneFluid[1]{ GameObject.Find("Fluid").GetComponent<SceneFluid>() }; // Replace with a general solution
+        // Get all fluid instances
+        GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
+        SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];
+        for (int i = 0; i < fluidObjects.Length; i++) allFluids[i] = fluidObjects[i].GetComponent<SceneFluid>();
+        
         List<PData> allPDatas = new();
 
         Vector2 offset = GetBoundsOffset();
@@ -62,7 +66,9 @@ public class SceneManager : MonoBehaviour
     {
         float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
 
-        SceneRigidBody[] allRigidBodies = new SceneRigidBody[1]{ GameObject.Find("RigidBody").GetComponent<SceneRigidBody>() }; // Replace with a general solution
+        GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
+        SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
+        for (int i = 0; i < rigidBodyObjects.Length; i++) allRigidBodies[i] = rigidBodyObjects[i].GetComponent<SceneRigidBody>();
 
         Vector2 offset = GetBoundsOffset();
 
@@ -103,18 +109,19 @@ public class SceneManager : MonoBehaviour
         return new RBData
         {
             pos = pos,
-            vel_AsInt = rbInput.isPassive ? 0 : Func.Float2AsInt2(rbInput.velocity),
+            vel_AsInt = rbInput.canMove ? 0 : Func.Float2AsInt2(rbInput.velocity),
             nextPos = 0,
             nextVel = 0,
-            rotVel_AsInt = rbInput.isPassive ? 0 : Func.FloatAsInt(rbInput.rotationVelocity),
-            mass = rbInput.isPassive ? 0 : rbInput.mass,
-            inertia = inertia,
+            rotVel_AsInt = rbInput.canRotate ? 0 : Func.FloatAsInt(rbInput.rotationVelocity),
+            mass = rbInput.canMove ? rbInput.mass : 0,
+            inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
             elasticity = rbInput.elasticity,
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
-            col = Func.ColorToFloat3(rbInput.color)
+            col = Func.ColorToFloat3(rbInput.color),
+            renderPriority = rbInput.renderPriority
         };
     }
 

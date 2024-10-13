@@ -1,6 +1,7 @@
-#pragma kernel SimulateRB_RB // 0
+#pragma kernel UpdatePositions // 0
 #pragma kernel SimulateRB_P // 1
 #pragma kernel UpdateRBVertices // 2
+#pragma kernel SimulateRB_RB // 3
 
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
@@ -77,8 +78,8 @@ float2 InteractionForce(RigidBody rb)
 {
     if (!LMousePressed && !RMousePressed) return 0;
     int dir = 0;
-    if (LMousePressed) {dir = -1;}
-    else if (RMousePressed) {dir = 1;}
+    if (LMousePressed) dir = -1;
+    else if (RMousePressed) dir = 1;
 
     float2 dst = rb.pos - MousePos;
 
@@ -94,13 +95,200 @@ float2 InteractionForce(RigidBody rb)
     return interactionForce;
 }
 
+bool IsPointInsideRB(float2 pos, RigidBody rb)
+{
+    // Transform the point position into the local coordinate space of the rigid body
+    float2 localPos = pos - rb.pos;
+
+    uint intersections = 0;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    uint numVertices = endIndex - startIndex + 1;
+
+    float2 lastVec = RBVectors[startIndex].pos;
+    for (uint i = 0; i < numVertices; i++)
+    {
+        uint vecIndex = wrapUint(startIndex + i, startIndex, endIndex);
+        float2 newVec = RBVectors[vecIndex].pos;
+
+        // Check if the edge from lastVec to newVec intersects the horizontal ray to the right of localPos
+        if (IsPointToTheLeftOfLine(localPos, lastVec, newVec)) intersections++;
+
+        lastVec = newVec;
+    }
+
+    // The point is inside the polygon if the number of intersections is odd
+    bool isInside = (intersections % 2) == 1;
+
+    return isInside;
+}
+
+RBHitInfo RayRBDstHitInfo(float2 pos, RigidBody rb)
+{
+    // Keep the last vector stored to avoid redundant data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+    RBHitInfo rbHitInfo = InitRBHitInfo();
+
+    float minDstSqr = 1.#INF;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        float2 dst = DstToLineSegment(lastVec.pos + rb.pos, newVec.pos + rb.pos, pos);
+
+        float dstSqr = dot2(dst);
+        if (dstSqr < minDstSqr)
+        {
+            minDstSqr = dstSqr;
+            rbHitInfo.hitPoint = pos + dst;
+            rbHitInfo.pointPos = pos;
+            rbHitInfo.lineVec = newVec.pos - lastVec.pos;
+        }
+
+        lastVec = newVec;
+    }
+
+    rbHitInfo.dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
+    rbHitInfo.lineVec = normalize(rbHitInfo.lineVec);
+
+    return rbHitInfo;
+}
+
+// Computes the vector cross product of a scalar and a 2D vector (z-component assumed)
+float2 crossZ(float z, float2 v)
+{
+    return z * float2(-v.y, v.x);
+}
+
+void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo rbHitInfo, bool AInsideB_BInsideA, out float2 deltaVelA, out float deltaRotVelA, out float2 deltaVelB, out float deltaRotVelB)
+{
+    // Initialize output parameters
+    deltaVelA = 0;
+    deltaRotVelA = 0;
+    deltaVelB = 0;
+    deltaRotVelB = 0;
+
+    // Collision point on the rigid body
+    float2 collisionPoint = rbHitInfo.hitPoint;
+    float2 collisionNormal = float2(rbHitInfo.lineVec.y, -rbHitInfo.lineVec.x);
+
+    // Penetration
+    float2 penetration = rbHitInfo.hitPoint - rbHitInfo.pointPos;
+
+    // Relative velocity between the two rigid bodies
+    float2 rbARotVelAtCollisionPoint = rotate(normalize(collisionPoint - rbA.pos), PI / 2.0) * IntToFloat(rbA.rotVel_AsInt) * length(collisionPoint - rbA.pos);
+    float2 rbBRotVelAtCollisionPoint = rotate(normalize(collisionPoint - rbB.pos), PI / 2.0) * IntToFloat(rbB.rotVel_AsInt) * length(collisionPoint - rbB.pos);
+    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt) + rbARotVelAtCollisionPoint;
+    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt) + rbBRotVelAtCollisionPoint;
+    float2 relVel = rbBVel - rbAVel;
+
+    rbA.pos -= penetration;
+    rbB.pos += penetration;
+}
+
 [numthreads(TN_RBS2,1,1)]
 void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumRigidBodies) return;
+    uint rbAIndex = id.x;
+
+    for (uint rbBIndex = rbAIndex + 1; rbBIndex < MAX_RIGIDBODIES_NUM; rbBIndex++)
+    {
+        if (rbBIndex >= NumRigidBodies) return;
+
+        RigidBody rbA = RigidBodies[rbAIndex];
+        RigidBody rbB = RigidBodies[rbBIndex];
+        
+        // Early exit if thr two rigid bodies are to far away from each other
+        float dst = length(rbB.pos - rbA.pos);
+        float radiusSum = sqrt(rbA.maxRadiusSqr) + sqrt(rbB.maxRadiusSqr);
+        if (dst > radiusSum) continue;
+        
+        // Initialize collision data
+        RBHitInfo rbHitInfo = InitRBHitInfo();
+        bool collisionDetected = false;
+        bool AInsideB_BInsideA = false;
+
+        // Check if any point of rbA is inside rbB
+        uint startIndexA = rbA.startIndex;
+        uint endIndexA = rbA.endIndex;
+        for (uint vecIndex = startIndexA; vecIndex < endIndexA; vecIndex++)
+        {
+            float2 vertexA = RBVectors[vecIndex].pos + rbA.pos;
+
+            bool isInside = IsPointInsideRB(vertexA, rbB);
+            if (!isInside) continue;
+
+            rbHitInfo = RayRBDstHitInfo(vertexA, rbB);
+            collisionDetected = true;
+            AInsideB_BInsideA = false;
+            break;
+            
+        }
+
+        // If no collision detected yet, check if any point of rbB is inside rbA
+        if (!collisionDetected)
+        {
+            uint startIndexB = rbB.startIndex;
+            uint endIndexB = rbB.endIndex;
+            for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
+            {
+                float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
+
+                bool isInside = IsPointInsideRB(vertexB, rbA);
+                if (!isInside) continue;
+
+                rbHitInfo = RayRBDstHitInfo(vertexB, rbA);
+                collisionDetected = true;
+                AInsideB_BInsideA = true;
+                break;
+            }
+        }
+
+        if (collisionDetected)
+        {
+            float2 deltaVelA, deltaVelB;
+            float deltaRotVelA, deltaRotVelB;
+
+            // Resolve collision and get delta impulses
+            ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
+
+            // Atomically update velocities
+            int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
+            int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
+
+            InterlockedAdd(RigidBodies[rbAIndex].vel_AsInt.x, deltaVelA_Int2.x);
+            InterlockedAdd(RigidBodies[rbAIndex].vel_AsInt.y, deltaVelA_Int2.y);
+
+            InterlockedAdd(RigidBodies[rbBIndex].vel_AsInt.x, deltaVelB_Int2.x);
+            InterlockedAdd(RigidBodies[rbBIndex].vel_AsInt.y, deltaVelB_Int2.y);
+
+            // Update angular velocities using atomic operations
+            int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
+            int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
+
+            InterlockedAdd(RigidBodies[rbAIndex].rotVel_AsInt, deltaRotVelA_Int);
+            InterlockedAdd(RigidBodies[rbBIndex].rotVel_AsInt, deltaRotVelB_Int);
+
+            // Update positions (TODO: InterlockedAdd!!!)
+            RigidBodies[rbAIndex].pos = rbA.pos;
+            RigidBodies[rbBIndex].pos = rbB.pos;
+        }
+    }
+}
+
+[numthreads(TN_RBS2,1,1)]
+void UpdatePositions(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= NumRigidBodies) return;
     uint i = id.x;
 
     RigidBody rb = RigidBodies[i];
+
+    bool canMove = rb.mass > 0;
+    if (!canMove) return;
 
     // Forces
     float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
@@ -110,7 +298,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     rb.pos += Int2ToFloat2(rb.vel_AsInt) * DeltaTime;
 
     float bounciness = 0.5;
-    float horisontalFriction = 0.2;
+    float horisontalFriction = 0.1;
 
     // Make sure rigid body is inside simulation bounds
     if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
@@ -170,31 +358,6 @@ void AddImpulseData(inout ImpulseData a, ImpulseData b, int rbIndex)
     }
 }
 
-bool RayRBIntersect(float2 pPos, RigidBody rb)
-{
-    // Keep the last vector stored to avoid unnecessary data fetches
-    RBVector lastVec = RBVectors[rb.startIndex];
-    float2 rayEnd = float2(1.#INF, pPos.y);
-
-    uint intersections = 0;
-    uint startIndex = rb.startIndex;
-    uint endIndex = rb.endIndex;
-    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
-    {
-        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
-
-        bool intersects = CheckLinesIntersect(pPos, rayEnd, lastVec.pos + rb.pos, newVec.pos + rb.pos);
-
-        if (intersects) intersections++;
-
-        lastVec = newVec;
-    }
-
-    bool isInside = intersections % 2 == 1; // intersections % 2 == 1;
-
-    return isInside;
-}
-
 RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
 {
     // Keep the last vector stored to avoid redundant data fetches
@@ -237,38 +400,6 @@ RBHitInfo RayRBIntersectHitInfo(float2 pPos, float2 pDir, RigidBody rb)
     return rbHitInfo;
 }
 
-RBHitInfo RayRBDstHitInfo(float2 pPos, RigidBody rb)
-{
-    // Keep the last vector stored to avoid redundant data fetches
-    RBVector lastVec = RBVectors[rb.startIndex];
-    RBHitInfo rbHitInfo = InitRBHitInfo();
-
-    float minDstSqr = 1.#INF;
-    uint startIndex = rb.startIndex;
-    uint endIndex = rb.endIndex;
-    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
-    {
-        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
-
-        float2 dst = DstToLineSegment(lastVec.pos + rb.pos, newVec.pos + rb.pos, pPos);
-
-        float dstSqr = dot2(dst);
-        if (dstSqr < minDstSqr)
-        {
-            minDstSqr = dstSqr;
-            rbHitInfo.hitPoint = pPos + dst;
-            rbHitInfo.lineVec = newVec.pos - lastVec.pos;
-        }
-
-        lastVec = newVec;
-    }
-
-    rbHitInfo.dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
-    rbHitInfo.lineVec = normalize(rbHitInfo.lineVec);
-
-    return rbHitInfo;
-}
-
 void SetPosWithSafeGuards(inout float2 pos, float2 newPos, float2 vec)
 {
     float diffThreshold = 1.0;
@@ -281,9 +412,12 @@ void SetPosWithSafeGuards(inout float2 pos, float2 newPos, float2 vec)
     }
 }
 
-// if particles begin to "teleport", use SetPosWithSafeGuards(pData.pos, collisionPoint, collisionNormal)
-float3 ResolveCollision(inout PData pData, float pMass, RigidBody rb)
+void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out float deltaRotVel, out float2 deltaCenterVel)
 {
+    // Initialize output parameters
+    deltaRotVel = 0;
+    deltaCenterVel = 0;
+
     // Get the hit information
     RBHitInfo rbHitInfo = RayRBDstHitInfo(pData.pos, rb);
 
@@ -298,7 +432,7 @@ float3 ResolveCollision(inout PData pData, float pMass, RigidBody rb)
 
     // Check if the particle is moving towards the rigid body
     float relVelAlongNormal = dot(relVel, collisionNormal);
-    if (relVelAlongNormal >= 0.0) return 0;
+    if (relVelAlongNormal >= 0.0) return;
 
     // Reflect the relative velocity across the collision normal with elasticity
     float2 mirrorRelVel = relVel - (1.0 + rb.elasticity) * relVelAlongNormal * collisionNormal;
@@ -311,7 +445,9 @@ float3 ResolveCollision(inout PData pData, float pMass, RigidBody rb)
     if (penetrationDepth < 0.0) pData.pos -= penetrationDepth * collisionNormal - rotVelAtCollisionPoint * DeltaTime;
 
     // Return 0 if the rigid body is flagged as stationary
-    if (rb.mass == 0.0) return 0;
+    bool canMove = rb.mass > 0;
+    bool canRotate = rb.inertia > 0;
+    if (!canMove && !canRotate) return;
 
     // Calculate the impulse applied to the particle (change in momentum)
     float2 pImpulse = pMass * (newPVel - oldPVel);
@@ -324,10 +460,8 @@ float3 ResolveCollision(inout PData pData, float pMass, RigidBody rb)
     float rotImpulse = cross2d(dst, rbImpulse);
     
     // Calculate delta velocities for the rigid body
-    float2 deltaRBVel = rbImpulse / rb.mass;
-    float deltaRBAngVel = rotImpulse / rb.inertia;
-
-    return float3(deltaRBVel.x, deltaRBVel.y, deltaRBAngVel);
+    deltaCenterVel = canMove ? rbImpulse / rb.mass : 0;
+    deltaRotVel = canRotate ? rotImpulse / rb.inertia : 0;
 }
 
 [numthreads(TN_RBS3,1,1)]
@@ -347,22 +481,26 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
         // Check P_RB collision
         if (dot2(rb.pos - pData.pos) <= rb.maxRadiusSqr)
         {
-            bool isInside = RayRBIntersect(pData.pos, rb);
+            bool isInside = IsPointInsideRB(pData.pos, rb);
 
             if (isInside)
             {
-                float3 deltaRBVel = ResolveCollision(pData, pMass, rb);
-
-                if (deltaRBVel.x == 1.#INF || deltaRBVel.y == 1.#INF || deltaRBVel.z == 1.#INF) continue;
-
-                // Convert impulses to integers
-                int2 deltaCenterVelInt2 = Float2AsInt2(deltaRBVel.xy);
-                int deltaRotVelInt = FloatAsInt(deltaRBVel.z);
+                float deltaRotVel;
+                float2 deltaCenterVel;
+                ResolveCollisionRB_P(pData, pMass, rb, deltaRotVel, deltaCenterVel);
 
                 // Atomically accumulate impulses to avoid race conditions
-                InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.x, deltaCenterVelInt2.x);
-                InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.y, deltaCenterVelInt2.y);
-                InterlockedAdd(RigidBodies[rbIndex].rotVel_AsInt, deltaRotVelInt);
+                if (deltaCenterVel.x != 0 && deltaCenterVel.y != 0)
+                {
+                    int2 deltaCenterVel_Int2 = Float2AsInt2(deltaCenterVel);
+                    if (deltaCenterVel.x != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.x, deltaCenterVel_Int2.x);
+                    if (deltaCenterVel.y != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.y, deltaCenterVel_Int2.y);
+                }
+                if (deltaRotVel != 0)
+                {
+                    int deltaRotVel_Int = FloatAsInt(deltaRotVel);
+                    InterlockedAdd(RigidBodies[rbIndex].rotVel_AsInt, deltaRotVel_Int);
+                }
             }
         }
     }
