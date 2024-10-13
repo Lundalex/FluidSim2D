@@ -172,6 +172,9 @@ public class ShaderHelper : MonoBehaviour
 
         rbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
+
+        rbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)

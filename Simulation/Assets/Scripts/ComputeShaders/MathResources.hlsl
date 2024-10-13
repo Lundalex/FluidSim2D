@@ -226,6 +226,12 @@ bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
     return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
 }
 
+bool IsPointToTheLeftOfLine(float2 P, float2 A, float2 B)
+{
+    return ((A.y > P.y) != (B.y > P.y)) &&
+            (P.x < (B.x - A.x) * (P.y - A.y) / (B.y - A.y + EPSILON) + A.x);
+}
+
 float2 LineIntersectionPoint(float2 r0, float2 r1, float2 a, float2 b)
 {
     float2 s1 = r1 - r0;
@@ -257,25 +263,29 @@ float2 LineIntersectionPoint(float2 r0, float2 r1, float2 a, float2 b)
     }
 }
 
-
-float DstToLineSegment(float2 A, float2 B, float2 P)
+float2 DstToLineSegment(float2 A, float2 B, float2 P)
 {
     float2 AB = B - A;
     float2 AP = P - A;
-    float ABLengthSquared = dot(AB, AB);
+    float ABLengthSquared = dot2(AB);
+    if (ABLengthSquared == 0.0)
+    {
+        // If A == B, return the vector from P to A
+        return A - P;
+    }
 
     // Scalar projection
     float AP_dot_AB = dot(AP, AB);
     float t = AP_dot_AB / ABLengthSquared;
 
-    // Clamp t to the closest point2 on the line segment
+    // Clamp t to the closest P on the line segment
     t = clamp(t, 0.0, 1.0);
 
-    // Closest point2 on line segment to P
+    // Closest P on line segment to P
     float2 closestPoint = A + t * AB;
 
-    // Return the distance vector from P to the closest point2
-    return dot2(closestPoint - P);
+    // Return the distance vector from P to the closest P
+    return closestPoint - P;
 }
 
 float Cross2D(float2 a, float2 b)
@@ -331,11 +341,11 @@ void EnsureNonZero(inout float2 a)
     a.y = (a.y > 0 ? 1 : -1) * max(abs(a.y), EPSILON);
 }
 
-float2 rotate(float2 point2, float angle)
+float2 rotate(float2 P, float angle)
 {
     float cosTheta = cos(angle);
     float sinTheta = sin(angle);
 
-    return float2(point2.x * cosTheta - point2.y * sinTheta,
-                    point2.x * sinTheta + point2.y * cosTheta);
+    return float2(P.x * cosTheta - P.y * sinTheta,
+                    P.x * sinTheta + P.y * cosTheta);
 }
