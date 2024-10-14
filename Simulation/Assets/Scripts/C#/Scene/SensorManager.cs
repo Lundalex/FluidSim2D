@@ -36,7 +36,6 @@ public class SensorManager : MonoBehaviour
                 ComputeHelper.GetBufferContents<RBData>(main.RBDataBuffer, contents => 
                 {
                     retrievedRBData = contents;
-
                     foreach (Sensor sensor in sensors)
                     {
                         if (SensorHelper.CheckIfSensorRequiresDataOfType(sensor.sensorType, "RigidBody"))
@@ -44,8 +43,6 @@ public class SensorManager : MonoBehaviour
                             sensor.UpdateSensor();
                         }
                     }
-
-                    // Maybe call update functions for all dependant sensors?
                 });
             }
 

@@ -393,7 +393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  msDataRetrievalInterval: 200
+  msDataRetrievalInterval: 25
 --- !u!1001 &326758041
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1192,7 +1192,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sensorType: 0
-  rbIndex: 0
+  rbIndex: 1
   offset:
     x: 0
     y: 30
