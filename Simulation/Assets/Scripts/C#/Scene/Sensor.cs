@@ -53,7 +53,7 @@ public class Sensor : MonoBehaviour
         sensorText = sensorUI.transform.Find("Label").GetComponent<Text>();
     }
 
-    public void Update()
+    void Update()
     {
         Vector2 canvasTargetPosition = SimSpaceToCanvasSpace(targetPosition);
         
