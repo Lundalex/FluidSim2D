@@ -27,6 +27,7 @@ const float StateThresholdPadding;
 const float BorderPadding;
 const float MaxInteractionRadius;
 
+// Interation settings
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
 const float InteractionTemperaturePower;

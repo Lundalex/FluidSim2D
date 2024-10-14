@@ -84,11 +84,11 @@ struct RBVector
     int parentIndex;
 };
 
-struct Ray
+struct RBAdjustment
 {
-    float2 pos;
-    float2 dir;
-    float2 invDir;
+    int2 deltaPos_Int2;
+    int2 deltaVel_Int2;
+    int deltaRotVel_Int;
 };
 
 struct RBHitInfo
@@ -106,20 +106,14 @@ struct ImpulseData
     int rbIndex;
 };
 
-Ray InitRay()
+RBAdjustment InitRBAdjustment()
 {
-    Ray ray;
-    ray.pos = 0;
-    ray.dir = 0;
-    ray.invDir = 0;
-}
+    RBAdjustment rbAdjustment;
+    rbAdjustment.deltaPos_Int2 = 0;
+    rbAdjustment.deltaVel_Int2 = 0;
+    rbAdjustment.deltaRotVel_Int = 0;
 
-Ray InitRay(float2 pos, float2 dir)
-{
-    Ray ray;
-    ray.pos = pos;
-    ray.dir = dir;
-    ray.invDir = 1 / dir;
+    return rbAdjustment;
 }
 
 RBHitInfo InitRBHitInfo()

@@ -8,7 +8,7 @@ using Vector3 = UnityEngine.Vector3;
 using Resources;
 public class Main : MonoBehaviour
 {
-    [Header("Simulation Settings")]
+    [Header("Simulation")]
     public int MaxParticlesNum = 20000; 
     public int StartTraversedChunksCount = 80000;
     public int MaxInfluenceRadius = 2;
@@ -32,13 +32,16 @@ public class Main : MonoBehaviour
     public int SpringCapacitySafety = 150; // Avg springs per particle should not exceed this value
     public int TriStorageLength = 4;
 
-    [Header("Boundary Settings")]
+    [Header("Boundary")]
     public int2 BoundaryDims = new(300, 200);
     public int SpawnDims = 160; // A x A
     public float BorderPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
+    [Header("Collision Solver")]
+    public float RB_RBCollisionCorrectionFactor = 0.8f;
+    public float RB_RBCollisionSlop = 0.01f;
 
-    [Header("Render Settings")]
+    [Header("Render")]
     public bool FixedTimeStep = true;
     public bool RenderMarchingSquares = false;
     public float TimeStep = 0.02f;
@@ -52,12 +55,12 @@ public class Main : MonoBehaviour
     public Color BackgroundColor;
     public bool DoDrawRBCentroids = false;
 
-    [Header("Interaction Settings - Particles")]
+    [Header("Interaction - Particles")]
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
-    [Header("Interaction Settings - Rigid Bodies")]
+    [Header("Interaction - Rigid Bodies")]
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
 
@@ -97,6 +100,7 @@ public class Main : MonoBehaviour
     // Rigid bodies
     public ComputeBuffer RBVectorBuffer;
     public ComputeBuffer RBDataBuffer;
+    public ComputeBuffer RBAdjustmentBuffer;
     public ComputeBuffer TraversedChunks_AC_Buffer;
     public ComputeBuffer StickynessReqs_AC_Buffer;
     public ComputeBuffer SortedStickyRequestsBuffer;
@@ -131,7 +135,6 @@ public class Main : MonoBehaviour
     // Other
     private float DeltaTime;
     private const int CalcStickyRequestsFrequency = 3;
-    private bool DoCalcStickyRequests = true;
     private bool ProgramStarted = false;
     private int FrameCount = 0;
     private bool ProgramPaused = false;
@@ -478,6 +481,7 @@ public class Main : MonoBehaviour
 
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
+        ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, RBDatas.Length);
 
 
         ComputeHelper.CreateCountBuffer(ref TCCountBuffer);
@@ -596,16 +600,15 @@ public class Main : MonoBehaviour
 
     void RunRbSimShader()
     {
-        if (RBVectors.Length > 1 && RBDatas.Length > 0)
-        {
-            ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
+        if (RBVectors.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
 
-            ComputeHelper.DispatchKernel (rbSimShader, "UpdatePositions", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
 
-            ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
-        }
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
 
         if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
+
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdatePositions", RBDatas.Length, rbSimShaderThreadSize2);
     }
 
     void RunRenderShader()
@@ -640,6 +643,7 @@ public class Main : MonoBehaviour
             SpringStartIndicesBuffer_dbC,
             ParticleSpringsCombinedBuffer,
             RBDataBuffer,
+            RBAdjustmentBuffer,
             RBVectorBuffer,
             TraversedChunks_AC_Buffer,
             TCCountBuffer,

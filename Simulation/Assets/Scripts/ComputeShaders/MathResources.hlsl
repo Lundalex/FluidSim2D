@@ -197,7 +197,7 @@ float lerp1D(float posA, float posB, float valA, float valB, float targetVal)
     return posA + t * (posB - posA);
 }
 
-float cross2d(float2 VectorA, float2 VectorB)
+float cross2D(float2 VectorA, float2 VectorB)
 {
     return VectorA.x * VectorB.y - VectorA.y * VectorB.x;
 }
@@ -288,9 +288,10 @@ float2 DstToLineSegment(float2 A, float2 B, float2 P)
     return closestPoint - P;
 }
 
-float Cross2D(float2 a, float2 b)
+// Computes the vector cross product of a scalar and a 2D vector (z-component assumed)
+float2 crossZ(float z, float2 v)
 {
-    return a.x * b.y - a.y * b.x;
+    return z * float2(-v.y, v.x);
 }
 
 float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
@@ -299,8 +300,8 @@ float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
     float2 s = B - A;        // Direction vector of the line segment
     float2 qp = A - pos;     // Vector from ray origin to segment start point
 
-    float r_cross_s = Cross2D(r, s);
-    float qp_cross_r = Cross2D(qp, r);
+    float r_cross_s = cross2D(r, s);
+    float qp_cross_r = cross2D(qp, r);
 
     // Check if lines are parallel (r_cross_s == 0)
     if (abs(r_cross_s) < EPSILON)
@@ -308,8 +309,8 @@ float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
         return 1.#INF; // No intersection, lines are parallel
     }
 
-    float t = Cross2D(qp, s) / r_cross_s; // Distance along the ray
-    float u = Cross2D(qp, r) / r_cross_s; // Parameter along the segment
+    float t = cross2D(qp, s) / r_cross_s; // Distance along the ray
+    float u = cross2D(qp, r) / r_cross_s; // Parameter along the segment
 
     // Check if intersection occurs within the ray and the segment
     if (t >= 0 && u >= 0 && u <= 1)
@@ -323,7 +324,7 @@ float RayLineIntersect(float2 pos, float2 dir, float2 A, float2 B)
 bool SideOfLine(float2 A, float2 B, float2 dstVec) {
     float2 lineVec = normalize(B - A);
 
-    float crossProduct = cross2d(lineVec, dstVec);
+    float crossProduct = cross2D(lineVec, dstVec);
 
     // True if P is on the left side of the line from A to B
     // This means all lines only "block" one side
