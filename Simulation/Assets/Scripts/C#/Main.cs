@@ -65,6 +65,7 @@ public class Main : MonoBehaviour
     public float RB_InteractionAttractionPower = 3.5f;
 
     [Header("References")]
+    public RenderTexture uiTexture;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
     public ComputeShader renderShader;
@@ -175,6 +176,7 @@ public class Main : MonoBehaviour
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
 
         renderShader.SetTexture(0, "Result", renderTexture);
+        renderShader.SetTexture(0, "UITexture", uiTexture);
 
         Debug.Log("Simulation started with " + ParticlesNum + " particles");
         ProgramStarted = true;

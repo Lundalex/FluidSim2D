@@ -20,6 +20,7 @@ const int ParticlesNum;
 const int RBodiesNum;
 
 RWTexture2D<unorm float4> Result;
+Texture2D<unorm float4> UITexture;
 
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
@@ -107,6 +108,14 @@ bool IsPointInsideRB(float2 pos, RigidBody rb)
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
+    // Render UI on top of everything else
+    float4 uiCol = UITexture[id.xy];
+    if (uiCol.w > 0)
+    {
+        Result[id.xy] = uiCol;
+        return;
+    }
+
     float2 pixelPos = id.xy * BoundsDims / (float2)Resolution;
     int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
 

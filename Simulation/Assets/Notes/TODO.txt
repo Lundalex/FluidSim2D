@@ -9,3 +9,5 @@ TASKS SPECIFIC TO RB_P-SIMULATION:
 - Fix "teleporting particles" bug
 
 - Fix glitching line in renderer - MAY BE RELATED TO "EXPLODING PARTICLES"
+
+- Make colors "pop" out more
