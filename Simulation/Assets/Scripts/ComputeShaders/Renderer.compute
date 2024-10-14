@@ -20,6 +20,7 @@ const int ParticlesNum;
 const int RBodiesNum;
 
 RWTexture2D<unorm float4> Result;
+RWTexture2D<unorm float4> UI;
 
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
@@ -107,6 +108,14 @@ bool IsPointInsideRB(float2 pos, RigidBody rb)
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
+    // Draw the corresponding UI pixel if the opacity > 0
+    float4 uiColor = UI[id.xy];
+    if (uiColor.w > 0)
+    {
+        Result[id.xy] = uiColor;
+        return;
+    }
+
     float2 pixelPos = id.xy * BoundsDims / (float2)Resolution;
     int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
 

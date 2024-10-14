@@ -164,8 +164,8 @@ void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo r
     // Compute velocities at the point of collision, including rotational velocities
     float2 rbARotVelAtCollisionPoint = crossZ(IntToFloat(rbA.rotVel_AsInt), rA);
     float2 rbBRotVelAtCollisionPoint = crossZ(IntToFloat(rbB.rotVel_AsInt), rB);
-    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt) + rbARotVelAtCollisionPoint;
-    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt) + rbBRotVelAtCollisionPoint;
+    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt2) + rbARotVelAtCollisionPoint;
+    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt2) + rbBRotVelAtCollisionPoint;
 
     // Relative velocity
     float2 relVel = rbBVel - rbAVel;
@@ -237,11 +237,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         float radiusSum = sqrt(rbA.maxRadiusSqr) + sqrt(rbB.maxRadiusSqr);
         if (dst > radiusSum) continue;
         
-        // Initialize collision data
-        RBHitInfo rbHitInfo = InitRBHitInfo();
         bool collisionDetected = false;
-        bool AInsideB_BInsideA = false;
-
         float2 deltaVelA = 0; float2 deltaVelB = 0;
         float deltaRotVelA = 0; float deltaRotVelB = 0;
 
@@ -255,33 +251,28 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             bool isInside = IsPointInsideRB(vertexA, rbB);
             if (!isInside) continue;
 
-            rbHitInfo = RayRBDstHitInfo(vertexA, rbB);
+            RBHitInfo rbHitInfo = RayRBDstHitInfo(vertexA, rbB);
             collisionDetected = true;
-            AInsideB_BInsideA = false;
 
-            // Resolve collision and get delta impulses
-            ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
+            // Resolve collision and modify delta velocities
+            ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, false, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
         }
 
-        // If no collision detected yet, check if any point of rbB is inside rbA
-        if (true)
+        // Check if any point of rbB is inside rbA
+        uint startIndexB = rbB.startIndex;
+        uint endIndexB = rbB.endIndex;
+        for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
         {
-            uint startIndexB = rbB.startIndex;
-            uint endIndexB = rbB.endIndex;
-            for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
-            {
-                float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
+            float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
 
-                bool isInside = IsPointInsideRB(vertexB, rbA);
-                if (!isInside) continue;
+            bool isInside = IsPointInsideRB(vertexB, rbA);
+            if (!isInside) continue;
 
-                rbHitInfo = RayRBDstHitInfo(vertexB, rbA);
-                collisionDetected = true;
-                AInsideB_BInsideA = true;
+            RBHitInfo rbHitInfo = RayRBDstHitInfo(vertexB, rbA);
+            collisionDetected = true;
 
-                // Resolve collision and get delta impulses
-                ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
-            }
+            // Resolve collision and modify delta velocities
+            ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, true, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
         }
 
         if (collisionDetected)
@@ -328,7 +319,7 @@ void AdjustRBDatas(uint3 id : SV_DispatchThreadID)
     RBAdjustments[rbIndex] = InitRBAdjustment();
 
     RigidBodies[rbIndex].pos += Int2ToFloat2(rbAdjustment.deltaPos_Int2);
-    RigidBodies[rbIndex].vel_AsInt += rbAdjustment.deltaVel_Int2;
+    RigidBodies[rbIndex].vel_AsInt2 += rbAdjustment.deltaVel_Int2;
     RigidBodies[rbIndex].rotVel_AsInt += rbAdjustment.deltaRotVel_Int;
 }
 
@@ -348,7 +339,7 @@ void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out floa
     // Relative velocity between the particle and the rigid body
     float2 dstToCollisionPoint = collisionPoint - rb.pos;
     float2 rotVelAtCollisionPoint = float2(-dstToCollisionPoint.y, dstToCollisionPoint.x) * IntToFloat(rb.rotVel_AsInt);
-    float2 rbVel = Int2ToFloat2(rb.vel_AsInt) + rotVelAtCollisionPoint;
+    float2 rbVel = Int2ToFloat2(rb.vel_AsInt2) + rotVelAtCollisionPoint;
     float2 relVel = pData.vel - rbVel;
 
     // Check if the particle is moving towards the rigid body
@@ -414,8 +405,8 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
                 if (deltaCenterVel.x != 0 && deltaCenterVel.y != 0)
                 {
                     int2 deltaCenterVel_Int2 = Float2AsInt2(deltaCenterVel);
-                    if (deltaCenterVel.x != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.x, deltaCenterVel_Int2.x);
-                    if (deltaCenterVel.y != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt.y, deltaCenterVel_Int2.y);
+                    if (deltaCenterVel.x != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt2.x, deltaCenterVel_Int2.x);
+                    if (deltaCenterVel.y != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt2.y, deltaCenterVel_Int2.y);
                 }
                 if (deltaRotVel != 0)
                 {
@@ -491,15 +482,15 @@ void UpdatePositions(uint3 id : SV_DispatchThreadID)
     if (!canMove) return;
 
     // Update position
-    rb.pos += Int2ToFloat2(rb.vel_AsInt) * DeltaTime;
+    rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
 
     // Forces
     float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
-    rb.vel_AsInt -= Float2AsInt2(totForce * DeltaTime);
+    rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
 
     // Damping
     float Damping = 0.1;
-    rb.vel_AsInt = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt) * (1 - Damping * DeltaTime));
+    rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
 
     float bounciness = 0.5;
     float horisontalFriction = 0.1;
@@ -519,28 +510,28 @@ void UpdatePositions(uint3 id : SV_DispatchThreadID)
         if (boundsMin.x < RigidBodyPadding)
         {
             rb.pos.x += RigidBodyPadding - boundsMin.x;
-            rb.vel_AsInt.x = FloatAsInt(IntToFloat(-rb.vel_AsInt.x) * bounciness);
-            rb.vel_AsInt.y = FloatAsInt(IntToFloat(rb.vel_AsInt.y) * (1 - horisontalFriction));
+            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
+            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
         }
         else if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
         {
             rb.pos.x -= boundsMax.x - (BoundaryDims.x - RigidBodyPadding);
-            rb.vel_AsInt.x = FloatAsInt(IntToFloat(-rb.vel_AsInt.x) * bounciness);
-            rb.vel_AsInt.y = FloatAsInt(IntToFloat(rb.vel_AsInt.y) * (1 - horisontalFriction));
+            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
+            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
         }
 
         // Y-axis collision
         if (boundsMin.y < RigidBodyPadding)
         {
             rb.pos.y += RigidBodyPadding - boundsMin.y;
-            rb.vel_AsInt.y = FloatAsInt(IntToFloat(-rb.vel_AsInt.y) * bounciness);
-            rb.vel_AsInt.x = FloatAsInt(IntToFloat(rb.vel_AsInt.x) * (1 - horisontalFriction));
+            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
+            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
         }
         else if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
         {
             rb.pos.y -= boundsMax.y - (BoundaryDims.y - RigidBodyPadding);
-            rb.vel_AsInt.y = FloatAsInt(IntToFloat(-rb.vel_AsInt.y) * bounciness);
-            rb.vel_AsInt.x = FloatAsInt(IntToFloat(rb.vel_AsInt.x) * (1 - horisontalFriction));
+            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
+            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
         }
     }
 

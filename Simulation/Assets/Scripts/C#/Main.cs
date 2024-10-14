@@ -43,7 +43,6 @@ public class Main : MonoBehaviour
 
     [Header("Render")]
     public bool FixedTimeStep = true;
-    public bool RenderMarchingSquares = false;
     public float TimeStep = 0.02f;
     public float ProgramSpeed = 2.0f;
     public float VisualParticleRadii = 0.4f;
@@ -65,6 +64,7 @@ public class Main : MonoBehaviour
     public float RB_InteractionAttractionPower = 3.5f;
 
     [Header("References")]
+    public RenderTexture uiTexture;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
     public ComputeShader renderShader;
@@ -76,7 +76,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
     [NonSerialized] public int pSimShaderThreadSize = 512; // /1024
     [NonSerialized] public int sortShaderThreadSize = 512; // /1024
-    [NonSerialized] public int marchingSquaresShaderThreadSize = 32; // /32
     [NonSerialized] public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
     [NonSerialized] public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
     [NonSerialized] public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
@@ -112,7 +111,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ParticlesNum;
     [NonSerialized] public int MaxInfluenceRadiusSqr;
     [NonSerialized] public float InvMaxInfluenceRadius;
-    [NonSerialized] public float MarchScale;
     [NonSerialized] public int2 ChunksNum;
     [NonSerialized] public int ChunksNumAll;
     [NonSerialized] public int ChunksNumAllNextPow2;
@@ -175,6 +173,7 @@ public class Main : MonoBehaviour
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
 
         renderShader.SetTexture(0, "Result", renderTexture);
+        renderShader.SetTexture(0, "UI", uiTexture);
 
         Debug.Log("Simulation started with " + ParticlesNum + " particles");
         ProgramStarted = true;
@@ -618,16 +617,9 @@ public class Main : MonoBehaviour
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (RenderMarchingSquares)
-        {
-            Graphics.Blit(src, dest);
-        }
-        else
-        {
-            RunRenderShader();
+        RunRenderShader();
 
-            Graphics.Blit(renderTexture, dest);
-        }
+        Graphics.Blit(renderTexture, dest);
     }
 
     void OnDestroy()
