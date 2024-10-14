@@ -66,7 +66,7 @@ namespace Resources
             return new float2(x, y);
         }
 
-
+        public static string RemoveCharsFromEnd(string input, int charsToRemove) => input[..^charsToRemove];
     }
 
     public class Func // Math resources
@@ -164,6 +164,17 @@ namespace Resources
         public static int2 Float2AsInt2(float2 a)
         {
             return new int2(FloatAsInt(a.x), FloatAsInt(a.y));
+        }
+
+        public static float IntToFloat(int a)
+        {
+            float int_float_precision = 100000.0f;
+            return a / int_float_precision;
+        }
+
+        public static float2 Int2ToFloat2(int2 a)
+        {
+            return new float2(IntToFloat(a.x), IntToFloat(a.y));
         }
 
         public static float3 ColorToFloat3(Color color)
