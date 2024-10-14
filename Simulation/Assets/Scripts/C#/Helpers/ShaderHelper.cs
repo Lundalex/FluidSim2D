@@ -163,18 +163,22 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
 
+        rbSimShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
+        rbSimShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
+        rbSimShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+
         rbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
 
-        rbSimShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
-        rbSimShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
-        rbSimShader.SetBuffer(1, "PDatas", m.PDataBuffer);
-
         rbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
+        rbSimShader.SetBuffer(2, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
+
+        rbSimShader.SetBuffer(4, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(4, "RBAdjustments", m.RBAdjustmentBuffer);
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
@@ -185,6 +189,9 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         rbSimShader.SetInt("NumVectors", m.RBVectors.Length);
         rbSimShader.SetInt("NumParticles", m.ParticlesNum);
+
+        rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
+        rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);
 
         rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
         rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);

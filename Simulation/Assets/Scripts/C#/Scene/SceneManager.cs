@@ -79,6 +79,8 @@ public class SceneManager : MonoBehaviour
         {
             SceneRigidBody rigidBody = allRigidBodies[i];
 
+            if (!rigidBody.RBInput.includeInSimulation) continue;
+
             // Transform points to local space
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
             Vector2[] vectors = GetTransformedPoints(rigidBody, offset, transformedRBPos);

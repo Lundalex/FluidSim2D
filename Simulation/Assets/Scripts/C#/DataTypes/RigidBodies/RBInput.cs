@@ -5,6 +5,7 @@ using UnityEngine;
 [Serializable]
 public struct RBInput
 {
+    public bool includeInSimulation;
     public float mass;
     public float gravity;
     public float elasticity;

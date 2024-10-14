@@ -59,3 +59,18 @@ calculateGroupSum(id.xy, uint2(TN_R, TN_R), 1.0);
 uint2 TN = uint2(TN_R, TN_R);
 uint localIndex = id.x % TN.x + (id.y % TN.y) * TN.x;
 if (localIndex == 0) return; // return for the first thread
+
+void AddImpulseData(inout ImpulseData a, ImpulseData b, int rbIndex)
+{
+    if (a.rbIndex == rbIndex)
+    {
+        a.centerImpulse += b.centerImpulse;
+        a.rotImpulse += b.rotImpulse;
+    }
+    else
+    {
+        a.centerImpulse = b.centerImpulse;
+        a.rotImpulse = b.rotImpulse;
+        a.rbIndex = rbIndex;
+    }
+}
