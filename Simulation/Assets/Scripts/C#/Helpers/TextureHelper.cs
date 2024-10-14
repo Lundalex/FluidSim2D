@@ -1,10 +1,8 @@
 using Unity.Mathematics;
 using UnityEngine;
 using System;
-
-// Import utils from Resources.cs
-using Resources;
 using UnityEngine.Experimental.Rendering;
+
 public class TextureHelper : MonoBehaviour
 {
     public ComputeShader ngShader;
@@ -12,7 +10,7 @@ public class TextureHelper : MonoBehaviour
     private int ngShaderThreadSize = 8; // /~10
     private int tbShaderThreadSize = 8; // /~10
     [NonSerialized] public RenderTexture T_VectorMap;
-    [NonSerialized] public RenderTexture T_PointsMap;
+    [NonSerialized] public RenderTexture T_TrilinearsMap;
     private int3 LastResolution;
     private int LastCellSize;
 
@@ -28,7 +26,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
 
@@ -43,7 +41,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
 
@@ -58,7 +56,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
 
@@ -75,7 +73,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -88,7 +86,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -101,7 +99,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -115,7 +113,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
             return texture;
@@ -127,7 +125,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
             return texture;
@@ -139,7 +137,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
             return texture;
@@ -154,7 +152,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -165,7 +163,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -176,7 +174,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
+                filterMode = FilterMode.Trilinear
             };
             texture.Create();
         }
@@ -329,7 +327,7 @@ public class TextureHelper : MonoBehaviour
         ngShader.SetInt("RngSeed", rngSeed);
         ngShader.SetInt("MaxNoiseCellSize", cellSize);
 
-        ComputeHelper.DispatchKernel(ngShader, "GeneratePointsMap", resolution / cellSize, ngShaderThreadSize);
+        ComputeHelper.DispatchKernel(ngShader, "GenerateTrilinearsMap", resolution / cellSize, ngShaderThreadSize);
         ngShader.SetTexture(3, "VoronoiNoise", texture);
         ComputeHelper.DispatchKernel(ngShader, "Voronoi", resolution, ngShaderThreadSize);
     }
@@ -346,7 +344,7 @@ public class TextureHelper : MonoBehaviour
 
         T_VectorMap = CreateTexture(newResolution / newCellSize, 3);
 
-        T_PointsMap = CreateTexture(newResolution / newCellSize, 3);
+        T_TrilinearsMap = CreateTexture(newResolution / newCellSize, 3);
 
         LastResolution = newResolution;
         LastCellSize = newCellSize;

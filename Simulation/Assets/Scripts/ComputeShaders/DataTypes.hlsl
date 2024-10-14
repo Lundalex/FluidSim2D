@@ -63,7 +63,7 @@ struct StickynessRequest
 struct RigidBody 
 {
     float2 pos;
-    int2 vel_AsInt;
+    int2 vel_AsInt2;
     float2 nextPos;
     float2 nextVel;
     int rotVel_AsInt; // (radians / second)

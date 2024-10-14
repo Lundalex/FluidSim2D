@@ -3,7 +3,7 @@ using Unity.Mathematics;
 public struct RBData
 {
     public float2 pos;
-    public int2 vel_AsInt;
+    public int2 vel_AsInt2;
     public float2 nextPos;
     public float2 nextVel;
     public float rotVel_AsInt; // (radians / second)

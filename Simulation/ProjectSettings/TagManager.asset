@@ -6,6 +6,10 @@ TagManager:
   tags:
   - RigidBody
   - Fluid
+  - UICanvas
+  - SensorUIContainer
+  - SensorManager
+  - Sensor
   layers:
   - Default
   - TransparentFX

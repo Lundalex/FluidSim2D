@@ -13,8 +13,8 @@ public class SceneManager : MonoBehaviour
     {
         int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
 
-        bounds.x += maxInfluenceRadius - bounds.x % maxInfluenceRadius;
-        bounds.y += maxInfluenceRadius - bounds.y % maxInfluenceRadius;
+        bounds.x -= bounds.x % maxInfluenceRadius;
+        bounds.y -= bounds.y % maxInfluenceRadius;
 
         return bounds;
     }
@@ -111,7 +111,7 @@ public class SceneManager : MonoBehaviour
         return new RBData
         {
             pos = pos,
-            vel_AsInt = rbInput.canMove ? 0 : Func.Float2AsInt2(rbInput.velocity),
+            vel_AsInt2 = rbInput.canMove ? 0 : Func.Float2AsInt2(rbInput.velocity),
             nextPos = 0,
             nextVel = 0,
             rotVel_AsInt = rbInput.canRotate ? 0 : Func.FloatAsInt(rbInput.rotationVelocity),
