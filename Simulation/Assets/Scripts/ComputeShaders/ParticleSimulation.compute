@@ -91,10 +91,9 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
     float totNearDensity = 0.0;
     for (int x = -1; x <= 1; x++)
     {
-        curChunk.x = chunk.x + x;
         for (int y = -1; y <= 1; y++)
         {
-            curChunk.y = chunk.y + y;
+            curChunk = chunk + int2(x, y);
 
             if (!ValidChunk(curChunk)) continue;
 
@@ -409,11 +408,9 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
         bool shouldBreak = false;
         for (int x = -1; x <= 1 && !shouldBreak; x++)
         {
-            curChunk.x = newChunk_A.x + x;
-
             for (int y = -1; y <= 1 && !shouldBreak; y++)
             {
-                curChunk.y = newChunk_A.y + y;
+                curChunk = newChunk_A + int2(x, y);
 
                 if (ValidChunk(curChunk))
                 {
@@ -460,16 +457,15 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
     int2 curChunk;
     int nCount = 0;
-    float2 totPressureForce = float2(0.0, 0.0);
-    float2 totViscocityForce = float2(0.0, 0.0);
-    float2 totSpringForce = float2(0.0, 0.0);
-    float totTemperatureExchange = 0.0;
+    float2 totPressureForce = 0;
+    float2 totViscocityForce = 0;
+    float2 totSpringForce = 0;
+    float totTemperatureExchange = 0;
     for (int x = -1; x <= 1; x++)
     {
-        curChunk.x = chunk.x + x;
         for (int y = -1; y <= 1; y++)
         {
-            curChunk.y = chunk.y + y;
+            curChunk = chunk + int2(x, y);
             
             if (!ValidChunk(curChunk)) continue;
 
