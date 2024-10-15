@@ -18,8 +18,8 @@
     Display:
         - Graph visualisation
         - Better looking ui elements
-
-Spring links, and point links, for rigid bodies (k * dL)
-
-Materials for rigid bodies
-Noise + Materials for fluids
+        - Materials for rigid bodies
+        - Noise + Materials for fluids
+    
+    Physics:
+        - Rigid body spring links (and point links) (F = k * dL)
