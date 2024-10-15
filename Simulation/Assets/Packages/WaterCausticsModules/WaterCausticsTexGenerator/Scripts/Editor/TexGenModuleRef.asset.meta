@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8049e24e9bb6d27469ea2050d91944cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201037
+  packageName: Water Caustics Effect for URP v2
+  packageVersion: 2.0.8
+  assetPath: Assets/WaterCausticsModules/WaterCausticsTexGenerator/Scripts/Editor/TexGenModuleRef.asset
+  uploadId: 694275

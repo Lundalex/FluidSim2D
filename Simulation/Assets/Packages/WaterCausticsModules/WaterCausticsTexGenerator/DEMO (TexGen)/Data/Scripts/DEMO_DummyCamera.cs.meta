@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 991a87386c50d7f4db020e0c65344b9c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 201037
+  packageName: Water Caustics Effect for URP v2
+  packageVersion: 2.0.8
+  assetPath: Assets/WaterCausticsModules/WaterCausticsTexGenerator/DEMO (TexGen)/Data/Scripts/DEMO_DummyCamera.cs
+  uploadId: 694275
