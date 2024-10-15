@@ -135,7 +135,10 @@ public class ShaderHelper : MonoBehaviour
     public void UpdateRenderShaderVariables(ComputeShader renderShader)
     {
         renderShader.SetFloat("VisualParticleRadii", m.VisualParticleRadii);
+        renderShader.SetFloat("MetaballsThreshold", m.MetaballsThreshold);
+        renderShader.SetFloat("EdgeWidth", m.RenderEdgeWidth);
         renderShader.SetFloat("RBRenderThickness", m.RBRenderThickness);
+        renderShader.SetVector("EdgeColor", Func.ColorToVector3(m.RenderEdgeColor));
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
         renderShader.SetVector("BackgroundColor", Func.ColorToVector3(m.BackgroundColor));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));

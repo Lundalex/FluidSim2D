@@ -260,7 +260,10 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.03
   ProgramSpeed: 6
-  VisualParticleRadii: 0.4
+  VisualParticleRadii: 1.5
+  MetaballsThreshold: 3
+  RenderEdgeWidth: 0.6
+  RenderEdgeColor: {r: 0.04358387, g: 0, b: 1, a: 1}
   RBRenderThickness: 0.5
   TimeStepsPerFrame: 2
   SubTimeStepsPerFrame: 3
@@ -270,6 +273,11 @@ MonoBehaviour:
     y: 1280
   BackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   DoDrawRBCentroids: 1
+  DoDrawRBEdges: 1
+  DoUseMetaballs: 1
+  DoSimulateParticleViscosity: 1
+  DoSimulateParticleSprings: 1
+  DoSimulateParticleTemperature: 1
   MaxInteractionRadius: 50
   InteractionAttractionPower: 3.5
   InteractionFountainPower: 0
@@ -461,6 +469,18 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: MaxGizmosIterations
       value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.b
+      value: 0.13710809
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.r
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.isStationary
@@ -807,6 +827,18 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: MaxGizmosIterations
       value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.isStationary
@@ -1191,7 +1223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b13675460d84d2b49a24f5b5509d4cab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorType: 0
+  sensorType: 1
   rbIndex: 1
   offset:
     x: 0
@@ -1469,6 +1501,18 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: MaxGizmosIterations
       value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.g
+      value: 0.28433526
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.edgeColor.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.isStationary

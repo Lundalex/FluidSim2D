@@ -1,6 +1,8 @@
 #pragma kernel Render2D; // 0
 
 #pragma multi_compile _ DRAW_RB_CENTROIDS
+#pragma multi_compile _ DRAW_RB_EDGES
+#pragma multi_compile _ USE_METABALLS
 
 #include "MathResources.hlsl"
 #include "CompositionResources.hlsl"
@@ -8,10 +10,12 @@
 #include "Constants.hlsl"
 
 const float VisualParticleRadii;
-const float RBRenderThickness;
+const float MetaballsThreshold;
+const float EdgeWidth;
 const int RBVectorNum;
 const int2 Resolution;
 const float3 BackgroundColor;
+const float3 EdgeColor;
 
 const int2 BoundsDims;
 const int MaxInfluenceRadius;
@@ -105,6 +109,46 @@ bool IsPointInsideRB(float2 pos, RigidBody rb)
     return isInside;
 }
 
+float DstToRB(float2 pos, RigidBody rb)
+{
+    // Keep the last vector stored to avoid redundant data fetches
+    RBVector lastVec = RBVectors[rb.startIndex];
+
+    float minDstSqr = 1.#INF;
+    uint startIndex = rb.startIndex;
+    uint endIndex = rb.endIndex;
+    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    {
+        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+
+        float2 dst = DstToLineSegment(lastVec.pos + rb.pos, newVec.pos + rb.pos, pos);
+
+        float dstSqr = dot2(dst);
+        if (dstSqr < minDstSqr) minDstSqr = dstSqr;
+
+        lastVec = newVec;
+    }
+
+    float dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
+
+    return dst;
+}
+
+float MetaballsDensity(float dstSqr, float radius)
+{
+    float dstR = sqrt(dstSqr) / radius;
+    return (1 - dstR);
+}
+
+float4 GetRenderColor(PData pData)
+{
+    // visualize velocity / temperature
+    float3 rgb = VelocityToRGB(pData.vel, PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)].colorG);
+    // float3 rgb = TemperatureToRGB(pData.temperature);
+
+    return float4(rgb.x, rgb.y, rgb.z, 0.0);
+}
+
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
@@ -121,7 +165,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
 
     // Render rigid bodies
     bool rigidBodyFound = false;
-    int highestRenderPriority;
+    int highestRenderPriority = 0;
     float4 result;
     for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
     {
@@ -139,9 +183,21 @@ void Render2D(uint3 id : SV_DispatchThreadID)
         {
             if (IsPointInsideRB(pixelPos, rb))
             {
-                result = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
-                highestRenderPriority = rb.renderPriority;
                 rigidBodyFound = true;
+                highestRenderPriority = rb.renderPriority;
+                
+                // Render edge
+                #if DRAW_RB_EDGES
+                    float dst = DstToRB(pixelPos, rb);
+                    if (dst < EdgeWidth)
+                    {
+                        result = float4(rb.edgeCol.x, rb.edgeCol.y, rb.edgeCol.z, 1.0);
+                        continue;
+                    }
+                #endif
+                
+                // Render body
+                result = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
             }
         }
     }
@@ -153,8 +209,14 @@ void Render2D(uint3 id : SV_DispatchThreadID)
 
     // Render particles
     int2 curChunk;
-    float minDst = VisualParticleRadii;
-    bool particleFound = false;
+    #if USE_METABALLS
+        float totDensity = 0;
+    #else
+        bool particleFound = false;
+        float minRadius = min(VisualParticleRadii, (float)MaxInfluenceRadius);
+        float minRadiusSqr = minRadius * minRadius;
+        float minDstSqr = 1.#INF;
+    #endif
     for (int x = -1; x <= 1; x++)
     {
         curChunk.x = chunk.x + x;
@@ -173,24 +235,41 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                 int pIndex = SpatialLookup[index].x;
                 PData pData = PDatas[pIndex];
 
-                float dst = length(pixelPos - pData.pos);
-                if (dst < minDst)
-                {
-                    // visualize velocity / temperature
-                    float3 rgb = VelocityToRGB(pData.vel, PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)].colorG);
-                    // float3 rgb = TemperatureToRGB(pData.temperature);
+                float dstSqr = dot2(pixelPos - pData.pos);
 
-                    Result[id.xy] = float4(rgb.x, rgb.y, rgb.z, 0.0);
-                    minDst = dst;
-                    particleFound = true;
-                }
+                #if USE_METABALLS
+                    if (dstSqr < pow(MaxInfluenceRadius, 2))
+                    {
+                        totDensity += MetaballsDensity(dstSqr, MaxInfluenceRadius);
+
+                        if (totDensity > MetaballsThreshold)
+                        {
+                            Result[id.xy] = GetRenderColor(pData);
+                            return;
+                        }
+                    }
+                #else
+                    if (dstSqr < min(minRadiusSqr, minDstSqr))
+                    {
+                        minDstSqr = dstSqr;
+                        particleFound = true;
+                        if (sqrt(dstSqr) > minRadius - EdgeWidth) result = float4(EdgeColor.x, EdgeColor.y, EdgeColor.z, 1.0);
+                        else result = GetRenderColor(pData);
+                    }
+                #endif
 
                 // Increment index each iteration - Chunk particle search algorithm
                 index++;
             }
         }
     }
-    if (particleFound) return;
+    #if !USE_METABALLS
+        if (particleFound)
+        {
+            Result[id.xy] = result;
+            return;
+        }
+    #endif
 
     Result[id.xy] = float4(BackgroundColor.x, BackgroundColor.y, BackgroundColor.z, 1.0);
 }
