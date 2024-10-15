@@ -37,6 +37,7 @@ public class Main : MonoBehaviour
     public int SpawnDims = 160; // A x A
     public float BorderPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
+
     [Header("Collision Solver")]
     public float RB_RBCollisionCorrectionFactor = 0.8f;
     public float RB_RBCollisionSlop = 0.01f;
@@ -47,19 +48,32 @@ public class Main : MonoBehaviour
     public float TimeStep = 0.02f;
     public float ProgramSpeed = 2.0f;
     public float VisualParticleRadii = 0.4f;
+    public float MetaballsThreshold = 1.0f;
+    public float RenderEdgeWidth = 0.5f;
+    public Color RenderEdgeColor = Color.white;
     public float RBRenderThickness = 0.5f;
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
     public int2 Resolution = new(1920, 1280);
-    public Color BackgroundColor;
+    public Color BackgroundColor = Color.black;
+
+    [Header("Shader Compilation - Renderer")]
     public bool DoDrawRBCentroids = false;
+    public bool DoDrawRBEdges;
+    public bool DoUseMetaballs = true;
+
+    [Header("Shader Compilation - Particle Simulation")]
+    public bool DoSimulateParticleViscosity = true;
+    public bool DoSimulateParticleSprings = true;
+    public bool DoSimulateParticleTemperature = true;
 
     [Header("Interaction - Particles")]
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
+
     [Header("Interaction - Rigid Bodies")]
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
@@ -265,8 +279,21 @@ public class Main : MonoBehaviour
         rbSimShader.SetBool("RMousePressed", mousePressed.x);
         rbSimShader.SetBool("LMousePressed", mousePressed.y);
 
-        // Multi-compilation
+        // Multi-compilation - renderShader
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
+        else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
+        if (DoDrawRBEdges) renderShader.EnableKeyword("DRAW_RB_EDGES");
+        else renderShader.DisableKeyword("DRAW_RB_EDGES");
+        if (DoUseMetaballs) renderShader.EnableKeyword("USE_METABALLS");
+        else renderShader.DisableKeyword("USE_METABALLS");
+
+        // Multi-compilation - pSimShader
+        if (DoSimulateParticleViscosity) pSimShader.EnableKeyword("SIMULATE_PARTICLE_VISCOSITY");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_VISCOSITY");
+        if (DoSimulateParticleSprings) pSimShader.EnableKeyword("SIMULATE_PARTICLE_SPRINGS");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_SPRINGS");
+        if (DoSimulateParticleTemperature) pSimShader.EnableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
 
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
@@ -528,26 +555,29 @@ public class Main : MonoBehaviour
 
     void GPUSortSpringLookUp()
     {
-        // Spring buffer kernels
-        int threadGroupsNum = Utils.GetThreadGroupsNums(ChunksNumAll, sortShaderThreadSize);
-
-        ComputeHelper.DispatchKernel (sortShader, "PopulateChunkSizes", threadGroupsNum);
-        ComputeHelper.DispatchKernel (sortShader, "PopulateSpringCapacities", threadGroupsNum);
-        ComputeHelper.DispatchKernel (sortShader, "CopySpringCapacities", threadGroupsNum);
-
-        // Calculate prefix sums (SpringStartIndices)
-        bool StepBufferCycle = false;
-        for (int offset = 1; offset < ChunksNumAll; offset *= 2)
+        if (DoSimulateParticleSprings)
         {
-            StepBufferCycle = !StepBufferCycle;
+            // Spring buffer kernels
+            int threadGroupsNum = Utils.GetThreadGroupsNums(ChunksNumAll, sortShaderThreadSize);
 
-            sortShader.SetBool("StepBufferCycle", StepBufferCycle);
-            sortShader.SetInt("Offset2", offset);
+            ComputeHelper.DispatchKernel (sortShader, "PopulateChunkSizes", threadGroupsNum);
+            ComputeHelper.DispatchKernel (sortShader, "PopulateSpringCapacities", threadGroupsNum);
+            ComputeHelper.DispatchKernel (sortShader, "CopySpringCapacities", threadGroupsNum);
 
-            ComputeHelper.DispatchKernel (sortShader, "ParallelPrefixSumScan", threadGroupsNum);
+            // Calculate prefix sums (SpringStartIndices)
+            bool StepBufferCycle = false;
+            for (int offset = 1; offset < ChunksNumAll; offset *= 2)
+            {
+                StepBufferCycle = !StepBufferCycle;
+
+                sortShader.SetBool("StepBufferCycle", StepBufferCycle);
+                sortShader.SetInt("Offset2", offset);
+
+                ComputeHelper.DispatchKernel (sortShader, "ParallelPrefixSumScan", threadGroupsNum);
+            }
+
+            if (StepBufferCycle == true) { ComputeHelper.DispatchKernel (sortShader, "CopySpringStartIndicesBuffer", threadGroupsNum); } // copy to result buffer if necessary
         }
-
-        if (StepBufferCycle == true) { ComputeHelper.DispatchKernel (sortShader, "CopySpringStartIndicesBuffer", threadGroupsNum); } // copy to result buffer if necessary
     }
 
     void GPUSortStickynessRequests()
@@ -591,7 +621,7 @@ public class Main : MonoBehaviour
         ComputeHelper.DispatchKernel (pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
         ComputeHelper.DispatchKernel (pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
 
-        if (step == 0)
+        if (step == 0 && DoSimulateParticleSprings)
         {
             ComputeHelper.DispatchKernel (pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
             ComputeHelper.DispatchKernel (pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);

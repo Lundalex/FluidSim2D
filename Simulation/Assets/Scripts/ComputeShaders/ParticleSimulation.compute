@@ -6,6 +6,10 @@
 #pragma kernel UpdatePositions // 5
 #pragma kernel ConsumeStickynessRequests // 6 (unused)
 
+#pragma multi_compile _ SIMULATE_PARTICLE_VISCOSITY
+#pragma multi_compile _ SIMULATE_PARTICLE_SPRINGS
+#pragma multi_compile _ SIMULATE_PARTICLE_TEMPERATURE
+
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 #include "MathResources.hlsl"
@@ -106,31 +110,33 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
                 int otherPIndex = SpatialLookup[index].x;
                 PType PType_otherPIndex = PTypes[Extract_PType(PDatas[otherPIndex].lastChunkKey_PType_POrder)];
 
-                // -- Spring handling --
-
-                if (TransferSpringData)
-                {
-                    if (x == 0 && y == 0)
+                // --- Spring handling ---
+                
+                #if SIMULATE_PARTICLE_SPRINGS
+                    if (TransferSpringData)
                     {
-                        if (pIndex == otherPIndex)
+                        if (x == 0 && y == 0)
                         {
-                            int pOrder = index - startIndex;
-                            Set_POrder(pData.lastChunkKey_PType_POrder, pOrder);
-                            PDatas[pIndex].lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
+                            if (pIndex == otherPIndex)
+                            {
+                                int pOrder = index - startIndex;
+                                Set_POrder(pData.lastChunkKey_PType_POrder, pOrder);
+                                PDatas[pIndex].lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
+                            }
                         }
                     }
-                }
+                #endif
 
                 // float avgInfluenceRadius = avg(influenceRadius, PType_otherPIndex.influenceRadius);
                 float avgInfluenceRadius = PType_otherPIndex.influenceRadius; // influenceRadius SEEMS UNDEFINED OR SOMETHING
 
-                // -- Calculate densities --
+                // --- Calculate densities ---
 
                 float dst = length(pData.predPos - PDatas[otherPIndex].predPos);
                 totDensity += PType_otherPIndex.mass * SmoothLiquid_optimised(dst, avgInfluenceRadius);
                 totNearDensity += PType_otherPIndex.mass * SmoothLiquidNear_optimised(dst, avgInfluenceRadius);
 
-                // -- Increment index each iteration - Chunk particle search algorithm --
+                // --- Increment index each iteration - Chunk particle search algorithm ---
 
                 index++;
             }
@@ -297,7 +303,7 @@ float2 LiquidSpringForce(PType pType, PType PType_otherPIndex, int pIndex, int o
         spring.restLength = avgInfluenceRadius - 0.1;
     }
 
-    // -- Modify spring and perform force calculations (plasticity, elasticity) --
+    // --- Modify spring and perform force calculations (plasticity, elasticity) ---
 
     // Plasticity calculations
     float diffMng = absDst - spring.restLength;
@@ -314,11 +320,11 @@ float2 LiquidSpringForce(PType pType, PType PType_otherPIndex, int pIndex, int o
     float absSpringForce = LiquidSpringForceModel(stiffness, spring.restLength, avgInfluenceRadius, absDst);
     float2 springForce = absSpringForce * normDst;
 
-    // -- Write new spring data --
+    // --- Write new spring data ---
 
     ParticleSpringsCombined[springIndex] = spring;
 
-    // -- Return calculated force --
+    // --- Return calculated force ---
 
     return (isnan(springForce.x) || isnan(springForce.y)) ? 0 : -springForce;
 }
@@ -453,7 +459,9 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     int2 chunk = int2((uint)lastChunkKey % ChunksNum.x, (int)((uint)lastChunkKey / ChunksNum.x));
     int baseChunkKey = GetChunkKey(chunk);
 
-    int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;
+    #if SIMULATE_PARTICLE_SPRINGS
+        int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;
+    #endif
 
     int2 curChunk;
     int nCount = 0;
@@ -490,21 +498,29 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
                 float2 normDst = normalize(dst);
 
                 float viscocityLaplacian = SmoothViscosityLaplacian_optimised(absDst, avgInfluenceRadius);
-
-                int springIndex = FrameBufferCycle
-                ? SpringStartIndices_dbA[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nCount + ParticleSpringsCombinedHalfLength
-                : SpringStartIndices_dbB[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nCount;
-
+                
                 totPressureForce += otherPIndex_Mass * PressureForce(pData.density, PData_otherPIndex.density, pData.nearDensity, PData_otherPIndex.nearDensity, pType, PType_otherPIndex, absDst, avgInfluenceRadius, normDst, state);
-                totViscocityForce += otherPIndex_Mass * ViscocityForce(pData.lastVel, PData_otherPIndex.lastVel, pType, PType_otherPIndex, viscocityLaplacian);
-                if (pType.fluidSpringGroup != 0 && pType.fluidSpringGroup == PType_otherPIndex.fluidSpringGroup)
-                {
-                    totSpringForce += otherPIndex_Mass * LiquidSpringForce(pType, PType_otherPIndex, i, otherPIndex, springIndex, absDst, avgInfluenceRadius, normDst);
-                }
 
-                totTemperatureExchange += TemperatureExchange(viscocityLaplacian, pData.temperature, PData_otherPIndex.temperature, pType.thermalConductivity, PType_otherPIndex.thermalConductivity, absDst, DeltaTime);
+                #if SIMULATE_PARTICLE_VISCOSITY
+                    totViscocityForce += otherPIndex_Mass * ViscocityForce(pData.lastVel, PData_otherPIndex.lastVel, pType, PType_otherPIndex, viscocityLaplacian);
+                #endif
 
-                // -- Increment index each iteration - particle chunks algorithm, particle springs algorithm --
+                #if SIMULATE_PARTICLE_SPRINGS
+                    int springIndex = FrameBufferCycle
+                    ? SpringStartIndices_dbA[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nCount + ParticleSpringsCombinedHalfLength
+                    : SpringStartIndices_dbB[max(baseChunkKey-1, 0)] + pOrder * nearSpringCapacity + nCount;
+
+                    if (pType.fluidSpringGroup != 0 && pType.fluidSpringGroup == PType_otherPIndex.fluidSpringGroup)
+                    {
+                        totSpringForce += otherPIndex_Mass * LiquidSpringForce(pType, PType_otherPIndex, i, otherPIndex, springIndex, absDst, avgInfluenceRadius, normDst);
+                    }
+                #endif
+                
+                #if SIMULATE_PARTICLE_TEMPERATURE
+                    totTemperatureExchange += TemperatureExchange(viscocityLaplacian, pData.temperature, PData_otherPIndex.temperature, pType.thermalConductivity, PType_otherPIndex.thermalConductivity, absDst, DeltaTime);
+                #endif
+
+                // --- Increment index each iteration - particle chunks algorithm, particle springs algorithm ---
 
                 index++;
                 nCount++;

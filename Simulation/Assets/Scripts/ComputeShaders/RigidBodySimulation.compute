@@ -240,12 +240,11 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         // Initialize collision data
         RBHitInfo rbHitInfo = InitRBHitInfo();
         bool collisionDetected = false;
-        bool AInsideB_BInsideA = false;
 
         float2 deltaVelA = 0; float2 deltaVelB = 0;
         float deltaRotVelA = 0; float deltaRotVelB = 0;
 
-        // Check if any point of rbA is inside rbB
+        // Check if any points of rbA is inside rbB
         uint startIndexA = rbA.startIndex;
         uint endIndexA = rbA.endIndex;
         for (uint vecIndex = startIndexA; vecIndex < endIndexA; vecIndex++)
@@ -257,36 +256,33 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
 
             rbHitInfo = RayRBDstHitInfo(vertexA, rbB);
             collisionDetected = true;
-            AInsideB_BInsideA = false;
+            bool AInsideB_BInsideA = false;
 
             // Resolve collision and get delta impulses
             ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
         }
 
-        // If no collision detected yet, check if any point of rbB is inside rbA
-        if (true)
+        // Check if any points of rbB is inside rbA
+        uint startIndexB = rbB.startIndex;
+        uint endIndexB = rbB.endIndex;
+        for (vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
         {
-            uint startIndexB = rbB.startIndex;
-            uint endIndexB = rbB.endIndex;
-            for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
-            {
-                float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
+            float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
 
-                bool isInside = IsPointInsideRB(vertexB, rbA);
-                if (!isInside) continue;
+            bool isInside = IsPointInsideRB(vertexB, rbA);
+            if (!isInside) continue;
 
-                rbHitInfo = RayRBDstHitInfo(vertexB, rbA);
-                collisionDetected = true;
-                AInsideB_BInsideA = true;
+            rbHitInfo = RayRBDstHitInfo(vertexB, rbA);
+            collisionDetected = true;
+            bool AInsideB_BInsideA = true;
 
-                // Resolve collision and get delta impulses
-                ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
-            }
+            // Resolve collision and get delta impulses
+            ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
         }
 
         if (collisionDetected)
         {
-            // Atomically update linear velocities
+            // Update linear velocities
             int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
             int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
 
@@ -296,13 +292,14 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             InterlockedAdd(RBAdjustments[rbBIndex].deltaVel_Int2.x, deltaVelB_Int2.x);
             InterlockedAdd(RBAdjustments[rbBIndex].deltaVel_Int2.y, deltaVelB_Int2.y);
 
-            // Update angular velocities using atomic operations
+            // Update angular velocities
             int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
             int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
 
             InterlockedAdd(RBAdjustments[rbAIndex].deltaRotVel_Int, deltaRotVelA_Int);
             InterlockedAdd(RBAdjustments[rbBIndex].deltaRotVel_Int, deltaRotVelB_Int);
-
+            
+            // Update positions
             float2 deltaPosA = rbA.pos - posRecA;
             float2 deltaPosB = rbB.pos - posRecB;
 

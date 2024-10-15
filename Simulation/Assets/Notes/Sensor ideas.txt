@@ -1,2 +1,25 @@
 --- RB sensors ---
     Stream data using async
+
+    Rigid body data:
+        - vel
+        - pos
+        - rot vel
+        - derived data (energy, acceleration)
+
+    Fluid data:
+        - temperature
+        - pressure
+        - volume
+        - flow (volume/s or mass/s)
+        - flow (speed)
+        - derived data (energy, effect (new particle energy/s))
+
+    Display:
+        - Graph visualisation
+        - Better looking ui elements
+
+Spring links, and point links, for rigid bodies (k * dL)
+
+Materials for rigid bodies
+Noise + Materials for fluids

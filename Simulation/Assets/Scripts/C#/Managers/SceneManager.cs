@@ -13,8 +13,11 @@ public class SceneManager : MonoBehaviour
     {
         int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
 
-        bounds.x -= bounds.x % maxInfluenceRadius;
-        bounds.y -= bounds.y % maxInfluenceRadius;
+        int2 boundsMod = bounds % maxInfluenceRadius;
+
+        // Round bounds up to next multiple of maxInfluenceRadius
+        if (boundsMod.x != 0) bounds.x += maxInfluenceRadius - boundsMod.x;
+        if (boundsMod.y != 0) bounds.y += maxInfluenceRadius - boundsMod.y;
 
         return bounds;
     }
@@ -123,6 +126,7 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             col = Func.ColorToFloat3(rbInput.color),
+            edgeCol = Func.ColorToFloat3(rbInput.edgeColor),
             renderPriority = rbInput.renderPriority
         };
     }

@@ -5,7 +5,7 @@ static const float int_float_precision = 100000.0;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
 #include "RandGen.hlsl"
-#include "StoreFloat.hlsl"
+#include "VariableStorageResources.hlsl"
 
 // -- Optimised SPH kernel functions --
 

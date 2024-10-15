@@ -75,6 +75,7 @@ struct RigidBody
     int startIndex;
     int endIndex;
     float3 col;
+    float3 edgeCol;
     int renderPriority;
 };
 

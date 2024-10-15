@@ -6,26 +6,26 @@ using Resources;
 using System.Globalization;
 public class Sensor : MonoBehaviour
 {
-    // Measurement settings
+    [Header("Measurement")]
     public SensorType sensorType;
     public int rbIndex;
 
-    // Render settings
+    [Header("Display")]
     public float2 offset;
     public bool doInterpolation;
     [Range(1.0f, 20.0f)] public float moveSpeed;
 
-    // References
+    [Header("References")]
     public GameObject sensorPrefab;
 
-    // Private
+    // Private references
     private Transform sensorContainer;
     private Main main;
     private SensorManager sensorManager;
     private Rect uiCanvasRect;
     private Vector2 canvasResolution;
 
-    // Sensor UI
+    // Display
     private GameObject sensorUI;
     private Text sensorText;
     private RectTransform sensorUIRect;

@@ -14,5 +14,6 @@ public struct RBInput
     public bool canRotate;
     public float rotationVelocity;
     public Color color;
+    public Color edgeColor;
     public int renderPriority;
 }
