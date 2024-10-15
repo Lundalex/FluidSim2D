@@ -1,5 +1,9 @@
 #pragma kernel Render2D; // 0
 
+#pragma kernel RenderFluids; // 0
+#pragma kernel RenderRigidBodies; // 1
+#pragma kernel ApplyMaterials; // 2
+
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_RB_EDGES
 #pragma multi_compile _ USE_METABALLS
@@ -24,8 +28,8 @@ const int ParticlesNum;
 const int RBodiesNum;
 
 RWTexture2D<unorm float4> Result;
+Texture2D<unorm float4> CausticsTexture;
 Texture2D<unorm float4> UITexture;
-
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
 
@@ -149,6 +153,26 @@ float4 GetRenderColor(PData pData)
     return float4(rgb.x, rgb.y, rgb.z, 0.0);
 }
 
+static const float3 COLOR_MULTIPLIER = float3(0.0, 0.0, 0.2);
+static const float3 COLOR_ADDITION = float3(0.0, 0.0, 0.8);
+static const float ALPHA_ADDITION = 1.0;
+float4 SampleCausticsTexture(uint2 threadID)
+{
+    float t;
+    float2 causticsTexDims;
+    CausticsTexture.GetDimensions(0, causticsTexDims.x, causticsTexDims.y, t);
+
+    uint2 wrappedThreadID = threadID % causticsTexDims;
+
+    float4 sample = CausticsTexture[wrappedThreadID];
+    
+    float3 color = sample.rgb * COLOR_MULTIPLIER + COLOR_ADDITION;
+    
+    float alpha = saturate(sample.a + ALPHA_ADDITION); // Clamp alpha to [0,1]
+    
+    return float4(color.r, color.g, color.b, alpha);
+}
+
 [numthreads(TN_R,TN_R,1)]
 void Render2D(uint3 id : SV_DispatchThreadID)
 {
@@ -244,7 +268,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
 
                         if (totDensity > MetaballsThreshold)
                         {
-                            Result[id.xy] = GetRenderColor(pData);
+                            Result[id.xy] = SampleCausticsTexture(id.xy);
                             return;
                         }
                     }
@@ -254,7 +278,7 @@ void Render2D(uint3 id : SV_DispatchThreadID)
                         minDstSqr = dstSqr;
                         particleFound = true;
                         if (sqrt(dstSqr) > minRadius - EdgeWidth) result = float4(EdgeColor.x, EdgeColor.y, EdgeColor.z, 1.0);
-                        else result = GetRenderColor(pData);
+                        else result = SampleCausticsTexture(id.xy);
                     }
                 #endif
 
@@ -272,4 +296,22 @@ void Render2D(uint3 id : SV_DispatchThreadID)
     #endif
 
     Result[id.xy] = float4(BackgroundColor.x, BackgroundColor.y, BackgroundColor.z, 1.0);
+}
+ 
+[numthreads(TN_R,TN_R,1)]
+void RenderFluids(uint3 id : SV_DispatchThreadID)
+{
+ 
+}
+ 
+[numthreads(TN_R,TN_R,1)]
+void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
+{
+ 
+}
+ 
+[numthreads(TN_R,TN_R,1)]
+void ApplyMaterials(uint3 id : SV_DispatchThreadID)
+{
+ 
 }

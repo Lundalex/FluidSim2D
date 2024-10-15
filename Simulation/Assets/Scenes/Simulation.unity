@@ -260,10 +260,10 @@ MonoBehaviour:
   RenderMarchingSquares: 0
   TimeStep: 0.03
   ProgramSpeed: 6
-  VisualParticleRadii: 1.5
+  VisualParticleRadii: 1.3
   MetaballsThreshold: 3
-  RenderEdgeWidth: 0.6
-  RenderEdgeColor: {r: 0.04358387, g: 0, b: 1, a: 1}
+  RenderEdgeWidth: 0.3
+  RenderEdgeColor: {r: 1, g: 1, b: 1, a: 1}
   RBRenderThickness: 0.5
   TimeStepsPerFrame: 2
   SubTimeStepsPerFrame: 3
@@ -274,7 +274,7 @@ MonoBehaviour:
   BackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   DoDrawRBCentroids: 1
   DoDrawRBEdges: 1
-  DoUseMetaballs: 1
+  DoUseMetaballs: 0
   DoSimulateParticleViscosity: 1
   DoSimulateParticleSprings: 1
   DoSimulateParticleTemperature: 1
@@ -285,6 +285,7 @@ MonoBehaviour:
   RB_MaxInteractionRadius: 50
   RB_InteractionAttractionPower: 8
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
+  causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   sceneManager: {fileID: 1751344381}
   shaderHelper: {fileID: 486544}
   renderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
@@ -1434,6 +1435,109 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TEMP: {x: -50, y: -20}
+--- !u!1 &2045799464
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2045799466}
+  - component: {fileID: 2045799465}
+  m_Layer: 0
+  m_Name: TexGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2045799465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2045799464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce6f32962bedf3d4aa7f27136ff042df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_generateInEditMode: 1
+  m_animateInEditMode: 1
+  m_pause: 0
+  m_unscaledTime: 1
+  m_density: 1
+  m_height: 1
+  m_speed: 1
+  m_flow: 0
+  m_flowDirection: 0
+  m_waves:
+  - m_active: 1
+    m_density: 7.3
+    m_height: 0.55
+    m_fluctuation: 0.85
+    m_flow: 0.11
+    m_direction: 100
+    Pause: 0
+    m_flowU: 0
+    m_flowV: 0
+  - m_active: 1
+    m_density: 3.7
+    m_height: 0.4
+    m_fluctuation: 0.55
+    m_flow: 0.2
+    m_direction: -60
+    Pause: 0
+    m_flowU: 0
+    m_flowV: 0
+  m_calcResolution: 512
+  m_renderTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
+  m_FillGap: 0.08
+  m_lightRay: 4
+  m_lightTransform: {fileID: 0}
+  m_lightVector: {x: 0, y: -1, z: 0}
+  m_lightDirection: 0
+  m_lightIncidentAngle: 0
+  m_version: 20008
+  m_style: 0
+  m_refractedRay: 0
+  m_brightness: 1
+  m_gamma: 1
+  m_clamp: 1
+  m_refractionIndex: 1.33
+  m_useChromaticAberration: 0
+  m_chromaticAberration: 0.005
+  m_usePostProcessing: 1
+  m_useBlur: 0
+  m_blurIterations: 1
+  m_blurSpread: 0.5
+  m_msaa: 2
+  m_blurDirectional: 0
+  m_blurDirection: 0
+  m_colorShift: 0.3
+  m_colorShiftDir: 0
+  m_useSyncDirection: 1
+  m_postBrightness: 1
+  m_postContrast: 1
+  m_computeShader: {fileID: 7200000, guid: cf24bd9d2b71b65458b930c520b46e99, type: 3}
+  m_shader: {fileID: 4800000, guid: e031a2e28107901449265842632577a4, type: 3}
+--- !u!4 &2045799466
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2045799464}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 599.7573, y: 97.93494, z: 0.78240883}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &614223046216948198
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1929,3 +2033,4 @@ SceneRoots:
   - {fileID: 431802506}
   - {fileID: 326758041}
   - {fileID: 415270256}
+  - {fileID: 2045799466}
