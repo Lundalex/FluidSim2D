@@ -81,6 +81,7 @@ public class Main : MonoBehaviour
     [Header("References")]
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
+    public RenderTexture backgroundTexture;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
     public ComputeShader renderShader;
@@ -192,7 +193,8 @@ public class Main : MonoBehaviour
 
         renderShader.SetTexture(0, "Result", renderTexture);
         renderShader.SetTexture(0, "UITexture", uiTexture);
-        renderShader.SetTexture(0, "CausticsTexture", causticsTexture);
+        renderShader.SetTexture(0, "Caustics", causticsTexture);
+        renderShader.SetTexture(0, "Background", backgroundTexture);
 
         Debug.Log("Simulation started with " + ParticlesNum + " particles");
         ProgramStarted = true;

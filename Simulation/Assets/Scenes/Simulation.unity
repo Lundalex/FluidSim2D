@@ -276,7 +276,7 @@ MonoBehaviour:
   DoDrawRBEdges: 1
   DoUseMetaballs: 0
   DoSimulateParticleViscosity: 1
-  DoSimulateParticleSprings: 1
+  DoSimulateParticleSprings: 0
   DoSimulateParticleTemperature: 1
   MaxInteractionRadius: 50
   InteractionAttractionPower: 3.5
@@ -286,6 +286,7 @@ MonoBehaviour:
   RB_InteractionAttractionPower: 8
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
   causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
+  backgroundTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   sceneManager: {fileID: 1751344381}
   shaderHelper: {fileID: 486544}
   renderShader: {fileID: 7200000, guid: ee5600fc85106194ea3f562bf40f8a95, type: 3}
@@ -1494,7 +1495,7 @@ MonoBehaviour:
     m_flowV: 0
   m_calcResolution: 512
   m_renderTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
-  m_FillGap: 0.08
+  m_FillGap: 0.3
   m_lightRay: 4
   m_lightTransform: {fileID: 0}
   m_lightVector: {x: 0, y: -1, z: 0}
@@ -1512,11 +1513,11 @@ MonoBehaviour:
   m_usePostProcessing: 1
   m_useBlur: 0
   m_blurIterations: 1
-  m_blurSpread: 0.5
+  m_blurSpread: 0
   m_msaa: 2
   m_blurDirectional: 0
   m_blurDirection: 0
-  m_colorShift: 0.3
+  m_colorShift: 0.37
   m_colorShiftDir: 0
   m_useSyncDirection: 1
   m_postBrightness: 1
