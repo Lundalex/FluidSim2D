@@ -21,7 +21,7 @@ public class SceneFluid : Polygon
 
     public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
     {
-        if (main == null) main = GameObject.Find("Main Camera").GetComponent<Main>();
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
 
         Vector2[] generatedPoints = GeneratePoints(gridDensity);
 
