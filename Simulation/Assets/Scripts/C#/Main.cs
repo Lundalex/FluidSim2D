@@ -118,12 +118,10 @@ public class Main : MonoBehaviour
     public ComputeBuffer RBVectorBuffer;
     public ComputeBuffer RBDataBuffer;
     public ComputeBuffer RBAdjustmentBuffer;
-    public ComputeBuffer TraversedChunks_AC_Buffer;
-    public ComputeBuffer StickynessReqs_AC_Buffer;
-    public ComputeBuffer SortedStickyRequestsBuffer;
-    public ComputeBuffer StickyRequestsResult_AC_Buffer;
-    public ComputeBuffer TCCountBuffer;
-    public ComputeBuffer SRCountBuffer;
+    public ComputeBuffer RecordedElementBuffer;
+
+    // Materials
+    public ComputeBuffer MaterialBuffer;
 
     // Constants
     [NonSerialized] public int ParticlesNum;
@@ -139,15 +137,19 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ParticlesNum_NextLog2;
 
     // Private references
-    private RenderTexture renderTexture;
+    [NonSerialized] public RenderTexture renderTexture;
+    [NonSerialized] public RenderTexture transformDataTexture;
 
     // Particle data
     private PData[] PDatas;
     private PType[] PTypes;
 
-    // Rigid Bodies - Properties
+    // Rigid Bodies
     public RBVector[] RBVectors;
     public RBData[] RBDatas;
+
+    // Materials
+    public Mat[] Materials;
 
     // Other
     private float DeltaTime;
@@ -161,13 +163,13 @@ public class Main : MonoBehaviour
     {
         SceneSetup();
 
-        ChunksNum = (int2)BoundaryDims / MaxInfluenceRadius;
-        ChunksNumAll = ChunksNum.x * ChunksNum.y;
-
         PDatas = sceneManager.GenerateParticles(MaxParticlesNum);
         ParticlesNum = PDatas.Length;
 
         BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
+
+        ChunksNum = BoundaryDims / MaxInfluenceRadius;
+        ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
         SetPTypesData();
         (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
@@ -177,24 +179,19 @@ public class Main : MonoBehaviour
         TraversedChunksCount = StartTraversedChunksCount;
 
         InitializeBuffers();
+        renderTexture = TextureHelper.CreateTexture(Resolution, 3);
+        transformDataTexture = TextureHelper.CreateTexture(Resolution, 3);
+
         shaderHelper.SetPSimShaderBuffers(pSimShader);
         shaderHelper.SetNewRBSimShaderBuffers(rbSimShader);
-        // shaderHelper.SetRbSimShaderBuffers(oldRbSimShader);
         shaderHelper.SetRenderShaderBuffers(renderShader);
+        shaderHelper.SetRenderShaderTextures(renderShader);
         shaderHelper.SetSortShaderBuffers(sortShader);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
         shaderHelper.UpdateNewRBSimShaderVariables(rbSimShader);
-        // shaderHelper.UpdateRbSimShaderVariables(oldRbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
-
-        renderTexture = TextureHelper.CreateTexture(Resolution, 3);
-
-        renderShader.SetTexture(0, "Result", renderTexture);
-        renderShader.SetTexture(0, "UITexture", uiTexture);
-        renderShader.SetTexture(0, "Caustics", causticsTexture);
-        renderShader.SetTexture(0, "Background", backgroundTexture);
 
         Debug.Log("Simulation started with " + ParticlesNum + " particles");
         ProgramStarted = true;
@@ -359,7 +356,6 @@ public class Main : MonoBehaviour
             gravity = gravity,
 
             influenceRadius = 2,
-            colorG = 0.5f
         };
         PTypes[1] = new PType // Liquid
         {
@@ -385,8 +381,7 @@ public class Main : MonoBehaviour
             stickyness = 2.0f,
             gravity = gravity,
 
-            influenceRadius = IR_1,
-            colorG = 0.0f
+            influenceRadius = IR_1
         };
         PTypes[2] = new PType // Gas
         {
@@ -413,7 +408,6 @@ public class Main : MonoBehaviour
             gravity = gravity * 0.1f,
 
             influenceRadius = IR_1,
-            colorG = 0.3f
         };
 
         PTypes[3] = new PType // Solid
@@ -441,7 +435,6 @@ public class Main : MonoBehaviour
             gravity = gravity,
 
             influenceRadius = IR_2,
-            colorG = 0.9f
         };
         PTypes[4] = new PType // Liquid
         {
@@ -468,7 +461,6 @@ public class Main : MonoBehaviour
             gravity = gravity,
 
             influenceRadius = IR_2,
-            colorG = 1.0f
         };
         PTypes[5] = new PType // Gas
         {
@@ -495,7 +487,6 @@ public class Main : MonoBehaviour
             gravity = gravity,
 
             influenceRadius = IR_2,
-            colorG = 0.9f
         };
     }
 
@@ -516,15 +507,10 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
         ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, RBDatas.Length);
 
+        ComputeHelper.CreateStructuredBuffer<int>(ref RecordedElementBuffer, Resolution.x * Resolution.y);
 
-        ComputeHelper.CreateCountBuffer(ref TCCountBuffer);
-        ComputeHelper.CreateCountBuffer(ref SRCountBuffer);
-
-        ComputeHelper.CreateAppendBuffer<int3>(ref TraversedChunks_AC_Buffer, 4096);
-
-        ComputeHelper.CreateStructuredBuffer<StickynessRequest>(ref SortedStickyRequestsBuffer, 4096);
-        ComputeHelper.CreateAppendBuffer<StickynessRequest>(ref StickynessReqs_AC_Buffer, 4096);
-        ComputeHelper.CreateAppendBuffer<StickynessRequest>(ref StickyRequestsResult_AC_Buffer, 4096);
+        Materials = new Mat[1];
+        ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Materials);
     }
 
     void GPUSortChunkLookUp()
@@ -637,19 +623,18 @@ public class Main : MonoBehaviour
     void RunRbSimShader()
     {
         if (RBVectors.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
-
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
-
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
-
         if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
-
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdatePositions", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
     }
 
     void RunRenderShader()
     {
-        ComputeHelper.DispatchKernel (renderShader, "Render2D", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "ResetDatas", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "RenderFluids", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodies", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "ApplyMaterials", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -681,12 +666,8 @@ public class Main : MonoBehaviour
             RBDataBuffer,
             RBAdjustmentBuffer,
             RBVectorBuffer,
-            TraversedChunks_AC_Buffer,
-            TCCountBuffer,
-            SRCountBuffer,
-            StickynessReqs_AC_Buffer,
-            SortedStickyRequestsBuffer,
-            StickyRequestsResult_AC_Buffer
+            RecordedElementBuffer,
+            MaterialBuffer
         );
     }
 }

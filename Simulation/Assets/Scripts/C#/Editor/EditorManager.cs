@@ -68,7 +68,7 @@ public class EditorManager : Editor
             rigidBody.Points = rigidBody.GeneratePoints(lineThickness * 0.5f, Vector2.zero, true);
 
             int iterationCount = 0;
-            Color bodyColor = rigidBody.RBInput.color;
+            Color bodyColor = Color.white;
             Handles.color = bodyColor;
             foreach (Vector2 point in rigidBody.Points)
             {

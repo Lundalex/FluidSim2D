@@ -1,13 +1,13 @@
 #pragma kernel SimulateRB_P // 0
 #pragma kernel UpdateRBVertices // 1
 #pragma kernel SimulateRB_RB // 2
-#pragma kernel UpdatePositions // 3
+#pragma kernel UpdateRigidBodies // 3
 #pragma kernel AdjustRBDatas // 4
 
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 #include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
+#include "Composition.hlsl"
 
 // Boundrary settings
 const uint2 BoundaryDims;
@@ -477,7 +477,7 @@ float2 InteractionForce(RigidBody rb)
 }
 
 [numthreads(TN_RBS2,1,1)]
-void UpdatePositions(uint3 id : SV_DispatchThreadID)
+void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= NumRigidBodies) return;
     uint i = id.x;
@@ -489,6 +489,9 @@ void UpdatePositions(uint3 id : SV_DispatchThreadID)
 
     // Update position
     rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
+
+    // Update accumulated rotation
+    rb.totRot += IntToFloat(rb.rotVel_AsInt) * DeltaTime;
 
     // Forces
     float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);

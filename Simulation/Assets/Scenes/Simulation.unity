@@ -261,7 +261,7 @@ MonoBehaviour:
   TimeStep: 0.03
   ProgramSpeed: 6
   VisualParticleRadii: 1.3
-  MetaballsThreshold: 3
+  MetaballsThreshold: 1.9
   RenderEdgeWidth: 0.3
   RenderEdgeColor: {r: 1, g: 1, b: 1, a: 1}
   RBRenderThickness: 0.5
@@ -274,16 +274,16 @@ MonoBehaviour:
   BackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   DoDrawRBCentroids: 1
   DoDrawRBEdges: 1
-  DoUseMetaballs: 0
+  DoUseMetaballs: 1
   DoSimulateParticleViscosity: 1
-  DoSimulateParticleSprings: 0
+  DoSimulateParticleSprings: 1
   DoSimulateParticleTemperature: 1
-  MaxInteractionRadius: 50
+  MaxInteractionRadius: 80
   InteractionAttractionPower: 3.5
   InteractionFountainPower: 0
   InteractionTemperaturePower: 0
-  RB_MaxInteractionRadius: 50
-  RB_InteractionAttractionPower: 8
+  RB_MaxInteractionRadius: 60
+  RB_InteractionAttractionPower: 6
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
   causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   backgroundTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}

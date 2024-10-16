@@ -1,15 +1,14 @@
-#pragma kernel Render2D; // 0
-
-#pragma kernel RenderFluids; // 0
-#pragma kernel RenderRigidBodies; // 1
-#pragma kernel ApplyMaterials; // 2
+#pragma kernel ResetDatas; // 0
+#pragma kernel RenderFluids; // 1
+#pragma kernel RenderRigidBodies; // 2
+#pragma kernel ApplyMaterials; // 3
 
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_RB_EDGES
 #pragma multi_compile _ USE_METABALLS
 
 #include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
+#include "Composition.hlsl"
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 
@@ -22,17 +21,18 @@ const float3 BackgroundColor;
 const float3 EdgeColor;
 
 const int2 BoundsDims;
+const float InvMaxInfluenceRadius;
 const int MaxInfluenceRadius;
-const int MaxInfluenceRadiusSqr // not set;
+const int MaxInfluenceRadiusSqr;
 const int NumMaterials;
 const int2 ChunksNum;
 const int ParticlesNum;
 const int RBodiesNum;
 
-// RWTexture2D<unorm float> ElementsBuffer;
-// RWTexture2D<unorm float4> Background;
-
+RWStructuredBuffer<int> RecordedElements;
+RWTexture2D<unorm float4> TransformDatas;
 RWTexture2D<unorm float4> Result;
+
 Texture2D<unorm float4> Caustics;
 Texture2D<unorm float4> UITexture;
 Texture2D<unorm float4> Background;
@@ -40,11 +40,13 @@ Texture2D<unorm float4> Background;
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
 
-StructuredBuffer<PType> PTypes;
 StructuredBuffer<PData> PDatas;
+StructuredBuffer<PType> PTypes;
 
 StructuredBuffer<RigidBody> RigidBodies;
 StructuredBuffer<RBVector> RBVectors;
+
+StructuredBuffer<Mat> Materials;
 
 bool ValidChunk(int2 chunk)
 {
@@ -54,6 +56,11 @@ bool ValidChunk(int2 chunk)
 int GetChunkKey(int2 chunk)
 {
     return chunk.y * ChunksNum.x + chunk.x;
+}
+
+uint GetPixelKey(uint2 threadID)
+{
+    return threadID.y * Resolution.x + threadID.x;
 }
 
 float3 TemperatureToRGB(float temperature)
@@ -145,9 +152,9 @@ float DstToRB(float2 pos, RigidBody rb)
     return dst;
 }
 
-float MetaballsDensity(float dstSqr, float radius)
+float MetaballsDensity(float dstSqr, float invRadius)
 {
-    float dstR = sqrt(dstSqr) / radius;
+    float dstR = sqrt(dstSqr) * invRadius;
     return (1 - dstR);
 }
 
@@ -162,7 +169,8 @@ float4 GetRenderColor(PData pData)
 
 static const float3 COLOR_MULTIPLIER = float3(0.0, 0.0, 0.4);
 static const float3 COLOR_ADDITION = float3(0.0, 0.0, 0.6);
-float4 SampleCaustics(uint2 threadID)
+static const float TEMP_ALPHA_OVERRIDE = 0.5;
+float4 SampleCaustics(uint2 threadID, float alpha)
 {
     float t;
     float2 causticsTexDims;
@@ -175,7 +183,6 @@ float4 SampleCaustics(uint2 threadID)
 
     float3 fluidCol = sample * COLOR_MULTIPLIER + COLOR_ADDITION;
 
-    float alpha = 0.5;
     float transparency = 1 - alpha;
     float3 combinedColor = fluidCol * alpha + Background[threadID.xy].xyz * transparency;
     
@@ -183,138 +190,26 @@ float4 SampleCaustics(uint2 threadID)
 }
 
 [numthreads(TN_R,TN_R,1)]
-void Render2D(uint3 id : SV_DispatchThreadID)
+void ResetDatas(uint3 id : SV_DispatchThreadID)
 {
-    // Render UI on top of everything else
-    float4 uiCol = UITexture[id.xy];
-    if (uiCol.w > 0)
-    {
-        Result[id.xy] = uiCol;
-        return;
-    }
-
-    float2 pixelPos = id.xy * BoundsDims / (float2)Resolution;
-    int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
-
-    // Render rigid bodies
-    bool rigidBodyFound = false;
-    int highestRenderPriority = 0;
-    float4 result;
-    for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
-    {
-        RigidBody rb = RigidBodies[rbIndex];
-        
-        #if DRAW_RB_CENTROIDS
-            if (dot2(pixelPos - rb.pos) < 2.0)
-            {
-                Result[id.xy] = float4(1, 0, 0, 1.0);
-                return;
-            }
-        #endif
-        
-        if (rb.renderPriority > highestRenderPriority)
-        {
-            if (IsPointInsideRB(pixelPos, rb))
-            {
-                rigidBodyFound = true;
-                highestRenderPriority = rb.renderPriority;
-                
-                // Render edge
-                #if DRAW_RB_EDGES
-                    float dst = DstToRB(pixelPos, rb);
-                    if (dst < EdgeWidth)
-                    {
-                        result = float4(rb.edgeCol.x, rb.edgeCol.y, rb.edgeCol.z, 1.0);
-                        continue;
-                    }
-                #endif
-                
-                // Render body
-                result = float4(rb.col.x, rb.col.y, rb.col.z, 1.0);
-            }
-        }
-    }
-    if (rigidBodyFound)
-    {
-        Result[id.xy] = result;
-        return;
-    }
-
-    // Render particles
-    int2 curChunk;
-    #if USE_METABALLS
-        float totDensity = 0;
-    #else
-        bool particleFound = false;
-        float minRadius = min(VisualParticleRadii, (float)MaxInfluenceRadius);
-        float minRadiusSqr = minRadius * minRadius;
-        float minDstSqr = 1.#INF;
-    #endif
-    for (int x = -1; x <= 1; x++)
-    {
-        curChunk.x = chunk.x + x;
-        for (int y = -1; y <= 1; y++)
-        {
-            curChunk.y = chunk.y + y;
-
-            if (!ValidChunk(curChunk)) continue;
-
-            int chunkKey = GetChunkKey(curChunk);
-            int startIndex = StartIndices[chunkKey];
-
-            int index = startIndex; 
-            while (index < ParticlesNum && chunkKey == SpatialLookup[index].y)
-            {
-                int pIndex = SpatialLookup[index].x;
-                PData pData = PDatas[pIndex];
-
-                float dstSqr = dot2(pixelPos - pData.pos);
-
-                #if USE_METABALLS
-                    if (dstSqr < pow(MaxInfluenceRadius, 2))
-                    {
-                        totDensity += MetaballsDensity(dstSqr, MaxInfluenceRadius);
-
-                        if (totDensity > MetaballsThreshold)
-                        {
-                            Result[id.xy] = GetRenderColor(pData);
-                            return;
-                        }
-                    }
-                #else
-                    if (dstSqr < min(minRadiusSqr, minDstSqr))
-                    {
-                        minDstSqr = dstSqr;
-                        particleFound = true;
-                        if (sqrt(dstSqr) > minRadius - EdgeWidth) result = float4(EdgeColor.x, EdgeColor.y, EdgeColor.z, 1.0);
-                        else result = SampleCaustics(id.xy);
-                    }
-                #endif
-
-                // Increment index each iteration - Chunk particle search algorithm
-                index++;
-            }
-        }
-    }
-    #if !USE_METABALLS
-        if (particleFound)
-        {
-            Result[id.xy] = result;
-            return;
-        }
-    #endif
-
-    Result[id.xy] = float4(Background[id.xy].x, Background[id.xy].y, Background[id.xy].z, 1.0);
+    RecordedElements[GetPixelKey(id.xy)] = 0;
 }
  
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
 {
-    // Render particles
+    float2 pixelPos = (float2(id.xy) + .5) * BoundsDims / (float2)Resolution;
+    int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
+
     int2 curChunk;
-    int matIndex;
+    int lastChunkKey_PType_POrder;
+    float totDensity = 0;
     bool particleFound = false;
     bool doContinue = true;
+    #if !USE_METABALLS
+        float minRadiusSqr = pow(min(MaxInfluenceRadius, VisualParticleRadii), 2);
+        float minDstSqr = 1.#INF;
+    #endif
     for (int x = -1; x <= 1 && doContinue; x++)
     {
         for (int y = -1; y <= 1 && doContinue; y++)
@@ -337,11 +232,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 #if USE_METABALLS
                     if (dstSqr < MaxInfluenceRadiusSqr)
                     {
-                        totDensity += MetaballsDensity(dstSqr, MaxInfluenceRadius);
+                        totDensity += MetaballsDensity(dstSqr, InvMaxInfluenceRadius);
 
                         if (totDensity > MetaballsThreshold)
                         {
-                            matIndex = pData.matIndex;
+                            lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                             particleFound = true;
                             doContinue = false;
                             break;
@@ -350,7 +245,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 #else
                     if (dstSqr < min(minRadiusSqr, minDstSqr))
                     {
-                        matIndex = pData.matIndex;
+                        lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                         particleFound = true;
                         minDstSqr = dstSqr;
                     }
@@ -362,19 +257,24 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    if (particleFound) ElementsBuffer[id.xy] = matIndex;
+    if (particleFound)
+    {
+        int matIndex = PTypes[Extract_PType(lastChunkKey_PType_POrder)].matIndex;
+
+        // if (particleFound) RecordedElements[id.xy].x = StoreFluidMatIndex(matIndex);
+        RecordedElements[GetPixelKey(id.xy)] = StoreFluidMatIndex(matIndex);
+    }
 }
 
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 {
-    float2 pixelPos = id.xy * BoundsDims / (float2)Resolution;
-    int2 chunk = (int2)(pixelPos / (float)MaxInfluenceRadius);
+    float2 pixelPos = (float2(id.xy) + .5) * BoundsDims / (float2)Resolution;
 
-    // Render rigid bodies to elements buffer
     int highestRenderPriority = 0;
     bool rigidBodyFound = false;
     int matIndex;
+    float3 transformData = 0;
     for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
@@ -386,17 +286,50 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
             {
                 highestRenderPriority = renderPriority;
                 rigidBodyFound = true;
-                matIndex = StoreRBMatIndex(rb.matIndex) -rb.matIndex - 1;
+                matIndex = rb.matIndex;
+                transformData = float3(rb.pos.x, rb.pos.y, rb.totRot);
             }
         }
     }
 
-    if (rigidBodyFound) ElementsBuffer[id.xy] = matIndex;
+    // if (rigidBodyFound) RecordedElements[id.xy].x = StoreRBMatIndex(matIndex);
+    if (rigidBodyFound)
+    {
+        uint pixelKey = GetPixelKey(id.xy);
+        RecordedElements[pixelKey] = StoreRBMatIndex(matIndex);
+        TransformDatas[id.xy] = float4(transformData, 0);
+    }
 }
  
 [numthreads(TN_R,TN_R,1)]
 void ApplyMaterials(uint3 id : SV_DispatchThreadID)
 {
-    int matIndex = ElementsBuffer[id.xy];
-    ElementsBuffer[id.xy] = NumMaterials;
+    int storedMatIndex = RecordedElements[GetPixelKey(id.xy)];
+    if (storedMatIndex == 0)
+    {
+        Result[id.xy] = float4(Background[id.xy].rgb, 1.0);
+        return;
+    }
+
+    bool fluid_RigidBody = storedMatIndex > 0;
+
+    int matIndex = fluid_RigidBody ? RetrieveStoredFluidMatIndex(storedMatIndex) : RetrieveStoredRBMatIndex(storedMatIndex);
+    Mat mat = Materials[matIndex];
+    
+    float4 color;
+    if (fluid_RigidBody)
+    {
+        color = SampleCaustics(id.xy, TEMP_ALPHA_OVERRIDE);
+    }
+    else
+    {
+        float4 transformData = TransformDatas[id.xy];
+        color = 1;
+    }
+
+    float transparency = 1 - color.a;
+    
+    float4 result = transparency > 0 ? float4(color.rgb, 1.0) * color.a + transparency * float4(Background[id.xy].rgb, 1.0) : color;
+
+    Result[id.xy] = result;
 }

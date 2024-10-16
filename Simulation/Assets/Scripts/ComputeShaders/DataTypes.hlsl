@@ -1,5 +1,12 @@
 // --- Particle Simulation structs ---
 
+struct Mat
+{
+    int2 matTexLoc;
+    int2 matTexDims;
+    float alpha;
+    float3 edgeCol;
+};
 struct PType 
 {
     int fluidSpringGroup;
@@ -26,10 +33,7 @@ struct PType
 
     float influenceRadius;
 
-    // Display
-    float colorG;
-    int2 matTexLoc;
-    int2 matTexDims;
+    int matIndex;
 };
 struct PData
 {
@@ -71,6 +75,7 @@ struct RigidBody
     float2 nextPos;
     float2 nextVel;
     int rotVel_AsInt; // (radians / second)
+    float totRot;
     float mass; // 0 -> Stationary
     float inertia;
     float gravity;
@@ -80,9 +85,8 @@ struct RigidBody
     int endIndex;
 
     // Display
-    float3 col;
-    float3 edgeCol;
     int renderPriority;
+    int matIndex;
 };
 
 struct RBVector 
