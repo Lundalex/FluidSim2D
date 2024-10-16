@@ -11,14 +11,10 @@
 #pragma kernel ParallelPrefixSumScan // 7
 #pragma kernel CopySpringStartIndicesBuffer // 8
 
-// Sticky requests
-#pragma kernel PopulateSortedStickyRequests // 9
-#pragma kernel SRSortIteration // 10
-
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 #include "MathResources.hlsl"
-#include "CompositionResources.hlsl"
+#include "Composition.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 
@@ -54,9 +50,6 @@ RWStructuredBuffer<int> SpringStartIndices_dbB; // Result B
 RWStructuredBuffer<int> SpringStartIndices_dbC; // Support
 
 RWStructuredBuffer<PData> PDatas;
-
-ConsumeStructuredBuffer<StickynessRequest> StickynessReqsCONSUME;
-RWStructuredBuffer<StickynessRequest> SortedStickyRequests;
 
 void SwapInt2(inout int2 a, inout int2 b)
 {
@@ -297,35 +290,5 @@ void CopySpringStartIndicesBuffer (uint3 id : SV_DispatchThreadID)
     else
     {
         SpringStartIndices_dbB[i] = SpringStartIndices_dbC[i];
-    }
-}
-
-[numthreads(TN_S,1,1)]
-void PopulateSortedStickyRequests (uint3 id : SV_DispatchThreadID)
-{
-    int i = id.x;
-
-    StickynessRequest stickynessRequest = StickynessReqsCONSUME.Consume();
-
-    SortedStickyRequests[i] = stickynessRequest;
-}
-
-[numthreads(TN_S,1,1)]
-void SRSortIteration (uint3 id : SV_DispatchThreadID)
-{
-    int lowRef = id.x;
-
-    int relBlock = (int)(2 * lowRef / (uint)SRBlockLen);
-    int relPos = lowRef % (0.5 * SRBlockLen);
-
-    int lowIndex = relBlock * SRBlockLen + relPos;
-
-    int highIndex = SRBrownPinkSort
-    ? relBlock * SRBlockLen + SRBlockLen - 1 - relPos
-    : relBlock * SRBlockLen + relPos + (int)(SRBlockLen * 0.5);
-    
-    if (SortedStickyRequests[lowIndex].pIndex > SortedStickyRequests[highIndex].pIndex)
-    {
-        SwapStickynessRequestStruct(SortedStickyRequests[highIndex], SortedStickyRequests[lowIndex]);
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using Unity.Mathematics;
-using UnityEngine;
 
 [Serializable]
 public struct RBInput
@@ -13,7 +12,6 @@ public struct RBInput
     public float2 velocity;
     public bool canRotate;
     public float rotationVelocity;
-    public Color color;
-    public Color edgeColor;
     public int renderPriority;
+    public int matIndex;
 }

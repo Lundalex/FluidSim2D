@@ -23,5 +23,6 @@ public struct PType
     public float gravity;
 
     public float influenceRadius;
-    public float colorG;
+
+    public int matIndex;
 };

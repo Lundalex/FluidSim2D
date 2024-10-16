@@ -118,6 +118,7 @@ public class SceneManager : MonoBehaviour
             nextPos = 0,
             nextVel = 0,
             rotVel_AsInt = rbInput.canRotate ? 0 : Func.FloatAsInt(rbInput.rotationVelocity),
+            totRot = 0,
             mass = rbInput.canMove ? rbInput.mass : 0,
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
@@ -125,9 +126,8 @@ public class SceneManager : MonoBehaviour
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
-            col = Func.ColorToFloat3(rbInput.color),
-            edgeCol = Func.ColorToFloat3(rbInput.edgeColor),
-            renderPriority = rbInput.renderPriority
+            renderPriority = rbInput.renderPriority,
+            matIndex = rbInput.matIndex
         };
     }
 

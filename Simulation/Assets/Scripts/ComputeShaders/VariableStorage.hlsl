@@ -1,3 +1,4 @@
+// Float <-> Int
 float IntToFloat(int a)
 {
     return (float)a / int_float_precision;
@@ -20,6 +21,7 @@ int AddFloatToFloatStoredAsInt(int a, float b)
     return FloatAsInt(IntToFloat(a) + b);
 }
 
+// Rb/fluid-matIndex <-> matIndex
 int StoreRBMatIndex(int rbMatIndex)
 {
     return -rbMatIndex - 1;
