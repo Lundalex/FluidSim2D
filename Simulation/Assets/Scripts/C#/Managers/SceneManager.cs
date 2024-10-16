@@ -24,7 +24,7 @@ public class SceneManager : MonoBehaviour
 
     public bool IsPointInsideBounds(Vector2 point)
     {
-        if (main == null) main = GameObject.Find("Main Camera").GetComponent<Main>();
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
 
         sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.BorderPadding;
         sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.BorderPadding;
