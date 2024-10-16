@@ -25,7 +25,11 @@ struct PType
     float gravity;
 
     float influenceRadius;
+
+    // Display
     float colorG;
+    int2 matTexLoc;
+    int2 matTexDims;
 };
 struct PData
 {
@@ -74,6 +78,8 @@ struct RigidBody
     float maxRadiusSqr;
     int startIndex;
     int endIndex;
+
+    // Display
     float3 col;
     float3 edgeCol;
     int renderPriority;

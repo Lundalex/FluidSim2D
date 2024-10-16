@@ -19,3 +19,20 @@ int AddFloatToFloatStoredAsInt(int a, float b)
 {
     return FloatAsInt(IntToFloat(a) + b);
 }
+
+int StoreRBMatIndex(int rbMatIndex)
+{
+    return -rbMatIndex - 1;
+}
+int RetrieveStoredRBMatIndex(int storedRBMatIndex)
+{
+    return -(storedRBMatIndex + 1);
+}
+int StoreFluidMatIndex(int fluidMatIndex)
+{
+    return fluidMatIndex + 1;
+}
+int RetrieveStoredFluidMatIndex(int storedMatIndex)
+{
+    return storedMatIndex - 1;
+}
