@@ -5,7 +5,7 @@ using UnityEngine;
 [Serializable]
 public struct MatInput
 {
-    public Texture2D txeture;
+    public Texture2D texture;
     public float alpha;
     public float3 edgeCol;
 };
