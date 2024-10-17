@@ -79,6 +79,8 @@ public class Main : MonoBehaviour
     public float RB_InteractionAttractionPower = 3.5f;
 
     [Header("References")]
+    public MaterialInput materialInput;
+    public PTypeInput pTypeInput;
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
     public RenderTexture backgroundTexture;
@@ -142,14 +144,10 @@ public class Main : MonoBehaviour
 
     // Particle data
     private PData[] PDatas;
-    private PType[] PTypes;
 
     // Rigid Bodies
     public RBVector[] RBVectors;
     public RBData[] RBDatas;
-
-    // Materials
-    public Mat[] Materials;
 
     // Other
     private float DeltaTime;
@@ -158,6 +156,7 @@ public class Main : MonoBehaviour
     private int FrameCount = 0;
     private bool ProgramPaused = false;
     private bool FrameStep = false;
+    public bool DoUpdateShaderData = false;
 
     void Start()
     {
@@ -171,7 +170,6 @@ public class Main : MonoBehaviour
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
-        SetPTypesData();
         (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
 
         SetConstants();
@@ -199,6 +197,8 @@ public class Main : MonoBehaviour
 
     void Update()
     {
+        if (DoUpdateShaderData) UpdateShaderData();
+
         PauseControls();
 
         bool simulateThisFrame = false;
@@ -243,19 +243,24 @@ public class Main : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
-    private void OnValidate()
+    private void UpdateShaderData()
     {
-        if (ProgramStarted)
-        {
-            SetConstants();
-            UpdateSettings();
-        }
+        SetConstants();
+        UpdateSettings();
+
+        DoUpdateShaderData = false;
+    }
+
+    public void OnValidate()
+    {
+        if (ProgramStarted) DoUpdateShaderData = true;
     }
 
     public void UpdateSettings()
     {
-        SetPTypesData();
-        PTypeBuffer.SetData(PTypes);
+        // Set new pType and material data
+        PTypeBuffer.SetData(pTypeInput.GetParticleTypes());
+        MaterialBuffer.SetData(materialInput.GetMaterials());
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
@@ -324,176 +329,10 @@ public class Main : MonoBehaviour
         ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
     }
 
-    void SetPTypesData()
-    {
-        PTypes = new PType[6];
-        float IR_1 = 2.0f;
-        float IR_2 = 2.0f;
-        int FSG_1 = 1;
-        int FSG_2 = 2;
-        PTypes[0] = new PType // Solid
-        {
-            fluidSpringGroup = 1,
-
-            springPlasticity = 0,
-            springTolDeformation = 0.1f,
-            springStiffness = 2000,
-
-            thermalConductivity = 1.0f,
-            specificHeatCapacity = 10.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
-
-            pressure = 3000,
-            nearPressure = 5,
-
-            mass = 1,
-            targetDensity = targetDensity,
-            damping = damping,
-            passiveDamping = 0.0f,
-            viscosity = 5.0f,
-            stickyness = 2.0f,
-            gravity = gravity,
-
-            influenceRadius = 2,
-        };
-        PTypes[1] = new PType // Liquid
-        {
-            fluidSpringGroup = FSG_1,
-
-            springPlasticity = Plasticity,
-            springTolDeformation = TolDeformation,
-            springStiffness = springStiffness,
-
-            thermalConductivity = 1.0f,
-            specificHeatCapacity = 10.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
-            
-            pressure = PressureMultiplier,
-            nearPressure = NearPressureMultiplier,
-
-            mass = 1,
-            targetDensity = targetDensity,
-            damping = damping,
-            passiveDamping = passiveDamping,
-            viscosity = viscosity,
-            stickyness = 2.0f,
-            gravity = gravity,
-
-            influenceRadius = IR_1
-        };
-        PTypes[2] = new PType // Gas
-        {
-            fluidSpringGroup = 0,
-
-            springPlasticity = -1,
-            springTolDeformation = -1,
-            springStiffness = -1,
-
-            thermalConductivity = 3.0f,
-            specificHeatCapacity = 10.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(0.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(100.0f),
-
-            pressure = 200,
-            nearPressure = 0,
-
-            mass = 0.1f,
-            targetDensity = 0,
-            damping = damping,
-            passiveDamping = passiveDamping,
-            viscosity = viscosity,
-            stickyness = 2.0f,
-            gravity = gravity * 0.1f,
-
-            influenceRadius = IR_1,
-        };
-
-        PTypes[3] = new PType // Solid
-        {
-            fluidSpringGroup = FSG_2,
-
-            springPlasticity = Plasticity,
-            springTolDeformation = TolDeformation,
-            springStiffness = springStiffness,
-
-            thermalConductivity = 7.0f,
-            specificHeatCapacity = 15.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(999.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(-999.0f),
-
-            pressure = PressureMultiplier,
-            nearPressure = NearPressureMultiplier,
-
-            mass = 1,
-            targetDensity = targetDensity * 1.5f,
-            damping = damping,
-            passiveDamping = passiveDamping,
-            viscosity = viscosity,
-            stickyness = 4.0f,
-            gravity = gravity,
-
-            influenceRadius = IR_2,
-        };
-        PTypes[4] = new PType // Liquid
-        {
-            fluidSpringGroup = FSG_2,
-
-            springPlasticity = Plasticity,
-            springTolDeformation = TolDeformation,
-            springStiffness = springStiffness,
-
-            thermalConductivity = 7.0f,
-            specificHeatCapacity = 15.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(-999.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
-
-            pressure = PressureMultiplier,
-            nearPressure = NearPressureMultiplier,
-
-            mass = 1,
-            targetDensity = targetDensity * 1.5f,
-            damping = damping,
-            passiveDamping = passiveDamping,
-            viscosity = viscosity,
-            stickyness = 4.0f,
-            gravity = gravity,
-
-            influenceRadius = IR_2,
-        };
-        PTypes[5] = new PType // Gas
-        {
-            fluidSpringGroup = FSG_2,
-
-            springPlasticity = Plasticity,
-            springTolDeformation = TolDeformation,
-            springStiffness = springStiffness,
-
-            thermalConductivity = 7.0f,
-            specificHeatCapacity = 15.0f,
-            freezeThreshold = Utils.CelsiusToKelvin(-999.0f),
-            vaporizeThreshold = Utils.CelsiusToKelvin(999.0f),
-
-            pressure = PressureMultiplier,
-            nearPressure = NearPressureMultiplier,
-
-            mass = 1,
-            targetDensity = targetDensity * 1.5f,
-            damping = damping,
-            passiveDamping = passiveDamping,
-            viscosity = viscosity,
-            stickyness = 4.0f,
-            gravity = gravity,
-
-            influenceRadius = IR_2,
-        };
-    }
-
     void InitializeBuffers()
     {
         ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas);
-        ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, PTypes);
+        ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
 
         ComputeHelper.CreateStructuredBuffer<int2>(ref SpatialLookupBuffer, ParticlesNum_NextPow2);
         ComputeHelper.CreateStructuredBuffer<int>(ref StartIndicesBuffer, ChunksNumAll);
@@ -509,8 +348,7 @@ public class Main : MonoBehaviour
 
         ComputeHelper.CreateStructuredBuffer<int>(ref RecordedElementBuffer, Resolution.x * Resolution.y);
 
-        Materials = new Mat[1];
-        ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Materials);
+        ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, materialInput.GetMaterials());
     }
 
     void GPUSortChunkLookUp()

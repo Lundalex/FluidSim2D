@@ -11,6 +11,7 @@ public class SceneRigidBody : Polygon
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 0.5f;
     public RBInput RBInput;
     [NonSerialized] public Vector2[] Points;
+
     public Vector2[] GeneratePoints(float gridDensity, Vector2 offset, bool editorView = false)
     {
         if (gridDensity == 0) gridDensity = defaultGridDensity;

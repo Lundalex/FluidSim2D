@@ -169,7 +169,6 @@ float4 GetRenderColor(PData pData)
 
 static const float3 COLOR_MULTIPLIER = float3(0.0, 0.0, 0.4);
 static const float3 COLOR_ADDITION = float3(0.0, 0.0, 0.6);
-static const float TEMP_ALPHA_OVERRIDE = 0.5;
 float4 SampleCaustics(uint2 threadID, float alpha)
 {
     float t;
@@ -319,7 +318,7 @@ void ApplyMaterials(uint3 id : SV_DispatchThreadID)
     float4 color;
     if (fluid_RigidBody)
     {
-        color = SampleCaustics(id.xy, TEMP_ALPHA_OVERRIDE);
+        color = SampleCaustics(id.xy, mat.alpha);
     }
     else
     {

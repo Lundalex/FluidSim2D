@@ -19,6 +19,12 @@ public class SceneFluid : Polygon
     private SceneManager sceneManager;
     private Main main;
 
+    private void OnValidate()
+    {
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        main.OnValidate();
+    }
+    
     public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
     {
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
