@@ -484,63 +484,64 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
 
     RigidBody rb = RigidBodies[i];
 
-    bool canMove = rb.mass > 0;
-    if (!canMove) return;
-
-    // Update position
-    rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
-
     // Update accumulated rotation
     rb.totRot += IntToFloat(rb.rotVel_AsInt) * DeltaTime;
-
-    // Forces
-    float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
-    rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
-
-    // Damping
-    float Damping = 0.1;
-    rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
-
-    float bounciness = 0.5;
-    float horisontalFriction = 0.1;
-
-    // Make sure rigid body is inside simulation bounds
-    if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
+    
+    bool canMove = rb.mass > 0;
+    if (canMove)
     {
-        float2 boundsMin = float2(1.#INF, 1.#INF);
-        float2 boundsMax = float2(-1.#INF, -1.#INF);
-        float2 minXVec = 1.#INF;
-        float2 minYVec = 1.#INF;
-        float2 maxXVec = -1.#INF;
-        float2 maxYVec = -1.#INF;
-        GetRBBounds(rb, boundsMin, boundsMax, minXVec, minYVec, maxXVec, maxYVec);
+        // Update position
+        rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
 
-        // X-axis collision
-        if (boundsMin.x < RigidBodyPadding)
-        {
-            rb.pos.x += RigidBodyPadding - boundsMin.x;
-            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
-            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
-        }
-        else if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
-        {
-            rb.pos.x -= boundsMax.x - (BoundaryDims.x - RigidBodyPadding);
-            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
-            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
-        }
+        // Forces
+        float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
+        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
 
-        // Y-axis collision
-        if (boundsMin.y < RigidBodyPadding)
+        // Damping
+        float Damping = 0.1;
+        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
+
+        float bounciness = 0.5;
+        float horisontalFriction = 0.1;
+
+        // Make sure rigid body is inside simulation bounds
+        if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
         {
-            rb.pos.y += RigidBodyPadding - boundsMin.y;
-            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
-            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
-        }
-        else if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
-        {
-            rb.pos.y -= boundsMax.y - (BoundaryDims.y - RigidBodyPadding);
-            rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
-            rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
+            float2 boundsMin = float2(1.#INF, 1.#INF);
+            float2 boundsMax = float2(-1.#INF, -1.#INF);
+            float2 minXVec = 1.#INF;
+            float2 minYVec = 1.#INF;
+            float2 maxXVec = -1.#INF;
+            float2 maxYVec = -1.#INF;
+            GetRBBounds(rb, boundsMin, boundsMax, minXVec, minYVec, maxXVec, maxYVec);
+
+            // X-axis collision
+            if (boundsMin.x < RigidBodyPadding)
+            {
+                rb.pos.x += RigidBodyPadding - boundsMin.x;
+                rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
+                rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
+            }
+            else if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
+            {
+                rb.pos.x -= boundsMax.x - (BoundaryDims.x - RigidBodyPadding);
+                rb.vel_AsInt2.x = FloatAsInt(IntToFloat(-rb.vel_AsInt2.x) * bounciness);
+                rb.vel_AsInt2.y = FloatAsInt(IntToFloat(rb.vel_AsInt2.y) * (1 - horisontalFriction));
+            }
+
+            // Y-axis collision
+            if (boundsMin.y < RigidBodyPadding)
+            {
+                rb.pos.y += RigidBodyPadding - boundsMin.y;
+                rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
+                rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
+            }
+            else if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
+            {
+                rb.pos.y -= boundsMax.y - (BoundaryDims.y - RigidBodyPadding);
+                rb.vel_AsInt2.y = FloatAsInt(IntToFloat(-rb.vel_AsInt2.y) * bounciness);
+                rb.vel_AsInt2.x = FloatAsInt(IntToFloat(rb.vel_AsInt2.x) * (1 - horisontalFriction));
+            }
         }
     }
 

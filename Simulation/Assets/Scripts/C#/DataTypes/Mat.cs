@@ -2,8 +2,11 @@ using Unity.Mathematics;
 
 public struct Mat
 {
-    public int2 matTexLoc;
-    public int2 matTexDims;
-    public float alpha;
+    public int2 colTexLoc;
+    public int2 colTexDims;
+    public float colTexScale;
+    public float3 baseCol;
+    public float opacity;
+    public float3 sampleColMul;
     public float3 edgeCol;
 };
