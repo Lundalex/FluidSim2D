@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class SceneManager : MonoBehaviour
 {
-    public Vector2 TEMP;
     Vector2 sceneMin;
     Vector2 sceneMax;
     Main main;
