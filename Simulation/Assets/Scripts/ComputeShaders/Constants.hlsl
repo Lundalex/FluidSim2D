@@ -9,3 +9,7 @@ static const uint TN_RBS1 = 64; // Rigid Body Simulation
 static const uint TN_RBS2 = 32; // Rigid Body Simulation
 static const uint TN_RBS3 = 512; // Rigid Body Simulation
 static const uint TN_S = 512; // Sorter
+
+static const float CENTROID_RADIUS = 2.0;
+static const float CENTROID_RADIUS_SQR = CENTROID_RADIUS*CENTROID_RADIUS;
+static const float4 COL_RED = float4(1, 0, 0, 1);

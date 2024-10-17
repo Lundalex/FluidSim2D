@@ -50,8 +50,6 @@ public class ShaderHelper : MonoBehaviour
 
     public void SetRenderShaderBuffers(ComputeShader renderShader)
     {
-        renderShader.SetBuffer(0, "RecordedElements", m.RecordedElementBuffer);
-
         if (m.ParticlesNum != 0)
         {
             renderShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
@@ -60,7 +58,7 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(1, "PDatas", m.PDataBuffer);
             renderShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
 
-            renderShader.SetBuffer(1, "RecordedElements", m.RecordedElementBuffer);
+            renderShader.SetBuffer(1, "Materials", m.MaterialBuffer);
         }
 
         if (m.RBDatas.Length != 0)
@@ -68,22 +66,26 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
             renderShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
 
-            renderShader.SetBuffer(2, "RecordedElements", m.RecordedElementBuffer);
+            renderShader.SetBuffer(2, "Materials", m.MaterialBuffer);
         }
-
-        renderShader.SetBuffer(3, "RecordedElements", m.RecordedElementBuffer);
-        renderShader.SetBuffer(3, "Materials", m.MaterialBuffer);
     }
 
     public void SetRenderShaderTextures(ComputeShader renderShader)
     {
-        renderShader.SetTexture(2, "TransformDatas", m.transformDataTexture);
+        renderShader.SetTexture(0, "Result", m.renderTexture);
+        renderShader.SetTexture(0, "Background", m.backgroundTexture);
+
+        renderShader.SetTexture(1, "Result", m.renderTexture);
+        renderShader.SetTexture(1, "Caustics", m.causticsTexture);
+        renderShader.SetTexture(1, "Background", m.backgroundTexture);
+        renderShader.SetTexture(1, "Atlas", m.AtlasTexture);
+
+        renderShader.SetTexture(2, "Result", m.renderTexture);
+        renderShader.SetTexture(2, "Background", m.backgroundTexture);
+        renderShader.SetTexture(2, "Atlas", m.AtlasTexture);
 
         renderShader.SetTexture(3, "Result", m.renderTexture);
-        renderShader.SetTexture(3, "TransformDatas", m.transformDataTexture);
         renderShader.SetTexture(3, "UITexture", m.uiTexture);
-        renderShader.SetTexture(3, "Caustics", m.causticsTexture);
-        renderShader.SetTexture(3, "Background", m.backgroundTexture);
     }
 
     public void SetSortShaderBuffers(ComputeShader sortShader)
@@ -149,11 +151,10 @@ public class ShaderHelper : MonoBehaviour
     {
         renderShader.SetFloat("VisualParticleRadii", m.VisualParticleRadii);
         renderShader.SetFloat("MetaballsThreshold", m.MetaballsThreshold);
-        renderShader.SetFloat("EdgeWidth", m.RenderEdgeWidth);
-        renderShader.SetFloat("RBRenderThickness", m.RBRenderThickness);
-        renderShader.SetVector("EdgeColor", Func.ColorToVector3(m.RenderEdgeColor));
+        renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
+        renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
+        renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
-        renderShader.SetVector("BackgroundColor", Func.ColorToVector3(m.BackgroundColor));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         renderShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);

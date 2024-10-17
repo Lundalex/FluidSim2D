@@ -1,10 +1,11 @@
-#pragma kernel ResetDatas; // 0
+#pragma kernel RenderBackground; // 0
 #pragma kernel RenderFluids; // 1
 #pragma kernel RenderRigidBodies; // 2
-#pragma kernel ApplyMaterials; // 3
+#pragma kernel RenderUI; // 3
 
 #pragma multi_compile _ DRAW_RB_CENTROIDS
-#pragma multi_compile _ DRAW_RB_EDGES
+#pragma multi_compile _ DRAW_FLUID_OUTLINES
+#pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
 
 #include "MathResources.hlsl"
@@ -14,11 +15,11 @@
 
 const float VisualParticleRadii;
 const float MetaballsThreshold;
-const float EdgeWidth;
+const float MetaballsEdgeDensityWidth;
+const float FluidEdgeWidth;
+const float RBEdgeWidth;
 const int RBVectorNum;
 const int2 Resolution;
-const float3 BackgroundColor;
-const float3 EdgeColor;
 
 const int2 BoundsDims;
 const float InvMaxInfluenceRadius;
@@ -30,12 +31,12 @@ const int ParticlesNum;
 const int RBodiesNum;
 
 RWStructuredBuffer<int> RecordedElements;
-RWTexture2D<unorm float4> TransformDatas;
 RWTexture2D<unorm float4> Result;
 
 Texture2D<unorm float4> Caustics;
 Texture2D<unorm float4> UITexture;
 Texture2D<unorm float4> Background;
+Texture2D<unorm float4> Atlas;
 
 StructuredBuffer<int2> SpatialLookup; 
 StructuredBuffer<int> StartIndices;
@@ -47,6 +48,14 @@ StructuredBuffer<RigidBody> RigidBodies;
 StructuredBuffer<RBVector> RBVectors;
 
 StructuredBuffer<Mat> Materials;
+
+float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
+{
+    uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
+    float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
+ 
+    return sampleCol;
+}
 
 bool ValidChunk(int2 chunk)
 {
@@ -164,12 +173,10 @@ float4 GetRenderColor(PData pData)
     float3 rgb = VelocityToRGB(pData.vel, 0);
     // float3 rgb = TemperatureToRGB(pData.temperature);
 
-    return float4(rgb.x, rgb.y, rgb.z, 0.0);
+    return float4(rgb.x, rgb.y, rgb.z, 0);
 }
 
-static const float3 COLOR_MULTIPLIER = float3(0.0, 0.0, 0.4);
-static const float3 COLOR_ADDITION = float3(0.0, 0.0, 0.6);
-float4 SampleCaustics(uint2 threadID, float alpha)
+float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
 {
     float t;
     float2 causticsTexDims;
@@ -178,20 +185,15 @@ float4 SampleCaustics(uint2 threadID, float alpha)
 
     uint2 wrappedThreadID = (threadID / (baseRes / causticsTexDims)) % causticsTexDims;
 
-    float sample = Caustics[wrappedThreadID].r;
+    float3 fluidCol = sampleColMul * Caustics[wrappedThreadID].rgb;
 
-    float3 fluidCol = sample * COLOR_MULTIPLIER + COLOR_ADDITION;
-
-    float transparency = 1 - alpha;
-    float3 combinedColor = fluidCol * alpha + Background[threadID.xy].xyz * transparency;
-    
-    return float4(combinedColor.r, combinedColor.g, combinedColor.b, 1.0);
+    return fluidCol;
 }
 
 [numthreads(TN_R,TN_R,1)]
-void ResetDatas(uint3 id : SV_DispatchThreadID)
+void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
-    RecordedElements[GetPixelKey(id.xy)] = 0;
+    Result[id.xy] = Background[id.xy];
 }
  
 [numthreads(TN_R,TN_R,1)]
@@ -204,9 +206,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     int lastChunkKey_PType_POrder;
     float totDensity = 0;
     bool particleFound = false;
+    bool drawOutline = false;
     bool doContinue = true;
     #if !USE_METABALLS
-        float minRadiusSqr = pow(min(MaxInfluenceRadius, VisualParticleRadii), 2);
+        float minRadius = min(MaxInfluenceRadius, VisualParticleRadii);
+        float minRadiusSqr = minRadius*minRadius;
         float minDstSqr = 1.#INF;
     #endif
     for (int x = -1; x <= 1 && doContinue; x++)
@@ -233,10 +237,23 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                     {
                         totDensity += MetaballsDensity(dstSqr, InvMaxInfluenceRadius);
 
+                        #if DRAW_FLUID_OUTLINES
+                            if (totDensity > MetaballsThreshold - MetaballsEdgeDensityWidth)
+                            {
+                                drawOutline = true;
+                                lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
+                                particleFound = true;
+                            }
+                        #endif
+
                         if (totDensity > MetaballsThreshold)
                         {
-                            lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
-                            particleFound = true;
+                            #if DRAW_FLUID_OUTLINES
+                                drawOutline = false;
+                            #else
+                                lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
+                                particleFound = true;
+                            #endif
                             doContinue = false;
                             break;
                         }
@@ -247,6 +264,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                         lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                         particleFound = true;
                         minDstSqr = dstSqr;
+
+                        #if DRAW_FLUID_OUTLINES
+                            if (sqrt(dstSqr) > minRadius - FluidEdgeWidth) drawOutline = true;
+                            else drawOutline = false;
+                        #endif
                     }
                 #endif
 
@@ -258,11 +280,39 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 
     if (particleFound)
     {
-        int matIndex = PTypes[Extract_PType(lastChunkKey_PType_POrder)].matIndex;
+        Mat mat = Materials[PTypes[Extract_PType(lastChunkKey_PType_POrder)].matIndex];
 
-        // if (particleFound) RecordedElements[id.xy].x = StoreFluidMatIndex(matIndex);
-        RecordedElements[GetPixelKey(id.xy)] = StoreFluidMatIndex(matIndex);
+        float3 result;
+        if (drawOutline)
+        {
+            result = mat.edgeCol;
+        }
+        else
+        {
+            float3 color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
+            
+            float opacity = mat.opacity;
+            float transparency = 1 - opacity;
+        
+            result = transparency > 0 ? color * opacity + transparency * Background[id.xy].rgb : color;
+        }
+    
+        Result[id.xy] = float4(result, 1);
     }
+}
+
+float2 MirrorRepeatUV(float2 uv)
+{
+    float2 intPart;
+    float2 fracPart = frac(uv); // Get fractional part
+
+    // Determine if each component should be mirrored
+    float2 isOdd = floor(uv) - floor(uv / 2.0) * 2.0; // 0.0 for even, 1.0 for odd
+
+    // Mirror the fractional part where the integer part is odd
+    fracPart = lerp(fracPart, 1.0 - fracPart, step(0.5, isOdd));
+
+    return fracPart;
 }
 
 [numthreads(TN_R,TN_R,1)]
@@ -272,14 +322,25 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 
     int highestRenderPriority = 0;
     bool rigidBodyFound = false;
+    bool drawOutline = false;
     int matIndex;
     float3 transformData = 0;
     for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
+
+        float dstSqr = dot2(pixelPos - rb.pos);
+
+        #if DRAW_RB_CENTROIDS
+            if (dstSqr < CENTROID_RADIUS_SQR)
+            {
+                Result[id.xy] = COL_RED;
+                return;
+            }
+        #endif
+
         int renderPriority = rb.renderPriority;
-        
-        if (renderPriority > highestRenderPriority)
+        if (renderPriority > highestRenderPriority && dstSqr < rb.maxRadiusSqr)
         {
             if (IsPointInsideRB(pixelPos, rb))
             {
@@ -287,48 +348,49 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
                 rigidBodyFound = true;
                 matIndex = rb.matIndex;
                 transformData = float3(rb.pos.x, rb.pos.y, rb.totRot);
+
+                #if DRAW_RB_OUTLINES
+                    float dst = DstToRB(pixelPos, rb);
+                    if (dst < RBEdgeWidth) drawOutline = true;
+                    else drawOutline = false;
+                #endif
             }
         }
     }
 
-    // if (rigidBodyFound) RecordedElements[id.xy].x = StoreRBMatIndex(matIndex);
     if (rigidBodyFound)
     {
-        uint pixelKey = GetPixelKey(id.xy);
-        RecordedElements[pixelKey] = StoreRBMatIndex(matIndex);
-        TransformDatas[id.xy] = float4(transformData, 0);
+        Mat mat = Materials[matIndex];
+
+        float3 result;
+        if (drawOutline)
+        {
+            result = mat.edgeCol;
+        }
+        else
+        {
+            float2 localPixelPos = rotate2d(pixelPos - transformData.xy, -transformData.z);
+            float2 localUV = MirrorRepeatUV(mat.colTexScale * localPixelPos / (float2)BoundsDims);
+    
+            float3 color = mat.colTexLoc.x != -1 ? SampleTexture(localUV, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
+            
+            float opacity = mat.opacity;
+            float transparency = 1 - opacity;
+    
+            result = transparency > 0 ? color * opacity + transparency * Background[id.xy].rgb : color;
+        }
+
+        Result[id.xy] = float4(result, 1);
     }
 }
  
 [numthreads(TN_R,TN_R,1)]
-void ApplyMaterials(uint3 id : SV_DispatchThreadID)
+void RenderUI(uint3 id : SV_DispatchThreadID)
 {
-    int storedMatIndex = RecordedElements[GetPixelKey(id.xy)];
-    if (storedMatIndex == 0)
+    float4 uiColor = UITexture[id.xy];
+    if (uiColor.a != 0)
     {
-        Result[id.xy] = float4(Background[id.xy].rgb, 1.0);
+        Result[id.xy] = uiColor;
         return;
     }
-
-    bool fluid_RigidBody = storedMatIndex > 0;
-
-    int matIndex = fluid_RigidBody ? RetrieveStoredFluidMatIndex(storedMatIndex) : RetrieveStoredRBMatIndex(storedMatIndex);
-    Mat mat = Materials[matIndex];
-    
-    float4 color;
-    if (fluid_RigidBody)
-    {
-        color = SampleCaustics(id.xy, mat.alpha);
-    }
-    else
-    {
-        float4 transformData = TransformDatas[id.xy];
-        color = 1;
-    }
-
-    float transparency = 1 - color.a;
-    
-    float4 result = transparency > 0 ? float4(color.rgb, 1.0) * color.a + transparency * float4(Background[id.xy].rgb, 1.0) : color;
-
-    Result[id.xy] = result;
 }

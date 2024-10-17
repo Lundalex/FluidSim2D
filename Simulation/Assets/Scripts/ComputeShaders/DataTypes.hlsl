@@ -2,9 +2,12 @@
 
 struct Mat
 {
-    int2 matTexLoc;
-    int2 matTexDims;
-    float alpha;
+    int2 colTexLoc;
+    int2 colTexDims;
+    float colTexScale;
+    float3 baseCol;
+    float opacity;
+    float3 sampleColMul;
     float3 edgeCol;
 };
 struct PType 

@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class SceneManager : MonoBehaviour
 {
+    public int MaxAtlasDims;
     Vector2 sceneMin;
     Vector2 sceneMax;
     Main main;
@@ -36,6 +37,61 @@ public class SceneManager : MonoBehaviour
                               && point.y < sceneMax.y;
 
         return isInsideBounds;
+    }
+
+    public (Texture2D, Mat[]) ConstructTextureAtlas(MatInput[] matInputs)
+    {
+        List<Texture2D> textures = new();
+        foreach (MatInput mat in matInputs)
+        {
+            if (mat.colorTexture != null)
+            {
+                if (!mat.colorTexture.isReadable) Debug.LogWarning("Color Texture " + mat.colorTexture.name + " is not readable. Read/Write needs to be set to true");
+                textures.Add(mat.colorTexture);
+            }
+        }
+
+        Texture2D atlas = new(MaxAtlasDims, MaxAtlasDims, TextureFormat.RGBAHalf, false);
+        Rect[] rects = new Rect[0];
+        if (textures.Count > 0) rects = atlas.PackTextures(textures.ToArray(), 1, MaxAtlasDims);
+
+        Debug.Log("Texture atlas constructed with " + rects.Length + " textures. Width: " + atlas.width + ". Height: " + atlas.height);
+
+        int2 GetTexLoc(int rectIndex) => new((int)(rects[rectIndex].x * atlas.width), (int)(rects[rectIndex].y * atlas.height));
+        int2 GetTexDims(int rectIndex) => new((int)(rects[rectIndex].width * atlas.width), (int)(rects[rectIndex].height * atlas.height));
+
+        int rectIndex = 0;
+        Mat[] renderMats = new Mat[matInputs.Length];
+        for (int i = 0; i < matInputs.Length; i++)
+        {
+            Mat mat = new();
+            MatInput matInput = matInputs[i];
+
+            if (matInput.colorTexture != null)
+            {
+                mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rectIndex), GetTexDims(rectIndex));
+                rectIndex++;
+            }
+            else mat = InitMat(matInput, matInput.baseColor, -1, -1);
+
+            renderMats[i] = mat;
+        }
+
+        return (atlas, renderMats);
+    }
+
+    private Mat InitMat(MatInput matInput, float3 baseCol, int2 colTexLoc, int2 colTexDims)
+    {
+        return new Mat
+        {
+            colTexLoc = colTexLoc,
+            colTexDims = colTexDims,
+            colTexScale = matInput.colorTextureScale,
+            baseCol = baseCol,
+            opacity = Mathf.Clamp(matInput.opacity, 0.0f, 1.0f),
+            sampleColMul = matInput.sampleColorMultiplier,
+            edgeCol = matInput.edgeColor
+        };
     }
 
     public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)

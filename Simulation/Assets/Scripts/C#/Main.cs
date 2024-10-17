@@ -49,18 +49,18 @@ public class Main : MonoBehaviour
     public float ProgramSpeed = 2.0f;
     public float VisualParticleRadii = 0.4f;
     public float MetaballsThreshold = 1.0f;
-    public float RenderEdgeWidth = 0.5f;
-    public Color RenderEdgeColor = Color.white;
-    public float RBRenderThickness = 0.5f;
+    public float MetaballsEdgeDensityWidth = 0.3f;
+    public float FluidEdgeWidth = 1.0f;
+    public float RBEdgeWidth = 0.5f;
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
     public int2 Resolution = new(1920, 1280);
-    public Color BackgroundColor = Color.black;
 
     [Header("Shader Compilation - Renderer")]
     public bool DoDrawRBCentroids = false;
-    public bool DoDrawRBEdges;
+    public bool DoDrawFluidOutlines = true;
+    public bool DoDrawRBOutlines = true;
     public bool DoUseMetaballs = true;
 
     [Header("Shader Compilation - Particle Simulation")]
@@ -140,7 +140,7 @@ public class Main : MonoBehaviour
 
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
-    [NonSerialized] public RenderTexture transformDataTexture;
+    [NonSerialized] public Texture2D AtlasTexture;
 
     // Particle data
     private PData[] PDatas;
@@ -148,6 +148,9 @@ public class Main : MonoBehaviour
     // Rigid Bodies
     public RBVector[] RBVectors;
     public RBData[] RBDatas;
+
+    // Materials
+    private Mat[] Mats;
 
     // Other
     private float DeltaTime;
@@ -171,6 +174,7 @@ public class Main : MonoBehaviour
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
         (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
+        (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
 
         SetConstants();
 
@@ -178,7 +182,6 @@ public class Main : MonoBehaviour
 
         InitializeBuffers();
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
-        transformDataTexture = TextureHelper.CreateTexture(Resolution, 3);
 
         shaderHelper.SetPSimShaderBuffers(pSimShader);
         shaderHelper.SetNewRBSimShaderBuffers(rbSimShader);
@@ -260,7 +263,7 @@ public class Main : MonoBehaviour
     {
         // Set new pType and material data
         PTypeBuffer.SetData(pTypeInput.GetParticleTypes());
-        MaterialBuffer.SetData(materialInput.GetMaterials());
+        MaterialBuffer.SetData(Mats);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
@@ -288,8 +291,10 @@ public class Main : MonoBehaviour
         // Multi-compilation - renderShader
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
         else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
-        if (DoDrawRBEdges) renderShader.EnableKeyword("DRAW_RB_EDGES");
-        else renderShader.DisableKeyword("DRAW_RB_EDGES");
+        if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
+        else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
+        if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
+        else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
         if (DoUseMetaballs) renderShader.EnableKeyword("USE_METABALLS");
         else renderShader.DisableKeyword("USE_METABALLS");
 
@@ -348,7 +353,7 @@ public class Main : MonoBehaviour
 
         ComputeHelper.CreateStructuredBuffer<int>(ref RecordedElementBuffer, Resolution.x * Resolution.y);
 
-        ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, materialInput.GetMaterials());
+        ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
     }
 
     void GPUSortChunkLookUp()
@@ -469,12 +474,12 @@ public class Main : MonoBehaviour
 
     void RunRenderShader()
     {
-        ComputeHelper.DispatchKernel (renderShader, "ResetDatas", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "RenderBackground", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
         ComputeHelper.DispatchKernel (renderShader, "RenderFluids", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
         ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodies", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
-        ComputeHelper.DispatchKernel (renderShader, "ApplyMaterials", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "RenderUI", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
     }
-
+    
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         if (RenderMarchingSquares)
