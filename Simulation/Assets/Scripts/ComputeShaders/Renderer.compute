@@ -195,6 +195,12 @@ void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
     Result[id.xy] = Background[id.xy];
 }
+
+float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
+{
+    float transparency = 1 - opacity;
+    return transparency > 0 ? color * opacity + transparency * Background[threadID].rgb : color;
+}
  
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
@@ -290,11 +296,8 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         else
         {
             float3 color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
-            
-            float opacity = mat.opacity;
-            float transparency = 1 - opacity;
         
-            result = transparency > 0 ? color * opacity + transparency * Background[id.xy].rgb : color;
+            result = BlendWithBackground(color, mat.opacity, id.xy);
         }
     
         Result[id.xy] = float4(result, 1);
@@ -304,12 +307,9 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 float2 MirrorRepeatUV(float2 uv)
 {
     float2 intPart;
-    float2 fracPart = frac(uv); // Get fractional part
-
-    // Determine if each component should be mirrored
-    float2 isOdd = floor(uv) - floor(uv / 2.0) * 2.0; // 0.0 for even, 1.0 for odd
-
-    // Mirror the fractional part where the integer part is odd
+    float2 fracPart = frac(uv);
+    
+    float2 isOdd = floor(uv) - floor(uv / 2.0) * 2.0;
     fracPart = lerp(fracPart, 1.0 - fracPart, step(0.5, isOdd));
 
     return fracPart;
@@ -373,11 +373,8 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
             float2 localUV = MirrorRepeatUV(mat.colTexScale * localPixelPos / (float2)BoundsDims);
     
             float3 color = mat.colTexLoc.x != -1 ? SampleTexture(localUV, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
-            
-            float opacity = mat.opacity;
-            float transparency = 1 - opacity;
-    
-            result = transparency > 0 ? color * opacity + transparency * Background[id.xy].rgb : color;
+
+            result = BlendWithBackground(color, mat.opacity, id.xy);
         }
 
         Result[id.xy] = float4(result, 1);
@@ -388,9 +385,5 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 void RenderUI(uint3 id : SV_DispatchThreadID)
 {
     float4 uiColor = UITexture[id.xy];
-    if (uiColor.a != 0)
-    {
-        Result[id.xy] = uiColor;
-        return;
-    }
+    if (uiColor.a != 0) Result[id.xy] = uiColor;
 }

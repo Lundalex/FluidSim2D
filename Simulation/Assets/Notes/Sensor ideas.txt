@@ -16,10 +16,9 @@
         - derived data (energy, effect (new particle energy/s))
 
     Display:
-        - Graph visualisation
-        - Better looking ui elements
-        - Materials for rigid bodies
-        - Noise + Materials for fluids
+        - Graph visualisation?
+        - Better looking UI elements
     
     Physics:
         - Rigid body spring links (and point links) (F = k * dL)
+          - Stuck RB vel -> vel & rotVel for parent rb
