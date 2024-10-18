@@ -5,6 +5,7 @@ using UnityEngine;
 using Resources;
 using UnityEngine.Rendering;
 using System;
+using UnityEditor;
 public static class ComputeHelper
 {
 
@@ -52,7 +53,7 @@ public static class ComputeHelper
 	public static void CreateAppendBuffer<T>(ref ComputeBuffer buffer, int capacity) // T is the buffer struct
 	{
 		int stride = GetStride<T>();
-        buffer ??= new ComputeBuffer(capacity, stride, ComputeBufferType.Append);
+        buffer = new ComputeBuffer(capacity, stride, ComputeBufferType.Append);
 		buffer.SetCounterValue(0);
 	}
     // Create structured buffer without ref, from data
@@ -65,7 +66,8 @@ public static class ComputeHelper
     // Create structured buffer with ref, from data
 	public static void CreateStructuredBuffer<T>(ref ComputeBuffer buffer, T[] data) // T is the buffer struct
 	{
-		buffer ??= new ComputeBuffer(data.Length, GetStride<T>());
+        if (buffer != null) Release(buffer);
+		buffer = new ComputeBuffer(data.Length, GetStride<T>());
 		buffer.SetData(data);
 	}
     // Create structured buffer without ref
@@ -77,6 +79,7 @@ public static class ComputeHelper
     // Create structured buffer with ref
 	public static void CreateStructuredBuffer<T>(ref ComputeBuffer buffer, int count) // T is the buffer struct
 	{
+        if (buffer != null) Release(buffer);
 		buffer = new ComputeBuffer(count, GetStride<T>());
 	}
     // Create count buffer without ref
@@ -88,6 +91,7 @@ public static class ComputeHelper
     // Create count buffer with ref
     public static void CreateCountBuffer(ref ComputeBuffer countBuffer)
     {
+        if (countBuffer != null) Release(countBuffer);
         countBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
 

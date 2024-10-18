@@ -6,8 +6,4 @@ GENERAL TASKS:
 TASKS SPECIFIC TO RB_P-SIMULATION:
 - Improve performance of RB_P collision solver function
 
-- Fix "teleporting particles" bug
-
-- Fix glitching line in renderer - MAY BE RELATED TO "EXPLODING PARTICLES"
-
 - Make colors "pop" out more
