@@ -12,6 +12,18 @@ public struct RBInput
     public float2 velocity;
     public bool canRotate;
     public float rotationVelocity;
+
+    // Inter-RB spring links
+    public bool enableSpringLink;
+    public bool rigidConstraint;
+    public int linkedRBIndex;
+    public float springStiffness;
+    public float springRestLength;
+    public float damping;
+    public float2 localLinkPosThisRB;
+    public float2 localLinkPosOtherRB;
+
+    // Display
     public int renderPriority;
     public int matIndex;
 }

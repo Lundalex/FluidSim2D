@@ -87,6 +87,14 @@ struct RigidBody
     int startIndex;
     int endIndex;
 
+    // Inter-RB spring links
+    int linkedRBIndex; // -1 -> No link
+    float springStiffness; // 0 -> Fully rigid constraint
+    float springRestLength;
+    float damping;
+    float2 localLinkPosThisRB;
+    float2 localLinkPosOtherRB;
+
     // Display
     int renderPriority;
     int matIndex;

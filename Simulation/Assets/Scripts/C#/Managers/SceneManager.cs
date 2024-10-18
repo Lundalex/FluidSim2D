@@ -181,6 +181,14 @@ public class SceneManager : MonoBehaviour
             maxRadiusSqr = maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
+            // Inter-RB spring links
+            linkedRBIndex = rbInput.enableSpringLink ? rbInput.linkedRBIndex : -1,
+            springStiffness = rbInput.rigidConstraint ? 0 : rbInput.springStiffness,
+            springRestLength = rbInput.rigidConstraint ? 0 : rbInput.springRestLength,
+            damping = rbInput.rigidConstraint ? 0 : rbInput.damping,
+            localLinkPosThisRB = rbInput.localLinkPosThisRB,
+            localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
+            // Display
             renderPriority = rbInput.renderPriority,
             matIndex = rbInput.matIndex
         };

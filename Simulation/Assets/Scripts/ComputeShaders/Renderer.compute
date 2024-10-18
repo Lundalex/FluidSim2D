@@ -20,6 +20,8 @@ const float FluidEdgeWidth;
 const float RBEdgeWidth;
 const int RBVectorNum;
 const int2 Resolution;
+const float BackgroundScale;
+const float3 BackgroundBrightness;
 
 const int2 BoundsDims;
 const float InvMaxInfluenceRadius;
@@ -176,12 +178,19 @@ float4 GetRenderColor(PData pData)
     return float4(rgb.x, rgb.y, rgb.z, 0);
 }
 
-float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
+float2 GetTexDims(Texture2D<unorm float4> tex)
 {
     float t;
-    float2 causticsTexDims;
+    float2 texDims;
+    tex.GetDimensions(0, texDims.x, texDims.y, t);
+
+    return texDims;
+}
+
+float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
+{
+    float2 causticsTexDims = GetTexDims(Caustics);
     float2 baseRes = 512;
-    Caustics.GetDimensions(0, causticsTexDims.x, causticsTexDims.y, t);
 
     uint2 wrappedThreadID = (threadID / (baseRes / causticsTexDims)) % causticsTexDims;
 
@@ -190,16 +199,29 @@ float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
     return fluidCol;
 }
 
+float2 MirrorRepeatUV(float2 uv)
+{
+    float2 intPart;
+    float2 fracPart = frac(uv);
+    
+    float2 isOdd = floor(uv) - floor(uv / 2.0) * 2.0;
+    fracPart = lerp(fracPart, 1.0 - fracPart, step(0.5, isOdd));
+
+    return fracPart;
+}
+
 [numthreads(TN_R,TN_R,1)]
 void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
-    Result[id.xy] = Background[id.xy];
+    float2 uv = MirrorRepeatUV(BackgroundScale * id.xy / (float2)Resolution);
+    Result[id.xy] = float4(SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness, 1);
 }
 
 float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
 {
+    float2 uv = MirrorRepeatUV(BackgroundScale * threadID / (float2)Resolution);
     float transparency = 1 - opacity;
-    return transparency > 0 ? color * opacity + transparency * Background[threadID].rgb : color;
+    return transparency > 0 ? color * opacity + transparency * SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness : color;
 }
  
 [numthreads(TN_R,TN_R,1)]
@@ -304,17 +326,6 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     }
 }
 
-float2 MirrorRepeatUV(float2 uv)
-{
-    float2 intPart;
-    float2 fracPart = frac(uv);
-    
-    float2 isOdd = floor(uv) - floor(uv / 2.0) * 2.0;
-    fracPart = lerp(fracPart, 1.0 - fracPart, step(0.5, isOdd));
-
-    return fracPart;
-}
-
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 {
@@ -369,7 +380,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         }
         else
         {
-            float2 localPixelPos = rotate2d(pixelPos - transformData.xy, -transformData.z);
+            float2 localPixelPos = rotate2D(pixelPos - transformData.xy, -transformData.z);
             float2 localUV = MirrorRepeatUV(mat.colTexScale * localPixelPos / (float2)BoundsDims);
     
             float3 color = mat.colTexLoc.x != -1 ? SampleTexture(localUV, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;

@@ -1,9 +1,6 @@
 GENERAL TASKS:
-- Make the simulation look the same in the editor as during runtime.
 
 - Fix incorrect usage of any() and all() in both 2d and 3d simulations
 
-TASKS SPECIFIC TO RB_P-SIMULATION:
-- Improve performance of RB_P collision solver function
-
-- Make colors "pop" out more
+Fix bright build render
+Disable error logging in the player settings, bottom tab

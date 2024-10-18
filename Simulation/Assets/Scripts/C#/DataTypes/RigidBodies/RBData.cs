@@ -16,6 +16,14 @@ public struct RBData
     public int startIndex;
     public int endIndex;
 
+    // Inter-RB spring links
+    public int linkedRBIndex; // -1 -> No link
+    public float springStiffness; // 0 -> Fully rigid constraint
+    public float springRestLength;
+    public float damping;
+    public float2 localLinkPosThisRB;
+    public float2 localLinkPosOtherRB;
+
     // Display
     public int renderPriority;
     public int matIndex;

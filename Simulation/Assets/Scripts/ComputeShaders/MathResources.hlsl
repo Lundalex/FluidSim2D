@@ -202,7 +202,7 @@ float cross2D(float2 VectorA, float2 VectorB)
     return VectorA.x * VectorB.y - VectorA.y * VectorB.x;
 }
 
-float2 rotate2d(float2 vec, float radians)
+float2 rotate2D(float2 vec, float radians)
 {
     // Rotation matrix
     float2x2 rotMatrix = float2x2(
