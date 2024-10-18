@@ -488,7 +488,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
 
     RigidBody rbA = RigidBodies[i];
 
-    // Check if the rigid body is linked to another
+    // Check if the rigid body is linked to another rigid body
     bool isLinked = rbA.linkedRBIndex != -1 && rbA.linkedRBIndex != (int)i;
     if (!isLinked) return;
 
@@ -588,7 +588,6 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         if (invMassB > 0) deltaVelB -= impulse * invMassB;
 
         // Apply impulses to angular velocities
-        if (invInertiaA > 0) deltaRotVelA += cross2D(linkPosA, impulse) * invInertiaA;
         if (invInertiaB > 0) deltaRotVelB -= cross2D(linkPosB, impulse) * invInertiaB;
     }
     else
@@ -698,7 +697,8 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     // Positional correction to prevent sinking
     float penetrationDepth = -dot(collisionPoint - (rb.pos + r), normal);
 
-    float2 correction = max(penetrationDepth - RB_RBCollisionSlop, 0.0) * RB_RBCollisionCorrectionFactor * normal;
+    float epsilonCorrection = 0.3; // Small additional correction to prevent slow "sinking" through the borders
+    float2 correction = (max(penetrationDepth, -epsilonCorrection) + epsilonCorrection) * normal;
     rb.pos += correction;
 }
 
@@ -717,17 +717,6 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     bool canMove = rb.mass > 0;
     if (canMove)
     {
-        // Update position
-        rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
-
-        // Forces
-        float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
-        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
-
-        // Damping
-        float Damping = 0.1;
-        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
-
         // Make sure rigid body is inside simulation bounds
         if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
         {
@@ -771,6 +760,17 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
                 ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
             }
         }
+
+        // Update position
+        rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
+
+        // Forces
+        float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
+        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
+
+        // Damping
+        float Damping = 0.1;
+        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
     }
 
     RigidBodies[i] = rb;
