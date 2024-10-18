@@ -52,6 +52,8 @@ public class Main : MonoBehaviour
     public float MetaballsEdgeDensityWidth = 0.3f;
     public float FluidEdgeWidth = 1.0f;
     public float RBEdgeWidth = 0.5f;
+    public float3 BackgroundBrightness;
+    public float BackgroundScale;
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
@@ -83,7 +85,7 @@ public class Main : MonoBehaviour
     public PTypeInput pTypeInput;
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
-    public RenderTexture backgroundTexture;
+    public Texture2D backgroundTexture;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
     public ComputeShader renderShader;
@@ -467,6 +469,7 @@ public class Main : MonoBehaviour
     {
         if (RBVectors.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRBSprings", RBDatas.Length, rbSimShaderThreadSize2);
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
         if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);

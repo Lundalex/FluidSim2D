@@ -155,6 +155,8 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
         renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
+        renderShader.SetFloat("BackgroundScale", m.BackgroundScale);
+        renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
@@ -195,10 +197,13 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(2, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
-        rbSimShader.SetBuffer(3, "RBVectors", m.RBVectorBuffer);
+        rbSimShader.SetBuffer(3, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(4, "RigidBodies", m.RBDataBuffer);
-        rbSimShader.SetBuffer(4, "RBAdjustments", m.RBAdjustmentBuffer);
+        rbSimShader.SetBuffer(4, "RBVectors", m.RBVectorBuffer);
+
+        rbSimShader.SetBuffer(5, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(5, "RBAdjustments", m.RBAdjustmentBuffer);
     }
 
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)

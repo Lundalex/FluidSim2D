@@ -611,8 +611,8 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLEnableWebGPU: 1
   webGLPowerPreference: 2
-  webGLWebAssemblyTable: 0
-  webGLWebAssemblyBigInt: 0
+  webGLWebAssemblyTable: 1
+  webGLWebAssemblyBigInt: 1
   webGLCloseOnQuit: 0
   webWasm2023: 0
   scriptingDefineSymbols: {}

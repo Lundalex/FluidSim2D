@@ -22,3 +22,10 @@
     Physics:
         - Rigid body spring links (and point links) (F = k * dL)
           - Stuck RB vel -> vel & rotVel for parent rb
+
+    Extensive shader code stripping settings for better performance. Also ability to strip certain parts of the simulation engine
+
+    Render springs
+    Improve code structure for RB simulation
+    Better scene builder UI
+    May be unnecessary calling all RB shaders each frame. Maybe only every n:th frame?
