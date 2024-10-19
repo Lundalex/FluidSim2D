@@ -38,9 +38,10 @@ public class Main : MonoBehaviour
     public float BorderPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
 
-    [Header("Collision Solver")]
+    [Header("Rigid Body Collision Solver")]
     public float RB_RBCollisionCorrectionFactor = 0.8f;
     public float RB_RBCollisionSlop = 0.01f;
+    public bool AllowLinkedRBCollisions = false;
 
     [Header("Render")]
     public bool FixedTimeStep = true;
@@ -58,7 +59,8 @@ public class Main : MonoBehaviour
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
     public int2 Resolution = new(1920, 1280);
-    [Header("Render RB Springs")]
+    
+    [Header("Rigid Body Spring Render")]
     public int SpringRenderNumPeriods;
     public float SpringRenderWidth;
     public float SpringRenderHalfMatWidth;

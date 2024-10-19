@@ -4,7 +4,7 @@ struct Mat
 {
     int2 colTexLoc;
     int2 colTexDims;
-    float colTexScale;
+    float colTexUpScaleFactor;
     float3 baseCol;
     float opacity;
     float3 sampleColMul;
@@ -101,6 +101,7 @@ struct RigidBody
     // Display
     int renderPriority;
     int matIndex;
+    int springMatIndex;
 };
 
 struct RBVector 

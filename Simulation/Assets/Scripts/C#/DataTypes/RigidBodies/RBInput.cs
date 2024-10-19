@@ -26,4 +26,5 @@ public struct RBInput
     // Display
     public int renderPriority;
     public int matIndex;
+    public int springMatIndex;
 }

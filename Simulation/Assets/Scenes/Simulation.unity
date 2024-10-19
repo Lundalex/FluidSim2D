@@ -257,6 +257,7 @@ MonoBehaviour:
   RigidBodyPadding: 2
   RB_RBCollisionCorrectionFactor: 50
   RB_RBCollisionSlop: 0.01
+  AllowLinkedRBCollisions: 1
   FixedTimeStep: 0
   RenderMarchingSquares: 0
   TimeStep: 0.03
@@ -277,7 +278,7 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
-  SpringRenderNumPeriods: 6
+  SpringRenderNumPeriods: 8
   SpringRenderWidth: 20
   SpringRenderHalfMatWidth: 2
   SpringRenderRodLength: 5
@@ -558,12 +559,16 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.springMatIndex
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.rigidConstraint
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.springStiffness
-      value: 200
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.enableSpringLink
@@ -751,7 +756,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 17
+      value: 65.58
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1106,7 +1111,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materialInputs:
   - colorTexture: {fileID: 0}
-    colorTextureScale: 3
+    colorTextureUpScaleFactor: 3
     opacity: 0.7
     baseColor:
       x: 0
@@ -1121,7 +1126,7 @@ MonoBehaviour:
       y: 1
       z: 1
   - colorTexture: {fileID: 2800000, guid: 70862481a53a58f4998d3e06daf76f7c, type: 3}
-    colorTextureScale: 8
+    colorTextureUpScaleFactor: 8
     opacity: 1
     baseColor:
       x: 0
@@ -1131,6 +1136,21 @@ MonoBehaviour:
       x: 2
       y: 2
       z: 2
+    edgeColor:
+      x: 1
+      y: 1
+      z: 1
+  - colorTexture: {fileID: 2800000, guid: 7e9936c5ed724d84295c98fdd6381305, type: 3}
+    colorTextureUpScaleFactor: 200
+    opacity: 1
+    baseColor:
+      x: 0
+      y: 0
+      z: 0
+    sampleColorMultiplier:
+      x: 4
+      y: 4
+      z: 4
     edgeColor:
       x: 1
       y: 1

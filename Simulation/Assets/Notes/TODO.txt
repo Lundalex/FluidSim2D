@@ -1,6 +1,0 @@
-GENERAL TASKS:
-
-- Fix incorrect usage of any() and all() in both 2d and 3d simulations
-
-Fix bright build render
-Disable error logging in the player settings, bottom tab

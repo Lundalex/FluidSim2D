@@ -86,7 +86,7 @@ public class SceneManager : MonoBehaviour
         {
             colTexLoc = colTexLoc,
             colTexDims = colTexDims,
-            colTexScale = matInput.colorTextureScale,
+            colTexUpScaleFactor = matInput.colorTextureUpScaleFactor,
             baseCol = baseCol,
             opacity = Mathf.Clamp(matInput.opacity, 0.0f, 1.0f),
             sampleColMul = matInput.sampleColorMultiplier,
@@ -188,9 +188,12 @@ public class SceneManager : MonoBehaviour
             damping = rbInput.rigidConstraint ? 0 : rbInput.damping,
             localLinkPosThisRB = rbInput.localLinkPosThisRB,
             localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
+            // Recorded spring force
+            recordedSpringForce = 0,
             // Display
             renderPriority = rbInput.renderPriority,
-            matIndex = rbInput.matIndex
+            matIndex = rbInput.matIndex,
+            springMatIndex = rbInput.springMatIndex
         };
     }
 
