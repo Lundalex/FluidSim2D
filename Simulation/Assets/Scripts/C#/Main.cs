@@ -58,6 +58,12 @@ public class Main : MonoBehaviour
     public int SubTimeStepsPerFrame = 3;
     public float MSvalMin = 0.41f;
     public int2 Resolution = new(1920, 1280);
+    [Header("Render RB Springs")]
+    public int SpringRenderNumPeriods;
+    public float SpringRenderWidth;
+    public float SpringRenderHalfMatWidth;
+    public float SpringRenderRodLength;
+    public Color SpringRenderColor;
 
     [Header("Shader Compilation - Renderer")]
     public bool DoDrawRBCentroids = false;
@@ -480,6 +486,7 @@ public class Main : MonoBehaviour
         ComputeHelper.DispatchKernel (renderShader, "RenderBackground", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
         ComputeHelper.DispatchKernel (renderShader, "RenderFluids", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
         ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodies", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodySprings", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
         ComputeHelper.DispatchKernel (renderShader, "RenderUI", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
     }
     

@@ -1,7 +1,8 @@
 #pragma kernel RenderBackground; // 0
 #pragma kernel RenderFluids; // 1
 #pragma kernel RenderRigidBodies; // 2
-#pragma kernel RenderUI; // 3
+#pragma kernel RenderRigidBodySprings; // 3
+#pragma kernel RenderUI; // 4
 
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_FLUID_OUTLINES
@@ -23,6 +24,13 @@ const int2 Resolution;
 const float BackgroundScale;
 const float3 BackgroundBrightness;
 
+// Rigid body springs
+const int SpringRenderNumPeriods;
+const float SpringRenderWidth;
+const float SpringRenderHalfMatWidth;
+const float SpringRenderRodLength;
+const float3 SpringRenderColor;
+
 const int2 BoundsDims;
 const float InvMaxInfluenceRadius;
 const int MaxInfluenceRadius;
@@ -30,7 +38,7 @@ const int MaxInfluenceRadiusSqr;
 const int NumMaterials;
 const int2 ChunksNum;
 const int ParticlesNum;
-const int RBodiesNum;
+const int NumRigidBodies;
 
 RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
@@ -223,11 +231,16 @@ float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
     float transparency = 1 - opacity;
     return transparency > 0 ? color * opacity + transparency * SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness : color;
 }
+
+float2 GetPixelPos(uint2 pixelID)
+{
+    return (float2(pixelID) + .5) * BoundsDims / (float2)Resolution;
+}
  
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
 {
-    float2 pixelPos = (float2(id.xy) + .5) * BoundsDims / (float2)Resolution;
+    float2 pixelPos = GetPixelPos(id.xy);
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
     int2 curChunk;
@@ -329,14 +342,15 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 {
-    float2 pixelPos = (float2(id.xy) + .5) * BoundsDims / (float2)Resolution;
+    float2 pixelPos = GetPixelPos(id.xy);
+    // FIX OUTSIDE BOUNDS CHECK
 
     int highestRenderPriority = 0;
     bool rigidBodyFound = false;
     bool drawOutline = false;
     int matIndex;
     float3 transformData = 0;
-    for (int rbIndex = 0; rbIndex < RBodiesNum; rbIndex++)
+    for (int rbIndex = 0; rbIndex < NumRigidBodies; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
 
@@ -391,7 +405,118 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         Result[id.xy] = float4(result, 1);
     }
 }
- 
+
+bool IsOnSpring(float2 localPos, float springLength, float halfSpringWidth)
+{
+    int numPeriods = 6;
+    float springMatWidth = 4.0;
+    float halfSpringMatWidth = springMatWidth * 0.5;
+    float RodLength = 10.0;
+
+    // Check if localPos is on the start or end rods of the spring
+    if ((localPos.x < SpringRenderRodLength || localPos.x > springLength - SpringRenderRodLength) && abs(localPos.y) < SpringRenderHalfMatWidth)
+        return true;
+
+    // Check if localPos is within the middle part of the spring
+    float midStartX = SpringRenderRodLength;
+    float midEndX = springLength - SpringRenderRodLength;
+    if (localPos.x >= midStartX && localPos.x <= midEndX)
+    {
+        float midLength = midEndX - midStartX;
+        float amplitude = halfSpringWidth;
+
+        // Normalize the position within the middle section from 0 to 1
+        float xNorm = (localPos.x - midStartX) / midLength;
+
+        // Position within the total periods
+        float xInPeriods = xNorm * SpringRenderNumPeriods + 0.25;
+
+        // Position within one period (0 to 1)
+        float x = xInPeriods - floor(xInPeriods);
+        
+        // Calculate y as a function of x, using a zigzag function
+        float y;
+        if (x < 0.5)
+            y = (2.0 * amplitude) * x;
+        else
+            y = (2.0 * amplitude) * (1.0 - x);
+        
+        // Center y around y == 0
+        y -= amplitude * 0.5;
+
+        // Check if localPos.y is within the material width of the spring at this x position
+        if (abs(localPos.y - y) <= SpringRenderHalfMatWidth)
+            return true;
+    }
+
+    return false;
+}
+
+[numthreads(TN_R, TN_R, 1)]
+void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
+{
+    float2 pixelPos = GetPixelPos(id.xy);
+
+    bool springFound = false;
+    int highestRenderPriority = 0;
+    float3 result = 0;
+    for (uint rbIndex = 0; rbIndex < (uint)NumRigidBodies; rbIndex++)
+    {
+        RigidBody rbA = RigidBodies[rbIndex];
+        float stiffness = rbA.springStiffness;
+
+        // Check if:
+        // 1. The rigid body is linked to another rigid body
+        // 2. The link is a non-rigid constraint (i.e., if springLength != 0)
+        // 3. The rigid body render priority is higher than the currently rendered spring
+        bool isLinked = rbA.linkedRBIndex != -1 && rbA.linkedRBIndex != (int)rbIndex;
+        bool rigidConstraint = stiffness == 0.0;
+        int renderPriority = rbA.renderPriority;
+        if (!isLinked || rigidConstraint || renderPriority <= highestRenderPriority) continue;
+
+        RigidBody rbB = RigidBodies[rbA.linkedRBIndex];
+
+        float2 worldLinkPosA = rbA.pos + rotate2D(rbA.localLinkPosThisRB, rbA.totRot);
+        float2 worldLinkPosB = rbB.pos + rotate2D(rbA.localLinkPosOtherRB, rbB.totRot);
+        
+        // (localSpringStart == 0 after the transformations)
+        float2 localSpringEnd = worldLinkPosB - worldLinkPosA;
+        float springLength = length(localSpringEnd);
+
+        // Avoid drawing the springs with 0 length
+        if (springLength == 0.0) continue;
+
+        // Compute the angle to rotate so that localSpringEnd aligns with x-axis
+        float theta = atan2(localSpringEnd.y, localSpringEnd.x);
+
+        // Compute the vector from spring start to pixel position
+        float2 pixelVec = pixelPos - worldLinkPosA;
+
+        // Rotate the pixel vector into the spring's local coordinate system
+        float2 localPixelPos = rotate2D(pixelVec, -theta);
+
+        // Now the spring starts at (0,0), ends at (springLength, 0)
+        // Check if the pixel is within the spring's area
+        float halfSpringWidth = SpringRenderWidth * 0.5;
+        if (localPixelPos.x >= 0.0 && localPixelPos.x <= springLength && abs(localPixelPos.y) <= halfSpringWidth)
+        {
+            bool isOnSpring = IsOnSpring(localPixelPos, springLength, halfSpringWidth);
+            if (isOnSpring)
+            {
+                springFound = true;
+                highestRenderPriority = renderPriority;
+                result = SpringRenderColor;
+
+                // Tint the result red depending on the force exerted by the spring
+                result.r += .00005 * rbA.recordedSpringForce;
+                result.gb -= .00005 * rbA.recordedSpringForce;
+            }
+        }
+    }
+
+    if (springFound) Result[id.xy] = float4(result, 1);
+}
+
 [numthreads(TN_R,TN_R,1)]
 void RenderUI(uint3 id : SV_DispatchThreadID)
 {

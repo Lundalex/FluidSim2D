@@ -55,10 +55,8 @@ public class ShaderHelper : MonoBehaviour
         {
             renderShader.SetBuffer(1, "SpatialLookup", m.SpatialLookupBuffer);
             renderShader.SetBuffer(1, "StartIndices", m.StartIndicesBuffer);
-
             renderShader.SetBuffer(1, "PDatas", m.PDataBuffer);
             renderShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
-
             renderShader.SetBuffer(1, "Materials", m.MaterialBuffer);
         }
 
@@ -66,8 +64,9 @@ public class ShaderHelper : MonoBehaviour
         {
             renderShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
             renderShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
-
             renderShader.SetBuffer(2, "Materials", m.MaterialBuffer);
+
+            renderShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
         }
     }
 
@@ -86,7 +85,9 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetTexture(2, "Atlas", m.AtlasTexture);
 
         renderShader.SetTexture(3, "Result", m.renderTexture);
-        renderShader.SetTexture(3, "UITexture", m.uiTexture);
+
+        renderShader.SetTexture(4, "Result", m.renderTexture);
+        renderShader.SetTexture(4, "UITexture", m.uiTexture);
     }
 
     public void SetSortShaderBuffers(ComputeShader sortShader)
@@ -157,6 +158,13 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetFloat("BackgroundScale", m.BackgroundScale);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
+
+        renderShader.SetInt("SpringRenderNumPeriods", m.SpringRenderNumPeriods);
+        renderShader.SetFloat("SpringRenderWidth", m.SpringRenderWidth);
+        renderShader.SetFloat("SpringRenderHalfMatWidth", m.SpringRenderHalfMatWidth);
+        renderShader.SetFloat("SpringRenderRodLength", m.SpringRenderRodLength);
+        renderShader.SetVector("SpringRenderColor", Func.ColorToVector3(m.SpringRenderColor));
+
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
@@ -164,7 +172,7 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
-        renderShader.SetInt("RBodiesNum", m.RBDatas.Length);
+        renderShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         renderShader.SetInt("RBVectorsNum", m.RBVectors.Length);
     }
 

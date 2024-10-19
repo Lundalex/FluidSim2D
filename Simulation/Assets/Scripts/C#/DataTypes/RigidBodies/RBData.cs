@@ -24,6 +24,9 @@ public struct RBData
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
 
+    // Recorded spring force
+    public float recordedSpringForce;
+
     // Display
     public int renderPriority;
     public int matIndex;

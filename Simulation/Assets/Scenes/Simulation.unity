@@ -263,7 +263,7 @@ MonoBehaviour:
   ProgramSpeed: 6
   VisualParticleRadii: 1.3
   MetaballsThreshold: 1.9
-  MetaballsEdgeDensityWidth: 0.5
+  MetaballsEdgeDensityWidth: 0.8
   FluidEdgeWidth: 0.5
   RBEdgeWidth: 0.3
   BackgroundBrightness:
@@ -277,6 +277,11 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
+  SpringRenderNumPeriods: 6
+  SpringRenderWidth: 20
+  SpringRenderHalfMatWidth: 2
+  SpringRenderRodLength: 5
+  SpringRenderColor: {r: 0, g: 1, b: 0.20270991, a: 1}
   DoDrawRBCentroids: 1
   DoDrawFluidOutlines: 1
   DoDrawRBOutlines: 1
@@ -546,7 +551,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.linkedRBIndex
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.renderPriority
@@ -554,7 +559,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.rigidConstraint
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.springStiffness
@@ -1451,7 +1456,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.canMove
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.color.a
@@ -1479,7 +1484,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.canRotate
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.isPassive

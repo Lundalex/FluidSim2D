@@ -331,6 +331,7 @@ void AdjustRBDatas(uint3 id : SV_DispatchThreadID)
     RigidBodies[rbIndex].pos += Int2ToFloat2(rbAdjustment.deltaPos_Int2);
     RigidBodies[rbIndex].vel_AsInt2 += rbAdjustment.deltaVel_Int2;
     RigidBodies[rbIndex].rotVel_AsInt += rbAdjustment.deltaRotVel_Int;
+    RigidBodies[rbIndex].recordedSpringForce = IntToFloat(rbAdjustment.recordedSpringForce_Int);
 }
 
 void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out float deltaRotVel, out float2 deltaCenterVel)
@@ -519,6 +520,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     float invInertiaA = (rbA.inertia > 0) ? 1.0 / rbA.inertia : 0;
     float invInertiaB = (rbB.inertia > 0) ? 1.0 / rbB.inertia : 0;
 
+    float2 springForce = 0;
     bool rigidConstraint = stiffness == 0.0;
     if (rigidConstraint)
     {
@@ -624,15 +626,15 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         float totalForceMagnitude = springForceMagnitude + dampingForceMagnitude;
 
         // Compute total force vector
-        float2 force = totalForceMagnitude * direction;
+        springForce = totalForceMagnitude * direction;
 
         // Apply forces to rbA and rbB
-        if (invMassA > 0) deltaVelA += force * invMassA * DeltaTime;
-        if (invMassB > 0) deltaVelB += (-force) * invMassB * DeltaTime;
+        if (invMassA > 0) deltaVelA += springForce * invMassA * DeltaTime;
+        if (invMassB > 0) deltaVelB += (-springForce) * invMassB * DeltaTime;
 
         // Compute torques
-        if (invInertiaA > 0) deltaRotVelA += cross2D(linkPosA, force) * invInertiaA * DeltaTime;
-        if (invInertiaB > 0) deltaRotVelB += cross2D(linkPosB, -force) * invInertiaB * DeltaTime;
+        if (invInertiaA > 0) deltaRotVelA += cross2D(linkPosA, springForce) * invInertiaA * DeltaTime;
+        if (invInertiaB > 0) deltaRotVelB += cross2D(linkPosB, -springForce) * invInertiaB * DeltaTime;
     }
 
     // Record the velocity and angular velocity changes in RBAdjustments
@@ -650,6 +652,15 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
 
     InterlockedAdd(RBAdjustments[i].deltaRotVel_Int, deltaRotVelA_Int);
     InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaRotVel_Int, deltaRotVelB_Int);
+
+    if (springForce.x != 0 && springForce.y != 0)
+    {
+        // Record the springForce exerted on the rigid bodies
+        float absSpringForce = length(springForce);
+        int recordedSpringForce_Int = FloatAsInt(absSpringForce);
+
+        InterlockedAdd(RBAdjustments[i].recordedSpringForce_Int, recordedSpringForce_Int);
+    }
 }
 
 

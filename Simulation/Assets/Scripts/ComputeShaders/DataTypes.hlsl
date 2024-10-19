@@ -95,6 +95,9 @@ struct RigidBody
     float2 localLinkPosThisRB;
     float2 localLinkPosOtherRB;
 
+    // Recorded spring force
+    float recordedSpringForce;
+
     // Display
     int renderPriority;
     int matIndex;
@@ -111,6 +114,8 @@ struct RBAdjustment
     int2 deltaPos_Int2;
     int2 deltaVel_Int2;
     int deltaRotVel_Int;
+
+    int recordedSpringForce_Int;
 };
 
 struct RBHitInfo
@@ -134,6 +139,7 @@ RBAdjustment InitRBAdjustment()
     rbAdjustment.deltaPos_Int2 = 0;
     rbAdjustment.deltaVel_Int2 = 0;
     rbAdjustment.deltaRotVel_Int = 0;
+    rbAdjustment.recordedSpringForce_Int = 0;
 
     return rbAdjustment;
 }
