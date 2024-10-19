@@ -13,3 +13,4 @@ static const uint TN_S = 512; // Sorter
 static const float CENTROID_RADIUS = 2.0;
 static const float CENTROID_RADIUS_SQR = CENTROID_RADIUS*CENTROID_RADIUS;
 static const float4 COL_RED = float4(1, 0, 0, 1);
+static const float RED_TINT_FACTOR = 0.00002;

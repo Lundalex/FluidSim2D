@@ -30,4 +30,5 @@ public struct RBData
     // Display
     public int renderPriority;
     public int matIndex;
+    public int springMatIndex;
 };

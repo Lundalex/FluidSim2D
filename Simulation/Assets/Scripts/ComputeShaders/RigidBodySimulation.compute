@@ -19,9 +19,10 @@ const uint NumRigidBodies;
 const uint NumVectors;
 const uint NumParticles;
 
-// Collision solver settings
+// Rigid Body Collision solver settings
 const float RB_RBCollisionCorrectionFactor;
 const float RB_RBCollisionSlop;
+const bool AllowLinkedRBCollisions;
 
 // Interation settings
 const float RB_MaxInteractionRadius;
@@ -227,7 +228,9 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         RigidBody rbB = RigidBodies[rbBIndex];
         
         // Don't allow collision checks for rigid bodies linked by a rigid constraint
-        bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rbB.springStiffness == 0) || ((int)rbBIndex == rbA.linkedRBIndex && rbA.springStiffness == 0);
+        bool rigidConstraintFlagA = rbA.springStiffness == 0;
+        bool rigidConstraintFlagB = rbB.springStiffness == 0;
+        bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rigidConstraintFlagB) || ((int)rbBIndex == rbA.linkedRBIndex && rigidConstraintFlagA) || !AllowLinkedRBCollisions;
         
         // Exit early if both rigid bodies are flagged as stationary, or rigidConstraint == true
         if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint) return;

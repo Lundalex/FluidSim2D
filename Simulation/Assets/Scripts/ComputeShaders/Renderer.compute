@@ -59,6 +59,13 @@ StructuredBuffer<RBVector> RBVectors;
 
 StructuredBuffer<Mat> Materials;
 
+SamplerState bilinearSampler
+{
+    Filter = MIN_MAG_LINEAR_MIP_POINT; // Bilinear filtering
+    AddressU = Clamp; // Use Clamp to prevent wrapping
+    AddressV = Clamp;
+};
+
 float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
 {
     uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
@@ -395,7 +402,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         else
         {
             float2 localPixelPos = rotate2D(pixelPos - transformData.xy, -transformData.z);
-            float2 localUV = MirrorRepeatUV(mat.colTexScale * localPixelPos / (float2)BoundsDims);
+            float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / (float2)BoundsDims);
     
             float3 color = mat.colTexLoc.x != -1 ? SampleTexture(localUV, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
 
@@ -406,16 +413,36 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
     }
 }
 
+float SampleZigZag(float xNorm, float amplitude, int numPeriods)
+{
+    // Position within the total periods
+    float xInPeriods = xNorm * numPeriods + 0.25;
+
+    // Position within one period (0 to 1)
+    float x = xInPeriods - floor(xInPeriods);
+    
+    // Zigzag pattern
+    float y;
+    if (x < 0.5)
+        y = (2.0 * amplitude) * x;
+    else
+        y = (2.0 * amplitude) * (1.0 - x);
+    
+    // Center y around y == 0
+    y -= amplitude * 0.5;
+
+    return y;
+}
+
+float SampleSin(float xNorm, float amplitude, int numPeriods)
+{
+    return amplitude * sin(2.0 * PI * numPeriods * xNorm);
+}
+
 bool IsOnSpring(float2 localPos, float springLength, float halfSpringWidth)
 {
-    int numPeriods = 6;
-    float springMatWidth = 4.0;
-    float halfSpringMatWidth = springMatWidth * 0.5;
-    float RodLength = 10.0;
-
     // Check if localPos is on the start or end rods of the spring
-    if ((localPos.x < SpringRenderRodLength || localPos.x > springLength - SpringRenderRodLength) && abs(localPos.y) < SpringRenderHalfMatWidth)
-        return true;
+    if ((localPos.x < SpringRenderRodLength || localPos.x > springLength - SpringRenderRodLength) && abs(localPos.y) < SpringRenderHalfMatWidth) return true;
 
     // Check if localPos is within the middle part of the spring
     float midStartX = SpringRenderRodLength;
@@ -423,33 +450,50 @@ bool IsOnSpring(float2 localPos, float springLength, float halfSpringWidth)
     if (localPos.x >= midStartX && localPos.x <= midEndX)
     {
         float midLength = midEndX - midStartX;
-        float amplitude = halfSpringWidth;
 
         // Normalize the position within the middle section from 0 to 1
         float xNorm = (localPos.x - midStartX) / midLength;
-
-        // Position within the total periods
-        float xInPeriods = xNorm * SpringRenderNumPeriods + 0.25;
-
-        // Position within one period (0 to 1)
-        float x = xInPeriods - floor(xInPeriods);
         
-        // Calculate y as a function of x, using a zigzag function
-        float y;
-        if (x < 0.5)
-            y = (2.0 * amplitude) * x;
-        else
-            y = (2.0 * amplitude) * (1.0 - x);
-        
-        // Center y around y == 0
-        y -= amplitude * 0.5;
+        // Calculate y as a zigzag function of x
+        float y = SampleZigZag(xNorm, halfSpringWidth - SpringRenderHalfMatWidth, SpringRenderNumPeriods);
 
         // Check if localPos.y is within the material width of the spring at this x position
-        if (abs(localPos.y - y) <= SpringRenderHalfMatWidth)
-            return true;
+        if (abs(localPos.y - y) <= SpringRenderHalfMatWidth) return true;
     }
 
     return false;
+}
+
+void TintRed(inout float3 color, float redTint)
+{
+    redTint = saturate(redTint);
+
+    color = lerp(color, float3(1.0, 0.0, 0.0), redTint);
+}
+
+float2 NormalizeLocalSpringPos(float2 value, float rodLength, float totalLength, float springLength, float halfSpringWidth)
+{
+    if (value.x < rodLength)
+    {
+        // Start rod
+        value.x = value.x / rodLength * (rodLength / totalLength);
+    }
+    else if (value.x > springLength - rodLength)
+    {
+        // End rod
+        value.x = (value.x - (springLength - rodLength)) / rodLength * ((rodLength / totalLength)) + (1.0 - (rodLength / totalLength));
+    }
+    else
+    {
+        // Middle zigzag section
+        float middleLength = springLength - 2.0 * rodLength;
+        value.x = (value.x - rodLength) / middleLength * ((totalLength - 2.0 * rodLength) / totalLength) + (rodLength / totalLength);
+    }
+
+    // Normalize value.y
+    value.y = (value.y / halfSpringWidth) * 0.5 + 0.5;
+
+    return value;
 }
 
 [numthreads(TN_R, TN_R, 1)]
@@ -458,8 +502,10 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float2 pixelPos = GetPixelPos(id.xy);
 
     bool springFound = false;
+    float2 posNorm;
+    float springForce;
+    int matIndex;
     int highestRenderPriority = 0;
-    float3 result = 0;
     for (uint rbIndex = 0; rbIndex < (uint)NumRigidBodies; rbIndex++)
     {
         RigidBody rbA = RigidBodies[rbIndex];
@@ -505,16 +551,26 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
             {
                 springFound = true;
                 highestRenderPriority = renderPriority;
-                result = SpringRenderColor;
-
-                // Tint the result red depending on the force exerted by the spring
-                result.r += .00005 * rbA.recordedSpringForce;
-                result.gb -= .00005 * rbA.recordedSpringForce;
+                springForce = rbA.recordedSpringForce;
+                matIndex = rbA.springMatIndex;
+                posNorm = NormalizeLocalSpringPos(localPixelPos, SpringRenderRodLength, rbA.springRestLength, springLength, halfSpringWidth);
             }
         }
     }
 
-    if (springFound) Result[id.xy] = float4(result, 1);
+    if (springFound)
+    {
+        Mat mat = Materials[matIndex];
+
+        float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundsDims);
+
+        float3 color = mat.colTexLoc.x != -1 ? SampleTexture(uv, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
+
+        float redTint = RED_TINT_FACTOR * springForce;
+        TintRed(color, redTint);
+        
+        Result[id.xy] = float4(color, 1);
+    }
 }
 
 [numthreads(TN_R,TN_R,1)]

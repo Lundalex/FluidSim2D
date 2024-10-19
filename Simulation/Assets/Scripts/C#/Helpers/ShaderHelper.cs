@@ -67,6 +67,7 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(2, "Materials", m.MaterialBuffer);
 
             renderShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
+            renderShader.SetBuffer(3, "Materials", m.MaterialBuffer);
         }
     }
 
@@ -85,6 +86,7 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetTexture(2, "Atlas", m.AtlasTexture);
 
         renderShader.SetTexture(3, "Result", m.renderTexture);
+        renderShader.SetTexture(3, "Atlas", m.AtlasTexture);
 
         renderShader.SetTexture(4, "Result", m.renderTexture);
         renderShader.SetTexture(4, "UITexture", m.uiTexture);
@@ -225,6 +227,7 @@ public class ShaderHelper : MonoBehaviour
 
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
         rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);
+        rbSimShader.SetBool("AllowLinkedRBCollisions", m.AllowLinkedRBCollisions);
 
         rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
         rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);
