@@ -22,18 +22,18 @@ public class Sensor : MonoBehaviour
     [NonSerialized] public int linkedRBIndex = -1;
 
     // Private references
-    private Transform sensorContainer;
-    private Main main;
-    private SensorManager sensorManager;
-    private Vector2 canvasResolution;
+    [NonSerialized] public Transform sensorContainer;
+    [NonSerialized] public Main main;
+    [NonSerialized] public SensorManager sensorManager;
+    [NonSerialized] public Vector2 canvasResolution;
 
     // Display
-    private GameObject sensorUI;
-    private Text sensorText;
-    private RectTransform sensorUIRect;
+    [NonSerialized] public GameObject sensorUI;
+    [NonSerialized] public Text sensorText;
+    [NonSerialized] public RectTransform sensorUIRect;
 
-    private Vector2 targetPosition;
-    private bool firstDataRecieved = false;
+    [NonSerialized] public Vector2 targetPosition;
+    [NonSerialized] public bool firstDataRecieved = false;
 
     private void Start()
     {
@@ -107,7 +107,7 @@ public class Sensor : MonoBehaviour
         }
     }
 
-    private static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
+    public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
 
-    private Vector2 SimSpaceToCanvasSpace(Vector2 simCoords) => (simCoords / new Vector2(main.BoundaryDims.x, main.BoundaryDims.y) - new Vector2(0.5f, 0.5f)) * canvasResolution;
+    public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords) => (simCoords / new Vector2(main.BoundaryDims.x, main.BoundaryDims.y) - new Vector2(0.5f, 0.5f)) * canvasResolution;
 }

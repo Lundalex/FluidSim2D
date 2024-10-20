@@ -9,7 +9,8 @@ using Unity.Mathematics;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
-    public Color BodyColor = Color.black;
+    public EditorRenderMethod editorRenderMethod;
+    public int MaxGizmosIterations = 20000;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
