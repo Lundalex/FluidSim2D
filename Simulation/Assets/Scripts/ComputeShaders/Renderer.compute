@@ -21,7 +21,7 @@ const float FluidEdgeWidth;
 const float RBEdgeWidth;
 const int RBVectorNum;
 const int2 Resolution;
-const float BackgroundScale;
+const float BackgroundUpScaleFactor;
 const float3 BackgroundBrightness;
 
 // Rigid body springs
@@ -29,7 +29,7 @@ const int SpringRenderNumPeriods;
 const float SpringRenderWidth;
 const float SpringRenderHalfMatWidth;
 const float SpringRenderRodLength;
-const float3 SpringRenderColor;
+const float TaperThresoldNormalised;
 
 const int2 BoundsDims;
 const float InvMaxInfluenceRadius;
@@ -228,13 +228,13 @@ float2 MirrorRepeatUV(float2 uv)
 [numthreads(TN_R,TN_R,1)]
 void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
-    float2 uv = MirrorRepeatUV(BackgroundScale * id.xy / (float2)Resolution);
+    float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * id.xy / (float2)Resolution);
     Result[id.xy] = float4(SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness, 1);
 }
 
 float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
 {
-    float2 uv = MirrorRepeatUV(BackgroundScale * threadID / (float2)Resolution);
+    float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * threadID / (float2)Resolution);
     float transparency = 1 - opacity;
     return transparency > 0 ? color * opacity + transparency * SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness : color;
 }
@@ -413,52 +413,75 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
     }
 }
 
-float SampleZigZag(float xNorm, float amplitude, int numPeriods)
+float2 ClosestPointZigZag(float2 localPos, float amplitude, int numPeriods, float startX, float totalLength)
 {
-    // Position within the total periods
-    float xInPeriods = xNorm * numPeriods + 0.25;
+    float totalPeriodLength = totalLength / numPeriods;
+    float halfPeriod = totalPeriodLength * 0.5;
 
-    // Position within one period (0 to 1)
-    float x = xInPeriods - floor(xInPeriods);
-    
-    // Zigzag pattern
-    float y;
-    if (x < 0.5)
-        y = (2.0 * amplitude) * x;
+    // Compute x relative to the start of the zigzag
+    float x = localPos.x - startX;
+
+    // Determine the current period index
+    int periodIndex = int(floor(x / totalPeriodLength));
+
+    // Position within the current period
+    float xInPeriod = x - periodIndex * totalPeriodLength;
+
+    // taper factor
+    float t = x / totalLength;
+    float taperFactor = saturate(min(t / TaperThresoldNormalised, (1.0 - t) / TaperThresoldNormalised));
+
+    // Apply the tapering to the amplitude
+    float taperedAmplitude = amplitude * taperFactor;
+
+    // Compute segment start and end positions with tapered amplitude
+    float2 segmentStart, segmentEnd;
+
+    if (xInPeriod < halfPeriod)
+    {
+        // Ascending segment
+        segmentStart = float2(startX + periodIndex * totalPeriodLength, -taperedAmplitude * 0.5);
+        segmentEnd = float2(segmentStart.x + halfPeriod, taperedAmplitude * 0.5);
+    }
     else
-        y = (2.0 * amplitude) * (1.0 - x);
-    
-    // Center y around y == 0
-    y -= amplitude * 0.5;
+    {
+        // Descending segment
+        segmentStart = float2(startX + periodIndex * totalPeriodLength + halfPeriod, taperedAmplitude * 0.5);
+        segmentEnd = float2(segmentStart.x + halfPeriod, -taperedAmplitude * 0.5);
+    }
 
-    return y;
-}
+    // Compute the closest point on the segment to localPos
+    float2 segmentVec = segmentEnd - segmentStart;
+    float2 pointVec = localPos - segmentStart;
 
-float SampleSin(float xNorm, float amplitude, int numPeriods)
-{
-    return amplitude * sin(2.0 * PI * numPeriods * xNorm);
+    float u = dot(pointVec, segmentVec) / dot(segmentVec, segmentVec);
+    u = clamp(u, 0.0, 1.0);
+
+    float2 closestPoint = segmentStart + u * segmentVec;
+    return closestPoint;
 }
 
 bool IsOnSpring(float2 localPos, float springLength, float halfSpringWidth)
 {
+    if (!(localPos.x >= 0.0 && localPos.x <= springLength && abs(localPos.y) <= halfSpringWidth)) return false;
+    
     // Check if localPos is on the start or end rods of the spring
     if ((localPos.x < SpringRenderRodLength || localPos.x > springLength - SpringRenderRodLength) && abs(localPos.y) < SpringRenderHalfMatWidth) return true;
 
     // Check if localPos is within the middle part of the spring
     float midStartX = SpringRenderRodLength;
     float midEndX = springLength - SpringRenderRodLength;
+
     if (localPos.x >= midStartX && localPos.x <= midEndX)
     {
         float midLength = midEndX - midStartX;
 
-        // Normalize the position within the middle section from 0 to 1
-        float xNorm = (localPos.x - midStartX) / midLength;
-        
-        // Calculate y as a zigzag function of x
-        float y = SampleZigZag(xNorm, halfSpringWidth - SpringRenderHalfMatWidth, SpringRenderNumPeriods);
+        // Calculate the closest point to a point defined by a zigzag function of x
+        float amplitude = halfSpringWidth - SpringRenderHalfMatWidth;
+        float2 closestPoint = ClosestPointZigZag(localPos, amplitude, SpringRenderNumPeriods, midStartX, midLength);
 
         // Check if localPos.y is within the material width of the spring at this x position
-        if (abs(localPos.y - y) <= SpringRenderHalfMatWidth) return true;
+        if (length(localPos - closestPoint) <= SpringRenderHalfMatWidth) return true;
     }
 
     return false;
@@ -496,7 +519,7 @@ float2 NormalizeLocalSpringPos(float2 value, float rodLength, float totalLength,
     return value;
 }
 
-[numthreads(TN_R, TN_R, 1)]
+[numthreads(TN_R,TN_R,1)]
 void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
 {
     float2 pixelPos = GetPixelPos(id.xy);
@@ -505,7 +528,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float2 posNorm;
     float springForce;
     int matIndex;
-    int highestRenderPriority = 0;
+    int highestRenderPriority = -1;
     for (uint rbIndex = 0; rbIndex < (uint)NumRigidBodies; rbIndex++)
     {
         RigidBody rbA = RigidBodies[rbIndex];
@@ -544,17 +567,16 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
         // Now the spring starts at (0,0), ends at (springLength, 0)
         // Check if the pixel is within the spring's area
         float halfSpringWidth = SpringRenderWidth * 0.5;
-        if (localPixelPos.x >= 0.0 && localPixelPos.x <= springLength && abs(localPixelPos.y) <= halfSpringWidth)
+        float springRenderHalfMatWidthSqr = SpringRenderHalfMatWidth*SpringRenderHalfMatWidth;
+
+        bool isOnSpring = IsOnSpring(localPixelPos, springLength, halfSpringWidth);
+        if (isOnSpring)
         {
-            bool isOnSpring = IsOnSpring(localPixelPos, springLength, halfSpringWidth);
-            if (isOnSpring)
-            {
-                springFound = true;
-                highestRenderPriority = renderPriority;
-                springForce = rbA.recordedSpringForce;
-                matIndex = rbA.springMatIndex;
-                posNorm = NormalizeLocalSpringPos(localPixelPos, SpringRenderRodLength, rbA.springRestLength, springLength, halfSpringWidth);
-            }
+            springFound = true;
+            highestRenderPriority = renderPriority;
+            springForce = rbA.recordedSpringForce;
+            matIndex = rbA.springMatIndex;
+            posNorm = NormalizeLocalSpringPos(localPixelPos, SpringRenderRodLength, rbA.springRestLength, springLength, halfSpringWidth);
         }
     }
 

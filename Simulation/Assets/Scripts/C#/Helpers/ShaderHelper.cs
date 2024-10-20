@@ -140,11 +140,10 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
         pSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        pSimShader.SetInt("SpawnDims", m.SpawnDims);
         pSimShader.SetInt("SubTimeStepsPerFrame", m.SubTimeStepsPerFrame);
-        pSimShader.SetFloat("LookAheadFactor", m.LookAheadFactor);
+        pSimShader.SetFloat("LookAheadTime", m.LookAheadTime);
         pSimShader.SetFloat("StateThresholdPadding", m.StateThresholdPadding);
-        pSimShader.SetFloat("BorderPadding", m.BorderPadding);
+        pSimShader.SetFloat("FluidPadding", m.FluidPadding);
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
@@ -158,14 +157,14 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
         renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
-        renderShader.SetFloat("BackgroundScale", m.BackgroundScale);
+        renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 
         renderShader.SetInt("SpringRenderNumPeriods", m.SpringRenderNumPeriods);
         renderShader.SetFloat("SpringRenderWidth", m.SpringRenderWidth);
-        renderShader.SetFloat("SpringRenderHalfMatWidth", m.SpringRenderHalfMatWidth);
-        renderShader.SetFloat("SpringRenderRodLength", m.SpringRenderRodLength);
-        renderShader.SetVector("SpringRenderColor", Func.ColorToVector3(m.SpringRenderColor));
+        renderShader.SetFloat("SpringRenderHalfMatWidth", m.SpringRenderMatWidth / 2.0f);
+        renderShader.SetFloat("SpringRenderRodLength", Mathf.Max(m.SpringRenderRodLength, 0.01f));
+        renderShader.SetFloat("TaperThresoldNormalised", m.TaperThresoldNormalised);
 
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
@@ -219,7 +218,7 @@ public class ShaderHelper : MonoBehaviour
     public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
     {
         rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
-        rbSimShader.SetFloat("RigidBodyPadding", m.BorderPadding + m.RigidBodyPadding);
+        rbSimShader.SetFloat("RigidBodyPadding", m.FluidPadding + m.RigidBodyPadding);
 
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         rbSimShader.SetInt("NumVectors", m.RBVectors.Length);

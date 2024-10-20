@@ -1,0 +1,101 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Foldout text="Engine Optimisations" name="EngineOptimisations" value="true" style="-unity-font-style: bold; -unity-text-outline-width: 0; text-shadow: 0 0 0 rgb(0, 0, 0); -unity-text-outline-color: rgba(55, 55, 55, 0); background-color: rgba(46, 46, 46, 0); border-bottom-color: rgb(0, 0, 0); border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px; border-top-color: rgba(0, 0, 0, 0); border-right-color: rgba(0, 0, 0, 0); border-left-color: rgba(0, 0, 0, 0); padding-bottom: 4px; padding-top: 1px; padding-right: 4px; padding-left: 4px;">
+        <ui:Foldout text="Fluids" name="Fluids" value="false">
+            <ui:Toggle label="Viscosity" binding-path="DoSimulateParticleViscosity" tooltip="Cost: Medium. Whether to include viscosity in the simulation" />
+            <ui:Toggle label="Springs" binding-path="DoSimulateParticleSprings" tooltip="Cost: High. Whether to include dynamic creation of springs between neighbouring particles. This enables fluid &quot;Elasticity&quot; and &quot;Plasticity&quot;. Should only be used when necessary." />
+            <ui:Toggle label="Temperature" binding-path="DoSimulateParticleTemperature" tooltip="Cost: Low-Medium. Whether to include the temperature system in the simulation. This includes &quot;Temperature Transfer&quot;, &quot;Matter State Changes&quot;, and the &quot;Temperature-Pressure Relationship&quot;." />
+        </ui:Foldout>
+        <ui:Toggle label="Show Advanced" name="ShowAdvanced" tooltip="Recommended: Keep default values. Enables editing of advanced program settings. " style="display: flex;" />
+        <ui:Foldout text="Advanced Settings" name="AdvancedSettings" tooltip="Recommended: Keep default values. Advanced program settings. " value="true" toggle-on-label-click="false" style="display: flex;">
+            <uie:PropertyField binding-path="renderShaderThreadSize" label="Render Shader Thread Group Size" tooltip="Number of threads per group during GPU shader processing" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" binding-path="pSimShaderThreadSize" label="Particle Simulation Shader Thread Group Size" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" binding-path="sortShaderThreadSize" label="Sorting Shader Thread Group Size" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 1)" binding-path="rbSimShaderThreadSize1" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 2)" binding-path="rbSimShaderThreadSize2" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 3)" binding-path="rbSimShaderThreadSize3" />
+        </ui:Foldout>
+    </ui:Foldout>
+    <ui:Foldout text="Fluid Simulation" name="FluidSimulation" value="true" style="-unity-font-style: bold; font-size: 12px; flex-direction: column; background-color: rgba(46, 46, 46, 0); background-position-x: center 0; background-position-y: center 0; -unity-background-scale-mode: stretch-to-fill; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); border-bottom-width: 2px; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
+        <ui:Slider label="Look-Ahead-Time" value="42" high-value="0.1" binding-path="LookAheadTime" focusable="true" tooltip="Look-ahead-time (seconds) used for inter-particle force calculations" show-input-field="true" fill="true" />
+        <ui:Slider label="State Transfer Padding" value="42" high-value="5" binding-path="StateThresholdPadding" focusable="true" tooltip="State transfer padding required for particles to surpass before transitioning between temperature states, preventing rapid flickering." show-input-field="true" fill="true" name="StateThresholdPadding" />
+        <uie:PropertyField binding-path="MaxInfluenceRadius" label="Max Influence Radius" tooltip="Recommended: Keep as default. Maximum influence radius between particles." />
+        <uie:PropertyField binding-path="MaxParticlesNum" label="Max Particles Num" name="MaxParticlesNum" />
+        <uie:PropertyField name="MaxSpringsPerParticle" binding-path="MaxSpringsPerParticle" tooltip="Spring memory slots created for each particle. Any additional particle springs will lose their data between frames" usage-hints="None" />
+        <ui:TextField label="Total Particle Springs: " placeholder-text="num springs" name="TotalParticleSprings" tooltip="Total number of generated spring memory slots." enabled="true" style="padding-top: 5px; -unity-text-align: upper-left; padding-left: 0; width: auto; margin-right: 0; position: relative; left: auto; align-items: auto; flex-direction: row; justify-content: space-between; align-self: center; display: flex;" />
+    </ui:Foldout>
+    <ui:Foldout text="Scene Boundary" name="SceneBoundary" value="true" style="-unity-font-style: bold; border-bottom-width: 2px; border-top-width: 2px; border-right-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-bottom: 4px; padding-right: 4px; padding-left: 4px;">
+        <uie:PropertyField binding-path="BoundaryDims" style="left: -3px;" />
+        <uie:PropertyField binding-path="FluidPadding" />
+        <uie:PropertyField binding-path="RigidBodyPadding" />
+    </ui:Foldout>
+    <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies over time." />
+        <ui:Slider label="Rigid Body Correction" value="42" high-value="1" binding-path="RB_RBCollisionCorrectionFactor" fill="true" page-size="0" show-input-field="true" tooltip="Correction amount at RB-RB collisions. A low value results in a smoother simulation, but slightly decreases simulation accuracy" />
+        <ui:Slider label="Rigid Body Slop" value="42" high-value="0.1" binding-path="RB_RBCollisionSlop" show-input-field="true" fill="true" tooltip="Allowed RB-RB collision penetration distance. A high value reduces potential jittering, but slightly decreases collision solver accuracy" />
+    </ui:Foldout>
+    <ui:Foldout text="Simulation Time" name="SimulationTime" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <uie:PropertyField binding-path="TimeStepsPerFrame" label="Time Steps Per Frame" />
+        <uie:PropertyField binding-path="SubTimeStepsPerFrame" label="Sub Time Steps Per Frame" />
+        <ui:EnumField label="Time Step Type" value="Center" type="TimeStepType, Assembly-CSharp" tooltip="Recommended: &quot;Dynamic&quot;. If set to &quot;Fixed&quot;, &quot;DeltaTime&quot; will be set to &quot;Time Step&quot;, independantly from the frame rate. This means low frame rates would lead to less simulation time passing per real life unit of time." binding-path="TimeStepType" />
+        <ui:Slider label="Time Step" value="42" high-value="0.1" binding-path="TimeStep" fill="true" show-input-field="true" tooltip="If &quot;Fixed Time Step&quot; is enabled, this represents &quot;DeltaTime&quot; for each frame. Otherwise, this represents the highest allowed value for &quot;DeltaTime&quot;, preventing low frame rates or performance spikes from breaking the simulation." low-value="0.01" />
+        <ui:Slider label="Program Speed" value="42" high-value="10" binding-path="ProgramSpeed" tooltip="&quot;DeltaTime&quot; gets multiplied by this value. A high value results in a faster but less accurate simulation." show-input-field="true" fill="true" low-value="0.1" />
+    </ui:Foldout>
+    <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="false">
+            <ui:Slider label="Interaction Radius" value="40" high-value="100" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
+            <ui:Slider label="Attraction Power" value="42" high-value="25" binding-path="InteractionAttractionPower" low-value="0" fill="true" show-input-field="true" />
+            <ui:Slider label="Fountain Power" value="42" high-value="10" binding-path="InteractionFountainPower" show-input-field="true" fill="true" />
+            <ui:Slider label="Temperature Power" value="0" high-value="25" binding-path="InteractionTemperaturePower" low-value="-25" fill="true" show-input-field="true" />
+        </ui:Foldout>
+        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false">
+            <ui:Slider label="Interaction Radius" value="42" high-value="100" show-input-field="true" fill="true" binding-path="RB_MaxInteractionRadius" />
+            <ui:Slider label="Attraction Power" value="42" high-value="25" show-input-field="true" fill="true" binding-path="RB_InteractionAttractionPower" />
+        </ui:Foldout>
+    </ui:Foldout>
+    <ui:Foldout text="Render Pipeline" name="RenderPipeline" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing the fluid &quot;mesh&quot;" />
+        <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at &quot;RenderFluids&quot; render step)" />
+        <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)" binding-path="DoDrawRBOutlines" />
+        <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)" />
+        <uie:PropertyField binding-path="RenderOrder" name="PropertyField" />
+    </ui:Foldout>
+    <ui:Foldout text="Render Display" name="RenderDisplay" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <uie:PropertyField binding-path="Resolution" label="Resolution" tooltip="The resolution of the output image." />
+        <ui:Foldout text="Rigid Body Springs" value="false" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="SpringRenderWidth" label="Sprite Width" tooltip="The total width of the spring." />
+            <uie:PropertyField binding-path="SpringRenderMatWidth" label="Material Width" tooltip="The width of the spring material, i.e. the spring thickness" />
+            <uie:PropertyField binding-path="SpringRenderRodLength" label="Rod Length" tooltip="The length of the start- and end spring rods attached to the rigid bodies." />
+            <uie:PropertyField binding-path="SpringRenderNumPeriods" label="Num Periods" tooltip="The total number of periods for the function representing the spring shape." />
+            <ui:Slider label="Normalised Taper" value="42" high-value="0.5" binding-path="TaperThresoldNormalised" fill="true" show-input-field="true" tooltip="How close to the spring start- and end rods to begin linearly lowering the amplitude of the spring pattern." low-value="0.05" />
+        </ui:Foldout>
+        <ui:Foldout text="Fluids" name="Fluids" value="false" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="VisualParticleRadii" label="Particle Radius" />
+            <uie:PropertyField binding-path="MetaballsThreshold" label="Metaballs Threshold" />
+            <uie:PropertyField binding-path="MetaballsEdgeDensityWidth" label="Metaballs Edge Width" tooltip="Metaballs Edge Density Width" />
+            <uie:PropertyField binding-path="FluidEdgeWidth" label="Edge Width" />
+        </ui:Foldout>
+        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="RBEdgeWidth" label="Edge Width" />
+        </ui:Foldout>
+        <ui:Foldout text="Background" name="Background" value="false" style="-unity-font-style: bold;">
+            <uie:ObjectField label="Texture" binding-path="backgroundTexture" />
+            <uie:PropertyField binding-path="BackgroundBrightness" label="Brightness" tooltip="A multiple for the background brightness (R, G, B)" />
+            <uie:PropertyField binding-path="BackgroundUpScaleFactor" label="Up-Scaling" tooltip="Background image up-scaling. Uses mirror-repeat for samples outisde the background texture dimensions." />
+        </ui:Foldout>
+    </ui:Foldout>
+    <ui:Foldout text="References" name="References" toggle-on-label-click="true" value="false" style="-unity-font-style: bold; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
+        <ui:Label text="Textures" style="left: -10px;" />
+        <uie:ObjectField label="UI" binding-path="uiTexture" />
+        <uie:ObjectField label="Caustics" binding-path="causticsTexture" />
+        <ui:Label text="Scripts" style="left: -10px;" />
+        <uie:ObjectField label="Material Input" binding-path="materialInput" />
+        <uie:ObjectField label="Particle Type Input" binding-path="pTypeInput" />
+        <uie:ObjectField label="Scene Manager" binding-path="sceneManager" />
+        <uie:ObjectField label="Shader Helper" binding-path="shaderHelper" />
+        <ui:Label text="Compute Shaders" style="left: -10px;" />
+        <uie:ObjectField label="Render" binding-path="renderShader" />
+        <uie:ObjectField label="Particle Simulation" binding-path="pSimShader" />
+        <uie:ObjectField label="Rigid Body Simulation" binding-path="rbSimShader" />
+        <uie:ObjectField label="Spatial Sorting" binding-path="sortShader" />
+    </ui:Foldout>
+</ui:UXML>

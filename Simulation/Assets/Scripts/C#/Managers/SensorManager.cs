@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SensorManager : MonoBehaviour
@@ -8,19 +9,15 @@ public class SensorManager : MonoBehaviour
 
     // Retrieved data
     [NonSerialized] public RBData[] retrievedRBData;
+    [NonSerialized] public List<Sensor> sensors;
 
     // Private
     private Main main;
-    private Sensor[] sensors;
 
     private bool programRunning = false;
     private void Start()
     {
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
-
-        GameObject[] sensorObjects = GameObject.FindGameObjectsWithTag("Sensor");
-        sensors = new Sensor[sensorObjects.Length];
-        for (int i = 0; i < sensorObjects.Length; i++) sensors[i] = sensorObjects[i].GetComponent<Sensor>();
 
         programRunning = true;
         StartCoroutine(RetrieveBufferDatasCoroutine());
@@ -31,7 +28,7 @@ public class SensorManager : MonoBehaviour
         while (programRunning)
         {
             // Retrieve rigid body data buffer asynchronously
-            if (main.RBDataBuffer != null)
+            if (main.RBDataBuffer != null && sensors != null)
             {
                 ComputeHelper.GetBufferContents<RBData>(main.RBDataBuffer, contents => 
                 {

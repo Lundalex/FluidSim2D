@@ -9,14 +9,16 @@ using Unity.Mathematics;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
-    public Color BodyColor;
+    public Color BodyColor = Color.black;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
-    public int pTypeIndex;
+    public float particleTemperature = 20.0f;
+    public int pTypeIndex = 0;
     [Header("Preview Values")]
     [NonSerialized] public Vector2[] Points;
     private SceneManager sceneManager;
+    private PTypeInput pTypeInput;
     private Main main;
 
     private void OnValidate()
@@ -28,13 +30,17 @@ public class SceneFluid : Polygon
     public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
     {
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        if (pTypeInput == null) pTypeInput = GameObject.FindGameObjectWithTag("PTypeInput").GetComponent<PTypeInput>();
 
         Vector2[] generatedPoints = GeneratePoints(gridDensity);
+
+        // Check if pTypeIndex is within range of all pTypes
+        if (pTypeIndex >= pTypeInput.particleTypeStates.Length * 3) Debug.LogError("pTypeIndex outside valid range. SceneFluid: " + this.name);
 
         PData[] pDatas = new PData[generatedPoints.Length];
         for (int i = 0; i < pDatas.Length; i++)
         {
-            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), 20.0f);
+            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), Utils.CelsiusToKelvin(particleTemperature));
         }
 
         return pDatas;

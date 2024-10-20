@@ -9,6 +9,7 @@ public class Polygon : MonoBehaviour
     public bool DoDrawBody = true;
     public Color LineColor;
     [NonSerialized] public List<Edge> Edges = new();
+    [NonSerialized] public List<Vector2> MeshPoints = new();
 
     protected virtual void Awake() => SetPolygonData();
 
@@ -17,12 +18,15 @@ public class Polygon : MonoBehaviour
         Vector2 offset = offsetInput ?? Vector2.zero;
 
         Edges = new List<Edge>();
+        MeshPoints = new List<Vector2>();
         Vector2[] points = GetComponent<PolygonCollider2D>().points;
+        
+        for (int i = 0; i < points.Length; i++) MeshPoints.Add(transform.TransformPoint(points[i]));
 
         for (int i = 0; i < points.Length; i++)
         {
-            Vector2 startPoint = transform.TransformPoint(points[i]);
-            Vector2 endPoint = transform.TransformPoint(points[(i + 1) % points.Length]);
+            Vector2 startPoint = MeshPoints[i];
+            Vector2 endPoint = MeshPoints[(i + 1) % points.Length];
 
             Edge edge = new(startPoint + offset, endPoint + offset);
             Edges.Add(edge);

@@ -9,7 +9,10 @@ public class SceneRigidBody : Polygon
 {
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 0.5f;
+    public Sensor[] LinkedSensors;
     public RBInput RBInput;
+    public float approximatedSpringLength;
+    public float approximatedSpringForce;
     [NonSerialized] public Vector2[] Points;
 
     public Vector2[] GeneratePoints(float gridDensity, Vector2 offset, bool editorView = false)
@@ -44,7 +47,20 @@ public class SceneRigidBody : Polygon
         return generatedPoints.ToArray();
     }
 
-    public (float, float) ComputeInertiaAndBalanceRB(ref Vector2[] vectors, ref Vector2 rigidBodyPosition, Vector2 offset, float? gridDensityInput = null)
+    public Vector2 ComputeCentroid(float gridDensity)
+    {
+        Vector2[] points = GeneratePoints(gridDensity, Vector2.zero);
+        int numPoints = points.Length;
+
+        // Centroid
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2 point in points) centroid += point;
+        centroid /= numPoints;
+
+        return centroid;
+    }
+
+    public (float, float) ComputeInertiaAndBalanceRigidBody(ref Vector2[] vectors, ref Vector2 rigidBodyPosition, Vector2 offset, float? gridDensityInput = null)
     {
         float gridDensity = gridDensityInput ?? 0.2f;
         

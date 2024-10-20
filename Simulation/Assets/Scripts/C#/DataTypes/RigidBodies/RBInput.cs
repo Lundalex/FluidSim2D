@@ -16,12 +16,12 @@ public struct RBInput
     // Inter-RB spring links
     public bool enableSpringLink;
     public bool rigidConstraint;
-    public int linkedRBIndex;
     public float springStiffness;
     public float springRestLength;
     public float damping;
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
+    public SceneRigidBody linkedRigidBody;
 
     // Display
     public int renderPriority;

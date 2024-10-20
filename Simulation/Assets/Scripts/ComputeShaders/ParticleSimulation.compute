@@ -22,12 +22,11 @@ const int ParticleSpringsCombinedHalfLength;
 const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
 const float InvMaxInfluenceRadius;
-const int SpawnDims;
 const int SubTimeStepsPerFrame;
 
-const float LookAheadFactor;
+const float LookAheadTime;
 const float StateThresholdPadding;
-const float BorderPadding;
+const float FluidPadding;
 const float MaxInteractionRadius;
 
 // Interation settings
@@ -149,27 +148,27 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 float4 BoundraryCheck(float2 pos, float2 vel, float damping)
 {
     // X-axis
-    if (pos.x > BoundaryDims.x - BorderPadding)
+    if (pos.x > BoundaryDims.x - FluidPadding)
     {
         vel.x = -abs(vel.x) * (1 - damping);
-        pos.x = BoundaryDims.x - BorderPadding;
+        pos.x = BoundaryDims.x - FluidPadding;
     }
-    else if (pos.x < BorderPadding)
+    else if (pos.x < FluidPadding)
     {
         vel.x = abs(vel.x) * (1 - damping);
-        pos.x = BorderPadding;
+        pos.x = FluidPadding;
     }
 
     // Y-axis
-    if (pos.y > BoundaryDims.y - BorderPadding)
+    if (pos.y > BoundaryDims.y - FluidPadding)
     {
         vel.y = -abs(vel.y) * (1 - damping);
-        pos.y = BoundaryDims.y - BorderPadding;
+        pos.y = BoundaryDims.y - FluidPadding;
     }
-    else if (pos.y < BorderPadding)
+    else if (pos.y < FluidPadding)
     {
         vel.y = abs(vel.y) * (1 - damping);
-        pos.y = BorderPadding;
+        pos.y = FluidPadding;
     }
     
     return float4(pos.x, pos.y, vel.x, vel.y);
@@ -271,23 +270,6 @@ float3 InteractionEffects(int pIndex)
     return float3(interactionForce.x, interactionForce.y, TemperatureEffect);
 }
 
-float2 StickynessForce(PData PData_i, PType pType, StickynessRequest stickynessRequest)
-{
-    float absDstToLine = sqrt(stickynessRequest.absDstToLineSqr);
-
-    float stickyness = stickynessRequest.RBStickyness * pType.stickyness;
-    float absStickynessForce = RBPStickynessModel(stickyness, absDstToLine, stickynessRequest.RBStickynessRange);
-
-    // If the lenSqr of a vector is 0, normalized(0) does a /0 operation, leading to thread errors
-    // Over time, this decreases the amount of available threads, leading to decreased performance!
-    if (dot(stickynessRequest.StickyLineDst, stickynessRequest.StickyLineDst) == 0) return float2(0, 0);
-
-    float2 normDstToLine = normalize(stickynessRequest.StickyLineDst);
-    float2 stickynessForce = absStickynessForce * normDstToLine;
-    
-    return stickynessForce;
-}
-
 float2 LiquidSpringForce(PType pType, PType PType_otherPIndex, int pIndex, int otherPIndex, int springIndex, float absDst, float avgInfluenceRadius, float2 normDst)
 {
     Spring spring = ParticleSpringsCombined[springIndex];
@@ -340,11 +322,11 @@ void PreCalculations (uint3 id : SV_DispatchThreadID)
     int i = id.x;
     if (id.x >= ParticlesNum) return;
 
-    PDatas[i].predPos = PDatas[i].pos + PDatas[i].vel * LookAheadFactor;
+    PDatas[i].predPos = PDatas[i].pos + PDatas[i].vel * LookAheadTime;
 
     // Make sure PredPositions[i] is within the world boundrary
-    PDatas[i].predPos.x = clamp(PDatas[i].predPos.x, BorderPadding, BoundaryDims.x - BorderPadding);
-    PDatas[i].predPos.y = clamp(PDatas[i].predPos.y, BorderPadding, BoundaryDims.y - BorderPadding);
+    PDatas[i].predPos.x = clamp(PDatas[i].predPos.x, FluidPadding, BoundaryDims.x - FluidPadding);
+    PDatas[i].predPos.y = clamp(PDatas[i].predPos.y, FluidPadding, BoundaryDims.y - FluidPadding);
 
     // LastVelocities
     PDatas[i].lastVel = PDatas[i].vel;

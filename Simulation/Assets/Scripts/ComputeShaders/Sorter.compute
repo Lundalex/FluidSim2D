@@ -58,13 +58,6 @@ void SwapInt2(inout int2 a, inout int2 b)
     b = temp;
 }
 
-void SwapStickynessRequestStruct(inout StickynessRequest a, inout StickynessRequest b)
-{
-    StickynessRequest temp = a;
-    a = b;
-    b = temp;
-}
-
 bool ValidChunk(int2 chunk)
 {
     return chunk.x >= 0 && chunk.x < ChunksNum.x && chunk.y >= 0 && chunk.y < ChunksNum.y;
