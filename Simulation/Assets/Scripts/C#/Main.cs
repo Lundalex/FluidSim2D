@@ -6,109 +6,106 @@ using Vector3 = UnityEngine.Vector3;
 
 // Import utils from Resources.cs
 using Resources;
+using System.Collections.Generic;
 public class Main : MonoBehaviour
 {
-    [Header("Simulation")]
-    public int MaxParticlesNum = 20000; 
-    public int StartTraversedChunksCount = 80000;
-    public int MaxInfluenceRadius = 2;
-    public float targetDensity = 2;
-    public float PressureMultiplier = 3000.0f;
-    public float NearPressureMultiplier = 12.0f;
-    [Range(0, 1)] public float damping = 0.7f;
-    [Range(0, 3.0f)] public float passiveDamping = 0.0f;
-    [Range(0, 1)] public float RbElasticity = 0.645f;
-    [Range(0, 0.1f)] public float LookAheadFactor = 0.017f;
-    [Range(0, 5.0f)] public float StateThresholdPadding = 3.0f;
-    public float viscosity = 1.5f;
-    public float springStiffness = 5.0f;
-    public float TolDeformation = 0.0f;
-    public float Plasticity = 3.0f;
-    public float gravity = 5.0f;
-    public float RbPStickyRadius = 2.0f;
-    public float RbPStickyness = 1.0f;
-    [Range(0, 3)] public int MaxChunkSearchSafety = 1;
-    [Range(1, 1.5f)] public float StickynessCapacitySafety = 1.1f; // Avg stickyness requests per particle should not exceed this value
-    public int SpringCapacitySafety = 150; // Avg springs per particle should not exceed this value
-    public int TriStorageLength = 4;
-
-    [Header("Boundary")]
-    public int2 BoundaryDims = new(300, 200);
-    public int SpawnDims = 160; // A x A
-    public float BorderPadding = 4.0f;
-    public float RigidBodyPadding = 2.0f;
-
-    [Header("Rigid Body Collision Solver")]
-    public float RB_RBCollisionCorrectionFactor = 0.8f;
-    public float RB_RBCollisionSlop = 0.01f;
-    public bool AllowLinkedRBCollisions = false;
-
-    [Header("Render")]
-    public bool FixedTimeStep = true;
-    public bool RenderMarchingSquares = false;
-    public float TimeStep = 0.02f;
-    public float ProgramSpeed = 2.0f;
-    public float VisualParticleRadii = 0.4f;
-    public float MetaballsThreshold = 1.0f;
-    public float MetaballsEdgeDensityWidth = 0.3f;
-    public float FluidEdgeWidth = 1.0f;
-    public float RBEdgeWidth = 0.5f;
-    public float3 BackgroundBrightness;
-    public float BackgroundScale;
-    public int TimeStepsPerFrame = 3;
-    public int SubTimeStepsPerFrame = 3;
-    public float MSvalMin = 0.41f;
-    public int2 Resolution = new(1920, 1280);
-    
-    [Header("Rigid Body Spring Render")]
-    public int SpringRenderNumPeriods;
-    public float SpringRenderWidth;
-    public float SpringRenderHalfMatWidth;
-    public float SpringRenderRodLength;
-    public Color SpringRenderColor;
-
-    [Header("Shader Compilation - Renderer")]
-    public bool DoDrawRBCentroids = false;
-    public bool DoDrawFluidOutlines = true;
-    public bool DoDrawRBOutlines = true;
-    public bool DoUseMetaballs = true;
-
     [Header("Shader Compilation - Particle Simulation")]
+    // Fluids
     public bool DoSimulateParticleViscosity = true;
     public bool DoSimulateParticleSprings = true;
     public bool DoSimulateParticleTemperature = true;
 
-    [Header("Interaction - Particles")]
+    // Shader Thread Group Sizes
+    public int renderShaderThreadSize = 32; // /32, AxA thread groups
+    public int pSimShaderThreadSize = 512; // /1024
+    public int sortShaderThreadSize = 512; // /1024
+    public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
+    public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
+    public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
+
+    [Header("Fluid Simulation")]
+    public float LookAheadTime = 0.017f;
+    public float StateThresholdPadding = 3.0f;
+    public int MaxInfluenceRadius = 2;
+    [SerializeField] private int MaxParticlesNum = 20000;
+    [SerializeField] private int MaxSpringsPerParticle = 150;
+
+    [Header("Scene Boundary")]
+    public int2 BoundaryDims = new(300, 200);
+    public float FluidPadding = 4.0f;
+    public float RigidBodyPadding = 2.0f;
+
+    [Header("Rigid Body Simulation")]
+    public bool AllowLinkedRBCollisions = false;
+    public float RB_RBCollisionCorrectionFactor = 0.8f;
+    public float RB_RBCollisionSlop = 0.01f;
+
+    [Header("Simulation Time")]
+    public int TimeStepsPerFrame = 3;
+    public int SubTimeStepsPerFrame = 3;
+    public TimeStepType TimeStepType;
+    public float TimeStep = 0.02f;
+    public float ProgramSpeed = 2.0f;
+
+    [Header("Mouse Interaction")]
+    // Particles
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
-
-    [Header("Interaction - Rigid Bodies")]
+    // Rigid Bodies
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
 
+    [Header("Render Pipeline")]
+    [SerializeField] private FluidRenderMethod FluidRenderMethod;
+    [SerializeField] private bool DoDrawFluidOutlines = true;
+    [SerializeField] private bool DoDrawRBOutlines = true;
+    [SerializeField] private bool DoDrawRBCentroids = false;
+    // The list that defines the order of render steps
+    public List<RenderStep> RenderOrder = new()
+    {
+        RenderStep.Background,
+        RenderStep.Fluids,
+        RenderStep.RigidBodies,
+        RenderStep.RigidBodySprings,
+        RenderStep.UI
+    };
+
+    [Header("Render Display")]
+    public int2 Resolution = new(1920, 1280);
+    // Rigid Body Springs
+    public float SpringRenderWidth;
+    public float SpringRenderMatWidth;
+    public float SpringRenderRodLength;
+    public int SpringRenderNumPeriods;
+    public float TaperThresoldNormalised = 0.2f;
+    // Fluids
+    public float VisualParticleRadii = 0.4f;
+    public float MetaballsThreshold = 1.0f;
+    public float MetaballsEdgeDensityWidth = 0.3f;
+    public float FluidEdgeWidth = 1.0f;
+    // Rigid Bodies
+    public float RBEdgeWidth = 0.5f;
+    // Background
+    public Texture2D backgroundTexture;
+    public float3 BackgroundBrightness;
+    public float BackgroundUpScaleFactor;
+
     [Header("References")]
-    public MaterialInput materialInput;
-    public PTypeInput pTypeInput;
+    // Textures
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
-    public Texture2D backgroundTexture;
+    // Scripts
+    public MaterialInput materialInput;
+    public PTypeInput pTypeInput;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
+    // Compute Shaders
     public ComputeShader renderShader;
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
     public ComputeShader sortShader;
-
-    // ThreadSize settings for compute shaders
-    [NonSerialized] public int renderShaderThreadSize = 32; // /32, AxA thread groups
-    [NonSerialized] public int pSimShaderThreadSize = 512; // /1024
-    [NonSerialized] public int sortShaderThreadSize = 512; // /1024
-    [NonSerialized] public int marchingSquaresShaderThreadSize = 32; // /32
-    [NonSerialized] public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
-    [NonSerialized] public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
-    [NonSerialized] public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -143,7 +140,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int2 ChunksNum;
     [NonSerialized] public int ChunksNumAll;
     [NonSerialized] public int ChunksNumAllNextPow2;
-    [NonSerialized] public int TraversedChunksCount;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
     [NonSerialized] public int ParticlesNum_NextPow2;
     [NonSerialized] public int ParticlesNum_NextLog2;
@@ -183,12 +179,10 @@ public class Main : MonoBehaviour
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
-        (RBDatas, RBVectors) = sceneManager.GenerateRigidBodies();
+        (RBDatas, RBVectors) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
 
         SetConstants();
-
-        TraversedChunksCount = StartTraversedChunksCount;
 
         InitializeBuffers();
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
@@ -237,7 +231,7 @@ public class Main : MonoBehaviour
                 RunRbSimShader();
 
                 int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
-                if (ParticlesNum != 0) {pSimShader.Dispatch(5, ThreadNums2, 1, 1);}
+                if (ParticlesNum != 0) pSimShader.Dispatch(5, ThreadNums2, 1, 1);
                 
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
@@ -305,7 +299,7 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
         if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
         else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
-        if (DoUseMetaballs) renderShader.EnableKeyword("USE_METABALLS");
+        if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");
         else renderShader.DisableKeyword("USE_METABALLS");
 
         // Multi-compilation - pSimShader
@@ -332,7 +326,7 @@ public class Main : MonoBehaviour
     float GetDeltaTime()
     {
         float deltaTime = TimeStep / SubTimeStepsPerFrame;
-        if (!FixedTimeStep) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
+        if (TimeStepType == TimeStepType.Dynamic) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
         return deltaTime;
     }
 
@@ -340,7 +334,7 @@ public class Main : MonoBehaviour
     {
         MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
         InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
-        ParticleSpringsCombinedHalfLength = ParticlesNum * SpringCapacitySafety / 2;
+        ParticleSpringsCombinedHalfLength = ParticlesNum * MaxSpringsPerParticle / 2;
         ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
     }
 
@@ -355,7 +349,7 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbA, ChunksNumAll);
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbB, ChunksNumAll);
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbC, ChunksNumAll);
-        ComputeHelper.CreateStructuredBuffer<Spring>(ref ParticleSpringsCombinedBuffer, ParticlesNum * SpringCapacitySafety);
+        ComputeHelper.CreateStructuredBuffer<Spring>(ref ParticleSpringsCombinedBuffer, ParticlesNum * MaxSpringsPerParticle);
 
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
@@ -483,27 +477,41 @@ public class Main : MonoBehaviour
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
     }
 
+void DispatchRenderStep(RenderStep step, int2 threadsNum)
+{
+    switch (step)
+    {
+        case RenderStep.Background:
+            ComputeHelper.DispatchKernel(renderShader, "RenderBackground", threadsNum, renderShaderThreadSize);
+            break;
+        case RenderStep.Fluids:
+            ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
+            break;
+        case RenderStep.RigidBodies:
+            ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
+            break;
+        case RenderStep.RigidBodySprings:
+            ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
+            break;
+        case RenderStep.UI:
+            ComputeHelper.DispatchKernel(renderShader, "RenderUI", threadsNum, renderShaderThreadSize);
+            break;
+    }
+}
     void RunRenderShader()
     {
-        ComputeHelper.DispatchKernel (renderShader, "RenderBackground", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
-        ComputeHelper.DispatchKernel (renderShader, "RenderFluids", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
-        ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodies", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
-        ComputeHelper.DispatchKernel (renderShader, "RenderRigidBodySprings", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
-        ComputeHelper.DispatchKernel (renderShader, "RenderUI", new int2(renderTexture.width, renderTexture.height), renderShaderThreadSize);
+        int2 threadsNum = new(renderTexture.width, renderTexture.height);
+        foreach (RenderStep step in RenderOrder)
+        {
+            DispatchRenderStep(step, threadsNum);
+        }
     }
     
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (RenderMarchingSquares)
-        {
-            Graphics.Blit(src, dest);
-        }
-        else
-        {
-            RunRenderShader();
+        RunRenderShader();
 
-            Graphics.Blit(renderTexture, dest);
-        }
+        Graphics.Blit(renderTexture, dest);
     }
 
     void OnDestroy()

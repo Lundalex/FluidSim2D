@@ -1,0 +1,24 @@
+using UnityEditor;
+using UnityEngine.UIElements;
+using UnityEditor.UIElements;
+
+#if true
+
+[CustomEditor(typeof(SceneFluid))]
+public class SceneFluidEditor : Editor
+{
+    public VisualTreeAsset m_UXML;
+
+    public override VisualElement CreateInspectorGUI()
+    {
+        var root = new VisualElement();
+        m_UXML.CloneTree(root);
+
+        var foldOut = new Foldout() { viewDataKey = "SceneFluidFullInspectorFoldout", text = "Full Inspector"};
+        InspectorElement.FillDefaultInspector(foldOut, serializedObject, this);
+        root.Add(foldOut);
+        return root;
+    }
+}
+
+#endif

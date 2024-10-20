@@ -10,6 +10,8 @@ TagManager:
   - SensorUIContainer
   - SensorManager
   - Sensor
+  - PTypeInput
+  - MaterialInput
   layers:
   - Default
   - TransparentFX

@@ -31,7 +31,6 @@ struct PType
     float damping;
     float passiveDamping;
     float viscosity;
-    float stickyness;
     float gravity;
 
     float influenceRadius;
@@ -58,15 +57,6 @@ struct Spring
     int pLinkedA;
     int pLinkedB;
     float restLength;
-};
-struct StickynessRequest 
-{
-    int pIndex;
-    int StickyLineIndex;
-    float2 StickyLineDst;
-    float absDstToLineSqr;
-    float RBStickyness;
-    float RBStickynessRange;
 };
 
 // --- Rigid Body structs ---

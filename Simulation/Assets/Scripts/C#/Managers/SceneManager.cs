@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Resources;
 using Unity.Mathematics;
@@ -9,6 +10,7 @@ public class SceneManager : MonoBehaviour
     Vector2 sceneMin;
     Vector2 sceneMax;
     Main main;
+    SensorManager sensorManager;
     public int2 GetBounds(int maxInfluenceRadius)
     {
         int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
@@ -26,10 +28,10 @@ public class SceneManager : MonoBehaviour
     {
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
 
-        sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.BorderPadding;
-        sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.BorderPadding;
-        sceneMax.x = transform.position.x + transform.localScale.x * 0.5f - main.BorderPadding;
-        sceneMax.y = transform.position.y + transform.localScale.y * 0.5f - main.BorderPadding;
+        sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.FluidPadding;
+        sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.FluidPadding;
+        sceneMax.x = transform.position.x + transform.localScale.x * 0.5f - main.FluidPadding;
+        sceneMax.y = transform.position.y + transform.localScale.y * 0.5f - main.FluidPadding;
 
         bool isInsideBounds = point.x > sceneMin.x
                               && point.y > sceneMin.y
@@ -120,9 +122,11 @@ public class SceneManager : MonoBehaviour
         return allPDatas.ToArray();
     }
 
-    public (RBData[], RBVector[]) GenerateRigidBodies(float? rbCalcGridDensityInput = null)
+    public (RBData[], RBVector[]) CreateRigidBodies(float? rbCalcGridDensityInput = null)
     {
         float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
+
+        if (sensorManager == null) sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
 
         GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
         SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
@@ -133,6 +137,7 @@ public class SceneManager : MonoBehaviour
         // Get the rigidBody data for each rigidBody
         List<RBData> allRBData = new();
         List<RBVector> allRBVectors = new();
+        List<Sensor> sensors = new();
         for (int i = 0; i < allRigidBodies.Length; i++)
         {
             SceneRigidBody rigidBody = allRigidBodies[i];
@@ -143,14 +148,38 @@ public class SceneManager : MonoBehaviour
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
             Vector2[] vectors = GetTransformedPoints(rigidBody, offset, transformedRBPos);
 
-            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRB(ref vectors, ref transformedRBPos, offset, rbCalcGridDensity);
+            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, offset, rbCalcGridDensity);
+
+            // Get the index of the rigid body linked via a spring
+            RBInput rbInput = rigidBody.RBInput;
+            int springLinkedRBIndex = Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
+            if (rigidBody.RBInput.enableSpringLink && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            else if (i == springLinkedRBIndex)
+            {
+                Debug.LogWarning("Attempted to link rigid body via spring to itself. Link will be removed");
+                rbInput.enableSpringLink = false;
+            }
 
             // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
+            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
             
             // Initialize the rigid body vector datas
             foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
+
+            // Add sensor to sensors, while making sure there are no dupicate assignments
+            foreach (var sensor in rigidBody.LinkedSensors)
+            {
+                if (sensors.Contains(sensor)) Debug.LogWarning("Duplicate sensor rigid body assignments. Sensor name: " + sensor.name);
+                else
+                {
+                    sensor.linkedRBIndex = i;
+                    sensors.Add(sensor);
+                }
+            }
         }
+
+        // Assign sensors to sensorManager
+        sensorManager.sensors = sensors;
 
         return (allRBData.ToArray(), allRBVectors.ToArray());
     }
@@ -164,7 +193,7 @@ public class SceneManager : MonoBehaviour
         return vectors;
     }
 
-    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int startIndex, int endIndex, Vector2 pos)
+    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos)
     {
         return new RBData
         {
@@ -182,7 +211,7 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = rbInput.enableSpringLink ? rbInput.linkedRBIndex : -1,
+            linkedRBIndex = rbInput.enableSpringLink ? linkedRBIndex : -1,
             springStiffness = rbInput.rigidConstraint ? 0 : rbInput.springStiffness,
             springRestLength = rbInput.rigidConstraint ? 0 : rbInput.springRestLength,
             damping = rbInput.rigidConstraint ? 0 : rbInput.damping,

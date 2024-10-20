@@ -22,7 +22,6 @@ public struct PType
     public float damping;
     public float passiveDamping;
     public float viscosity;
-    public float stickyness;
     public float gravity;
 
     public float influenceRadius;
