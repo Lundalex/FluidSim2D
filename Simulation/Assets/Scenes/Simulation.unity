@@ -371,17 +371,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8622674090623328263, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
   m_PrefabInstance: {fileID: 1082940497101622488}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &135673742 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-  m_PrefabInstance: {fileID: 1082940497101622488}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b53051fb16c15ae4189e0992a74b9760, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &155133418
 GameObject:
   m_ObjectHideFlags: 0
@@ -636,7 +625,7 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[0]'
       value: 
-      objectReference: {fileID: 135673742}
+      objectReference: {fileID: 2083877552}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[1]'
       value: 
@@ -1556,6 +1545,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2083877552 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+  m_PrefabInstance: {fileID: 7127550308942418413}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61f3fd8a41512cb458cdbc6ea534cbf2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &322357873346878811
 PrefabInstance:
   m_ObjectHideFlags: 0
