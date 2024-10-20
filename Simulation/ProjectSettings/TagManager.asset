@@ -12,6 +12,7 @@ TagManager:
   - Sensor
   - PTypeInput
   - MaterialInput
+  - EditorSettings
   layers:
   - Default
   - TransparentFX

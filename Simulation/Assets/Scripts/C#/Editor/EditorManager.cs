@@ -1,11 +1,10 @@
-using Resources;
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(SceneFluid))]
 public class EditorManager : Editor
 {
-    private const float lineThickness = 1.0f;
+    private const float lineThickness = 0.5f;
+    private const float springLineThickness = 2.0f;
     private const float springAmplitude = 10.0f;
     private const int numSpringPoints = 15;
 
@@ -14,47 +13,6 @@ public class EditorManager : Editor
     void OnDisable() => EditorApplication.update -= OnEditorUpdate;
 
     void OnEditorUpdate() {}
-
-    // Draw fluid objects
-    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
-    static void DrawFluidObjects(SceneFluid fluid, GizmoType gizmoType)
-    {
-        if (fluid == null) return;
-
-        fluid.SetPolygonData();
-
-        // Draw points
-        if (fluid.DoDrawBody)
-        {
-            fluid.Points = fluid.GeneratePoints(-1);
-
-            int iterationCount = 0;
-            Gizmos.color = fluid.BodyColor;
-            foreach (Vector2 point in fluid.Points)
-            {
-                if (iterationCount++ > fluid.MaxGizmosIterations) return;
-                Gizmos.DrawSphere(point, fluid.editorPointRadius);
-            }
-        }
-        
-        // Draw edges
-        foreach (Edge edge in fluid.Edges)
-        {
-            Vector2 edgeDir = (edge.end - edge.start).normalized;
-            Vector2 perpDir = 0.5f * lineThickness * new Vector2(-edgeDir.y, edgeDir.x);
-
-            // Compute the four vertices of the quad
-            Vector2 v1 = edge.start + perpDir;
-            Vector2 v2 = edge.start - perpDir;
-            Vector2 v3 = edge.end + perpDir;
-            Vector2 v4 = edge.end - perpDir;
-
-            Vector3[] quadVertices = new Vector3[] { v1, v3, v4, v2 };
-
-            // Draw the quad
-            Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
-        }
-    }
 
     static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody, float gridDensity)
     {
@@ -96,20 +54,13 @@ public class EditorManager : Editor
     {
         // Calculate the direction and distance between the points
         Vector2 direction = (endPoint - startPoint).normalized;
-        float totalLength = Vector2.Distance(startPoint, endPoint);
 
         // Calculate the perpendicular direction
         Vector2 perpendicular = new Vector2(-direction.y, direction.x);
 
-        // Set the color for the zigzag line
-        Handles.color = color;
-
-        // Calculate the length of each segment
-        float segmentLength = totalLength / (pointCount - 1);
-
         // Previous point along the zigzag
         Vector2 prevPoint = startPoint;
-
+        Handles.color = color;
         for (int i = 1; i < pointCount; i++)
         {
             // Position along the line
@@ -117,13 +68,10 @@ public class EditorManager : Editor
             Vector2 pointOnLine = Vector2.Lerp(startPoint, endPoint, t);
 
             // Determine the offset direction
-            float offsetMultiplier = (i % 2 == 0) ? -1f : 1f;
+            float offsetMultiplier = (i % 2 == 0) ? -1.0f : 1.0f;
 
             // No offset for the end point
-            if (i == pointCount - 1)
-            {
-                offsetMultiplier = 0f;
-            }
+            if (i == pointCount - 1) offsetMultiplier = 0.0f;
 
             // Offset perpendicular to the line
             Vector2 offsetVector = perpendicular * amplitude * offsetMultiplier;
@@ -158,44 +106,54 @@ public class EditorManager : Editor
         // Update points
         rigidBody.SetPolygonData();
 
-        // Draw the filled body using quads for each point
+        // --- Draw the filled body using triangulation ---
         if (rigidBody.DoDrawBody)
         {
-            rigidBody.Points = rigidBody.GeneratePoints(lineThickness * 0.5f, Vector2.zero, true);
-
-            int iterationCount = 0;
-            Color bodyColor = Color.white;
-            Handles.color = bodyColor;
-            foreach (Vector2 point in rigidBody.Points)
+            if (rigidBody.MeshPoints.Count < 3)
             {
-                if (iterationCount++ > rigidBody.MaxGizmosIterations) return;
+                // Cannot create a polygon with less than 3 points
+                return;
+            }
 
-                // Create a quad for each point
-                Vector3[] quadVertices = new Vector3[4];
+            // Triangulate the polygon
+            Vector2[] polygonPoints = rigidBody.MeshPoints.ToArray();
+            Triangulator triangulator = new Triangulator(polygonPoints);
+            int[] indices = triangulator.Triangulate();
 
-                float halfThickness = 0.25f * lineThickness;
+            // Convert Vector2 to Vector3 (z = 0)
+            Vector3[] vertices = new Vector3[polygonPoints.Length];
+            for (int i = 0; i < polygonPoints.Length; i++)
+            {
+                vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
+            }
 
-                quadVertices[0] = new Vector3(point.x - halfThickness, point.y - halfThickness, 0); // Bottom-left
-                quadVertices[1] = new Vector3(point.x + halfThickness, point.y - halfThickness, 0); // Bottom-right
-                quadVertices[2] = new Vector3(point.x + halfThickness, point.y + halfThickness, 0); // Top-right
-                quadVertices[3] = new Vector3(point.x - halfThickness, point.y + halfThickness, 0); // Top-left
+            // Draw triangles
+            Handles.color = rigidBody.BodyColor;
+            for (int i = 0; i < indices.Length; i += 3)
+            {
+                Vector3[] triangleVertices = new Vector3[3];
+                triangleVertices[0] = vertices[indices[i]];
+                triangleVertices[1] = vertices[indices[i + 1]];
+                triangleVertices[2] = vertices[indices[i + 2]];
 
-                // Draw the filled rectangle (the body)
-                Handles.DrawSolidRectangleWithOutline(quadVertices, bodyColor, bodyColor);
+                // Draw the triangle
+                Handles.DrawAAConvexPolygon(triangleVertices);
             }
         }
 
         // Draw wiremesh
         Vector2[] meshVertices = rigidBody.MeshPoints.ToArray();
-        DrawMeshWireframe(meshVertices, Color.black, lineThickness);
+        DrawMeshWireframe(meshVertices, rigidBody.LineColor, lineThickness);
 
-        // Draw linked spring
+        // Draw spring
         if (rigidBody.RBInput.enableSpringLink && rigidBody.RBInput.linkedRigidBody != null)
         {   
             float gridDensity = 3.0f; // A lower value results in a higher performance cost, but also slightly increases centroid approximation accuracy
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridDensity);
+
             float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
             float approxForce = rigidBody.RBInput.springStiffness * Mathf.Abs(rigidBody.RBInput.springRestLength - approxLength);
+            
             rigidBody.approximatedSpringLength = approxLength;
             rigidBody.approximatedSpringForce = approxForce;
 
@@ -203,13 +161,80 @@ public class EditorManager : Editor
             Color springStressedColor = Color.red;
             Color lerpColor = Color.Lerp(springBaseColor, springStressedColor, approxForce / 50000.0f);
 
-            // Draw spring shape
-            DrawZigZagSpring(startPoint, endPoint, lerpColor, lineThickness, springAmplitude, numSpringPoints);
+            // Draw spring
+            DrawZigZagSpring(startPoint, endPoint, lerpColor, springLineThickness, springAmplitude, numSpringPoints);
 
-            Handles.color = Color.red;
+            Gizmos.color = Color.red;
             float radius = 2.5f;
-            Handles.DrawSolidDisc(startPoint, Vector3.forward, radius);
-            Handles.DrawSolidDisc(endPoint, Vector3.forward, radius);
+            Gizmos.DrawSphere(startPoint, radius);
+            Gizmos.DrawSphere(endPoint, radius);
+        }
+    }
+
+    // Draw fluid objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidObjects(SceneFluid fluid, GizmoType gizmoType)
+    {
+        if (fluid == null) return;
+
+        fluid.SetPolygonData();
+
+        if (fluid.editorRenderMethod == EditorRenderMethod.Particles)
+        {
+            fluid.Points = fluid.GeneratePoints(-1);
+
+            int iterationCount = 0;
+            Gizmos.color = fluid.BodyColor;
+            foreach (Vector2 point in fluid.Points)
+            {
+                if (iterationCount++ > fluid.MaxGizmosIterations) return;
+                Gizmos.DrawSphere(point, fluid.editorPointRadius);
+            }
+        }
+        else if (fluid.editorRenderMethod == EditorRenderMethod.Triangulation)
+        {
+            // Cannot create a polygon with less than 3 points
+            if (fluid.MeshPoints.Count < 3) return;
+
+            // Triangulate the polygon
+            Vector2[] polygonPoints = fluid.MeshPoints.ToArray();
+            Triangulator triangulator = new Triangulator(polygonPoints);
+            int[] indices = triangulator.Triangulate();
+
+            // Convert Vector2 to Vector3 (z = 0)
+            Vector3[] vertices = new Vector3[polygonPoints.Length];
+            for (int i = 0; i < polygonPoints.Length; i++) vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
+
+            // Draw triangles
+            Handles.color = fluid.BodyColor;
+            for (int i = 0; i < indices.Length; i += 3)
+            {
+                Vector3[] triangleVertices = new Vector3[3];
+                triangleVertices[0] = vertices[indices[i]];
+                triangleVertices[1] = vertices[indices[i + 1]];
+                triangleVertices[2] = vertices[indices[i + 2]];
+
+                // Draw the triangle
+                Handles.DrawAAConvexPolygon(triangleVertices);
+            }
+        }
+        
+        // Draw edges
+        foreach (Edge edge in fluid.Edges)
+        {
+            Vector2 edgeDir = (edge.end - edge.start).normalized;
+            Vector2 perpDir = 0.5f * lineThickness * new Vector2(-edgeDir.y, edgeDir.x);
+
+            // Compute the four vertices of the quad
+            Vector2 v1 = edge.start + perpDir;
+            Vector2 v2 = edge.start - perpDir;
+            Vector2 v3 = edge.end + perpDir;
+            Vector2 v4 = edge.end - perpDir;
+
+            Vector3[] quadVertices = new Vector3[] { v1, v3, v4, v2 };
+
+            // Draw the quad
+            Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
         }
     }
 }

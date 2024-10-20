@@ -5,9 +5,8 @@ using System;
 public class Polygon : MonoBehaviour
 {
     [Header("Editor Settings")]
-    public int MaxGizmosIterations = 20000;
-    public bool DoDrawBody = true;
-    public Color LineColor;
+    public Color LineColor = Color.black;
+    public Color BodyColor = Color.white;
     [NonSerialized] public List<Edge> Edges = new();
     [NonSerialized] public List<Vector2> MeshPoints = new();
 

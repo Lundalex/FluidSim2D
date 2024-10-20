@@ -7,6 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneRigidBody : Polygon
 {
+    public bool DoDrawBody = true;
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 0.5f;
     public Sensor[] LinkedSensors;
@@ -15,7 +16,7 @@ public class SceneRigidBody : Polygon
     public float approximatedSpringForce;
     [NonSerialized] public Vector2[] Points;
 
-    public Vector2[] GeneratePoints(float gridDensity, Vector2 offset, bool editorView = false)
+    public Vector2[] GeneratePoints(float gridDensity, Vector2 offset)
     {
         if (gridDensity == 0) gridDensity = defaultGridDensity;
 
@@ -28,13 +29,10 @@ public class SceneRigidBody : Polygon
         Vector2 max = Func.MaxVector2(Edges.Select(edge => Func.MaxVector2(edge.start, edge.end)).ToArray());
 
         // Generate grid points within the bounding box
-        int iterationCount = 0;
         for (float x = min.x; x <= max.x; x += gridDensity)
         {
             for (float y = min.y; y <= max.y; y += gridDensity)
             {
-                if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints.ToArray();
-
                 Vector2 point = new Vector2(x, y) + offset;
 
                 if (IsPointInsidePolygon(point))
