@@ -8,7 +8,7 @@ public class SensorManager : MonoBehaviour
     [Range(10.0f, 100.0f)] public float msDataRetrievalInterval;
 
     // Retrieved data
-    [NonSerialized] public RBData[] retrievedRBData;
+    [NonSerialized] public RBData[] retrievedRBDatas;
     [NonSerialized] public List<Sensor> sensors;
 
     // Private
@@ -32,12 +32,12 @@ public class SensorManager : MonoBehaviour
             {
                 ComputeHelper.GetBufferContents<RBData>(main.RBDataBuffer, contents => 
                 {
-                    retrievedRBData = contents;
+                    retrievedRBDatas = contents;
                     foreach (Sensor sensor in sensors)
                     {
-                        if (SensorHelper.CheckIfSensorRequiresDataOfType(sensor.sensorType, "RigidBody"))
+                        if (sensor is RigidBodySensor rigidBodySensor)
                         {
-                            sensor.UpdateSensor();
+                            rigidBodySensor.UpdateSensor();
                         }
                     }
                 });
