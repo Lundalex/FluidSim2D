@@ -262,7 +262,7 @@ float3 InteractionEffects(int pIndex)
     if (dir == -1)
     {
         float dstX = MaxInteractionRadius - abs(dst.x);
-        fountainInteractionForce = InteractionFountainPower * absInteractionGradient * dstX;
+        fountainInteractionForce = 0.0025 * InteractionFountainPower * absInteractionGradient * dstX;
     }
 
     float2 interactionForce = baseInteractionForce + float2(0, fountainInteractionForce);

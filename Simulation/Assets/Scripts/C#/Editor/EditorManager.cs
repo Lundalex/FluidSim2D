@@ -5,7 +5,7 @@ public class EditorManager : Editor
 {
     private const float lineThickness = 0.5f;
     private const float springLineThickness = 2.0f;
-    private const float springAmplitude = 10.0f;
+    private const float springAmplitude = 7.0f;
     private const int numSpringPoints = 15;
 
     void OnEnable() => EditorApplication.update += OnEditorUpdate;

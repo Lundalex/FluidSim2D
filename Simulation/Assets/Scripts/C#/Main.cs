@@ -60,6 +60,7 @@ public class Main : MonoBehaviour
     [Header("Render Pipeline")]
     [SerializeField] private FluidRenderMethod FluidRenderMethod;
     [SerializeField] private bool DoDrawFluidOutlines = true;
+    [SerializeField] private bool DoDisplayFluidVelocities = true;
     [SerializeField] private bool DoDrawRBOutlines = true;
     [SerializeField] private bool DoDrawRBCentroids = false;
     // The list that defines the order of render steps
@@ -74,6 +75,7 @@ public class Main : MonoBehaviour
 
     [Header("Render Display")]
     public int2 Resolution = new(1920, 1280);
+    public float3 GlobalBrightness;
     // Rigid Body Springs
     public float SpringRenderWidth;
     public float SpringRenderMatWidth;
@@ -297,6 +299,8 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
         if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
         else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
+        if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
+        else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
         if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
         else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
         if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");

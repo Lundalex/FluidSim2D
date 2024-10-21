@@ -6,6 +6,7 @@
 
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_FLUID_OUTLINES
+#pragma multi_compile _ DISPLAY_FLUID_VELOCITIES
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
 
@@ -40,6 +41,8 @@ const int2 ChunksNum;
 const int ParticlesNum;
 const int NumRigidBodies;
 
+const float3 GlobalBrightness;
+
 RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
 
@@ -71,7 +74,7 @@ float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm flo
     uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
-    return sampleCol;
+    return sampleCol * GlobalBrightness;
 }
 
 bool ValidChunk(int2 chunk)
@@ -261,6 +264,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         float minRadiusSqr = minRadius*minRadius;
         float minDstSqr = 1.#INF;
     #endif
+    #if DISPLAY_FLUID_VELOCITIES
+        float totVelocities = 0;
+        int numParticles = 0;
+    #endif
     for (int x = -1; x <= 1 && doContinue; x++)
     {
         for (int y = -1; y <= 1 && doContinue; y++)
@@ -283,6 +290,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 #if USE_METABALLS
                     if (dstSqr < MaxInfluenceRadiusSqr)
                     {
+                        #if DISPLAY_FLUID_VELOCITIES
+                            totVelocities += length(pData.vel);
+                            numParticles++;
+                        #endif
+
                         totDensity += MetaballsDensity(dstSqr, InvMaxInfluenceRadius);
 
                         #if DRAW_FLUID_OUTLINES
@@ -309,6 +321,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 #else
                     if (dstSqr < min(minRadiusSqr, minDstSqr))
                     {
+                        #if DISPLAY_FLUID_VELOCITIES
+                            totVelocities += length(pData.vel);
+                            numParticles++;
+                        #endif
+
                         lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                         particleFound = true;
                         minDstSqr = dstSqr;
@@ -337,9 +354,14 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         }
         else
         {
-            float3 color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
+            float3 color = (SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol) * GlobalBrightness;
         
             result = BlendWithBackground(color, mat.opacity, id.xy);
+            
+            #if DISPLAY_FLUID_VELOCITIES
+                float avgVel = totVelocities / numParticles;
+                result.r += avgVel * 0.05;
+            #endif
         }
     
         Result[id.xy] = float4(result, 1);

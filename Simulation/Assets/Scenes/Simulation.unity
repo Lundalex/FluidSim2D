@@ -256,18 +256,23 @@ MonoBehaviour:
   ProgramSpeed: 5.96
   MaxInteractionRadius: 50
   InteractionAttractionPower: 4
-  InteractionFountainPower: 0
+  InteractionFountainPower: 4
   InteractionTemperaturePower: 0
   RB_MaxInteractionRadius: 60
-  RB_InteractionAttractionPower: 6
+  RB_InteractionAttractionPower: 10
   FluidRenderMethod: 0
   DoDrawFluidOutlines: 1
+  DoDisplayFluidVelocities: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 1
   RenderOrder: 0000000001000000020000000300000004000000
   Resolution:
     x: 1920
     y: 1280
+  GlobalBrightness:
+    x: 1
+    y: 1
+    z: 1
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
   SpringRenderRodLength: 3
@@ -523,6 +528,10 @@ PrefabInstance:
       value: 0.022114396
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.damping
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.gravity
       value: 5
       objectReference: {fileID: 0}
@@ -600,7 +609,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: approximatedSpringForce
-      value: 2334.7397
+      value: 29891.312
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: LinkedSensors.Array.size
@@ -609,6 +618,10 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.enableSpringLink
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.overrideCentroid
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.rotationVelocity
@@ -620,7 +633,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: approximatedSpringLength
-      value: 75.33052
+      value: 139.78262
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[0]'
@@ -808,7 +821,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 55.6
+      value: -8.94
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1658,6 +1671,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: RBInput.overrideCentroid
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[0]'
       value: 
       objectReference: {fileID: 866438673}
@@ -1934,35 +1951,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: 4.2095127
+      value: 7.312649
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: -4.4767795
+      value: -3.4165983
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
-      value: 4.225472
+      value: 7.1743855
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
-      value: 1.051728
+      value: 1.5755872
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
-      value: -9.839456
+      value: -6.8233676
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
-      value: 1.0699794
+      value: 1.6913128
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
-      value: -9.862657
+      value: -7.2151527
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
-      value: -4.4065385
+      value: -3.6718743
+      objectReference: {fileID: 0}
+    - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[4].x
+      value: -7.2151527
+      objectReference: {fileID: 0}
+    - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[4].y
+      value: -3.6718743
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: pTypeIndex

@@ -55,12 +55,14 @@
     <ui:Foldout text="Render Pipeline" name="RenderPipeline" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing the fluid &quot;mesh&quot;" />
         <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at &quot;RenderFluids&quot; render step)" />
+        <ui:Toggle label="Fluid Velocities" value="true" binding-path="DoDisplayFluidVelocities" tooltip="Whether to display fluid velocities by tinting the red color channel with the average velocity of the neighbouring particles" />
         <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)" binding-path="DoDrawRBOutlines" />
         <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)" />
         <uie:PropertyField binding-path="RenderOrder" name="PropertyField" />
     </ui:Foldout>
     <ui:Foldout text="Render Display" name="RenderDisplay" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <uie:PropertyField binding-path="Resolution" label="Resolution" tooltip="The resolution of the output image." />
+        <uie:PropertyField binding-path="GlobalBrightness" label="Global Brightness" tooltip="Brightness modifier used for all textures" />
         <ui:Foldout text="Rigid Body Springs" value="false" style="-unity-font-style: bold;">
             <uie:PropertyField binding-path="SpringRenderWidth" label="Sprite Width" tooltip="The total width of the spring." />
             <uie:PropertyField binding-path="SpringRenderMatWidth" label="Material Width" tooltip="The width of the spring material, i.e. the spring thickness" />
