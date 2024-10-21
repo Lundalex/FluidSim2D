@@ -48,6 +48,7 @@ struct PData
     float temperature; // kelvin
     float temperatureExchangeBuffer;
     int lastChunkKey_PType_POrder; // composed 3 int structure
+    float recordedPressure;
     // POrder; // POrder is dynamic, 
     // LastChunkKey; // 0 <= LastChunkKey <= ChunkNum
     // PType; // 0 <= PType <= PTypesNum
@@ -57,6 +58,15 @@ struct Spring
     int pLinkedA;
     int pLinkedB;
     float restLength;
+};
+struct RecordedFluidData
+{
+    int totTemp_Int;
+    int totPressure_Int;
+    int2 totVel_Int2;
+    int totMass_Int;
+
+    int numContributions;
 };
 
 // --- Rigid Body structs ---

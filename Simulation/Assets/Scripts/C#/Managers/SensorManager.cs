@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class SensorManager : MonoBehaviour
@@ -9,9 +11,12 @@ public class SensorManager : MonoBehaviour
 
     // Retrieved data
     [NonSerialized] public RBData[] retrievedRBDatas;
-    [NonSerialized] public List<Sensor> sensors;
+    [NonSerialized] public PData[] retrievedPDatas;
+    [NonSerialized] public int2[] SpatialLookupBuffer;
+    [NonSerialized] public int[] StartIndicesBuffer;
 
-    // Private
+    // References
+    [NonSerialized] public List<Sensor> sensors;
     private Main main;
 
     private bool programRunning = false;
@@ -20,27 +25,60 @@ public class SensorManager : MonoBehaviour
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
 
         programRunning = true;
-        StartCoroutine(RetrieveBufferDatasCoroutine());
+        StartCoroutine(RetrieveRigidBodyBufferDatasCoroutine());
+        StartCoroutine(RetrieveParticleBufferDatasCoroutine());
     }
 
-    IEnumerator RetrieveBufferDatasCoroutine()
+    IEnumerator RetrieveRigidBodyBufferDatasCoroutine()
     {
         while (programRunning)
         {
             // Retrieve rigid body data buffer asynchronously
             if (main.RBDataBuffer != null && sensors != null)
             {
-                ComputeHelper.GetBufferContents<RBData>(main.RBDataBuffer, contents => 
+                bool hasRigidBodySensor = sensors.OfType<RigidBodySensor>().Any();
+                if (hasRigidBodySensor)
                 {
-                    retrievedRBDatas = contents;
-                    foreach (Sensor sensor in sensors)
+                    ComputeHelper.GetBufferContentsAsync<RBData>(main.RBDataBuffer, contents => 
                     {
-                        if (sensor is RigidBodySensor rigidBodySensor)
+                        retrievedRBDatas = contents;
+                        foreach (Sensor sensor in sensors)
                         {
-                            rigidBodySensor.UpdateSensor();
+                            if (sensor is RigidBodySensor rigidBodySensor)
+                            {
+                                rigidBodySensor.UpdateSensor();
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            }
+
+            yield return new WaitForSeconds(msDataRetrievalInterval / 1000.0f);
+        }
+    }
+
+    IEnumerator RetrieveParticleBufferDatasCoroutine()
+    {
+        while (programRunning)
+        {
+            // Retrieve rigid body data buffer asynchronously
+            if (main.RBDataBuffer != null && sensors != null)
+            {
+                bool hasFluidSensor = sensors.OfType<FluidSensor>().Any();
+                if (hasFluidSensor)
+                {
+                    ComputeHelper.GetBufferContentsAsync<PData>(main.PDataBuffer, contents => 
+                    {
+                        retrievedPDatas = contents;
+                        foreach (Sensor sensor in sensors)
+                        {
+                            if (sensor is FluidSensor rigidBodySensor)
+                            {
+                                rigidBodySensor.UpdateSensor();
+                            }
+                        }
+                    });
+                }
             }
 
             yield return new WaitForSeconds(msDataRetrievalInterval / 1000.0f);

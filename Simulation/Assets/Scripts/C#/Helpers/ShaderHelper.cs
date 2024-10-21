@@ -46,6 +46,11 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(5, "PDatas", m.PDataBuffer);
             pSimShader.SetBuffer(5, "PTypes", m.PTypeBuffer);
             pSimShader.SetBuffer(5, "SpringCapacities", m.SpringCapacitiesBuffer);
+
+            pSimShader.SetBuffer(6, "SpatialLookup", m.PDataBuffer);
+            pSimShader.SetBuffer(6, "PTypes", m.PTypeBuffer);
+            pSimShader.SetBuffer(6, "PTypes", m.PTypeBuffer);
+            // pSimShader.SetBuffer(6, "RecordedFluidDatas", m.RecordedFluidDataBuffer);
         }
     }
 
@@ -199,6 +204,7 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(0, "SpatialLookup", m.SpatialLookupBuffer);
         rbSimShader.SetBuffer(0, "PTypes", m.PTypeBuffer);
         rbSimShader.SetBuffer(0, "PDatas", m.PDataBuffer);
+        rbSimShader.SetBuffer(0, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);

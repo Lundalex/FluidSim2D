@@ -26,7 +26,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
 
@@ -41,7 +41,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
 
@@ -56,7 +56,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
 
@@ -73,7 +73,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }
@@ -86,7 +86,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }
@@ -99,7 +99,7 @@ public class TextureHelper : MonoBehaviour
                 volumeDepth = resolution.z,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }
@@ -113,7 +113,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
             return texture;
@@ -125,7 +125,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
             return texture;
@@ -137,7 +137,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
             return texture;
@@ -152,7 +152,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }
@@ -163,7 +163,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }
@@ -174,7 +174,7 @@ public class TextureHelper : MonoBehaviour
                 dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
                 enableRandomWrite = true,
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear
+                filterMode = FilterMode.Point
             };
             texture.Create();
         }

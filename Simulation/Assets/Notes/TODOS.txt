@@ -11,9 +11,11 @@
         - temperature
         - pressure
         - volume
+        - mass
         - flow (volume/s or mass/s)
         - flow (speed)
         - derived data (energy, effect (new particle energy/s))
+        - energy(temp_E, vel_E)
 
     Display:
         - Graph visualisation?

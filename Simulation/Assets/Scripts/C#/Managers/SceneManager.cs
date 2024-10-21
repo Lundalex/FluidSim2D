@@ -66,9 +66,9 @@ public class SceneManager : MonoBehaviour
         Mat[] renderMats = new Mat[matInputs.Length];
         for (int i = 0; i < matInputs.Length; i++)
         {
-            Mat mat = new();
             MatInput matInput = matInputs[i];
 
+            Mat mat = new();
             if (matInput.colorTexture != null)
             {
                 mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rectIndex), GetTexDims(rectIndex));

@@ -58,6 +58,25 @@ void UpdateRBVertices(uint3 id : SV_DispatchThreadID)
     RBVectors[i].pos = rotate(rbVector.pos, deltaRot);
 }
 
+void AccumulateDeltaVel(int index, int2 deltaVel_Int2)
+{
+    InterlockedAdd(RBAdjustments[index].deltaVel_Int2.x, deltaVel_Int2.x);
+    InterlockedAdd(RBAdjustments[index].deltaVel_Int2.y, deltaVel_Int2.y);
+}
+void AccumulateDeltaRotVel(int index, int deltaRotVel_Int)
+{
+    InterlockedAdd(RBAdjustments[index].deltaRotVel_Int, deltaRotVel_Int);
+}
+void AccumulateDeltaPos(int index, int2 deltaPos_Int2)
+{
+    InterlockedAdd(RBAdjustments[index].deltaPos_Int2.x, deltaPos_Int2.x);
+    InterlockedAdd(RBAdjustments[index].deltaPos_Int2.y, deltaPos_Int2.y);
+}
+void AccumulateSpringForce(int index, int springForce_Int)
+{
+    InterlockedAdd(RBAdjustments[index].recordedSpringForce_Int, springForce_Int);
+}
+
 bool IsPointInsideRB(float2 pos, RigidBody rb)
 {
     uint intersections = 0;
@@ -293,19 +312,16 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
             int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
 
-            InterlockedAdd(RBAdjustments[rbAIndex].deltaVel_Int2.x, deltaVelA_Int2.x);
-            InterlockedAdd(RBAdjustments[rbAIndex].deltaVel_Int2.y, deltaVelA_Int2.y);
-
-            InterlockedAdd(RBAdjustments[rbBIndex].deltaVel_Int2.x, deltaVelB_Int2.x);
-            InterlockedAdd(RBAdjustments[rbBIndex].deltaVel_Int2.y, deltaVelB_Int2.y);
+            AccumulateDeltaVel(rbAIndex, deltaVelA_Int2);
+            AccumulateDeltaVel(rbBIndex, deltaVelB_Int2);
 
             // Update angular velocities
             int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
             int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
 
-            InterlockedAdd(RBAdjustments[rbAIndex].deltaRotVel_Int, deltaRotVelA_Int);
-            InterlockedAdd(RBAdjustments[rbBIndex].deltaRotVel_Int, deltaRotVelB_Int);
-            
+            AccumulateDeltaRotVel(rbAIndex, deltaRotVelA_Int);
+            AccumulateDeltaRotVel(rbBIndex, deltaRotVelB_Int);
+
             // Update positions
             float2 deltaPosA = rbA.pos - posRecA;
             float2 deltaPosB = rbB.pos - posRecB;
@@ -313,11 +329,8 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             int2 deltaPosA_int2 = Float2AsInt2(deltaPosA);
             int2 deltaPosB_int2 = Float2AsInt2(deltaPosB);
 
-            InterlockedAdd(RBAdjustments[rbAIndex].deltaPos_Int2.x, deltaPosA_int2.x);
-            InterlockedAdd(RBAdjustments[rbAIndex].deltaPos_Int2.y, deltaPosA_int2.y);
-
-            InterlockedAdd(RBAdjustments[rbBIndex].deltaPos_Int2.x, deltaPosB_int2.x);
-            InterlockedAdd(RBAdjustments[rbBIndex].deltaPos_Int2.y, deltaPosB_int2.y);
+            AccumulateDeltaPos(rbAIndex, deltaPosA_int2);
+            AccumulateDeltaPos(rbBIndex, deltaPosB_int2);
         }
     }
 }
@@ -415,17 +428,15 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
                 float2 deltaCenterVel;
                 ResolveCollisionRB_P(pData, pMass, rb, deltaRotVel, deltaCenterVel);
 
-                // Atomically accumulate impulses to avoid race conditions
-                if (deltaCenterVel.x != 0 && deltaCenterVel.y != 0)
+                if (deltaCenterVel.x != 0 || deltaCenterVel.y != 0)
                 {
                     int2 deltaCenterVel_Int2 = Float2AsInt2(deltaCenterVel);
-                    if (deltaCenterVel.x != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt2.x, deltaCenterVel_Int2.x);
-                    if (deltaCenterVel.y != 0) InterlockedAdd(RigidBodies[rbIndex].vel_AsInt2.y, deltaCenterVel_Int2.y);
+                    AccumulateDeltaVel(rbIndex, deltaCenterVel_Int2);
                 }
                 if (deltaRotVel != 0)
                 {
                     int deltaRotVel_Int = FloatAsInt(deltaRotVel);
-                    InterlockedAdd(RigidBodies[rbIndex].rotVel_AsInt, deltaRotVel_Int);
+                    AccumulateDeltaRotVel(rbIndex, deltaRotVel_Int);
                 }
             }
         }
@@ -557,11 +568,8 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         int2 deltaPosA_Int2 = Float2AsInt2(deltaPosA);
         int2 deltaPosB_Int2 = Float2AsInt2(deltaPosB);
 
-        InterlockedAdd(RBAdjustments[i].deltaPos_Int2.x, deltaPosA_Int2.x);
-        InterlockedAdd(RBAdjustments[i].deltaPos_Int2.y, deltaPosA_Int2.y);
-
-        InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaPos_Int2.x, deltaPosB_Int2.x);
-        InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaPos_Int2.y, deltaPosB_Int2.y);
+        AccumulateDeltaPos(i, deltaPosA_Int2);
+        AccumulateDeltaPos(rbA.linkedRBIndex, deltaPosB_Int2);
 
         // Compute velocities at the link points, including rotational velocities
         float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2) + crossZ(IntToFloat(rbA.rotVel_AsInt), linkPosA);
@@ -644,25 +652,22 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
     int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
 
-    InterlockedAdd(RBAdjustments[i].deltaVel_Int2.x, deltaVelA_Int2.x);
-    InterlockedAdd(RBAdjustments[i].deltaVel_Int2.y, deltaVelA_Int2.y);
-
-    InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaVel_Int2.x, deltaVelB_Int2.x);
-    InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaVel_Int2.y, deltaVelB_Int2.y);
+    AccumulateDeltaVel(i, deltaVelA_Int2);
+    AccumulateDeltaVel(rbA.linkedRBIndex, deltaVelB_Int2);
 
     int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
     int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
 
-    InterlockedAdd(RBAdjustments[i].deltaRotVel_Int, deltaRotVelA_Int);
-    InterlockedAdd(RBAdjustments[rbA.linkedRBIndex].deltaRotVel_Int, deltaRotVelB_Int);
+    AccumulateDeltaRotVel(i, deltaRotVelA_Int);
+    AccumulateDeltaRotVel(rbA.linkedRBIndex, deltaRotVelB_Int);
 
-    if (springForce.x != 0 && springForce.y != 0)
+    if (springForce.x != 0 || springForce.y != 0)
     {
         // Record the springForce exerted on the rigid bodies
         float absSpringForce = length(springForce);
         int recordedSpringForce_Int = FloatAsInt(absSpringForce);
 
-        InterlockedAdd(RBAdjustments[i].recordedSpringForce_Int, recordedSpringForce_Int);
+        AccumulateSpringForce(i, recordedSpringForce_Int);
     }
 }
 
