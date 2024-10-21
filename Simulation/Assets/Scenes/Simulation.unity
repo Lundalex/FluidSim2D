@@ -242,7 +242,7 @@ MonoBehaviour:
   MaxParticlesNum: 20000
   MaxSpringsPerParticle: 150
   BoundaryDims:
-    x: 319
+    x: 300
     y: 200
   FluidPadding: 4
   RigidBodyPadding: 2
@@ -253,7 +253,7 @@ MonoBehaviour:
   SubTimeStepsPerFrame: 3
   TimeStepType: 1
   TimeStep: 0.03
-  ProgramSpeed: 5.96
+  ProgramSpeed: 6
   MaxInteractionRadius: 50
   InteractionAttractionPower: 4
   InteractionFountainPower: 4
@@ -1243,7 +1243,7 @@ MonoBehaviour:
   - solidState:
       fluidSpringGroup: 1
       springPlasticity: 3
-      springTolDeformation: 0.2
+      springTolDeformation: 0
       springStiffness: 5
       thermalConductivity: 1
       specificHeatCapacity: 10
@@ -1261,8 +1261,8 @@ MonoBehaviour:
       matIndex: 0
     liquidState:
       fluidSpringGroup: 1
-      springPlasticity: 3
-      springTolDeformation: 0.2
+      springPlasticity: 1
+      springTolDeformation: 0
       springStiffness: 5
       thermalConductivity: 1
       specificHeatCapacity: 10
@@ -1279,9 +1279,9 @@ MonoBehaviour:
       influenceRadius: 2
       matIndex: 0
     gasState:
-      fluidSpringGroup: 0
+      fluidSpringGroup: 1
       springPlasticity: 3
-      springTolDeformation: 0.2
+      springTolDeformation: 0
       springStiffness: 5
       thermalConductivity: 1
       specificHeatCapacity: 10
@@ -1844,6 +1844,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2002973397}
     m_Modifications:
+    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: moveSpeed
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 6569177160939710243, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

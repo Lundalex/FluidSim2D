@@ -5,3 +5,11 @@ TextScriptImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 94653
+  packageName: ShaderlabVSCode
+  packageVersion: 1.5.2
+  assetPath: Assets/Packages/ShaderlabVSCode/ScriptTemplates/HLSL Shader-New HLSL
+    Shader.hlsl.txt
+  uploadId: 628726

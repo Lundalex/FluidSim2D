@@ -157,7 +157,7 @@ namespace Resources
 
         public static int FloatAsInt(float a)
         {
-            float int_float_precision = 10000.0f;
+            float int_float_precision = 50000.0f;
             return (int)(a * int_float_precision);
         }
 
@@ -168,7 +168,7 @@ namespace Resources
 
         public static float IntToFloat(int a)
         {
-            float int_float_precision = 10000.0f;
+            float int_float_precision = 50000.0f;
             return a / int_float_precision;
         }
 

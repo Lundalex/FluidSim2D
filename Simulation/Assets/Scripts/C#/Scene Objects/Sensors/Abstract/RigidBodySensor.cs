@@ -8,7 +8,7 @@ public abstract class RigidBodySensor : Sensor
     {
         if (sensorText != null)
         {
-            if (linkedRBIndex == -1) Debug.LogWarning("Sensor not linked to any rigid body. Sensor UI will not be updated");
+            if (linkedRBIndex == -1) Debug.LogWarning("Sensor not linked to any rigid body; It will not be updated");
             else
             {
                 RBData[] retrievedRBDatas = sensorManager.retrievedRBDatas;

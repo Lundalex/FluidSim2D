@@ -10,3 +10,10 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 94653
+  packageName: ShaderlabVSCode
+  packageVersion: 1.5.2
+  assetPath: Assets/Packages/ShaderlabVSCode/Editor/ShaderlabVSCodeEditor.cs
+  uploadId: 628726

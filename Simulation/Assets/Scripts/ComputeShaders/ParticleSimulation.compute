@@ -4,6 +4,7 @@
 #pragma kernel TransferAllSpringData // 3
 #pragma kernel ParticleForces // 4
 #pragma kernel UpdatePositions // 5
+#pragma kernel RecordFluidData // 5
 
 #pragma multi_compile _ SIMULATE_PARTICLE_VISCOSITY
 #pragma multi_compile _ SIMULATE_PARTICLE_SPRINGS
@@ -51,13 +52,15 @@ StructuredBuffer<int> StartIndices;
 
 RWStructuredBuffer<Spring> ParticleSpringsCombined; // Buffer_A / Buffer_B
 
-RWStructuredBuffer<PType> PTypes;
+StructuredBuffer<PType> PTypes;
 RWStructuredBuffer<PData> PDatas;
 
 const bool FrameBufferCycle;
 StructuredBuffer<int2> SpringCapacities; // [](baseChunkCapacity, neighboorChunksCapacity)
 StructuredBuffer<int> SpringStartIndices_dbA; // Result A
 StructuredBuffer<int> SpringStartIndices_dbB; // Result B
+
+RWStructuredBuffer<RecordedFluidData> RecordedFluidDatas;
 
 bool ValidChunk(int2 chunk)
 {
@@ -67,6 +70,11 @@ bool ValidChunk(int2 chunk)
 int GetChunkKey(int2 chunk)
 {
     return chunk.y * ChunksNum.x + chunk.x;
+}
+
+int2 GetChunk(int lastChunkKey)
+{
+    return int2((uint)lastChunkKey % ChunksNum.x, (int)((uint)lastChunkKey / ChunksNum.x));
 }
 
 float2 CalcDensity(int pIndex) // (density, nearDensity)
@@ -84,16 +92,15 @@ float2 CalcDensity(int pIndex) // (density, nearDensity)
 
     int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
 
-    int2 chunk = int2((uint)lastChunkKey % ChunksNum.x, (int)((uint)lastChunkKey / ChunksNum.x));
+    int2 chunk = GetChunk(lastChunkKey);
 
-    int2 curChunk;
     float totDensity = 0.0;
     float totNearDensity = 0.0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
         {
-            curChunk = chunk + int2(x, y);
+            int2 curChunk = chunk + int2(x, y);
 
             if (!ValidChunk(curChunk)) continue;
 
@@ -384,10 +391,9 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
         int lastChunkKey_A = Extract_LastChunkKey(pData_A.lastChunkKey_PType_POrder);
         int lastChunkKey_B = Extract_LastChunkKey(pData_B.lastChunkKey_PType_POrder);
     
-        int2 newChunk_A = int2((uint)lastChunkKey_A % ChunksNum.x, (int)((float)lastChunkKey_A / ChunksNum.x));
-        int2 newChunk_B = int2((uint)lastChunkKey_B % ChunksNum.x, (int)((float)lastChunkKey_B / ChunksNum.x));
+        int2 newChunk_A = GetChunk(lastChunkKey_A);
+        int2 newChunk_B = GetChunk(lastChunkKey_B);
 
-        int2 curChunk;
         int localSpringBCapacityOrder = 0;
         bool inRangeAB = false;
         bool shouldBreak = false;
@@ -395,7 +401,7 @@ void TransferAllSpringData (uint3 id : SV_DispatchThreadID)
         {
             for (int y = -1; y <= 1 && !shouldBreak; y++)
             {
-                curChunk = newChunk_A + int2(x, y);
+                int2 curChunk = newChunk_A + int2(x, y);
 
                 if (ValidChunk(curChunk))
                 {
@@ -435,14 +441,13 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
     float startTemperature = pData.temperature;
 
-    int2 chunk = int2((uint)lastChunkKey % ChunksNum.x, (int)((uint)lastChunkKey / ChunksNum.x));
+    int2 chunk = GetChunk(lastChunkKey);
     int baseChunkKey = GetChunkKey(chunk);
 
     #if SIMULATE_PARTICLE_SPRINGS
         int nearSpringCapacity = (uint)SpringCapacities[baseChunkKey].y / SpringCapacities[baseChunkKey].x;
     #endif
 
-    int2 curChunk;
     int nCount = 0;
     float2 totPressureForce = 0;
     float2 totViscocityForce = 0;
@@ -452,7 +457,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     {
         for (int y = -1; y <= 1; y++)
         {
-            curChunk = chunk + int2(x, y);
+            int2 curChunk = chunk + int2(x, y);
             
             if (!ValidChunk(curChunk)) continue;
 
@@ -512,6 +517,9 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 totForce = totPressureForce + totSpringForce + totViscocityForce + interactionEffects.xy - float2(0, pType.gravity);
     PDatas[i].vel += totForce * DeltaTime / pType.mass;
     PDatas[i].temperatureExchangeBuffer = totTemperatureExchange + interactionEffects.z * DeltaTime;
+
+    // Record data
+    PDatas[i].recordedPressure = length(totPressureForce);
 }
 
 [numthreads(TN_PS,1,1)]
@@ -568,4 +576,30 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
             }
             break;
     }
+}
+
+[numthreads(TN_PS,1,1)]
+void RecordFluidData (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= ParticlesNum) return;
+    // index from SpatialLookup to improve memory access coherency
+    int i = SpatialLookup[id.x].x;
+    uint state = id.y * BoundaryDims.x + id.x + FrameRand;
+
+    PData pData = PDatas[i];
+    PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
+    int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
+
+    int2 chunk = GetChunk(lastChunkKey);
+    int chunkKey = GetChunkKey(chunk);
+
+    int2 vel_Int2 = Float2AsInt2(pData.vel);
+
+    // Record data with InterlockedAdd to ensure there are no race conditions
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(pData.temperature));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.x, vel_Int2.x);
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.y, vel_Int2.y);
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(pType.mass));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].numContributions, 1);
 }

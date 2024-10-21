@@ -62,19 +62,27 @@ StructuredBuffer<RBVector> RBVectors;
 
 StructuredBuffer<Mat> Materials;
 
-SamplerState bilinearSampler
-{
-    Filter = MIN_MAG_LINEAR_MIP_POINT; // Bilinear filtering
-    AddressU = Clamp; // Use Clamp to prevent wrapping
-    AddressV = Clamp;
-};
-
 float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
 {
     uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
     return sampleCol * GlobalBrightness;
+}
+
+float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
+{
+    if (mat.colTexLoc.x != -1)
+    {
+        float3 sampledColor = SampleTexture(uv, mat.colTexLoc, mat.colTexDims, atlas) * mat.sampleColMul;
+        return sampledColor + mat.baseCol;
+    }
+    else return mat.baseCol;
+}
+
+void SetResultColor(uint2 id, float3 color)
+{
+    Result[id] = float4(color, 1.0);
 }
 
 bool ValidChunk(int2 chunk)
@@ -115,17 +123,6 @@ float3 TemperatureToRGB(float temperature)
     }
 
     return color;
-}
-
-float3 VelocityToRGB(float2 velocity, float g)
-{
-    // Not really normalized
-    float normalizedVelLength = length(velocity) * 0.04;
-
-    float r = min(1.0, normalizedVelLength);
-    float b = max(0.0, 1 - normalizedVelLength);
-
-    return float3(r, g, b);
 }
 
 bool IsPointInsideRB(float2 pos, RigidBody rb)
@@ -187,15 +184,6 @@ float MetaballsDensity(float dstSqr, float invRadius)
     return (1 - dstR);
 }
 
-float4 GetRenderColor(PData pData)
-{
-    // visualize velocity / temperature
-    float3 rgb = VelocityToRGB(pData.vel, 0);
-    // float3 rgb = TemperatureToRGB(pData.temperature);
-
-    return float4(rgb.x, rgb.y, rgb.z, 0);
-}
-
 float2 GetTexDims(Texture2D<unorm float4> tex)
 {
     float t;
@@ -232,7 +220,8 @@ float2 MirrorRepeatUV(float2 uv)
 void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
     float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * id.xy / (float2)Resolution);
-    Result[id.xy] = float4(SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness, 1);
+    float3 sampleCol = SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness;
+    SetResultColor(id.xy, sampleCol);
 }
 
 float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
@@ -246,14 +235,13 @@ float2 GetPixelPos(uint2 pixelID)
 {
     return (float2(pixelID) + .5) * BoundsDims / (float2)Resolution;
 }
- 
+
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
 {
     float2 pixelPos = GetPixelPos(id.xy);
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
-    int2 curChunk;
     int lastChunkKey_PType_POrder;
     float totDensity = 0;
     bool particleFound = false;
@@ -272,7 +260,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     {
         for (int y = -1; y <= 1 && doContinue; y++)
         {
-            curChunk = chunk + int2(x, y);
+            int2 curChunk = chunk + int2(x, y);
 
             if (!ValidChunk(curChunk)) continue;
 
@@ -363,8 +351,8 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 result.r += avgVel * 0.05;
             #endif
         }
-    
-        Result[id.xy] = float4(result, 1);
+        
+        SetResultColor(id.xy, result);
     }
 }
 
@@ -425,13 +413,13 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         {
             float2 localPixelPos = rotate2D(pixelPos - transformData.xy, -transformData.z);
             float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / (float2)BoundsDims);
-    
-            float3 color = mat.colTexLoc.x != -1 ? SampleTexture(localUV, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
+
+            float3 color = GetMaterialColor(mat, localUV, Atlas);
 
             result = BlendWithBackground(color, mat.opacity, id.xy);
         }
 
-        Result[id.xy] = float4(result, 1);
+        SetResultColor(id.xy, result);
     }
 }
 
@@ -608,12 +596,12 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
 
         float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundsDims);
 
-        float3 color = mat.colTexLoc.x != -1 ? SampleTexture(uv, mat.colTexLoc, mat.colTexDims, Atlas) * mat.sampleColMul + mat.baseCol : mat.baseCol;
+        float3 result = GetMaterialColor(mat, uv, Atlas);
 
         float redTint = RED_TINT_FACTOR * springForce;
-        TintRed(color, redTint);
+        TintRed(result, redTint);
         
-        Result[id.xy] = float4(color, 1);
+        SetResultColor(id.xy, result);
     }
 }
 
