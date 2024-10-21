@@ -47,6 +47,8 @@ public class SceneRigidBody : Polygon
 
     public Vector2 ComputeCentroid(float gridDensity)
     {
+        if (RBInput.overrideCentroid) return transform.position;
+
         Vector2[] points = GeneratePoints(gridDensity, Vector2.zero);
         int numPoints = points.Length;
 
@@ -68,8 +70,12 @@ public class SceneRigidBody : Polygon
 
         // Centroid
         Vector2 centroid = Vector2.zero;
-        foreach (Vector2 point in points) centroid += point;
-        centroid /= numPoints;
+        if (RBInput.overrideCentroid) centroid = transform.position;
+        else
+        {
+            foreach (Vector2 point in points) centroid += point;
+            centroid /= numPoints;
+        }
 
         // Shift vectors to align centroid with rigid body position
         Vector2 shift = rigidBodyPosition - centroid;

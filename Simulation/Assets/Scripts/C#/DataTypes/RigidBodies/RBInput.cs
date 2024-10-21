@@ -5,6 +5,7 @@ using Unity.Mathematics;
 public struct RBInput
 {
     public bool includeInSimulation;
+    public bool overrideCentroid;
     public float mass;
     public float gravity;
     public float elasticity;

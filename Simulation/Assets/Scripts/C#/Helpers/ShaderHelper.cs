@@ -175,6 +175,8 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
         renderShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         renderShader.SetInt("RBVectorsNum", m.RBVectors.Length);
+
+        renderShader.SetVector("GlobalBrightness", new Vector3(m.GlobalBrightness.x, m.GlobalBrightness.y, m.GlobalBrightness.z));
     }
 
     public void UpdateSortShaderVariables(ComputeShader sortShader)

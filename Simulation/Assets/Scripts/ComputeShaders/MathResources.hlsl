@@ -1,7 +1,7 @@
 static const float PI = 3.14159;
 static const float EPSILON = 0.0001;
 static const float LARGE_FLOAT = 1000000000.0;
-static const float int_float_precision = 10000.0; // A higher value may cause the half precision to be insufficient, leading to incorrect calculations
+static const float int_float_precision = 50000.0; // A higher value may cause the half precision to be insufficient, leading to incorrect calculations
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
 #include "RandGen.hlsl"
