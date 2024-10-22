@@ -134,6 +134,18 @@ struct ImpulseData
     int rbIndex;
 };
 
+RecordedFluidData InitRecordedFluidData()
+{
+    RecordedFluidData recordedFluidData;
+    recordedFluidData.totTemp_Int = 0;
+    recordedFluidData.totPressure_Int = 0;
+    recordedFluidData.totVel_Int2 = 0;
+    recordedFluidData.totMass_Int = 0;
+    recordedFluidData.numContributions = 0;
+
+    return recordedFluidData;
+}
+
 RBAdjustment InitRBAdjustment()
 {
     RBAdjustment rbAdjustment;

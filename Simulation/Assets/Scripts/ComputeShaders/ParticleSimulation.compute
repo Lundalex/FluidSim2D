@@ -4,7 +4,8 @@
 #pragma kernel TransferAllSpringData // 3
 #pragma kernel ParticleForces // 4
 #pragma kernel UpdatePositions // 5
-#pragma kernel RecordFluidData // 5
+#pragma kernel ResetFluidData // 6
+#pragma kernel RecordFluidData // 7
 
 #pragma multi_compile _ SIMULATE_PARTICLE_VISCOSITY
 #pragma multi_compile _ SIMULATE_PARTICLE_SPRINGS
@@ -17,6 +18,7 @@
 
 // Constants
 const int2 ChunksNum;
+const uint ChunksNumAll;
 const uint ParticlesNum;
 const int2 BoundaryDims;
 const int ParticleSpringsCombinedHalfLength;
@@ -578,12 +580,19 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     }
 }
 
+[numthreads(TN_PS2,1,1)]
+void ResetFluidData (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= ChunksNumAll) return;
+    RecordedFluidDatas[id.x] = InitRecordedFluidData();
+}
+
 [numthreads(TN_PS,1,1)]
 void RecordFluidData (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= ParticlesNum) return;
     // index from SpatialLookup to improve memory access coherency
-    int i = SpatialLookup[id.x].x;
+    uint i = SpatialLookup[id.x].x;
     uint state = id.y * BoundaryDims.x + id.x + FrameRand;
 
     PData pData = PDatas[i];

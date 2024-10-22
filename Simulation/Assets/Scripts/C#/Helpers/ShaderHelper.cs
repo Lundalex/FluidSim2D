@@ -47,10 +47,12 @@ public class ShaderHelper : MonoBehaviour
             pSimShader.SetBuffer(5, "PTypes", m.PTypeBuffer);
             pSimShader.SetBuffer(5, "SpringCapacities", m.SpringCapacitiesBuffer);
 
-            pSimShader.SetBuffer(6, "SpatialLookup", m.PDataBuffer);
-            pSimShader.SetBuffer(6, "PTypes", m.PTypeBuffer);
-            pSimShader.SetBuffer(6, "PTypes", m.PTypeBuffer);
-            // pSimShader.SetBuffer(6, "RecordedFluidDatas", m.RecordedFluidDataBuffer);
+            pSimShader.SetBuffer(6, "RecordedFluidDatas", m.RecordedFluidDataBuffer);
+
+            pSimShader.SetBuffer(7, "SpatialLookup", m.SpatialLookupBuffer);
+            pSimShader.SetBuffer(7, "PDatas", m.PDataBuffer);
+            pSimShader.SetBuffer(7, "PTypes", m.PTypeBuffer);
+            pSimShader.SetBuffer(7, "RecordedFluidDatas", m.RecordedFluidDataBuffer);
         }
     }
 
@@ -141,6 +143,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         pSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        pSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         pSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);

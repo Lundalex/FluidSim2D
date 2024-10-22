@@ -172,7 +172,8 @@ public class SceneManager : MonoBehaviour
                 if (sensors.Contains(sensor)) Debug.LogWarning("Duplicate sensor rigid body assignments. Sensor name: " + sensor.name);
                 else
                 {
-                    sensor.linkedRBIndex = i;
+                    if (sensor is RigidBodySensor rigidBodySensor)
+                    rigidBodySensor.linkedRBIndex = i;
                     sensors.Add(sensor);
                 }
             }

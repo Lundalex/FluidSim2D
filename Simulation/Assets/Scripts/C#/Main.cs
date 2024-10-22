@@ -18,6 +18,7 @@ public class Main : MonoBehaviour
     // Shader Thread Group Sizes
     public int renderShaderThreadSize = 32; // /32, AxA thread groups
     public int pSimShaderThreadSize = 512; // /1024
+    public int pSimShaderThreadSize2 = 512; // /1024
     public int sortShaderThreadSize = 512; // /1024
     public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
     public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
@@ -124,12 +125,12 @@ public class Main : MonoBehaviour
     // Particle data
     public ComputeBuffer PDataBuffer;
     public ComputeBuffer PTypeBuffer;
+    public ComputeBuffer RecordedFluidDataBuffer;
 
     // Rigid bodies
     public ComputeBuffer RBVectorBuffer;
     public ComputeBuffer RBDataBuffer;
     public ComputeBuffer RBAdjustmentBuffer;
-    public ComputeBuffer RecordedElementBuffer;
 
     // Materials
     public ComputeBuffer MaterialBuffer;
@@ -346,6 +347,7 @@ public class Main : MonoBehaviour
     {
         ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas);
         ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
+        ComputeHelper.CreateStructuredBuffer<RecordedFluidData>(ref RecordedFluidDataBuffer, ChunksNumAll);
 
         ComputeHelper.CreateStructuredBuffer<int2>(ref SpatialLookupBuffer, ParticlesNum_NextPow2);
         ComputeHelper.CreateStructuredBuffer<int>(ref StartIndicesBuffer, ChunksNumAll);
@@ -358,8 +360,6 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
         ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, RBDatas.Length);
-
-        ComputeHelper.CreateStructuredBuffer<int>(ref RecordedElementBuffer, Resolution.x * Resolution.y);
 
         ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
     }
@@ -469,6 +469,9 @@ public class Main : MonoBehaviour
         }
 
         ComputeHelper.DispatchKernel (pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize);
+
+        ComputeHelper.DispatchKernel (pSimShader, "ResetFluidData", ChunksNumAll, pSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel (pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize);
     }
 
     void RunRbSimShader()
@@ -525,6 +528,7 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
             StartIndicesBuffer,
             PDataBuffer,
             PTypeBuffer,
+            RecordedFluidDataBuffer,
             SpringCapacitiesBuffer,
             SpringStartIndicesBuffer_dbA,
             SpringStartIndicesBuffer_dbB,
@@ -533,7 +537,6 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
             RBDataBuffer,
             RBAdjustmentBuffer,
             RBVectorBuffer,
-            RecordedElementBuffer,
             MaterialBuffer
         );
     }
