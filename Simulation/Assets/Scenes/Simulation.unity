@@ -421,8 +421,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  msRigidBodyDataRetrievalInterval: 0
-  msFluidDataRetrievalInterval: 0
+  enabledFluidSensors:
+  - {fileID: 1354928016}
+  msRigidBodyDataRetrievalInterval: 10
+  msFluidDataRetrievalInterval: 50
 --- !u!4 &376927702 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1201,6 +1203,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1354928015 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+  m_PrefabInstance: {fileID: 325462343563679208}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1354928016 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+  m_PrefabInstance: {fileID: 325462343563679208}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f91b19560bbee4b77a1230237d76d789, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1359110064 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1451,6 +1469,7 @@ Transform:
   - {fileID: 2028896046}
   - {fileID: 135673741}
   - {fileID: 2081943271}
+  - {fileID: 1354928015}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &2028896046 stripped
@@ -1561,59 +1580,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2081943270
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2081943271}
-  - component: {fileID: 2081943272}
-  m_Layer: 0
-  m_Name: FluidSensorPrefab
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2081943271
+--- !u!4 &2081943271 stripped
 Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+  m_PrefabInstance: {fileID: 8130943699817193477}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2081943270}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2002973397}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2081943272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2081943270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76f48b4aef97341679c9f792b29c6bc6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  numDecimals: 0
-  sensorUIPrefab: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
-  targetPosition: {x: 20, y: 180}
-  measurementZone:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
 --- !u!114 &2083877552 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
@@ -1686,6 +1657,67 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cb9d796c0adba324a9e3b1bad16df2ce, type: 3}
+--- !u!1001 &325462343563679208
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2002973397}
+    m_Modifications:
+    - target: {fileID: 1932904838105472172, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_Name
+      value: FluidTemperatureSensorPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 160.86348
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 117.76725
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.338074
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: numDecimals
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
 --- !u!1001 &614223046216948198
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1961,6 +1993,67 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+--- !u!1001 &8130943699817193477
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2002973397}
+    m_Modifications:
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 246757247591005640, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 868415544438198122, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: numDecimals
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5945530165368747400, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: m_Name
+      value: FluidMassSensorPrefab
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 22aad3404d310493eb0990b946042a53, type: 3}
 --- !u!1001 &8142432084846364063
 PrefabInstance:
   m_ObjectHideFlags: 0

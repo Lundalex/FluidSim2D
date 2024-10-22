@@ -175,8 +175,15 @@ public class SceneManager : MonoBehaviour
                     if (sensor is RigidBodySensor rigidBodySensor)
                     rigidBodySensor.linkedRBIndex = i;
                     sensors.Add(sensor);
+                    sensor.StartSensor();
                 }
             }
+        }
+
+        foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
+        {
+            sensors.Add(fluidSensor);
+            fluidSensor.StartSensor();
         }
 
         // Assign sensors to sensorManager

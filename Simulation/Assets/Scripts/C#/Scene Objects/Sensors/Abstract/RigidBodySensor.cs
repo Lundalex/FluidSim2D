@@ -11,7 +11,7 @@ public abstract class RigidBodySensor : Sensor
     [NonSerialized] public bool firstDataRecieved = false;
     public abstract void UpdateSensorContents(RBData[] rBDatas, int linkedRBIndex);
 
-    public override void InitPosition()
+    public override void InitSensor()
     {
         sensorUIRect.localPosition = SimSpaceToCanvasSpace(new(-10000.0f, 0.0f));
     }
