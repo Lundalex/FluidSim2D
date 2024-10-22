@@ -232,6 +232,7 @@ MonoBehaviour:
   DoSimulateParticleTemperature: 1
   renderShaderThreadSize: 32
   pSimShaderThreadSize: 512
+  pSimShaderThreadSize2: 512
   sortShaderThreadSize: 512
   rbSimShaderThreadSize1: 64
   rbSimShaderThreadSize2: 32
@@ -270,9 +271,9 @@ MonoBehaviour:
     x: 1920
     y: 1280
   GlobalBrightness:
-    x: 1
-    y: 1
-    z: 1
+    x: 0.3
+    y: 0.3
+    z: 0.3
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
   SpringRenderRodLength: 3
@@ -420,7 +421,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  msDataRetrievalInterval: 25
+  msRigidBodyDataRetrievalInterval: 0
+  msFluidDataRetrievalInterval: 0
 --- !u!4 &376927702 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1448,6 +1450,7 @@ Transform:
   - {fileID: 866438672}
   - {fileID: 2028896046}
   - {fileID: 135673741}
+  - {fileID: 2081943271}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &2028896046 stripped
@@ -1558,6 +1561,59 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2081943270
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2081943271}
+  - component: {fileID: 2081943272}
+  m_Layer: 0
+  m_Name: FluidSensorPrefab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2081943271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2081943270}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2002973397}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2081943272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2081943270}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76f48b4aef97341679c9f792b29c6bc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numDecimals: 0
+  sensorUIPrefab: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
+  targetPosition: {x: 20, y: 180}
+  measurementZone:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
 --- !u!114 &2083877552 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
@@ -1617,6 +1673,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4285786590569918535, guid: cb9d796c0adba324a9e3b1bad16df2ce, type: 3}
+      propertyPath: sensorUIPrefab
+      value: 
+      objectReference: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
     - target: {fileID: 5489764208928198127, guid: cb9d796c0adba324a9e3b1bad16df2ce, type: 3}
       propertyPath: m_Name
       value: PositionSensor
@@ -1791,6 +1851,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SpringDynamometerPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: sensorUIPrefab
+      value: 
+      objectReference: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
     - target: {fileID: 8622674090623328263, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1845,9 +1909,9 @@ PrefabInstance:
     m_TransformParent: {fileID: 2002973397}
     m_Modifications:
     - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: moveSpeed
-      value: 20
-      objectReference: {fileID: 0}
+      propertyPath: sensorUIPrefab
+      value: 
+      objectReference: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
     - target: {fileID: 6569177160939710243, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

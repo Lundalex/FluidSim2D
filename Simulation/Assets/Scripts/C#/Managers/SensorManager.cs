@@ -2,18 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class SensorManager : MonoBehaviour
 {
-    [Range(10.0f, 100.0f)] public float msDataRetrievalInterval;
+    [Range(10.0f, 100.0f)] public float msRigidBodyDataRetrievalInterval;
+    [Range(10.0f, 100.0f)] public float msFluidDataRetrievalInterval;
 
     // Retrieved data
     [NonSerialized] public RBData[] retrievedRBDatas;
-    [NonSerialized] public PData[] retrievedPDatas;
-    [NonSerialized] public int2[] SpatialLookupBuffer;
-    [NonSerialized] public int[] StartIndicesBuffer;
+    [NonSerialized] public RecordedFluidData[] retrievedFluidDatas;
 
     // References
     [NonSerialized] public List<Sensor> sensors;
@@ -53,7 +52,7 @@ public class SensorManager : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(msDataRetrievalInterval / 1000.0f);
+            yield return new WaitForSeconds(msRigidBodyDataRetrievalInterval / 1000.0f);
         }
     }
 
@@ -62,26 +61,26 @@ public class SensorManager : MonoBehaviour
         while (programRunning)
         {
             // Retrieve rigid body data buffer asynchronously
-            if (main.RBDataBuffer != null && sensors != null)
+            if (main.RecordedFluidDataBuffer != null && sensors is AnyState fluidsensor!= null)
             {
                 bool hasFluidSensor = sensors.OfType<FluidSensor>().Any();
                 if (hasFluidSensor)
                 {
-                    ComputeHelper.GetBufferContentsAsync<PData>(main.PDataBuffer, contents => 
+                    ComputeHelper.GetBufferContentsAsync<RecordedFluidData>(main.RecordedFluidDataBuffer, contents => 
                     {
-                        retrievedPDatas = contents;
+                        retrievedFluidDatas = contents;
                         foreach (Sensor sensor in sensors)
                         {
-                            if (sensor is FluidSensor rigidBodySensor)
+                            if (sensor is FluidSensor fluidSensor)
                             {
-                                rigidBodySensor.UpdateSensor();
+                                fluidSensor.UpdateSensor();
                             }
                         }
                     });
                 }
             }
 
-            yield return new WaitForSeconds(msDataRetrievalInterval / 1000.0f);
+            yield return new WaitForSeconds(msFluidDataRetrievalInterval / 1000.0f);
         }
     }
 

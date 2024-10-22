@@ -6,15 +6,10 @@ using System;
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
-    public float2 offset;
     public int numDecimals;
-    public bool doInterpolation;
-    [Range(1.0f, 20.0f)] public float moveSpeed;
 
     [Header("References")]
-    public GameObject sensorPrefab;
-
-    [NonSerialized] public int linkedRBIndex = -1;
+    public GameObject sensorUIPrefab;
 
     // Private references
     [NonSerialized] public Transform sensorContainer;
@@ -27,14 +22,11 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public Text sensorText;
     [NonSerialized] public RectTransform sensorUIRect;
 
-    [NonSerialized] public Vector2 targetPosition;
-    [NonSerialized] public bool firstDataRecieved = false;
-
     private void Start()
     {
         SetReferences();
-
         InitSensorUI();
+        InitPosition();
     }
 
     private void SetReferences()
@@ -48,26 +40,21 @@ public abstract class Sensor : MonoBehaviour
 
     private void InitSensorUI()
     {
-        sensorUI = Instantiate(sensorPrefab, sensorContainer);
+        sensorUI = Instantiate(sensorUIPrefab, sensorContainer);
         sensorUI.name = "UI - " + this.name;
 
         sensorUIRect = sensorUI.GetComponent<RectTransform>();
-        sensorUIRect.localPosition = SimSpaceToCanvasSpace(new(-10000.0f, 0.0f));
 
         sensorText = sensorUI.transform.Find("Label").GetComponent<Text>();
     }
 
+    public abstract void InitPosition();
+    public abstract void UpdatePosition();
     public abstract void UpdateSensor();
 
     void Update()
     {
-        if (firstDataRecieved)
-        {
-            Vector2 canvasTargetPosition = SimSpaceToCanvasSpace(targetPosition);
-            
-            // Interpolate the current position
-            sensorUIRect.localPosition = doInterpolation ? Vector2.Lerp(sensorUIRect.localPosition, canvasTargetPosition, Time.deltaTime * moveSpeed) : canvasTargetPosition;
-        }
+        UpdatePosition();
     }
 
     public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
