@@ -54,6 +54,11 @@ namespace Resources
         {
             return 273.15f + celciusTemp;
         }
+
+        public static float KelvinToCelcius(float kelvinTemp)
+        {
+            return kelvinTemp - 273.15f;
+        }
         
         public static float2 GetParticleSpawnPosition(int pIndex, int maxIndex, int Width, int Height, int SpawnDims)
         {

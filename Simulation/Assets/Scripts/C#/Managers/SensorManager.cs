@@ -2,11 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class SensorManager : MonoBehaviour
 {
+    public FluidSensor[] enabledFluidSensors;
     [Range(10.0f, 100.0f)] public float msRigidBodyDataRetrievalInterval;
     [Range(10.0f, 100.0f)] public float msFluidDataRetrievalInterval;
 
@@ -61,7 +61,7 @@ public class SensorManager : MonoBehaviour
         while (programRunning)
         {
             // Retrieve rigid body data buffer asynchronously
-            if (main.RecordedFluidDataBuffer != null && sensors is AnyState fluidsensor!= null)
+            if (main.RecordedFluidDataBuffer != null && sensors != null)
             {
                 bool hasFluidSensor = sensors.OfType<FluidSensor>().Any();
                 if (hasFluidSensor)

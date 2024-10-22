@@ -21,12 +21,14 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public GameObject sensorUI;
     [NonSerialized] public Text sensorText;
     [NonSerialized] public RectTransform sensorUIRect;
+    [NonSerialized] public bool programStarted = false;
 
-    private void Start()
+    public void StartSensor()
     {
         SetReferences();
         InitSensorUI();
-        InitPosition();
+        InitSensor();
+        programStarted = true;
     }
 
     private void SetReferences()
@@ -48,13 +50,13 @@ public abstract class Sensor : MonoBehaviour
         sensorText = sensorUI.transform.Find("Label").GetComponent<Text>();
     }
 
-    public abstract void InitPosition();
+    public abstract void InitSensor();
     public abstract void UpdatePosition();
     public abstract void UpdateSensor();
 
     void Update()
     {
-        UpdatePosition();
+        if (programStarted) UpdatePosition();
     }
 
     public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);

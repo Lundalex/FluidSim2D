@@ -170,7 +170,7 @@ public class Main : MonoBehaviour
     private bool FrameStep = false;
     public bool DoUpdateShaderData = false;
 
-    void Start()
+    void Awake()
     {
         SceneSetup();
 
