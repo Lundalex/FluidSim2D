@@ -206,10 +206,10 @@ public class SceneManager : MonoBehaviour
         return new RBData
         {
             pos = pos,
-            vel_AsInt2 = rbInput.canMove ? Func.Float2AsInt2(rbInput.velocity) : 0,
+            vel_AsInt2 = rbInput.canMove ? Func.Float2AsInt2(rbInput.velocity, main.FloatIntPrecisionRB) : 0,
             nextPos = 0,
             nextVel = 0,
-            rotVel_AsInt = rbInput.canRotate ? Func.FloatAsInt(rbInput.rotationVelocity) : 0,
+            rotVel_AsInt = rbInput.canRotate ? Func.FloatAsInt(rbInput.rotationVelocity, main.FloatIntPrecisionRB) : 0,
             totRot = 0,
             mass = rbInput.canMove ? rbInput.mass : 0,
             inertia = rbInput.canRotate ? inertia : 0,

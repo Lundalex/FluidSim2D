@@ -237,6 +237,8 @@ MonoBehaviour:
   rbSimShaderThreadSize1: 64
   rbSimShaderThreadSize2: 32
   rbSimShaderThreadSize3: 512
+  FloatIntPrecisionRB: 50000
+  FloatIntPrecisionP: 5000
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -1711,6 +1713,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
       propertyPath: numDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: SampleDensity
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

@@ -160,26 +160,24 @@ namespace Resources
             return min;
         }
 
-        public static int FloatAsInt(float a)
+        public static int FloatAsInt(float a, float precision)
         {
-            float int_float_precision = 50000.0f;
-            return (int)(a * int_float_precision);
+            return (int)(a * precision);
         }
 
-        public static int2 Float2AsInt2(float2 a)
+        public static int2 Float2AsInt2(float2 a, float precision)
         {
-            return new int2(FloatAsInt(a.x), FloatAsInt(a.y));
+            return new int2(FloatAsInt(a.x, precision), FloatAsInt(a.y, precision));
         }
 
-        public static float IntToFloat(int a)
+        public static float IntToFloat(int a, float precision)
         {
-            float int_float_precision = 50000.0f;
-            return a / int_float_precision;
+            return a / precision;
         }
 
-        public static float2 Int2ToFloat2(int2 a)
+        public static float2 Int2ToFloat2(int2 a, float precision)
         {
-            return new float2(IntToFloat(a.x), IntToFloat(a.y));
+            return new float2(IntToFloat(a.x, precision), IntToFloat(a.y, precision));
         }
 
         public static float3 ColorToFloat3(Color color)

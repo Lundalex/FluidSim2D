@@ -15,3 +15,9 @@ static const float CENTROID_RADIUS = 2.0;
 static const float CENTROID_RADIUS_SQR = CENTROID_RADIUS*CENTROID_RADIUS;
 static const float4 COL_RED = float4(1, 0, 0, 1);
 static const float RED_TINT_FACTOR = 0.00002;
+
+// --- Float-Int storage precision values ---
+
+// A higher value may cause the half precision to be insufficient, leading to incorrect calculations
+static const float IntFloatPrecisionRB = 50000.0;
+static const float IntFloatPrecisionP = 1000.0;
