@@ -62,8 +62,10 @@ struct Spring
 struct RecordedFluidData
 {
     int totTemp_Int;
+    int totThermalEnergy_Int;
     int totPressure_Int;
     int2 totVel_Int2;
+    int totVelAbs_Int;
     int totMass_Int;
 
     int numContributions;
@@ -110,6 +112,15 @@ struct RBVector
     int parentIndex;
 };
 
+struct SensorArea
+{
+    float2 min;
+    float2 max;
+    float patternMod;
+    float4 lineColor;
+    float4 colorTint;
+};
+
 struct RBAdjustment
 {
     int2 deltaPos_Int2;
@@ -138,8 +149,10 @@ RecordedFluidData InitRecordedFluidData()
 {
     RecordedFluidData recordedFluidData;
     recordedFluidData.totTemp_Int = 0;
+    recordedFluidData.totThermalEnergy_Int = 0;
     recordedFluidData.totPressure_Int = 0;
     recordedFluidData.totVel_Int2 = 0;
+    recordedFluidData.totVelAbs_Int = 0;
     recordedFluidData.totMass_Int = 0;
     recordedFluidData.numContributions = 0;
 

@@ -64,6 +64,7 @@ public class Main : MonoBehaviour
     [SerializeField] private FluidRenderMethod FluidRenderMethod;
     [SerializeField] private bool DoDrawFluidOutlines = true;
     [SerializeField] private bool DoDisplayFluidVelocities = true;
+    [SerializeField] private bool DoDrawUnoccupiedFluidSensorArea = false;
     [SerializeField] private bool DoDrawRBOutlines = true;
     [SerializeField] private bool DoDrawRBCentroids = false;
     // The list that defines the order of render steps
@@ -92,6 +93,9 @@ public class Main : MonoBehaviour
     public float FluidEdgeWidth = 1.0f;
     // Rigid Bodies
     public float RBEdgeWidth = 0.5f;
+    // Sensor Areas
+    public float FluidSensorEdgeWidth = 3.0f;
+    public float SensorAreaAnimationSpeed = 2.0f;
     // Background
     public Texture2D backgroundTexture;
     public float3 BackgroundBrightness;
@@ -134,6 +138,8 @@ public class Main : MonoBehaviour
     public ComputeBuffer RBDataBuffer;
     public ComputeBuffer RBAdjustmentBuffer;
 
+    // Fluid Sensors
+    public ComputeBuffer SensorAreaBuffer;
     // Materials
     public ComputeBuffer MaterialBuffer;
 
@@ -160,6 +166,9 @@ public class Main : MonoBehaviour
     public RBVector[] RBVectors;
     public RBData[] RBDatas;
 
+    // Fluid Sensors
+    public SensorArea[] SensorAreas;
+
     // Materials
     private Mat[] Mats;
 
@@ -184,7 +193,7 @@ public class Main : MonoBehaviour
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
-        (RBDatas, RBVectors) = sceneManager.CreateRigidBodies();
+        (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
 
         SetConstants();
@@ -296,6 +305,7 @@ public class Main : MonoBehaviour
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         rbSimShader.SetBool("RMousePressed", mousePressed.x);
         rbSimShader.SetBool("LMousePressed", mousePressed.y);
+        renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
 
         // Multi-compilation - renderShader
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
@@ -304,6 +314,8 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
         if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
         else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
+        if (DoDrawUnoccupiedFluidSensorArea) renderShader.EnableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
+        else renderShader.DisableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
         if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
         else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
         if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");
@@ -362,6 +374,8 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
         ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, RBDatas.Length);
+
+        ComputeHelper.CreateStructuredBuffer<SensorArea>(ref SensorAreaBuffer, SensorAreas);
 
         ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
     }
@@ -538,6 +552,7 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
             ParticleSpringsCombinedBuffer,
             RBDataBuffer,
             RBAdjustmentBuffer,
+            SensorAreaBuffer,
             RBVectorBuffer,
             MaterialBuffer
         );

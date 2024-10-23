@@ -455,6 +455,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     float2 totViscocityForce = 0;
     float2 totSpringForce = 0;
     float totTemperatureExchange = 0;
+    float totAbsPressure = 0;
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -485,7 +486,9 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
 
                 float viscocityLaplacian = SmoothViscosityLaplacian_optimised(absDst, avgInfluenceRadius);
                 
-                totPressureForce += otherPIndex_Mass * PressureForce(pData.density, PData_otherPIndex.density, pData.nearDensity, PData_otherPIndex.nearDensity, pType, PType_otherPIndex, absDst, avgInfluenceRadius, normDst, state);
+                float2 pressureForce = otherPIndex_Mass * PressureForce(pData.density, PData_otherPIndex.density, pData.nearDensity, PData_otherPIndex.nearDensity, pType, PType_otherPIndex, absDst, avgInfluenceRadius, normDst, state);
+                totPressureForce += pressureForce;
+                totAbsPressure += length(pressureForce);
 
                 #if SIMULATE_PARTICLE_VISCOSITY
                     totViscocityForce += otherPIndex_Mass * ViscocityForce(pData.lastVel, PData_otherPIndex.lastVel, pType, PType_otherPIndex, viscocityLaplacian);
@@ -521,7 +524,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     PDatas[i].temperatureExchangeBuffer = totTemperatureExchange + interactionEffects.z * DeltaTime;
 
     // Record data
-    PDatas[i].recordedPressure = length(totPressureForce);
+    PDatas[i].recordedPressure = totAbsPressure;
 }
 
 [numthreads(TN_PS,1,1)]
@@ -598,17 +601,24 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
     PData pData = PDatas[i];
     PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
     int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
+    float mass = pType.mass;
+    float temperature = pData.temperature;
 
     int2 chunk = GetChunk(lastChunkKey);
     int chunkKey = GetChunkKey(chunk);
 
+    float thermalEnergy = mass * temperature * pType.specificHeatCapacity;
+
     int2 vel_Int2 = Float2AsInt2(pData.vel, IntFloatPrecisionP);
+    int totVelAbs_Int = FloatAsInt(length(pData.vel), IntFloatPrecisionP);
 
     // Record data with InterlockedAdd to ensure there are no race conditions
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(pData.temperature, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(temperature, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totThermalEnergy_Int, FloatAsInt(thermalEnergy, IntFloatPrecisionP));
     InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure, IntFloatPrecisionP));
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.x, vel_Int2.x);
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.y, vel_Int2.y);
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(pType.mass, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totVelAbs_Int, totVelAbs_Int);
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(mass, IntFloatPrecisionP));
     InterlockedAdd(RecordedFluidDatas[chunkKey].numContributions, 1);
 }

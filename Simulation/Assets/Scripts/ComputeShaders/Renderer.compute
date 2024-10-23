@@ -7,6 +7,7 @@
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_FLUID_OUTLINES
 #pragma multi_compile _ DISPLAY_FLUID_VELOCITIES
+#pragma multi_compile _ DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
 
@@ -20,8 +21,9 @@ const float MetaballsThreshold;
 const float MetaballsEdgeDensityWidth;
 const float FluidEdgeWidth;
 const float RBEdgeWidth;
-const int RBVectorNum;
-const int2 Resolution;
+const float FluidSensorEdgeWidth;
+const float SensorAreaAnimationSpeed;
+const uint2 Resolution;
 const float BackgroundUpScaleFactor;
 const float3 BackgroundBrightness;
 
@@ -39,9 +41,13 @@ const int MaxInfluenceRadiusSqr;
 const int NumMaterials;
 const int2 ChunksNum;
 const int ParticlesNum;
-const int NumRigidBodies;
+const uint NumRigidBodies;
+const uint NumFluidSensors;
 
 const float3 GlobalBrightness;
+
+// Per-timestep-set constants
+const float RealTimeElapsed;
 
 RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
@@ -59,6 +65,8 @@ StructuredBuffer<PType> PTypes;
 
 StructuredBuffer<RigidBody> RigidBodies;
 StructuredBuffer<RBVector> RBVectors;
+
+StructuredBuffer<SensorArea> SensorAreas;
 
 StructuredBuffer<Mat> Materials;
 
@@ -98,6 +106,11 @@ int GetChunkKey(int2 chunk)
 uint GetPixelKey(uint2 threadID)
 {
     return threadID.y * Resolution.x + threadID.x;
+}
+
+bool IsOutsideResolutionDims(uint2 threadID)
+{
+    return threadID.x > Resolution.x || threadID.y > Resolution.y;
 }
 
 float3 TemperatureToRGB(float temperature)
@@ -219,6 +232,8 @@ float2 MirrorRepeatUV(float2 uv)
 [numthreads(TN_R,TN_R,1)]
 void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
+    if (IsOutsideResolutionDims(id.xy))return;
+
     float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * id.xy / (float2)Resolution);
     float3 sampleCol = SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness;
     SetResultColor(id.xy, sampleCol);
@@ -236,9 +251,26 @@ float2 GetPixelPos(uint2 pixelID)
     return (float2(pixelID) + .5) * BoundsDims / (float2)Resolution;
 }
 
+bool IsInsideArea(float2 pos, float2 min2, float2 max2)
+{
+    return pos.x >= min2.x && pos.x <= max2.x && pos.y >= min2.y && pos.y <= max2.y;
+}
+
+float DstToBorder(float2 pos, float2 min2, float2 max2)
+{
+    float dstToLeft = abs(pos.x - min2.x);
+    float dstToRight = abs(pos.x - max2.x);
+    float dstToBottom = abs(pos.y - min2.y);
+    float dstToTop = abs(pos.y - max2.y);
+
+    return min(min(dstToLeft, dstToRight), min(dstToBottom, dstToTop));
+}
+
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
 {
+    if (IsOutsideResolutionDims(id.xy))return;
+
     float2 pixelPos = GetPixelPos(id.xy);
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
@@ -331,15 +363,41 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         }
     }
 
+    float3 result = 0;
+    float4 sensorAreaTint = 0;
+    bool isInsideAnySensorArea = false;
+    for (uint sensorAreaIndex = 0; sensorAreaIndex < NumFluidSensors; sensorAreaIndex++)
+    {
+        SensorArea sensorArea = SensorAreas[sensorAreaIndex];
+        if (IsInsideArea(pixelPos, sensorArea.min, sensorArea.max))
+        {
+            isInsideAnySensorArea = true;
+
+            // Draw edges
+            float distanceToBorder = DstToBorder(pixelPos, sensorArea.min, sensorArea.max);
+            if (distanceToBorder < FluidSensorEdgeWidth)
+            {
+                sensorAreaTint += sensorArea.lineColor;
+                continue;
+            }
+            
+            // Draw striped pattern
+            float patternMod = sensorArea.patternMod;
+            float patternPos = pixelPos.x + pixelPos.y + RealTimeElapsed * SensorAreaAnimationSpeed;
+            float patternPosMod = patternPos % patternMod;
+
+            if (patternPosMod < patternMod * 0.5)
+            {
+                sensorAreaTint += sensorArea.colorTint;
+            }
+        }
+    }
+
     if (particleFound)
     {
         Mat mat = Materials[PTypes[Extract_PType(lastChunkKey_PType_POrder)].matIndex];
 
-        float3 result;
-        if (drawOutline)
-        {
-            result = mat.edgeCol;
-        }
+        if (drawOutline) result = mat.edgeCol;
         else
         {
             float3 color = (SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol) * GlobalBrightness;
@@ -351,23 +409,50 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 result.r += avgVel * 0.05;
             #endif
         }
-        
-        SetResultColor(id.xy, result);
+
+        #if !DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
+            if (isInsideAnySensorArea) result = sensorAreaTint.rgb * sensorAreaTint.a + result * (1.0 - sensorAreaTint.a);
+            SetResultColor(id.xy, result);
+        #endif
     }
+
+    #if DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
+        // If no particle was found, but the pixel is inside a sensor area
+        if (!particleFound && isInsideAnySensorArea)
+        {
+            // Optionally, blend with background if needed
+            float3 background = BlendWithBackground(0, 0, id.xy);
+            result = sensorAreaTint.rgb * sensorAreaTint.a + background * (1.0 - sensorAreaTint.a);
+        }
+        else if (particleFound)
+        {
+            // Do nothing
+        }
+        else
+        {
+            // Set result to background color color
+            result = BlendWithBackground(0, 0, id.xy);
+        }
+
+        if (isInsideAnySensorArea) result = sensorAreaTint.rgb * sensorAreaTint.a + result * (1.0 - sensorAreaTint.a);
+
+        SetResultColor(id.xy, result);
+    #endif
 }
 
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
 {
+    if (IsOutsideResolutionDims(id.xy))return;
+    
     float2 pixelPos = GetPixelPos(id.xy);
-    // FIX OUTSIDE BOUNDS CHECK
 
     int highestRenderPriority = 0;
     bool rigidBodyFound = false;
     bool drawOutline = false;
     int matIndex;
     float3 transformData = 0;
-    for (int rbIndex = 0; rbIndex < NumRigidBodies; rbIndex++)
+    for (uint rbIndex = 0; rbIndex < NumRigidBodies; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
 
@@ -532,6 +617,8 @@ float2 NormalizeLocalSpringPos(float2 value, float rodLength, float totalLength,
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
 {
+    if (IsOutsideResolutionDims(id.xy))return;
+
     float2 pixelPos = GetPixelPos(id.xy);
 
     bool springFound = false;
@@ -539,7 +626,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float springForce;
     int matIndex;
     int highestRenderPriority = -1;
-    for (uint rbIndex = 0; rbIndex < (uint)NumRigidBodies; rbIndex++)
+    for (uint rbIndex = 0; rbIndex < NumRigidBodies; rbIndex++)
     {
         RigidBody rbA = RigidBodies[rbIndex];
         float stiffness = rbA.springStiffness;
@@ -608,6 +695,8 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
 [numthreads(TN_R,TN_R,1)]
 void RenderUI(uint3 id : SV_DispatchThreadID)
 {
+    if (IsOutsideResolutionDims(id.xy))return;
+
     float4 uiColor = UITexture[id.xy];
     if (uiColor.a != 0) Result[id.xy] = uiColor;
 }
