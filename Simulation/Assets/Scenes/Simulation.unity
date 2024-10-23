@@ -238,7 +238,7 @@ MonoBehaviour:
   rbSimShaderThreadSize2: 32
   rbSimShaderThreadSize3: 512
   FloatIntPrecisionRB: 50000
-  FloatIntPrecisionP: 5000
+  FloatIntPrecisionP: 1000
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -423,8 +423,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enabledFluidSensors:
-  - {fileID: 1354928016}
+  enabledFluidSensors: []
   msRigidBodyDataRetrievalInterval: 10
   msFluidDataRetrievalInterval: 50
 --- !u!4 &376927702 stripped
@@ -1008,6 +1007,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a293a36603f4f540a2fa8b779c7d442, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &876135944 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+  m_PrefabInstance: {fileID: 7783249810643629540}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &955280876 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1210,17 +1214,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3889367222502609891, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
   m_PrefabInstance: {fileID: 325462343563679208}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1354928016 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
-  m_PrefabInstance: {fileID: 325462343563679208}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f91b19560bbee4b77a1230237d76d789, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1359110064 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1472,6 +1465,7 @@ Transform:
   - {fileID: 135673741}
   - {fileID: 2081943271}
   - {fileID: 1354928015}
+  - {fileID: 876135944}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &2028896046 stripped
@@ -1713,7 +1707,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
       propertyPath: numDecimals
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
       propertyPath: SampleDensity
@@ -1999,6 +1993,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+--- !u!1001 &7783249810643629540
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2002973397}
+    m_Modifications:
+    - target: {fileID: 942823825645345921, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_Name
+      value: FluidVelocitySensorPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 141.02443
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 106.50041
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.2331525
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
 --- !u!1001 &8130943699817193477
 PrefabInstance:
   m_ObjectHideFlags: 0
