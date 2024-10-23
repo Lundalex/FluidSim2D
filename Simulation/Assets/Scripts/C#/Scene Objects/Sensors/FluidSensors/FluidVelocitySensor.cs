@@ -1,4 +1,5 @@
 using Resources;
+using UnityEngine;
 
 public class FluidVelocitySensor : FluidSensor
 {
@@ -7,20 +8,24 @@ public class FluidVelocitySensor : FluidSensor
     {
         switch (velocityType)
         {
+            case VelocityType.Absolute_Destructive:
+                float vel0 = Func.Magnitude(sumFluidDatas.totVelComponents) / sumFluidDatas.numContributions;
+                sensorText.text = FloatToStr(vel0, numDecimals) + " l.e/s";
+                break;
+
+            case VelocityType.Absolute_Summative:
+                float vel1 = sumFluidDatas.totVelAbs / sumFluidDatas.numContributions;
+                sensorText.text = FloatToStr(vel1, numDecimals) + " l.e/s";
+                break;
+
+            case VelocityType.ComponentWise:
+                Vector2 vel2 = sumFluidDatas.totVelComponents / sumFluidDatas.numContributions;
+                sensorText.text = FloatToStr(vel2, numDecimals) + " l.e/s";
+                break;
             
             default:
-            break
+            Debug.LogWarning("Unknown VelocityType. FluidVelocitySensor: " + this.name);
+            break;
         }
-
-
-        var vel = velocityType switch
-        {
-            VelocityType.Absolute_Destructive => Func.Magnitude(sumFluidDatas.totVelComponents) / sumFluidDatas.numContributions,
-            VelocityType.Absolute_Summative => sumFluidDatas.totVelAbs / sumFluidDatas.numContributions,
-            VelocityType.ComponentWise => sumFluidDatas.totVelComponents,
-            _ => -999,
-        };
-
-        sensorText.text = FloatToStr(vel, numDecimals) + " l.e/s";
     }
 }

@@ -65,6 +65,7 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(1, "PDatas", m.PDataBuffer);
             renderShader.SetBuffer(1, "PTypes", m.PTypeBuffer);
             renderShader.SetBuffer(1, "Materials", m.MaterialBuffer);
+            renderShader.SetBuffer(1, "SensorAreas", m.SensorAreaBuffer);
         }
 
         if (m.RBDatas.Length != 0)
@@ -165,6 +166,8 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
         renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
+        renderShader.SetFloat("FluidSensorEdgeWidth", m.FluidSensorEdgeWidth);
+        renderShader.SetFloat("SensorAreaAnimationSpeed", m.SensorAreaAnimationSpeed);
         renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 
@@ -182,7 +185,7 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
         renderShader.SetInt("NumRigidBodies", m.RBDatas.Length);
-        renderShader.SetInt("RBVectorsNum", m.RBVectors.Length);
+        renderShader.SetInt("NumFluidSensors", m.SensorAreas.Length);
 
         renderShader.SetVector("GlobalBrightness", new Vector3(m.GlobalBrightness.x, m.GlobalBrightness.y, m.GlobalBrightness.z));
     }

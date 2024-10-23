@@ -194,6 +194,11 @@ namespace Resources
             return new Vector3(color.r, color.g, color.b);
         }
 
+        public static Color Float3ToColor(float3 a)
+        {
+            return new Color(a.x, a.y, a.z);
+        }
+        
         public static Vector3 Float2ToVector3(float2 a)
         {
             return new Vector3(a.x, a.y, 1);

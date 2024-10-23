@@ -6,6 +6,7 @@ using Resources;
 using UnityEngine.Rendering;
 using System;
 using UnityEditor;
+using Unity.VisualScripting;
 public static class ComputeHelper
 {
 
@@ -45,7 +46,7 @@ public static class ComputeHelper
 	public static ComputeBuffer CreateAppendBuffer<T>(int capacity) // T is the buffer struct
 	{
 		int stride = GetStride<T>();
-		ComputeBuffer buffer = new ComputeBuffer(capacity, stride, ComputeBufferType.Append);
+		ComputeBuffer buffer = new ComputeBuffer(Mathf.Max(capacity, 1), stride, ComputeBufferType.Append);
 		buffer.SetCounterValue(0);
 		return buffer;
 	}
@@ -53,13 +54,13 @@ public static class ComputeHelper
 	public static void CreateAppendBuffer<T>(ref ComputeBuffer buffer, int capacity) // T is the buffer struct
 	{
 		int stride = GetStride<T>();
-        buffer = new ComputeBuffer(capacity, stride, ComputeBufferType.Append);
+        buffer = new ComputeBuffer(Mathf.Max(capacity, 1), stride, ComputeBufferType.Append);
 		buffer.SetCounterValue(0);
 	}
     // Create structured buffer without ref, from data
 	public static ComputeBuffer CreateStructuredBuffer<T>(T[] data) // T is the buffer struct
 	{
-		var buffer = new ComputeBuffer(data.Length, GetStride<T>());
+		var buffer = new ComputeBuffer(Mathf.Max(data.Length, 1), GetStride<T>());
 		buffer.SetData(data);
 		return buffer;
 	}
@@ -67,20 +68,20 @@ public static class ComputeHelper
 	public static void CreateStructuredBuffer<T>(ref ComputeBuffer buffer, T[] data) // T is the buffer struct
 	{
         if (buffer != null) Release(buffer);
-		buffer = new ComputeBuffer(data.Length, GetStride<T>());
+		buffer = new ComputeBuffer(Mathf.Max(data.Length, 1), GetStride<T>());
 		buffer.SetData(data);
 	}
     // Create structured buffer without ref
 	public static ComputeBuffer CreateStructuredBuffer<T>(int count) // T is the buffer struct
 	{
-		var buffer = new ComputeBuffer(count, GetStride<T>());
+		var buffer = new ComputeBuffer(Mathf.Max(count, 1), GetStride<T>());
 		return buffer;
 	}
     // Create structured buffer with ref
 	public static void CreateStructuredBuffer<T>(ref ComputeBuffer buffer, int count) // T is the buffer struct
 	{
         if (buffer != null) Release(buffer);
-		buffer = new ComputeBuffer(count, GetStride<T>());
+		buffer = new ComputeBuffer(Mathf.Max(count, 1), GetStride<T>());
 	}
     // Create count buffer without ref
     public static ComputeBuffer CreateCountBuffer()

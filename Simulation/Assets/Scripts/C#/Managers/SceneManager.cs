@@ -122,7 +122,7 @@ public class SceneManager : MonoBehaviour
         return allPDatas.ToArray();
     }
 
-    public (RBData[], RBVector[]) CreateRigidBodies(float? rbCalcGridDensityInput = null)
+    public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridDensityInput = null)
     {
         float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
 
@@ -180,16 +180,19 @@ public class SceneManager : MonoBehaviour
             }
         }
 
+        // Initialize fluid sensors and get related data
+        List<SensorArea> sensorAreas = new();
         foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
         {
             sensors.Add(fluidSensor);
             fluidSensor.StartSensor();
+            sensorAreas.Add(fluidSensor.GetSensorAreaData());
         }
 
         // Assign sensors to sensorManager
         sensorManager.sensors = sensors;
 
-        return (allRBData.ToArray(), allRBVectors.ToArray());
+        return (allRBData.ToArray(), allRBVectors.ToArray(), sensorAreas.ToArray());
     }
 
     private Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)

@@ -1,9 +1,14 @@
+using System;
 using System.Collections.Generic;
+using Resources;
 using Unity.Mathematics;
 using UnityEngine;
 
 public abstract class FluidSensor : Sensor
 {
+    public Color lineColor;
+    public Color areaColor;
+    public float patternModulo;
     [Range(1, 20)] public int SampleDensity;
     public PositionType positionType;
     public Vector2 targetPosition;
@@ -12,22 +17,22 @@ public abstract class FluidSensor : Sensor
     private float sampleDensityCorrection;
     public abstract void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas);
 
-    int GetChunkKey(int x, int y) => x + y * main.BoundaryDims.x;
+    int GetChunkKey(int x, int y) => x + y * main.ChunksNum.x;
 
     private void InitMeasurementChunkKeys()
     {
         int2 chunksNum = main.ChunksNum;
         float maxInfluenceRadius = main.MaxInfluenceRadius;
 
-        int minX = Mathf.Max(Mathf.RoundToInt(measurementZone.min.x / maxInfluenceRadius), 0);
-        int minY = Mathf.Max(Mathf.RoundToInt(measurementZone.min.y / maxInfluenceRadius), 0);
-        int maxX = Mathf.Min(Mathf.RoundToInt(measurementZone.max.x / maxInfluenceRadius), chunksNum.x);
-        int maxY = Mathf.Min(Mathf.RoundToInt(measurementZone.max.y / maxInfluenceRadius), chunksNum.y);
+        int minX = Mathf.Max(Mathf.FloorToInt(measurementZone.min.x / maxInfluenceRadius), 0);
+        int minY = Mathf.Max(Mathf.FloorToInt(measurementZone.min.y / maxInfluenceRadius), 0);
+        int maxX = Mathf.Min(Mathf.CeilToInt(measurementZone.max.x / maxInfluenceRadius), chunksNum.x);
+        int maxY = Mathf.Min(Mathf.CeilToInt(measurementZone.max.y / maxInfluenceRadius), chunksNum.y);
         
         measurementChunkKeys = new();
-        for (int x = minX; x < maxX; x += SampleDensity)
+        for (int x = minX; x <= maxX; x += SampleDensity)
         {
-            for (int y = minY; y < maxY; y += SampleDensity)
+            for (int y = minY; y <= maxY; y += SampleDensity)
             {
                 measurementChunkKeys.Add(GetChunkKey(x, y));
             }
@@ -46,11 +51,23 @@ public abstract class FluidSensor : Sensor
         InitMeasurementChunkKeys();
     }
 
+    public SensorArea GetSensorAreaData()
+    {
+        return new SensorArea
+        {
+            min = measurementZone.min,
+            max = measurementZone.max,
+            patternMod = patternModulo,
+            lineColor = new float4(Func.ColorToFloat3(lineColor), lineColor.a),
+            colorTint = new float4(Func.ColorToFloat3(areaColor), areaColor.a)
+        };
+    }
+
     public override void UpdatePosition()
     {
         if (positionType == PositionType.Relative)
         {
-            Vector2 relativeTargetPosition = measurementZone.center + new Vector2(0, measurementZone.height * 0.5f) + targetPosition;
+            Vector2 relativeTargetPosition = measurementZone.center + targetPosition;
             sensorUIRect.localPosition = SimSpaceToCanvasSpace(relativeTargetPosition);
         }
         else sensorUIRect.localPosition = SimSpaceToCanvasSpace(targetPosition);
@@ -79,6 +96,7 @@ public abstract class FluidSensor : Sensor
     void AddRecordedFluidData(ref RecordedFluidData_Translated a, RecordedFluidData_Translated b)
     {
         a.totTemp += b.totTemp;
+        a.totThermalEnergy += b.totThermalEnergy;
         a.totPressure += b.totPressure;
         a.totVelComponents += b.totVelComponents;
         a.totVelAbs += b.totVelAbs;

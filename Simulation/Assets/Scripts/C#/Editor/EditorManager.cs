@@ -1,10 +1,15 @@
+using System;
+using System.Drawing.Drawing2D;
+using Resources;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 public class EditorManager : Editor
 {
-    private const float lineThickness = 0.5f;
-    private const float springLineThickness = 2.0f;
+    private const float sceneObjectLineThickness = 0.5f;
+    private const float sceneObjectSensorLineThickness = 0.5f;
+    private const float springsceneObjectLineThickness = 2.0f;
     private const float springAmplitude = 7.0f;
     private const int numSpringPoints = 15;
 
@@ -25,7 +30,7 @@ public class EditorManager : Editor
         return (startPoint, endPoint);
     }
 
-    static void DrawMeshWireframe(Vector2[] meshVertices, Color color, float lineThickness)
+    static void DrawMeshWireframe(Vector2[] meshVertices, Color color, float sceneObjectLineThickness)
     {
         int vertexCount = meshVertices.Length;
 
@@ -36,7 +41,7 @@ public class EditorManager : Editor
             Vector2 end = meshVertices[(i + 1) % vertexCount];
 
             Vector2 edgeDir = (end - start).normalized;
-            Vector2 perpDir = 0.5f * lineThickness * new Vector2(-edgeDir.y, edgeDir.x);
+            Vector2 perpDir = 0.5f * sceneObjectLineThickness * new Vector2(-edgeDir.y, edgeDir.x);
 
             Vector2 v1 = start + perpDir;
             Vector2 v2 = start - perpDir;
@@ -50,7 +55,7 @@ public class EditorManager : Editor
         }
     }
 
-    public static void DrawZigZagSpring(Vector2 startPoint, Vector2 endPoint, Color color, float lineThickness, float amplitude, int pointCount)
+    public static void DrawZigZagSpring(Vector2 startPoint, Vector2 endPoint, Color color, float sceneObjectLineThickness, float amplitude, int pointCount)
     {
         // Calculate the direction and distance between the points
         Vector2 direction = (endPoint - startPoint).normalized;
@@ -81,7 +86,7 @@ public class EditorManager : Editor
 
             // Calculate the quad (rectangle) between prevPoint and currentPoint
             Vector2 segmentDirection = (currentPoint - prevPoint).normalized;
-            Vector2 segmentPerp = new Vector2(-segmentDirection.y, segmentDirection.x) * (lineThickness * 0.5f);
+            Vector2 segmentPerp = new Vector2(-segmentDirection.y, segmentDirection.x) * (sceneObjectLineThickness * 0.5f);
 
             Vector3[] quadVertices = new Vector3[4];
             quadVertices[0] = prevPoint + segmentPerp;
@@ -143,7 +148,7 @@ public class EditorManager : Editor
 
         // Draw wiremesh
         Vector2[] meshVertices = rigidBody.MeshPoints.ToArray();
-        DrawMeshWireframe(meshVertices, rigidBody.LineColor, lineThickness);
+        DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
 
         // Draw spring
         if (rigidBody.RBInput.enableSpringLink && rigidBody.RBInput.linkedRigidBody != null)
@@ -162,7 +167,7 @@ public class EditorManager : Editor
             Color lerpColor = Color.Lerp(springBaseColor, springStressedColor, approxForce / 50000.0f);
 
             // Draw spring
-            DrawZigZagSpring(startPoint, endPoint, lerpColor, springLineThickness, springAmplitude, numSpringPoints);
+            DrawZigZagSpring(startPoint, endPoint, lerpColor, springsceneObjectLineThickness, springAmplitude, numSpringPoints);
 
             Gizmos.color = Color.red;
             float radius = 2.5f;
@@ -223,7 +228,7 @@ public class EditorManager : Editor
         foreach (Edge edge in fluid.Edges)
         {
             Vector2 edgeDir = (edge.end - edge.start).normalized;
-            Vector2 perpDir = 0.5f * lineThickness * new Vector2(-edgeDir.y, edgeDir.x);
+            Vector2 perpDir = 0.5f * sceneObjectLineThickness * new Vector2(-edgeDir.y, edgeDir.x);
 
             // Compute the four vertices of the quad
             Vector2 v1 = edge.start + perpDir;
@@ -236,5 +241,29 @@ public class EditorManager : Editor
             // Draw the quad
             Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
         }
+    }
+
+    // Draw fluid sensor objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidSensorObjects(FluidSensor fluidSensor, GizmoType gizmoType)
+    {
+        if (fluidSensor == null) return;
+
+        Vector2 min = fluidSensor.measurementZone.min;
+        Vector2 max = min + new Vector2(fluidSensor.measurementZone.width, fluidSensor.measurementZone.height);
+
+        if (min == max) return;
+
+        Vector2 v1 = min;
+        Vector2 v2 = new(min.x, max.y);
+        Vector2 v3 = new(max.x, min.y);
+        Vector2 v4 = max;
+
+        Vector2[] quadVertices_Vector2 = new Vector2[] { v1, v3, v4, v2 };
+        Vector3[] quadVertices_Vector3 = new Vector3[] { v1, v3, v4, v2 };
+
+        DrawMeshWireframe(quadVertices_Vector2, fluidSensor.lineColor, sceneObjectSensorLineThickness);
+        Handles.color = fluidSensor.areaColor;
+        Handles.DrawSolidRectangleWithOutline(quadVertices_Vector3, fluidSensor.areaColor, fluidSensor.areaColor);
     }
 }
