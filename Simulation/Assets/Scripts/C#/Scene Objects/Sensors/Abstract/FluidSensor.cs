@@ -9,6 +9,7 @@ public abstract class FluidSensor : Sensor
     public Vector2 targetPosition;
     public Rect measurementZone;
     private List<int> measurementChunkKeys;
+    private float sampleDensityCorrection;
     public abstract void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas);
 
     int GetChunkKey(int x, int y) => x + y * main.BoundaryDims.x;
@@ -31,7 +32,7 @@ public abstract class FluidSensor : Sensor
                 measurementChunkKeys.Add(GetChunkKey(x, y));
             }
         }
-        // Debug.Log(measurementChunkKeys.Count * Mathf.Pow(SampleDensity, 2));
+        sampleDensityCorrection = (maxX - minX) * (maxY - minY) / (float)measurementChunkKeys.Count;
     }
 
     private void OnValidate()
@@ -62,26 +63,26 @@ public abstract class FluidSensor : Sensor
             if (measurementZone.height == 0.0f && measurementZone.width == 0.0f) Debug.Log("Measurement zone has no width or height. It will not be updated. FluidSensor: " + this.name);
             else
             {
-                RecordedFluidData sumFluidDatas = new();
+                RecordedFluidData_Translated sumFluidDatas = new();
                 foreach (int chunkKey in measurementChunkKeys)
                 {
-                    RecordedFluidData fluidData = sensorManager.retrievedFluidDatas[chunkKey];
+                    // The velAbs calculation is a conservative estimate. The estimation accuracy becomes higher the fewer particles with differing velocities there are in each chunk
+                    RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
                     if (fluidData.numContributions > 0) AddRecordedFluidData(ref sumFluidDatas, fluidData);
                 }
-
-                RecordedFluidData_Translated translatedSumFluidDatas = new(sumFluidDatas, SampleDensity, main.FloatIntPrecisionP);
-
-                UpdateSensorContents(translatedSumFluidDatas);
+                
+                UpdateSensorContents(sumFluidDatas);
             }
         }
     }
 
-    void AddRecordedFluidData(ref RecordedFluidData a, RecordedFluidData b)
+    void AddRecordedFluidData(ref RecordedFluidData_Translated a, RecordedFluidData_Translated b)
     {
-        a.totTemp_Int += b.totTemp_Int;
-        a.totPressure_Int += b.totPressure_Int;
-        a.totVel_Int2 += b.totVel_Int2;
-        a.totMass_Int += b.totMass_Int;
+        a.totTemp += b.totTemp;
+        a.totPressure += b.totPressure;
+        a.totVelComponents += b.totVelComponents;
+        a.totVelAbs += b.totVelAbs;
+        a.totMass += b.totMass;
 
         a.numContributions += b.numContributions;
     }

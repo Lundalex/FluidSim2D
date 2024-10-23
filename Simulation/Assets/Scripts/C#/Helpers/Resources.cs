@@ -122,6 +122,11 @@ namespace Resources
             a = Log2(NextPow2(a));
         }
 
+        public static float Magnitude(float2 a)
+        {
+            return Mathf.Sqrt(a.x*a.x + a.y*a.y);
+        }
+
         public static float MaxFloat(params float[] inputArray)
         {
             float max = float.MinValue;
