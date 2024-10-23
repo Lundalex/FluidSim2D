@@ -13,15 +13,15 @@ public struct RecordedFluidData_Translated
 
     public int numContributions;
 
-    public RecordedFluidData_Translated(RecordedFluidData recordedFluidData, int sampleDensity)
+    public RecordedFluidData_Translated(RecordedFluidData recordedFluidData, int sampleDensity, float precision)
     {
         // Translate from stored integer values to floating point, and correct the results with respect to the sampleDensity
         float sampleDensityCorrection = Mathf.Pow(sampleDensity, 2);
         
-        this.totTemp = Func.IntToFloat(recordedFluidData.totTemp_Int) * sampleDensityCorrection;
-        this.totPressure = Func.IntToFloat(recordedFluidData.totPressure_Int) * sampleDensityCorrection;
-        this.totVel = Func.Int2ToFloat2(recordedFluidData.totVel_Int2) * sampleDensityCorrection;
-        this.totMass = Func.IntToFloat(recordedFluidData.totMass_Int) * sampleDensityCorrection;
+        this.totTemp = Func.IntToFloat(recordedFluidData.totTemp_Int, precision) * sampleDensityCorrection;
+        this.totPressure = Func.IntToFloat(recordedFluidData.totPressure_Int, precision) * sampleDensityCorrection;
+        this.totVel = Func.Int2ToFloat2(recordedFluidData.totVel_Int2, precision) * sampleDensityCorrection;
+        this.totMass = Func.IntToFloat(recordedFluidData.totMass_Int, precision) * sampleDensityCorrection;
         this.numContributions = Mathf.RoundToInt(recordedFluidData.numContributions * sampleDensityCorrection);
     }
 };

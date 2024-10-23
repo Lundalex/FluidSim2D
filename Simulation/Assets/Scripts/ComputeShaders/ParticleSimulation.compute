@@ -602,13 +602,13 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
     int2 chunk = GetChunk(lastChunkKey);
     int chunkKey = GetChunkKey(chunk);
 
-    int2 vel_Int2 = Float2AsInt2(pData.vel);
+    int2 vel_Int2 = Float2AsInt2(pData.vel, IntFloatPrecisionP);
 
     // Record data with InterlockedAdd to ensure there are no race conditions
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(pData.temperature));
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(pData.temperature, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure, IntFloatPrecisionP));
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.x, vel_Int2.x);
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.y, vel_Int2.y);
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(pType.mass));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(pType.mass, IntFloatPrecisionP));
     InterlockedAdd(RecordedFluidDatas[chunkKey].numContributions, 1);
 }

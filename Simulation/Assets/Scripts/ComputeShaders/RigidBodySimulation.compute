@@ -53,7 +53,7 @@ void UpdateRBVertices(uint3 id : SV_DispatchThreadID)
 
     RBVector rbVector = RBVectors[i];
 
-    float deltaRot = IntToFloat(RigidBodies[rbVector.parentIndex].rotVel_AsInt) * DeltaTime;
+    float deltaRot = IntToFloat(RigidBodies[rbVector.parentIndex].rotVel_AsInt, IntFloatPrecisionRB) * DeltaTime;
 
     RBVectors[i].pos = rotate(rbVector.pos, deltaRot);
 }
@@ -183,10 +183,10 @@ void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo r
     float2 rB = rbHitInfo.pointPos - rbB.pos;
 
     // Compute velocities at the point of collision, including rotational velocities
-    float2 rbARotVelAtCollisionPoint = crossZ(IntToFloat(rbA.rotVel_AsInt), rA);
-    float2 rbBRotVelAtCollisionPoint = crossZ(IntToFloat(rbB.rotVel_AsInt), rB);
-    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt2) + rbARotVelAtCollisionPoint;
-    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt2) + rbBRotVelAtCollisionPoint;
+    float2 rbARotVelAtCollisionPoint = crossZ(IntToFloat(rbA.rotVel_AsInt, IntFloatPrecisionRB), rA);
+    float2 rbBRotVelAtCollisionPoint = crossZ(IntToFloat(rbB.rotVel_AsInt, IntFloatPrecisionRB), rB);
+    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt2, IntFloatPrecisionRB) + rbARotVelAtCollisionPoint;
+    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt2, IntFloatPrecisionRB) + rbBRotVelAtCollisionPoint;
 
     // Relative velocity
     float2 relVel = rbBVel - rbAVel;
@@ -309,15 +309,15 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         if (collisionDetected)
         {
             // Update linear velocities
-            int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
-            int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
+            int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA, IntFloatPrecisionRB);
+            int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB, IntFloatPrecisionRB);
 
             AccumulateDeltaVel(rbAIndex, deltaVelA_Int2);
             AccumulateDeltaVel(rbBIndex, deltaVelB_Int2);
 
             // Update angular velocities
-            int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
-            int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
+            int deltaRotVelA_Int = FloatAsInt(deltaRotVelA, IntFloatPrecisionRB);
+            int deltaRotVelB_Int = FloatAsInt(deltaRotVelB, IntFloatPrecisionRB);
 
             AccumulateDeltaRotVel(rbAIndex, deltaRotVelA_Int);
             AccumulateDeltaRotVel(rbBIndex, deltaRotVelB_Int);
@@ -326,8 +326,8 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             float2 deltaPosA = rbA.pos - posRecA;
             float2 deltaPosB = rbB.pos - posRecB;
 
-            int2 deltaPosA_int2 = Float2AsInt2(deltaPosA);
-            int2 deltaPosB_int2 = Float2AsInt2(deltaPosB);
+            int2 deltaPosA_int2 = Float2AsInt2(deltaPosA, IntFloatPrecisionRB);
+            int2 deltaPosB_int2 = Float2AsInt2(deltaPosB, IntFloatPrecisionRB);
 
             AccumulateDeltaPos(rbAIndex, deltaPosA_int2);
             AccumulateDeltaPos(rbBIndex, deltaPosB_int2);
@@ -344,10 +344,10 @@ void AdjustRBDatas(uint3 id : SV_DispatchThreadID)
     RBAdjustment rbAdjustment = RBAdjustments[rbIndex];
     RBAdjustments[rbIndex] = InitRBAdjustment();
 
-    RigidBodies[rbIndex].pos += Int2ToFloat2(rbAdjustment.deltaPos_Int2);
+    RigidBodies[rbIndex].pos += Int2ToFloat2(rbAdjustment.deltaPos_Int2, IntFloatPrecisionRB);
     RigidBodies[rbIndex].vel_AsInt2 += rbAdjustment.deltaVel_Int2;
     RigidBodies[rbIndex].rotVel_AsInt += rbAdjustment.deltaRotVel_Int;
-    RigidBodies[rbIndex].recordedSpringForce = IntToFloat(rbAdjustment.recordedSpringForce_Int);
+    RigidBodies[rbIndex].recordedSpringForce = IntToFloat(rbAdjustment.recordedSpringForce_Int, IntFloatPrecisionRB);
 }
 
 void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out float deltaRotVel, out float2 deltaCenterVel)
@@ -365,8 +365,8 @@ void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out floa
 
     // Relative velocity between the particle and the rigid body
     float2 dstToCollisionPoint = collisionPoint - rb.pos;
-    float2 rotVelAtCollisionPoint = float2(-dstToCollisionPoint.y, dstToCollisionPoint.x) * IntToFloat(rb.rotVel_AsInt);
-    float2 rbVel = Int2ToFloat2(rb.vel_AsInt2) + rotVelAtCollisionPoint;
+    float2 rotVelAtCollisionPoint = float2(-dstToCollisionPoint.y, dstToCollisionPoint.x) * IntToFloat(rb.rotVel_AsInt, IntFloatPrecisionRB);
+    float2 rbVel = Int2ToFloat2(rb.vel_AsInt2, IntFloatPrecisionRB) + rotVelAtCollisionPoint;
     float2 relVel = pData.vel - rbVel;
 
     // Check if the particle is moving towards the rigid body
@@ -430,12 +430,12 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
 
                 if (deltaCenterVel.x != 0 || deltaCenterVel.y != 0)
                 {
-                    int2 deltaCenterVel_Int2 = Float2AsInt2(deltaCenterVel);
+                    int2 deltaCenterVel_Int2 = Float2AsInt2(deltaCenterVel, IntFloatPrecisionRB);
                     AccumulateDeltaVel(rbIndex, deltaCenterVel_Int2);
                 }
                 if (deltaRotVel != 0)
                 {
-                    int deltaRotVel_Int = FloatAsInt(deltaRotVel);
+                    int deltaRotVel_Int = FloatAsInt(deltaRotVel, IntFloatPrecisionRB);
                     AccumulateDeltaRotVel(rbIndex, deltaRotVel_Int);
                 }
             }
@@ -565,15 +565,15 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         float2 deltaPosB = correctionB;
 
         // Record the changes in RBAdjustments
-        int2 deltaPosA_Int2 = Float2AsInt2(deltaPosA);
-        int2 deltaPosB_Int2 = Float2AsInt2(deltaPosB);
+        int2 deltaPosA_Int2 = Float2AsInt2(deltaPosA, IntFloatPrecisionRB);
+        int2 deltaPosB_Int2 = Float2AsInt2(deltaPosB, IntFloatPrecisionRB);
 
         AccumulateDeltaPos(i, deltaPosA_Int2);
         AccumulateDeltaPos(rbA.linkedRBIndex, deltaPosB_Int2);
 
         // Compute velocities at the link points, including rotational velocities
-        float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2) + crossZ(IntToFloat(rbA.rotVel_AsInt), linkPosA);
-        float2 velAtLinkB = Int2ToFloat2(rbB.vel_AsInt2) + crossZ(IntToFloat(rbB.rotVel_AsInt), linkPosB);
+        float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2, IntFloatPrecisionRB) + crossZ(IntToFloat(rbA.rotVel_AsInt, IntFloatPrecisionRB), linkPosA);
+        float2 velAtLinkB = Int2ToFloat2(rbB.vel_AsInt2, IntFloatPrecisionRB) + crossZ(IntToFloat(rbB.rotVel_AsInt, IntFloatPrecisionRB), linkPosB);
 
         // Compute relative velocity
         float2 relVel = velAtLinkA - velAtLinkB;
@@ -623,8 +623,8 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         float springForceMagnitude = -stiffness * displacement;
 
         // Compute velocities at the link points, including rotational velocities
-        float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2) + crossZ(IntToFloat(rbA.rotVel_AsInt), linkPosA);
-        float2 velAtLinkB = Int2ToFloat2(rbB.vel_AsInt2) + crossZ(IntToFloat(rbB.rotVel_AsInt), linkPosB);
+        float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2, IntFloatPrecisionRB) + crossZ(IntToFloat(rbA.rotVel_AsInt, IntFloatPrecisionRB), linkPosA);
+        float2 velAtLinkB = Int2ToFloat2(rbB.vel_AsInt2, IntFloatPrecisionRB) + crossZ(IntToFloat(rbB.rotVel_AsInt, IntFloatPrecisionRB), linkPosB);
 
         // Compute relative velocity along the spring direction
         float2 relVel = velAtLinkA - velAtLinkB;
@@ -649,14 +649,14 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     }
 
     // Record the velocity and angular velocity changes in RBAdjustments
-    int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA);
-    int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB);
+    int2 deltaVelA_Int2 = Float2AsInt2(deltaVelA, IntFloatPrecisionRB);
+    int2 deltaVelB_Int2 = Float2AsInt2(deltaVelB, IntFloatPrecisionRB);
 
     AccumulateDeltaVel(i, deltaVelA_Int2);
     AccumulateDeltaVel(rbA.linkedRBIndex, deltaVelB_Int2);
 
-    int deltaRotVelA_Int = FloatAsInt(deltaRotVelA);
-    int deltaRotVelB_Int = FloatAsInt(deltaRotVelB);
+    int deltaRotVelA_Int = FloatAsInt(deltaRotVelA, IntFloatPrecisionRB);
+    int deltaRotVelB_Int = FloatAsInt(deltaRotVelB, IntFloatPrecisionRB);
 
     AccumulateDeltaRotVel(i, deltaRotVelA_Int);
     AccumulateDeltaRotVel(rbA.linkedRBIndex, deltaRotVelB_Int);
@@ -665,7 +665,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     {
         // Record the springForce exerted on the rigid bodies
         float absSpringForce = length(springForce);
-        int recordedSpringForce_Int = FloatAsInt(absSpringForce);
+        int recordedSpringForce_Int = FloatAsInt(absSpringForce, IntFloatPrecisionRB);
 
         AccumulateSpringForce(i, recordedSpringForce_Int);
     }
@@ -677,8 +677,8 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     float2 r = collisionPoint - rb.pos;
 
     // Compute the velocity at the collision point, including rotational velocity
-    float2 rbRotVelAtCollisionPoint = crossZ(IntToFloat(rb.rotVel_AsInt), r);
-    float2 rbVel = Int2ToFloat2(rb.vel_AsInt2) + rbRotVelAtCollisionPoint;
+    float2 rbRotVelAtCollisionPoint = crossZ(IntToFloat(rb.rotVel_AsInt, IntFloatPrecisionRB), r);
+    float2 rbVel = Int2ToFloat2(rb.vel_AsInt2, IntFloatPrecisionRB) + rbRotVelAtCollisionPoint;
 
     // Relative velocity (since the boundary is stationary, the relative velocity is just rbVel)
     float2 relVel = rbVel;
@@ -707,11 +707,11 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     float2 impulse = j * normal;
 
     // Update linear velocity
-    rb.vel_AsInt2 += Float2AsInt2(impulse * invMass);
+    rb.vel_AsInt2 += Float2AsInt2(impulse * invMass, IntFloatPrecisionRB);
 
     // Update angular velocity
     float deltaRotVel = cross2D(r, impulse) * invInertia;
-    rb.rotVel_AsInt += FloatAsInt(deltaRotVel);
+    rb.rotVel_AsInt += FloatAsInt(deltaRotVel, IntFloatPrecisionRB);
 
     // Positional correction to prevent sinking
     float penetrationDepth = -dot(collisionPoint - (rb.pos + r), normal);
@@ -731,7 +731,7 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     RigidBody rb = RigidBodies[i];
 
     // Update accumulated rotation
-    rb.totRot += IntToFloat(rb.rotVel_AsInt) * DeltaTime;
+    rb.totRot += IntToFloat(rb.rotVel_AsInt, IntFloatPrecisionRB) * DeltaTime;
 
     bool canMove = rb.mass > 0;
     if (canMove)
@@ -781,15 +781,15 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         }
 
         // Update position
-        rb.pos += Int2ToFloat2(rb.vel_AsInt2) * DeltaTime;
+        rb.pos += Int2ToFloat2(rb.vel_AsInt2, IntFloatPrecisionRB) * DeltaTime;
 
         // Forces
         float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
-        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime);
+        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, IntFloatPrecisionRB);
 
         // Damping
         float Damping = 0.1;
-        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2) * (1 - Damping * DeltaTime));
+        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2, IntFloatPrecisionRB) * (1 - Damping * DeltaTime), IntFloatPrecisionRB);
     }
 
     RigidBodies[i] = rb;

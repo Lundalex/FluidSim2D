@@ -14,7 +14,7 @@ public class SceneFluid : Polygon
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
-    public float particleTemperature = 20.0f;
+    public float particleTemperatureCelcius = 20.0f;
     public int pTypeIndex = 0;
     [Header("Preview Values")]
     [NonSerialized] public Vector2[] Points;
@@ -41,7 +41,7 @@ public class SceneFluid : Polygon
         PData[] pDatas = new PData[generatedPoints.Length];
         for (int i = 0; i < pDatas.Length; i++)
         {
-            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), Utils.CelsiusToKelvin(particleTemperature));
+            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), particleTemperatureCelcius);
         }
 
         return pDatas;

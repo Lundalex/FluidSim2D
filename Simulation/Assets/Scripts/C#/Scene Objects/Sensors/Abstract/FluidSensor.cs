@@ -69,7 +69,7 @@ public abstract class FluidSensor : Sensor
                     if (fluidData.numContributions > 0) AddRecordedFluidData(ref sumFluidDatas, fluidData);
                 }
 
-                RecordedFluidData_Translated translatedSumFluidDatas = new RecordedFluidData_Translated(sumFluidDatas, SampleDensity);
+                RecordedFluidData_Translated translatedSumFluidDatas = new(sumFluidDatas, SampleDensity, main.FloatIntPrecisionP);
 
                 UpdateSensorContents(translatedSumFluidDatas);
             }

@@ -13,6 +13,8 @@
             <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 1)" binding-path="rbSimShaderThreadSize1" />
             <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 2)" binding-path="rbSimShaderThreadSize2" />
             <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 3)" binding-path="rbSimShaderThreadSize3" />
+            <uie:PropertyField binding-path="FloatIntPrecisionRB" label="Float-Int Precision RB" tooltip="Precision used for float-to-integer storage solutions." />
+            <uie:PropertyField tooltip="Precision used for float-to-integer storage solutions." binding-path="FloatIntPrecisionP" label="Float-Int Precision P" />
         </ui:Foldout>
     </ui:Foldout>
     <ui:Foldout text="Fluid Simulation" name="FluidSimulation" value="true" style="-unity-font-style: bold; font-size: 12px; flex-direction: column; background-color: rgba(46, 46, 46, 0); background-position-x: center 0; background-position-y: center 0; -unity-background-scale-mode: stretch-to-fill; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); border-bottom-width: 2px; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
