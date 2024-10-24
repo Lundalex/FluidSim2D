@@ -2,8 +2,8 @@
 #pragma kernel UpdateRBVertices // 1
 #pragma kernel SimulateRB_RB // 2
 #pragma kernel SimulateRBSprings // 3
-#pragma kernel UpdateRigidBodies // 4
-#pragma kernel AdjustRBDatas // 5
+#pragma kernel AdjustRBDatas // 4
+#pragma kernel UpdateRigidBodies // 5
 
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
