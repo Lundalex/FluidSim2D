@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Resources;
+using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
 

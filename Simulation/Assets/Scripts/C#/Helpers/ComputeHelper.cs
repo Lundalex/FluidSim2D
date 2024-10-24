@@ -1,8 +1,8 @@
 using Unity.Mathematics;
 using UnityEngine;
 
-// Import utils from Resources.cs
-using Resources;
+// Import utils from Resources2.cs
+using Resources2;
 using UnityEngine.Rendering;
 using System;
 using UnityEditor;

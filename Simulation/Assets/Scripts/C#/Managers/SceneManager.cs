@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Resources;
+using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -127,6 +127,7 @@ public class SceneManager : MonoBehaviour
         float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
 
         if (sensorManager == null) sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
 
         GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
         SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
@@ -152,7 +153,7 @@ public class SceneManager : MonoBehaviour
 
             // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.RBInput;
-            int springLinkedRBIndex = Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
+            int springLinkedRBIndex = rbInput.linkedRigidBody == null ? -1 : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
             if (rigidBody.RBInput.enableSpringLink && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
             else if (i == springLinkedRBIndex)
             {

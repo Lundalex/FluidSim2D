@@ -274,9 +274,9 @@ MonoBehaviour:
     x: 1920
     y: 1280
   GlobalBrightness:
-    x: 1
-    y: 1
-    z: 1
+    x: 1.2
+    y: 1.2
+    z: 1.2
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
   SpringRenderRodLength: 3
@@ -1231,11 +1231,11 @@ MonoBehaviour:
     baseColor:
       x: 0
       y: 0
-      z: 0.6
+      z: 0.65
     sampleColorMultiplier:
       x: 0
       y: 0
-      z: 0.4
+      z: 1
     edgeColor:
       x: 1
       y: 1
@@ -2542,11 +2542,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: 10.603304
+      value: 9.155579
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: -4.385891
+      value: -3.9794126
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x

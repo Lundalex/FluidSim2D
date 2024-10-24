@@ -1,6 +1,6 @@
 using System;
 using System.Drawing.Drawing2D;
-using Resources;
+using Resources2;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;

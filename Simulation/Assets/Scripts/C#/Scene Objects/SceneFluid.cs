@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
-using Resources;
+using Resources2;
 using System.Linq;
 using UnityEditor;
 using Unity.Mathematics;
@@ -33,6 +33,7 @@ public class SceneFluid : Polygon
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         if (pTypeInput == null) pTypeInput = GameObject.FindGameObjectWithTag("PTypeInput").GetComponent<PTypeInput>();
 
+        SetPolygonData();
         Vector2[] generatedPoints = GeneratePoints(gridDensity);
 
         // Check if pTypeIndex is within range of all pTypes
