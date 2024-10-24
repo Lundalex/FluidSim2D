@@ -4,8 +4,8 @@ using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
-// Import utils from Resources.cs
-using Resources;
+// Import utils from Resources2.cs
+using Resources2;
 using System.Collections.Generic;
 public class Main : MonoBehaviour
 {

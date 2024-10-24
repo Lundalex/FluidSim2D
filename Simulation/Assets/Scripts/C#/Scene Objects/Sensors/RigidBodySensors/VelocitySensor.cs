@@ -1,4 +1,4 @@
-using Resources;
+using Resources2;
 using UnityEngine;
 public class VelocitySensor : RigidBodySensor
 {
