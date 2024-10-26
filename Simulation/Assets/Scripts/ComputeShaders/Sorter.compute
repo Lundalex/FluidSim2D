@@ -79,15 +79,12 @@ int GetNeighboorParticlesNum(int chunkKey)
 {
     int2 chunk = int2((uint)chunkKey % ChunksNum.x, (int)((uint)chunkKey / ChunksNum.x));
 
-    int2 curChunk;
     int neighboorParticlesNum = 0;
     for (int x = -1; x <= 1; x++)
     {
-        curChunk.x = chunk.x + x;
-
         for (int y = -1; y <= 1; y++)
         {
-            curChunk.y = chunk.y + y;
+            int2 curChunk = chunk + int2(x, y);
 
             if (ValidChunk(curChunk))
             {

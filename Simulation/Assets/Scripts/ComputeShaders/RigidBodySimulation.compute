@@ -239,6 +239,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     uint rbAIndex = id.x;
     RigidBody baseRB = RigidBodies[rbAIndex];
 
+    [unroll(MAX_RIGIDBODIES_NUM)]
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < MAX_RIGIDBODIES_NUM; rbBIndex++)
     {
         if (rbBIndex >= NumRigidBodies) return;
