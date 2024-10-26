@@ -97,7 +97,7 @@ float3 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
     float4 sample = gradientTex.Load(int3(x, 0, 0));
     float3 sampleCol = sample.rgb * sample.a;
 
-    return sampleCol;
+    return sampleCol * GlobalBrightness;
 }
 
 float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
@@ -632,10 +632,11 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float2 pixelPos = GetPixelPos(id.xy);
 
     bool springFound = false;
-    float2 posNorm;
-    float springForce;
-    int matIndex;
+    float2 posNorm = 0;
+    float springForce = 0;
+    int matIndex = 0;
     int highestRenderPriority = -1;
+    [unroll(MAX_RIGIDBODIES_NUM)]
     for (uint rbIndex = 0; rbIndex < MAX_RIGIDBODIES_NUM; rbIndex++)
     {
         if (rbIndex >= NumRigidBodies) break;
