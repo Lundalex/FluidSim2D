@@ -636,10 +636,9 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float springForce;
     int matIndex;
     int highestRenderPriority = -1;
-    [unroll(MAX_RIGIDBODIES_NUM)]6
     for (uint rbIndex = 0; rbIndex < MAX_RIGIDBODIES_NUM; rbIndex++)
     {
-        if (rbIndex >= NumRigidBodies) return;
+        if (rbIndex >= NumRigidBodies) break;
 
         RigidBody rbA = RigidBodies[rbIndex];
         float stiffness = rbA.springStiffness;
