@@ -82,6 +82,7 @@ public class ShaderHelper : MonoBehaviour
 
         renderShader.SetTexture(1, "Result", m.renderTexture);
         renderShader.SetTexture(1, "Caustics", m.causticsTexture);
+        renderShader.SetTexture(1, "VelocityGradient", m.VelocityGradientTexture);
         renderShader.SetTexture(1, "Background", m.backgroundTexture);
         renderShader.SetTexture(1, "Atlas", m.AtlasTexture);
 
@@ -164,6 +165,7 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetFloat("FluidSensorEdgeWidth", m.FluidSensorEdgeWidth);
         renderShader.SetFloat("SensorAreaAnimationSpeed", m.SensorAreaAnimationSpeed);
+        renderShader.SetFloat("InvVelocityGradientMaxValue", 1 / m.VelocityGradientMaxValue);
         renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 

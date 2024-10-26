@@ -91,6 +91,9 @@ public class Main : MonoBehaviour
     public float MetaballsThreshold = 1.0f;
     public float MetaballsEdgeDensityWidth = 0.3f;
     public float FluidEdgeWidth = 1.0f;
+    public Gradient VelocityGradient;
+    public int VelocityGradientResolution;
+    public float VelocityGradientMaxValue;
     // Rigid Bodies
     public float RBEdgeWidth = 0.5f;
     // Sensor Areas
@@ -158,6 +161,7 @@ public class Main : MonoBehaviour
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
     [NonSerialized] public Texture2D AtlasTexture;
+    [NonSerialized] public Texture2D VelocityGradientTexture;
 
     // Particle data
     private PData[] PDatas;
@@ -195,6 +199,7 @@ public class Main : MonoBehaviour
 
         (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
+        TextureHelper.TextureFromGradient(ref VelocityGradientTexture, VelocityGradientResolution, VelocityGradient);
 
         SetConstants();
 

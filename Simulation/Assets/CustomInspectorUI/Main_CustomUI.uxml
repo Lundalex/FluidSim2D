@@ -78,6 +78,11 @@
             <uie:PropertyField binding-path="MetaballsThreshold" label="Metaballs Threshold" />
             <uie:PropertyField binding-path="MetaballsEdgeDensityWidth" label="Metaballs Edge Width" tooltip="Metaballs Edge Density Width" />
             <uie:PropertyField binding-path="FluidEdgeWidth" label="Edge Width" />
+            <ui:Foldout text="VelocityGradient" name="VelocityGradient">
+                <uie:PropertyField binding-path="VelocityGradient" label="Gradient" tooltip="The gradient used for particle velocity tinting." />
+                <uie:PropertyField binding-path="VelocityGradientResolution" label="Resolution" tooltip="The resolution (width) of the generated gradient texture." />
+                <uie:PropertyField binding-path="VelocityGradientMaxValue" label="MaxValue" tooltip="The maximum (velocity) value used to normalize the particle velocities when sampling from the gradient texture." />
+            </ui:Foldout>
         </ui:Foldout>
         <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false" style="-unity-font-style: bold;">
             <uie:PropertyField binding-path="RBEdgeWidth" label="Edge Width" />

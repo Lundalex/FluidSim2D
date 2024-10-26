@@ -23,7 +23,7 @@ const float FluidEdgeWidth;
 const float RBEdgeWidth;
 const float FluidSensorEdgeWidth;
 const float SensorAreaAnimationSpeed;
-const uint2 Resolution;
+const float InvVelocityGradientMaxValue;
 const float BackgroundUpScaleFactor;
 const float3 BackgroundBrightness;
 
@@ -34,7 +34,8 @@ const float SpringRenderHalfMatWidth;
 const float SpringRenderRodLength;
 const float TaperThresoldNormalised;
 
-const int2 BoundsDims;
+const uint2 Resolution;
+const uint2 BoundsDims;
 const float InvMaxInfluenceRadius;
 const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
@@ -53,6 +54,7 @@ RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
 
 Texture2D<unorm float4> Caustics;
+Texture2D<unorm float4> VelocityGradient;
 Texture2D<unorm float4> UITexture;
 Texture2D<unorm float4> Background;
 Texture2D<unorm float4> Atlas;
@@ -70,12 +72,32 @@ StructuredBuffer<SensorArea> SensorAreas;
 
 StructuredBuffer<Mat> Materials;
 
+float2 GetTexDims(Texture2D<unorm float4> tex)
+{
+    float t;
+    float2 texDims;
+    tex.GetDimensions(0, texDims.x, texDims.y, t);
+
+    return texDims;
+}
+
 float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
 {
     uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
     return sampleCol * GlobalBrightness;
+}
+
+float3 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
+{
+    int gradientWidth = GetTexDims(gradientTex).x;
+    uint x = (int)(u * gradientWidth);
+    x = clamp(x, 0, gradientWidth-1);
+    float4 sample = gradientTex.Load(int3(x, 0, 0));
+    float3 sampleCol = sample.rgb * sample.a;
+
+    return sampleCol;
 }
 
 float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
@@ -195,15 +217,6 @@ float MetaballsDensity(float dstSqr, float invRadius)
 {
     float dstR = sqrt(dstSqr) * invRadius;
     return (1 - dstR);
-}
-
-float2 GetTexDims(Texture2D<unorm float4> tex)
-{
-    float t;
-    float2 texDims;
-    tex.GetDimensions(0, texDims.x, texDims.y, t);
-
-    return texDims;
 }
 
 float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
@@ -406,7 +419,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             
             #if DISPLAY_FLUID_VELOCITIES
                 float avgVel = totVelocities / numParticles;
-                result.r += avgVel * 0.05;
+                result += SampleGradient(avgVel * InvVelocityGradientMaxValue, VelocityGradient);
             #endif
         }
 
@@ -424,10 +437,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             float3 background = BlendWithBackground(0, 0, id.xy);
             result = sensorAreaTint.rgb * sensorAreaTint.a + background * (1.0 - sensorAreaTint.a);
         }
-        else if (particleFound)
-        {
-            // Do nothing
-        }
+        else if (particleFound) { } // Do nothing
         else
         {
             // Set result to background color color
