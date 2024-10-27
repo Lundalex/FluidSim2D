@@ -119,5 +119,5 @@ AssetOrigin:
   productId: 201717
   packageName: Modern UI Pack
   packageVersion: 5.5.25
-  assetPath: Assets/Modern UI Pack/Editor/Icons/SettingsActive.png
+  assetPath: Assets/Imports/Packages/Modern UI Pack/Editor/Icons/SettingsActive.png
   uploadId: 698908

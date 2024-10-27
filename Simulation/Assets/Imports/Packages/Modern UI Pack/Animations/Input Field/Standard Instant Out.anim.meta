@@ -13,5 +13,6 @@ AssetOrigin:
   productId: 201717
   packageName: Modern UI Pack
   packageVersion: 5.5.25
-  assetPath: Assets/Modern UI Pack/Animations/Input Field/Standard Instant Out.anim
+  assetPath: Assets/Imports/Packages/Modern UI Pack/Animations/Input Field/Standard
+    Instant Out.anim
   uploadId: 698908

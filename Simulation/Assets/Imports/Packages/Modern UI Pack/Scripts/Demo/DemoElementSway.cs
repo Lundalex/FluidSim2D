@@ -11,7 +11,7 @@ namespace Michsky.MUIP
     public class DemoElementSway : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [Header("Resources")]
-        [SerializeField] private DemoElementSwayParent swayParent;
+        [SerializeField] private CustomTwinButtonToggleParent swayParent;
         [SerializeField] private Canvas mainCanvas;
         [SerializeField] private RectTransform swayObject;
         [SerializeField] private CanvasGroup normalCG;
@@ -36,8 +36,8 @@ namespace Michsky.MUIP
         {
             if (swayParent == null)
             {
-                var tempSway = transform.parent.GetComponent<DemoElementSwayParent>();
-                if (tempSway == null) { transform.parent.gameObject.AddComponent<DemoElementSwayParent>(); }
+                var tempSway = transform.parent.GetComponent<CustomTwinButtonToggleParent>();
+                if (tempSway == null) { transform.parent.gameObject.AddComponent<CustomTwinButtonToggleParent>(); }
                 swayParent = tempSway;
             }
 
@@ -90,7 +90,7 @@ namespace Michsky.MUIP
             StopCoroutine("HighlightHelper");
             StopCoroutine("ActiveHelper");
 
-            StartCoroutine("DissolveHelper");
+            if (this.gameObject.activeInHierarchy) StartCoroutine("DissolveHelper");
         }
 
         public void Highlight()
@@ -102,7 +102,7 @@ namespace Michsky.MUIP
             StopCoroutine("HighlightHelper");
             StopCoroutine("ActiveHelper");
 
-            StartCoroutine("HighlightHelper");
+            if (this.gameObject.activeInHierarchy) StartCoroutine("HighlightHelper");
         }
 
         public void Active()
