@@ -9,7 +9,7 @@ namespace Michsky.MUIP
     {
         [Header("Settings")]
         [SerializeField] private UIManager UIManagerAsset;
-        public bool overrideColors = false;
+        public bool overrideColors = true;
         public bool overrideFonts = false;
 
         [Header("Resources")]

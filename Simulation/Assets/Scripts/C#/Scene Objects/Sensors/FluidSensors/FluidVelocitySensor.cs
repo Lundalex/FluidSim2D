@@ -10,22 +10,24 @@ public class FluidVelocitySensor : FluidSensor
         {
             case VelocityType.Absolute_Destructive:
                 float vel0 = Func.Magnitude(sumFluidDatas.totVelComponents) / sumFluidDatas.numContributions;
-                sensorText.text = FloatToStr(vel0, numDecimals) + " l.e/s";
+                sensorUI.SetMeasurement(vel0, numDecimals);
+                sensorUI.SetUnit("l.e/s");
                 break;
 
             case VelocityType.Absolute_Summative:
                 float vel1 = sumFluidDatas.totVelAbs / sumFluidDatas.numContributions;
-                sensorText.text = FloatToStr(vel1, numDecimals) + " l.e/s";
-                break;
-
-            case VelocityType.ComponentWise:
-                Vector2 vel2 = sumFluidDatas.totVelComponents / sumFluidDatas.numContributions;
-                sensorText.text = FloatToStr(vel2, numDecimals) + " l.e/s";
+                sensorUI.SetMeasurement(vel1, numDecimals);
+                sensorUI.SetUnit("l.e/s");
                 break;
             
             default:
             Debug.LogWarning("Unknown VelocityType. FluidVelocitySensor: " + this.name);
             break;
         }
+    }
+
+    public override void InitSensorTitle()
+    {
+        sensorUI.SetTitle("Velocity");
     }
 }

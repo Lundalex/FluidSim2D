@@ -1,15 +1,16 @@
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UI;
 using System.Globalization;
 using System;
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
     public int numDecimals;
+    public Color primaryColor;
 
     [Header("References")]
     public GameObject sensorUIPrefab;
+    public Canvas mainCanvas;
 
     // Private references
     [NonSerialized] public Transform sensorContainer;
@@ -18,9 +19,9 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public Vector2 canvasResolution;
 
     // Display
-    [NonSerialized] public GameObject sensorUI;
-    [NonSerialized] public Text sensorText;
-    [NonSerialized] public RectTransform sensorUIRect;
+    [NonSerialized] public SensorUI sensorUI;
+
+    // Script
     [NonSerialized] public bool programStarted = false;
 
     public void StartSensor()
@@ -42,25 +43,26 @@ public abstract class Sensor : MonoBehaviour
 
     private void InitSensorUI()
     {
-        sensorUI = Instantiate(sensorUIPrefab, sensorContainer);
-        sensorUI.name = "UI - " + this.name;
-
-        sensorUIRect = sensorUI.GetComponent<RectTransform>();
-
-        sensorText = sensorUI.transform.Find("Label").GetComponent<Text>();
+        GameObject sensorUIGameObject = Instantiate(sensorUIPrefab, sensorContainer);
+        sensorUI = sensorUIGameObject.GetComponent<SensorUI>();
+        sensorUI.swayElementA.swayParent = sensorUI.swayParent;
+        sensorUI.swayElementB.swayParent = sensorUI.swayParent;
+        sensorUI.swayElementA.mainCanvas = mainCanvas;
+        sensorUI.swayElementB.mainCanvas = mainCanvas;
+        sensorUI.SetPrimaryColor(primaryColor);
+        InitSensorTitle();
+        sensorUIGameObject.name = "UI - " + this.name;
     }
 
     public abstract void InitSensor();
     public abstract void UpdatePosition();
     public abstract void UpdateSensor();
+    public abstract void InitSensorTitle();
 
     void Update()
     {
         if (programStarted) UpdatePosition();
     }
-
-    public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
-    public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
 
     public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords) => (simCoords / new Vector2(main.BoundaryDims.x, main.BoundaryDims.y) - new Vector2(0.5f, 0.5f)) * canvasResolution;
 }

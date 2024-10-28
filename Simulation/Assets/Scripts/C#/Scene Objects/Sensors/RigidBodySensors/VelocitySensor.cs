@@ -6,6 +6,12 @@ public class VelocitySensor : RigidBodySensor
     {
         RBData rbData = rBDatas[linkedRBIndex];
         Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
-        sensorText.text = FloatToStr(vel.magnitude, numDecimals) + "l.e/s";
+        sensorUI.SetMeasurement(vel.magnitude, numDecimals);
+        sensorUI.SetUnit("l.e/s");
+    }
+
+    public override void InitSensorTitle()
+    {
+        sensorUI.SetTitle("Velocity");
     }
 }

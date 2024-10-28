@@ -11,8 +11,8 @@ namespace Michsky.MUIP
     public class DemoElementSway : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [Header("Resources")]
-        [SerializeField] private CustomTwinButtonToggleParent swayParent;
-        [SerializeField] private Canvas mainCanvas;
+        [SerializeField] public CustomTwinButtonToggleParent swayParent;
+        [SerializeField] public Canvas mainCanvas;
         [SerializeField] private RectTransform swayObject;
         [SerializeField] private CanvasGroup normalCG;
         [SerializeField] private CanvasGroup highlightedCG;

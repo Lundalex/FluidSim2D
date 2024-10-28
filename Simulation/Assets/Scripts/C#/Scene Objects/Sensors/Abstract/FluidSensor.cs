@@ -16,6 +16,7 @@ public abstract class FluidSensor : Sensor
     private List<int> measurementChunkKeys;
     private float sampleDensityCorrection;
     public abstract void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas);
+    public abstract override void InitSensorTitle();
 
     int GetChunkKey(int x, int y) => x + y * main.ChunksNum.x;
 
@@ -68,14 +69,14 @@ public abstract class FluidSensor : Sensor
         if (positionType == PositionType.Relative)
         {
             Vector2 relativeTargetPosition = measurementZone.center + targetPosition;
-            sensorUIRect.localPosition = SimSpaceToCanvasSpace(relativeTargetPosition);
+            sensorUI.SetPosition(SimSpaceToCanvasSpace(relativeTargetPosition));
         }
-        else sensorUIRect.localPosition = SimSpaceToCanvasSpace(targetPosition);
+        else sensorUI.SetPosition(SimSpaceToCanvasSpace(targetPosition));
     }
 
     public override void UpdateSensor()
     {
-        if (sensorText != null)
+        if (sensorUI != null)
         {
             if (measurementZone.height == 0.0f && measurementZone.width == 0.0f) Debug.Log("Measurement zone has no width or height. It will not be updated. FluidSensor: " + this.name);
             else

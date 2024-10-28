@@ -10,10 +10,11 @@ public abstract class RigidBodySensor : Sensor
     [NonSerialized] public Vector2 targetPosition;
     [NonSerialized] public bool firstDataRecieved = false;
     public abstract void UpdateSensorContents(RBData[] rBDatas, int linkedRBIndex);
+    public abstract override void InitSensorTitle();
 
     public override void InitSensor()
     {
-        sensorUIRect.localPosition = SimSpaceToCanvasSpace(new(-10000.0f, 0.0f));
+        sensorUI.SetPosition(SimSpaceToCanvasSpace(new(-10000.0f, 0.0f)));
     }
 
     public override void UpdatePosition()
@@ -23,13 +24,13 @@ public abstract class RigidBodySensor : Sensor
             Vector2 canvasTargetPosition = SimSpaceToCanvasSpace(targetPosition);
             
             // Interpolate the current position
-            sensorUIRect.localPosition = doInterpolation ? Vector2.Lerp(sensorUIRect.localPosition, canvasTargetPosition, Time.deltaTime * moveSpeed) : canvasTargetPosition;
+            sensorUI.SetPosition(doInterpolation ? Vector2.Lerp(sensorUI.rectTransform.localPosition, canvasTargetPosition, Time.deltaTime * moveSpeed) : canvasTargetPosition);
         }
     }
 
     public override void UpdateSensor()
     {
-        if (sensorText != null)
+        if (sensorUI != null)
         {
             if (linkedRBIndex == -1) Debug.LogWarning("Sensor not linked to any rigid body; It will not be updated. RigidBodySensor: " + this.name);
             else
@@ -39,7 +40,7 @@ public abstract class RigidBodySensor : Sensor
                 targetPosition = (Vector2)rbData.pos + offset;
 
                 // Init sensor UI position
-                if (!firstDataRecieved) sensorUIRect.localPosition = SimSpaceToCanvasSpace(targetPosition);
+                if (!firstDataRecieved) sensorUI.SetPosition(SimSpaceToCanvasSpace(targetPosition));
                 firstDataRecieved = true;
 
                 UpdateSensorContents(retrievedRBDatas, linkedRBIndex);

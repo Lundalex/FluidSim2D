@@ -25,6 +25,12 @@ public class FluidEnergySensor : FluidSensor
             energy /= sumFluidDatas.numContributions;
         }
 
-        sensorText.text = FloatToStr(energy, numDecimals) + " e.u";
+        sensorUI.SetMeasurement(energy, numDecimals);
+        sensorUI.SetUnit("e.u");
+    }
+
+    public override void InitSensorTitle()
+    {
+        sensorUI.SetTitle("Energy");
     }
 }

@@ -9,8 +9,13 @@ public class Polygon : MonoBehaviour
     public Color BodyColor = Color.white;
     [NonSerialized] public List<Edge> Edges = new();
     [NonSerialized] public List<Vector2> MeshPoints = new();
-
-    protected virtual void Awake() => SetPolygonData();
+    [NonSerialized] public bool ProgramStarted = false;
+    
+    protected virtual void Awake()
+    {
+        SetPolygonData();
+        ProgramStarted = true;   
+    }
 
     public void SetPolygonData(Vector2? offsetInput = null)
     {

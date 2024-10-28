@@ -89,15 +89,14 @@ float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm flo
     return sampleCol * GlobalBrightness;
 }
 
-float3 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
+float4 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
 {
     int gradientWidth = GetTexDims(gradientTex).x;
     uint x = (int)(u * gradientWidth);
     x = clamp(x, 0, gradientWidth-1);
     float4 sample = gradientTex.Load(int3(x, 0, 0));
-    float3 sampleCol = sample.rgb * sample.a;
 
-    return sampleCol * GlobalBrightness;
+    return float4(sample.rgb * GlobalBrightness, sample.a);
 }
 
 float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
@@ -419,7 +418,8 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             
             #if DISPLAY_FLUID_VELOCITIES
                 float avgVel = totVelocities / numParticles;
-                result += SampleGradient(avgVel * InvVelocityGradientMaxValue, VelocityGradient);
+                float4 gradientCol = SampleGradient(avgVel * InvVelocityGradientMaxValue, VelocityGradient);
+                result = lerp(result, gradientCol.rgb, gradientCol.a);
             #endif
         }
 
