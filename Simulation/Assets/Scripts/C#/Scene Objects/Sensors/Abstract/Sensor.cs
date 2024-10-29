@@ -1,6 +1,4 @@
-using Unity.Mathematics;
 using UnityEngine;
-using System.Globalization;
 using System;
 public abstract class Sensor : MonoBehaviour
 {
@@ -9,6 +7,7 @@ public abstract class Sensor : MonoBehaviour
     public Color primaryColor;
 
     [Header("References")]
+    public ProgramManager programManager;
     public GameObject sensorUIPrefab;
     public Canvas mainCanvas;
 
@@ -21,18 +20,16 @@ public abstract class Sensor : MonoBehaviour
     // Display
     [NonSerialized] public SensorUI sensorUI;
 
-    // Script
-    [NonSerialized] public bool programStarted = false;
-
     public void StartSensor()
     {
         SetReferences();
         InitSensorUI();
         InitSensor();
-        programStarted = true;
+
+        programManager.AddSensor(ref sensorUI, this);
     }
 
-    private void SetReferences()
+    public void SetReferences()
     {
         sensorContainer = GameObject.FindGameObjectWithTag("SensorUIContainer").GetComponent<Transform>();
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
@@ -59,10 +56,7 @@ public abstract class Sensor : MonoBehaviour
     public abstract void UpdateSensor();
     public abstract void InitSensorTitle();
 
-    void Update()
-    {
-        if (programStarted) UpdatePosition();
-    }
+    public void UpdateScript() => UpdatePosition();
 
     public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords) => (simCoords / new Vector2(main.BoundaryDims.x, main.BoundaryDims.y) - new Vector2(0.5f, 0.5f)) * canvasResolution;
 }

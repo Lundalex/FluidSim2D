@@ -22,6 +22,7 @@ public abstract class FluidSensor : Sensor
 
     private void InitMeasurementChunkKeys()
     {
+        if (main == null) SetReferences();
         int2 chunksNum = main.ChunksNum;
         float maxInfluenceRadius = main.MaxInfluenceRadius;
 
@@ -43,7 +44,7 @@ public abstract class FluidSensor : Sensor
 
     private void OnValidate()
     {
-        if (programStarted) InitMeasurementChunkKeys();
+        if (programManager != null) if (programManager.programStarted) InitMeasurementChunkKeys();
     }
 
     public override void InitSensor()

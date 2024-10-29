@@ -46,6 +46,7 @@ const uint NumRigidBodies;
 const uint NumFluidSensors;
 
 const float3 GlobalBrightness;
+const float GlobalBrightnessFactor;
 
 // Per-timestep-set constants
 const float RealTimeElapsed;
@@ -111,7 +112,7 @@ float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
 
 void SetResultColor(uint2 id, float3 color)
 {
-    Result[id] = float4(color, 1.0);
+    Result[id] = float4(color * GlobalBrightnessFactor, 1.0);
 }
 
 bool ValidChunk(int2 chunk)
@@ -471,7 +472,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         #if DRAW_RB_CENTROIDS
             if (dstSqr < CENTROID_RADIUS_SQR)
             {
-                Result[id.xy] = COL_RED;
+                Result[id.xy] = COL_RED * GlobalBrightnessFactor;
                 return;
             }
         #endif

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using System.Globalization;
 using Unity.Mathematics;
 using Michsky.MUIP;
+using System;
 
 public class SensorUI : MonoBehaviour
 {
@@ -16,6 +17,8 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public DemoElementSway swayElementA;
     [SerializeField] public DemoElementSway swayElementB;
     [SerializeField] public CustomTwinButtonToggleParent swayParent;
+    [SerializeField] public ProgramManager programManager;
+    [NonSerialized] public int sensorIndex;
 
     public void SetMeasurement(float val, int numDecimals)
     {
@@ -68,6 +71,9 @@ public class SensorUI : MonoBehaviour
     {
         SetTitle("Title");
     }
+
+    public void SetSettingsViewAsEnabled() => programManager.SetSensorSettingsViewStatus(sensorIndex, true);
+    public void SetSettingsViewAsDisabled() => programManager.SetSensorSettingsViewStatus(sensorIndex, false);
 
     public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);

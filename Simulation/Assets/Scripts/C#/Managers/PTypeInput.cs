@@ -3,14 +3,10 @@ using UnityEngine;
 
 public class PTypeInput : MonoBehaviour
 {
+    public ProgramManager programManager;
     public PTypeState[] particleTypeStates;
-    private Main m;
 
-    private void OnValidate()
-    {
-        if (m == null) m = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
-        m.OnValidate();
-    }
+    public void OnValidate() => programManager.doOnSettingsChanged = true;
     
     public PType[] GetParticleTypes()
     {

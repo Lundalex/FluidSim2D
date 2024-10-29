@@ -80,6 +80,7 @@ public class Main : MonoBehaviour
     [Header("Render Display")]
     public int2 Resolution = new(1920, 1280);
     public float3 GlobalBrightness;
+    public float SettingsViewDarkTintPercent;
     // Rigid Body Springs
     public float SpringRenderWidth;
     public float SpringRenderMatWidth;
@@ -103,6 +104,7 @@ public class Main : MonoBehaviour
     public Texture2D backgroundTexture;
     public float3 BackgroundBrightness;
     public float BackgroundUpScaleFactor;
+    public float GlobalBrightnessChangeSpeed;
 
     [Header("References")]
     // Textures
@@ -118,6 +120,8 @@ public class Main : MonoBehaviour
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
     public ComputeShader sortShader;
+    // Scriptable Objects
+    public ProgramManager programManager;
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -179,13 +183,11 @@ public class Main : MonoBehaviour
     // Other
     private float DeltaTime;
     private const int CalcStickyRequestsFrequency = 3;
-    private bool ProgramStarted = false;
     private int FrameCount = 0;
     private bool ProgramPaused = false;
     private bool FrameStep = false;
-    public bool DoUpdateShaderData = false;
 
-    void Awake()
+    public void ScriptStart()
     {
         SceneSetup();
 
@@ -218,13 +220,10 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
         Debug.Log("Simulation started with " + ParticlesNum + " particles");
-        ProgramStarted = true;
     }
 
-    void Update()
+    public void ScriptUpdate()
     {
-        if (DoUpdateShaderData) UpdateShaderData();
-
         PauseControls();
 
         bool simulateThisFrame = false;
@@ -269,17 +268,14 @@ public class Main : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
+    public void OnValidate() => programManager.doOnSettingsChanged = true;
+
+    public void OnSettingsChanged() => UpdateShaderData();
+
     private void UpdateShaderData()
     {
         SetConstants();
         UpdateSettings();
-
-        DoUpdateShaderData = false;
-    }
-
-    public void OnValidate()
-    {
-        if (ProgramStarted) DoUpdateShaderData = true;
     }
 
     public void UpdateSettings()
@@ -304,8 +300,8 @@ public class Main : MonoBehaviour
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        pSimShader.SetBool("LMousePressed", mousePressed.x);
-        pSimShader.SetBool("RMousePressed", mousePressed.y);
+        pSimShader.SetBool("LMousePressed", mousePressed.x && !programManager.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("RMousePressed", mousePressed.y && !programManager.isAnySensorSettingsViewActive);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         rbSimShader.SetBool("RMousePressed", mousePressed.x);
@@ -351,7 +347,7 @@ public class Main : MonoBehaviour
     {
         float deltaTime = TimeStep / SubTimeStepsPerFrame;
         if (TimeStepType == TimeStepType.Dynamic) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
-        return deltaTime;
+        return deltaTime * programManager.timeScale;
     }
 
     void SetConstants()
@@ -537,6 +533,8 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
     
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
+        renderShader.SetFloat("GlobalBrightnessFactor", programManager.globalBrightnessFactor);
+
         RunRenderShader();
 
         Graphics.Blit(renderTexture, dest);

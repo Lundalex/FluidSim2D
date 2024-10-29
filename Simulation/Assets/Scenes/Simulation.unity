@@ -277,6 +277,7 @@ MonoBehaviour:
     x: 0.4
     y: 0.4
     z: 0.4
+  SettingsViewDarkTintPercent: 0.8
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
   SpringRenderRodLength: 3
@@ -327,6 +328,7 @@ MonoBehaviour:
     y: 2
     z: 2
   BackgroundUpScaleFactor: 1
+  GlobalBrightnessChangeSpeed: 10
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
   causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   materialInput: {fileID: 1333254612}
@@ -337,7 +339,7 @@ MonoBehaviour:
   pSimShader: {fileID: 7200000, guid: 1159aacbba0e56246a49c59505ceac6b, type: 3}
   rbSimShader: {fileID: 7200000, guid: 262942b13b71cb34685c0e9873f5a06c, type: 3}
   sortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
-  DoUpdateShaderData: 0
+  programManager: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
 --- !u!33 &486542
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1231,12 +1233,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1251,7 +1253,7 @@ Canvas:
   m_GameObject: {fileID: 1093615693}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 441367189}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -1332,6 +1334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6219053cb0e554d1fba2890751e08a65, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  programManager: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
   materialInputs:
   - colorTexture: {fileID: 0}
     colorTextureUpScaleFactor: 3
@@ -1387,7 +1390,7 @@ Transform:
   m_GameObject: {fileID: 1333254611}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 123.74411, y: 122.59942, z: -1.2139726}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1409,6 +1412,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60f0f9d213ee0c84c9b15bf4d21012c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1360447221
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1360447223}
+  - component: {fileID: 1360447224}
+  m_Layer: 0
+  m_Name: LifeCycleManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1360447223
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360447221}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1360447224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360447221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9532b5a5089ba4de0adbe8076186d30d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  programManager: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
+  main: {fileID: 486541}
 --- !u!1 &1543420958
 GameObject:
   m_ObjectHideFlags: 0
@@ -1438,6 +1487,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80f72d164278a49e4a4baf6250d01312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  programManager: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
   particleTypeStates:
   - solidState:
       fluidSpringGroup: 1
@@ -1505,7 +1555,7 @@ Transform:
   m_GameObject: {fileID: 1543420958}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 123.74411, y: 122.59942, z: -1.2139726}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1749,7 +1799,7 @@ Transform:
   m_GameObject: {fileID: 2045799464}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 599.7573, y: 97.93494, z: 0.78240883}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1871,6 +1921,10 @@ PrefabInstance:
       propertyPath: primaryColor.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
     - target: {fileID: 5797480423376532324, guid: f25faf8b20b714194b4037da58bdd580, type: 3}
       propertyPath: sensorUIPrefab
       value: 
@@ -2070,6 +2124,10 @@ PrefabInstance:
       value: 0.13335514
       objectReference: {fileID: 0}
     - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
+    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: sensorUIPrefab
       value: 
       objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
@@ -2187,6 +2245,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5103234227717517998, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
+    - target: {fileID: 5103234227717517998, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       propertyPath: sensorUIPrefab
       value: 
       objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
@@ -2275,6 +2337,10 @@ PrefabInstance:
       propertyPath: primaryColor.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
     - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: sensorUIPrefab
       value: 
@@ -2408,6 +2474,10 @@ PrefabInstance:
       propertyPath: primaryColor.r
       value: 0.58226705
       objectReference: {fileID: 0}
+    - target: {fileID: 984015996368962036, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
     - target: {fileID: 984015996368962036, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
       propertyPath: sensorUIPrefab
       value: 
@@ -2566,6 +2636,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7261939996400553395, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
+    - target: {fileID: 7261939996400553395, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
       propertyPath: sensorUIPrefab
       value: 
       objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
@@ -2686,6 +2760,10 @@ PrefabInstance:
       propertyPath: primaryColor.r
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 868415544438198122, guid: 22aad3404d310493eb0990b946042a53, type: 3}
+      propertyPath: programManager
+      value: 
+      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
     - target: {fileID: 868415544438198122, guid: 22aad3404d310493eb0990b946042a53, type: 3}
       propertyPath: sensorUIPrefab
       value: 
@@ -2840,3 +2918,4 @@ SceneRoots:
   - {fileID: 2002973397}
   - {fileID: 1333254613}
   - {fileID: 1543420960}
+  - {fileID: 1360447223}
