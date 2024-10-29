@@ -29,9 +29,10 @@ public class ProgramManager : ScriptableObject
     {
         isAnySensorSettingsViewActive = CheckIfAnySensorSettingsViewActive();
 
-        LerpGlobalBrightness();
-        LerpTimeScale();
-        LerpSensorUIScale();
+        float clampedDeltaTime = Mathf.Min(Time.deltaTime, 1 / 30.0f);
+        LerpGlobalBrightness(clampedDeltaTime);
+        LerpTimeScale(clampedDeltaTime);
+        LerpSensorUIScale(clampedDeltaTime);
 
         if (doOnSettingsChanged && programStarted)
         {
@@ -63,19 +64,19 @@ public class ProgramManager : ScriptableObject
         return false;
     }
 
-    private void LerpGlobalBrightness()
+    private void LerpGlobalBrightness(float deltaTime)
     {
         float target = 1f - main.SettingsViewDarkTintPercent * (isAnySensorSettingsViewActive ? 1f : 0f);
-        globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, Time.unscaledDeltaTime * main.GlobalBrightnessChangeSpeed);
+        globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, deltaTime * main.GlobalBrightnessChangeSpeed);
     }
 
-    private void LerpTimeScale()
+    private void LerpTimeScale(float deltaTime)
     {
         float target = isAnySensorSettingsViewActive ? 0f : 1f;
-        timeScale = Mathf.Lerp(timeScale, target, Time.unscaledDeltaTime * main.GlobalBrightnessChangeSpeed);
+        timeScale = Mathf.Lerp(timeScale, target, deltaTime * main.GlobalBrightnessChangeSpeed);
     }
 
-    private void LerpSensorUIScale()
+    private void LerpSensorUIScale(float deltaTime)
     {
         foreach (SensorData sensorData in sensorDatas)
         {
@@ -83,7 +84,7 @@ public class ProgramManager : ScriptableObject
             Vector3 currentScale = sensorData.sensorUI.transform.localScale;
             Vector3 targetScale = Vector3.one * targetScaleValue;
 
-            Vector3 newScale = Vector3.Lerp(currentScale, targetScale, Time.unscaledDeltaTime * main.GlobalBrightnessChangeSpeed);
+            Vector3 newScale = Vector3.Lerp(currentScale, targetScale, deltaTime * main.GlobalBrightnessChangeSpeed);
             sensorData.sensorUI.transform.localScale = newScale;
             // Manage the draw order
             sensorData.sensorUI.transform.SetSiblingIndex(sensorData.isSettingsViewActive ? sensorDatas.Count - 1 : 0);

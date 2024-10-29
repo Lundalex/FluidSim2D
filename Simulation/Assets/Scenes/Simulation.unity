@@ -2318,6 +2318,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1200880608}
     m_Modifications:
     - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: offset.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: mainCanvas
       value: 
       objectReference: {fileID: 1093615697}
