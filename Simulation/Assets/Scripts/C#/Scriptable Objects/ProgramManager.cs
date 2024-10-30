@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,12 +16,14 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public float globalBrightnessFactor = 1;
     [HideInInspector] public float timeScale = 1;
     [HideInInspector] public bool isAnySensorSettingsViewActive;
+    [HideInInspector] public bool programPaused = false;
 
     public void Start()
     {
         main.ScriptStart();
 
         programStarted = true;
+        programPaused = false;
     }
 
     public void Update()

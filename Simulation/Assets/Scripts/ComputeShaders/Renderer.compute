@@ -711,6 +711,7 @@ void RenderUI(uint3 id : SV_DispatchThreadID)
 {
     if (IsOutsideResolutionDims(id.xy))return;
 
+    // UI COLOR SET WITH OPACITY AUTO! HOW???
     float4 uiColor = UITexture[id.xy];
     if (uiColor.a != 0) Result[id.xy] = uiColor;
 }

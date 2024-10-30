@@ -42,10 +42,10 @@ public abstract class Sensor : MonoBehaviour
     {
         GameObject sensorUIGameObject = Instantiate(sensorUIPrefab, sensorContainer);
         sensorUI = sensorUIGameObject.GetComponent<SensorUI>();
-        sensorUI.swayElementA.swayParent = sensorUI.swayParent;
-        sensorUI.swayElementB.swayParent = sensorUI.swayParent;
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;
+        sensorUI.swayElementC.mainCanvas = mainCanvas;
+        sensorUI.swayElementD.mainCanvas = mainCanvas;
         sensorUI.SetPrimaryColor(primaryColor);
         InitSensorTitle();
         sensorUIGameObject.name = "UI - " + this.name;

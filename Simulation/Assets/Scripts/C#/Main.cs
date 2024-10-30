@@ -184,7 +184,6 @@ public class Main : MonoBehaviour
     private float DeltaTime;
     private const int CalcStickyRequestsFrequency = 3;
     private int FrameCount = 0;
-    private bool ProgramPaused = false;
     private bool FrameStep = false;
 
     public void ScriptStart()
@@ -227,8 +226,8 @@ public class Main : MonoBehaviour
         PauseControls();
 
         bool simulateThisFrame = false;
-        if (!ProgramPaused || FrameStep) simulateThisFrame = true;
-        if (ProgramPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
+        if (!programManager.programPaused || FrameStep) simulateThisFrame = true;
+        if (programManager.programPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
         
         if (!simulateThisFrame) return;
 
@@ -262,8 +261,8 @@ public class Main : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
-            ProgramPaused = !ProgramPaused;
-            Debug.Log("Program paused");
+            programManager.programPaused = !programManager.programPaused;
+            if (programManager.programPaused) Debug.Log("Program paused");
         }
         if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }

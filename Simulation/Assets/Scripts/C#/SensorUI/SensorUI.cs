@@ -16,12 +16,15 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public RectTransform rectTransform;
     [SerializeField] public DemoElementSway swayElementA;
     [SerializeField] public DemoElementSway swayElementB;
-    [SerializeField] public CustomTwinButtonToggleParent swayParent;
+    [SerializeField] public DemoElementSway swayElementC;
+    [SerializeField] public DemoElementSway swayElementD;
+    [SerializeField] public CustomTwinButtonToggleParent swayParentAB;
+    [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
     [SerializeField] public ProgramManager programManager;
     [SerializeField] public PointerHoverArea pointerHoverArea;
     [NonSerialized] public int sensorIndex;
-    private float pointerHoverCooldown = 0.0f;
-    private float pointerHoverTimer = float.PositiveInfinity;
+    private float pointerHoverCooldown = 0.5f;
+    private float pointerHoverTimer = 0.3f;
     private bool pointerHover = false;
     public void SetMeasurement(float val, int numDecimals)
     {
@@ -34,15 +37,9 @@ public class SensorUI : MonoBehaviour
         decimalText.text = decimalPart.ToString();
     }
 
-    public void SetUnit(string unit)
-    {
-        unitText.text = unit;
-    }
+    public void SetUnit(string unit) => unitText.text = unit;
 
-    public void SetTitle(string title)
-    {
-        titleText.text = title;
-    }
+    public void SetTitle(string title) => titleText.text = title;
 
     public void SetPrimaryColor(Color color)
     {
@@ -55,13 +52,13 @@ public class SensorUI : MonoBehaviour
     {
         // --- Pointer hover ---
 
-        pointerHoverTimer += Time.deltaTime;
+        pointerHoverTimer += Mathf.Min(Time.deltaTime, 1 / 30.0f);
         if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > pointerHoverCooldown) || programManager.isAnySensorSettingsViewActive)
         {
+            pos = rectTransform.localPosition;
             pointerHover = true;
-            return;
         }
-        if (pointerHover)
+        else if (pointerHover)
         {
             pointerHover = false;
             pointerHoverTimer = 0.0f;
@@ -69,11 +66,12 @@ public class SensorUI : MonoBehaviour
 
         // --- Clamp position to screen bounds ---
 
-        Vector2 offset = new Vector2(20, -50);
-        Vector2 localContainerMin = new Vector2(-400, -250) * transform.localScale + offset;
-        Vector2 localContainerMax = new Vector2(400, 250) * transform.localScale + offset;
+        Vector2 offset = new(28, -83);
+        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale;
+        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale;
 
-        Vector2 Resolution = new Vector2(1920, 1280) * 1.0f;
+        int2 ResolutionInt2 = programManager.main.Resolution;
+        Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
 
         Vector2 min = -Resolution * 0.5f - localContainerMin;
         Vector2 max = Resolution * 0.5f - localContainerMax;
