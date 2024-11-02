@@ -348,7 +348,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                                 lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                                 particleFound = true;
                             #endif
-                            if (EARLY_EXIT)
+                            if (DO_EARLY_EXIT)
                             {
                                 doContinue = false;
                                 break;
