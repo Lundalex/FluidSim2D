@@ -287,6 +287,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     float2 pixelPos = GetPixelPos(id.xy);
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
+    const bool DO_EARLY_EXIT = false; // (== true) causes rendering artifacts
     int lastChunkKey_PType_POrder;
     float totDensity = 0;
     bool particleFound = false;
@@ -347,8 +348,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                                 lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
                                 particleFound = true;
                             #endif
-                            doContinue = false;
-                            break;
+                            if (EARLY_EXIT)
+                            {
+                                doContinue = false;
+                                break;
+                            }
                         }
                     }
                 #else
