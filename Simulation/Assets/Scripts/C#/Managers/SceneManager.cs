@@ -59,8 +59,8 @@ public class SceneManager : MonoBehaviour
 
         Debug.Log("Texture atlas constructed with " + rects.Length + " textures. Width: " + atlas.width + ". Height: " + atlas.height);
 
-        int2 GetTexLoc(int rectIndex) => new((int)(rects[rectIndex].x * atlas.width), (int)(rects[rectIndex].y * atlas.height));
-        int2 GetTexDims(int rectIndex) => new((int)(rects[rectIndex].width * atlas.width), (int)(rects[rectIndex].height * atlas.height));
+        int2 GetTexLoc(Rect rect) => new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height));
+        int2 GetTexDims(Rect rect) => new((int)(rect.width * atlas.width), (int)(rect.height * atlas.height));
 
         int rectIndex = 0;
         Mat[] renderMats = new Mat[matInputs.Length];
@@ -71,7 +71,8 @@ public class SceneManager : MonoBehaviour
             Mat mat = new();
             if (matInput.colorTexture != null)
             {
-                mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rectIndex), GetTexDims(rectIndex));
+                Rect rect = rects[rectIndex];
+                mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rect), GetTexDims(rect));
                 rectIndex++;
             }
             else mat = InitMat(matInput, matInput.baseColor, -1, -1);
