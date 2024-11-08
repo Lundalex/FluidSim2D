@@ -47,6 +47,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.swayElementC.mainCanvas = mainCanvas;
         sensorUI.swayElementD.mainCanvas = mainCanvas;
         sensorUI.SetPrimaryColor(primaryColor);
+        sensorUI.sensor = this;
         InitSensorTitle();
         sensorUIGameObject.name = "UI - " + this.name;
     }

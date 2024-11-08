@@ -1,14 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
 namespace Michsky.MUIP
 {
     public class CustomTwinButtonToggleParent : MonoBehaviour
     {
         public List<DemoElementSway> elements;
-        private int prevIndex = 0;
         public void DissolveAll(DemoElementSway currentSway)
         {
             for (int i = 0; i < elements.Count; ++i)
@@ -35,7 +33,6 @@ namespace Michsky.MUIP
         {
             // MOD:
             index = index == 0 ? 1 : 0;
-            prevIndex = index;
 
             if (elements.Count == 0)
             {

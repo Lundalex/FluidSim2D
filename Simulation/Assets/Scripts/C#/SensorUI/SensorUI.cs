@@ -8,10 +8,14 @@ using System;
 
 public class SensorUI : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private TMP_Text decimalText;
     [SerializeField] private TMP_Text integerText;
     [SerializeField] private TMP_Text unitText;
     [SerializeField] private TMP_Text titleText;
+    [SerializeField] private TMP_InputField positionXInput;
+    [SerializeField] private TMP_InputField positionYInput;
+    [SerializeField] private Slider scaleSlider;
     [SerializeField] private Image containerTrimImage;
     [SerializeField] public RectTransform rectTransform;
     [SerializeField] public DemoElementSway swayElementA;
@@ -22,10 +26,60 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
     [SerializeField] public ProgramManager programManager;
     [SerializeField] public PointerHoverArea pointerHoverArea;
+    [SerializeField] public DashedRectangle dashedRectangle;
+    
+    // Private/NonSerialized
+    [NonSerialized] public Sensor sensor;
     [NonSerialized] public int sensorIndex;
     private float pointerHoverCooldown = 0.5f;
     private float pointerHoverTimer = 0.3f;
     private bool pointerHover = false;
+    private readonly Vector3 baseScale = new(0.6f, 0.6f, 0.6f);
+
+    public void OnPositionXChanged()
+    {
+        Vector2Int pos = GetPositionFromInputFields();
+        Debug.Log(pos.x);
+
+        dashedRectangle.SetPosition(pos);
+
+        positionXInput.text = pos.x.ToString();
+    }
+
+    public void OnPositionYChanged()
+    {
+        Vector2Int pos = GetPositionFromInputFields();
+        Debug.Log(pos.y);
+
+        dashedRectangle.SetPosition(pos);
+
+        positionYInput.text = pos.y.ToString();
+    }
+
+    public void OnScaleChanged()
+    {
+        float scale = scaleSlider.value;
+        Debug.Log(scale);
+        dashedRectangle.SetScale(scale);
+    }
+
+    public void OnApplyTransformSettings()
+    {
+        Vector2Int pos = GetPositionFromInputFields();
+        float scale = scaleSlider.value;
+
+        transform.localScale = baseScale * scale;
+        rectTransform.localPosition = ClampPosToScreenBounds(pos);
+    }
+
+    private Vector2Int GetPositionFromInputFields()
+    {
+        int.TryParse(positionXInput.text, out int positionX);
+        int.TryParse(positionYInput.text, out int positionY);
+
+        return new(positionX, positionY);
+    }
+
     public void SetMeasurement(float val, int numDecimals)
     {
         numDecimals = Mathf.Min(numDecimals, 2);
@@ -50,8 +104,6 @@ public class SensorUI : MonoBehaviour
 
     public void SetPosition(Vector2 pos)
     {
-        // --- Pointer hover ---
-
         pointerHoverTimer += Mathf.Min(Time.deltaTime, 1 / 30.0f);
         if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > pointerHoverCooldown) || programManager.isAnySensorSettingsViewActive)
         {
@@ -64,8 +116,11 @@ public class SensorUI : MonoBehaviour
             pointerHoverTimer = 0.0f;
         }
 
-        // --- Clamp position to screen bounds ---
+        rectTransform.localPosition = ClampPosToScreenBounds(pos);
+    }
 
+    private Vector2 ClampPosToScreenBounds(Vector2 pos)
+    {
         Vector2 offset = new(28, -83);
         Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale;
         Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale;
@@ -76,10 +131,11 @@ public class SensorUI : MonoBehaviour
         Vector2 min = -Resolution * 0.5f - localContainerMin;
         Vector2 max = Resolution * 0.5f - localContainerMax;
 
-        float clampedX = Mathf.Clamp(pos.x, min.x, max.x);
-        float clampedY = Mathf.Clamp(pos.y, min.y, max.y);
+        Vector2 clampedPos;
+        clampedPos.x = Mathf.Clamp(pos.x, min.x, max.x);
+        clampedPos.y = Mathf.Clamp(pos.y, min.y, max.y);
 
-        rectTransform.localPosition = new Vector2(clampedX, clampedY);
+        return clampedPos;
     }
 
     [ContextMenu("Set Measurement (Default)")]
