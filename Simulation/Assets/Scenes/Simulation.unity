@@ -2330,6 +2330,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
     - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: targetPosition.y
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: sensorUIOutlinePrefab
       value: 
       objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
