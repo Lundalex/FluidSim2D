@@ -97,6 +97,7 @@
             <uie:ObjectField label="Texture" binding-path="backgroundTexture" />
             <uie:PropertyField binding-path="BackgroundBrightness" label="Brightness" tooltip="A multiple for the background brightness (R, G, B)" />
             <uie:PropertyField binding-path="BackgroundUpScaleFactor" label="Up-Scaling" tooltip="Background image up-scaling. Uses mirror-repeat for samples outisde the background texture dimensions." />
+            <ui:Slider label="Settings View Change Speed" value="10" high-value="20" binding-path="GlobalSettingsViewChangeSpeed" tooltip="The interpolation speed of properties changed in response to opening a sensor settings view panel" show-input-field="true" fill="true" name="Slider" low-value="0.1" />
         </ui:Foldout>
     </ui:Foldout>
     <ui:Foldout text="References" name="References" toggle-on-label-click="true" value="false" style="-unity-font-style: bold; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
@@ -113,7 +114,5 @@
         <uie:ObjectField label="Particle Simulation" binding-path="pSimShader" />
         <uie:ObjectField label="Rigid Body Simulation" binding-path="rbSimShader" />
         <uie:ObjectField label="Spatial Sorting" binding-path="sortShader" />
-        <ui:Label text="Scriptable Objects" style="left: -10px;" />
-        <uie:ObjectField label="Program Manager" binding-path="programManager" />
     </ui:Foldout>
 </ui:UXML>

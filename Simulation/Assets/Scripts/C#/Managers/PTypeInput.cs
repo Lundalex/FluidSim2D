@@ -3,10 +3,9 @@ using UnityEngine;
 
 public class PTypeInput : MonoBehaviour
 {
-    public ProgramManager programManager;
     public PTypeState[] particleTypeStates;
 
-    public void OnValidate() => programManager.doOnSettingsChanged = true;
+    public void OnValidate() => ProgramManager.Instance.doOnSettingsChanged = true;
     
     public PType[] GetParticleTypes()
     {

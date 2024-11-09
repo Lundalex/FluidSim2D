@@ -4,52 +4,58 @@ using System.Collections.Generic;
 [RequireComponent(typeof(LineRenderer))]
 public class DashedRectangle : MonoBehaviour
 {
-    public bool DoAddPositionValueTEMP = false;
-    [SerializeField] RectTransform rectTransform;
+    // Serialized fields
+    [SerializeField] private RectTransform rectTransform;
     [SerializeField] private float width = 5f;
     [SerializeField] private float height = 3f;
     [SerializeField] private float cornerRadius = 0.5f;
     [SerializeField] private int cornerSegments = 10;
-    [SerializeField] private float scrollSpeed = 0.5f;
-    [SerializeField] private Vector2 posOffset;
 
+    // Private references
     private LineRenderer lineRenderer;
-    private Material lineMaterial;
-    private float offset;
-    private float scale = 1;
-    private Vector2 lastPosition;
 
-    public void SetPosition(Vector2 pos) => rectTransform.anchoredPosition = pos;
-    public void SetScale(float newScale) => scale = newScale;
+    // Private variables
+    private Vector3 scale = Vector3.one;
+    private readonly Vector2 CenterOffset = new(0.026f, -0.085f);
 
-    private void Start()
+    public void SetPosition(Vector2 pos)
     {
-        lineRenderer = GetComponent<LineRenderer>();
-        lineRenderer.positionCount = 0;
-
-        // Generate positions
-        List<Vector3> positions = GenerateRoundedRectanglePositions(width * scale, height * scale, cornerRadius, cornerSegments);
-        lineRenderer.positionCount = positions.Count;
-        lineRenderer.SetPositions(positions.ToArray());
-
-        lineMaterial = lineRenderer.sharedMaterial;
-    }
-    
-    private void Update()
-    {
-        offset += Time.deltaTime * scrollSpeed;
-        lineMaterial.mainTextureOffset = new Vector2(offset, 0);
-
-        Vector2 newPosition = rectTransform.anchoredPosition;
-        Debug.Log(newPosition);
-        if (lastPosition != newPosition)
+        Vector2 newPosition = SimSpaceToWorldSpace(pos);
+        if (newPosition != rectTransform.anchoredPosition)
         {
-            lastPosition = newPosition;
-            Start();
+            rectTransform.anchoredPosition = newPosition;
+            Initialize();
         }
     }
 
-    private void OnValidate() => Start();
+    public void SetScale(Vector3 newScale)
+    {
+        if (newScale != scale)
+        {
+            scale = newScale;
+            Initialize();
+        }
+    }
+
+    public void Initialize()
+    {
+        // Generate positions
+        List<Vector3> positions = GenerateRoundedRectanglePositions(width * scale.x, height * scale.y, cornerRadius, cornerSegments);
+        lineRenderer.positionCount = positions.Count;
+        lineRenderer.SetPositions(positions.ToArray());
+    }
+
+    private void Awake()
+    {
+        lineRenderer = GetComponent<LineRenderer>();
+
+        Initialize();
+    }
+
+    private void OnValidate()
+    {
+        if (ProgramManager.Instance.programStarted) Initialize();
+    }
 
     private List<Vector3> GenerateRoundedRectanglePositions(float width, float height, float radius, int segments)
     {
@@ -78,10 +84,22 @@ public class DashedRectangle : MonoBehaviour
                 float angle = Mathf.Lerp(startAngle, endAngle, (float)j / segments);
                 float rad = Mathf.Deg2Rad * angle;
                 Vector2 point = center + new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * radius;
-                positions.Add(point);
+                positions.Add(point + CenterOffset);
             }
         }
 
         return positions;
+    }
+
+    private Vector2 SimSpaceToWorldSpace(Vector2 simCoords)
+    {
+        (Vector2 viewMin, Vector2 viewDims) = ProgramManager.Instance.GetUIBoundaries();
+
+        Vector2 boundaryDims = ProgramManager.Instance.main != null
+            ? new Vector2(ProgramManager.Instance.main.BoundaryDims.x, ProgramManager.Instance.main.BoundaryDims.y)
+            : new Vector2(float.MaxValue, float.MaxValue);
+
+        Vector2 normalizedCoords = simCoords / boundaryDims;
+        return normalizedCoords * viewDims + viewMin;
     }
 }

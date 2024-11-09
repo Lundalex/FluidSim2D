@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class ProgramLifeCycleManager : MonoBehaviour
 {
-    public ProgramManager programManager;
     [SerializeField] private Main main;
 
     private void Awake()
     {
-        programManager.main = main;
+        ProgramManager.Instance.main = main;
+        ProgramManager.Instance.Start();
     }
 
-    private void Start() => programManager.Start();
+    private void Update() => ProgramManager.Instance.Update();
 
-    private void Update() => programManager.Update();
+    private void OnDestroy() => ProgramManager.Instance.ResetDatas();
 }

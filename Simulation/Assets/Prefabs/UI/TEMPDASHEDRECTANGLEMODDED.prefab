@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2979893485258481687}
   - component: {fileID: 3361045990001223205}
   m_Layer: 5
-  m_Name: DashedRectanglesss
+  m_Name: TEMPDASHEDRECTANGLEMODDED
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -178,11 +178,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad392142eb6023649b66e7eb303e9630, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DoAddPositionValueTEMP: 0
   rectTransform: {fileID: 2506170889221206381}
   width: 3.38
   height: 2.05
   cornerRadius: 0.3
   cornerSegments: 5
   scrollSpeed: 0.5
-  posOffset: {x: 0.27, y: -0.46}
+  programManager: {fileID: 0}

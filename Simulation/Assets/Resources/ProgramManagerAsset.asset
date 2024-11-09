@@ -12,4 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: deeb6ba08d41c4057a90117808ccbcd7, type: 3}
   m_Name: ProgramManagerAsset
   m_EditorClassIdentifier: 
+  lineMaterial: {fileID: 2100000, guid: 5282b6afadd89014199f32ef6d211b8a, type: 2}
+  main: {fileID: 0}
+  sensorManager: {fileID: 0}
   programStarted: 1
+  doOnSettingsChanged: 0
+  globalBrightnessFactor: 1
+  timeScale: 1
+  isAnySensorSettingsViewActive: 0
+  programPaused: 0

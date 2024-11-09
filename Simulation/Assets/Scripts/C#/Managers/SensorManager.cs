@@ -19,9 +19,9 @@ public class SensorManager : MonoBehaviour
     private Main main;
 
     private bool programRunning = false;
-    private void Start()
+    public void StartScript(Main main)
     {
-        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        this.main = main;
 
         programRunning = true;
         StartCoroutine(RetrieveRigidBodyBufferDatasCoroutine());

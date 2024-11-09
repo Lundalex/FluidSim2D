@@ -10,8 +10,6 @@ public abstract class FluidSensor : Sensor
     public Color areaColor;
     public float patternModulo;
     [Range(1, 20)] public int SampleDensity;
-    public PositionType positionType;
-    public Vector2 targetPosition;
     public Rect measurementZone;
     private List<int> measurementChunkKeys;
     private float sampleDensityCorrection;
@@ -22,7 +20,6 @@ public abstract class FluidSensor : Sensor
 
     private void InitMeasurementChunkKeys()
     {
-        if (main == null) SetReferences();
         int2 chunksNum = main.ChunksNum;
         float maxInfluenceRadius = main.MaxInfluenceRadius;
 
@@ -44,7 +41,7 @@ public abstract class FluidSensor : Sensor
 
     private void OnValidate()
     {
-        if (programManager != null) if (programManager.programStarted) InitMeasurementChunkKeys();
+        if (ProgramManager.Instance != null) if (ProgramManager.Instance.programStarted) InitMeasurementChunkKeys();
     }
 
     public override void InitSensor()

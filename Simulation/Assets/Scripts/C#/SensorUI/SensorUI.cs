@@ -15,8 +15,8 @@ public class SensorUI : MonoBehaviour
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_InputField positionXInput;
     [SerializeField] private TMP_InputField positionYInput;
-    [SerializeField] private Slider scaleSlider;
     [SerializeField] private Image containerTrimImage;
+    [SerializeField] public Slider scaleSlider;
     [SerializeField] public RectTransform rectTransform;
     [SerializeField] public DemoElementSway swayElementA;
     [SerializeField] public DemoElementSway swayElementB;
@@ -24,58 +24,62 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public DemoElementSway swayElementD;
     [SerializeField] public CustomTwinButtonToggleParent swayParentAB;
     [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
-    [SerializeField] public ProgramManager programManager;
     [SerializeField] public PointerHoverArea pointerHoverArea;
-    [SerializeField] public DashedRectangle dashedRectangle;
-    
+
+    // Events
+    public event Action<bool> OnSettingsViewStatusChanged;
+
     // Private/NonSerialized
     [NonSerialized] public Sensor sensor;
+    [NonSerialized] public GameObject dashedRectangleObject;
+    [NonSerialized] public DashedRectangle dashedRectangle;
     [NonSerialized] public int sensorIndex;
-    private float pointerHoverCooldown = 0.5f;
+    [NonSerialized] public float sliderScale;
+    [NonSerialized] public float userScale;
     private float pointerHoverTimer = 0.3f;
-    private bool pointerHover = false;
-    private readonly Vector3 baseScale = new(0.6f, 0.6f, 0.6f);
+    private bool isPointerHovering = false;
+    private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
+    private const float PointerHoverCooldown = 0.5f;
+    private const float MaxDeltaTime = 1f / 30f;
+    private const float SettingsViewActiveFixedScale = 2.0f;
 
-    public void OnPositionXChanged()
+    public void OnPositionChanged()
     {
-        Vector2Int pos = GetPositionFromInputFields();
-        Debug.Log(pos.x);
-
+        if (dashedRectangle == null) return;
+        Vector2 pos = GetPositionFromInputFields();
         dashedRectangle.SetPosition(pos);
-
-        positionXInput.text = pos.x.ToString();
     }
 
-    public void OnPositionYChanged()
+    public Vector3 GetTotalScale(bool settingsViewActive = false)
     {
-        Vector2Int pos = GetPositionFromInputFields();
-        Debug.Log(pos.y);
+        return (settingsViewActive ? SettingsViewActiveFixedScale : sliderScale) * BaseScale;
+    }
 
-        dashedRectangle.SetPosition(pos);
-
-        positionYInput.text = pos.y.ToString();
+    public Vector3 GetTotalDashedRectangleScale()
+    {
+        return sensor.UseFixedScaleForDashedRectangle ? BaseScale : userScale * BaseScale;
     }
 
     public void OnScaleChanged()
     {
-        float scale = scaleSlider.value;
-        Debug.Log(scale);
-        dashedRectangle.SetScale(scale);
+        userScale = scaleSlider.value;
+        if (dashedRectangle != null) dashedRectangle.SetScale(GetTotalDashedRectangleScale());
     }
 
     public void OnApplyTransformSettings()
     {
-        Vector2Int pos = GetPositionFromInputFields();
-        float scale = scaleSlider.value;
+        Vector2 pos = GetPositionFromInputFields();
 
-        transform.localScale = baseScale * scale;
-        rectTransform.localPosition = ClampPosToScreenBounds(pos);
+        sliderScale = userScale;
+        rectTransform.localPosition = ClampPosToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
+        sensor.positionType = PositionType.Fixed;
+        sensor.targetPosition = pos;
     }
 
-    private Vector2Int GetPositionFromInputFields()
+    private Vector2 GetPositionFromInputFields()
     {
-        int.TryParse(positionXInput.text, out int positionX);
-        int.TryParse(positionYInput.text, out int positionY);
+        float.TryParse(positionXInput.text, out float positionX);
+        float.TryParse(positionYInput.text, out float positionY);
 
         return new(positionX, positionY);
     }
@@ -104,15 +108,15 @@ public class SensorUI : MonoBehaviour
 
     public void SetPosition(Vector2 pos)
     {
-        pointerHoverTimer += Mathf.Min(Time.deltaTime, 1 / 30.0f);
-        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > pointerHoverCooldown) || programManager.isAnySensorSettingsViewActive)
+        pointerHoverTimer += Mathf.Min(Time.deltaTime, MaxDeltaTime);
+        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > PointerHoverCooldown) || ProgramManager.Instance.isAnySensorSettingsViewActive)
         {
             pos = rectTransform.localPosition;
-            pointerHover = true;
+            isPointerHovering = true;
         }
-        else if (pointerHover)
+        else if (isPointerHovering)
         {
-            pointerHover = false;
+            isPointerHovering = false;
             pointerHoverTimer = 0.0f;
         }
 
@@ -125,7 +129,7 @@ public class SensorUI : MonoBehaviour
         Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale;
         Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale;
 
-        int2 ResolutionInt2 = programManager.main.Resolution;
+        int2 ResolutionInt2 = ProgramManager.Instance.main.Resolution;
         Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
 
         Vector2 min = -Resolution * 0.5f - localContainerMin;
@@ -157,8 +161,25 @@ public class SensorUI : MonoBehaviour
         SetTitle("Title");
     }
 
-    public void SetSettingsViewAsEnabled() => programManager.SetSensorSettingsViewStatus(sensorIndex, true);
-    public void SetSettingsViewAsDisabled() => programManager.SetSensorSettingsViewStatus(sensorIndex, false);
+    public void SetSettingsViewAsEnabled()
+    {
+        OnSettingsViewStatusChanged?.Invoke(true);
+
+        dashedRectangleObject.SetActive(true);
+
+        Vector2 simPos = sensor.CanvasSpaceToSimSpace(rectTransform.localPosition);
+        positionXInput.text = ((int)simPos.x).ToString();
+        positionYInput.text = ((int)simPos.y).ToString();
+
+        dashedRectangle.SetPosition(simPos);
+        dashedRectangle.SetScale(GetTotalDashedRectangleScale());
+    }
+    public void SetSettingsViewAsDisabled()
+    {
+        OnSettingsViewStatusChanged?.Invoke(false);
+
+        dashedRectangleObject.SetActive(false);
+    }
 
     public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);

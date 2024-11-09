@@ -1,27 +1,59 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "ProgramDataAsset", menuName = "ProgramData")]
+[CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
 public class ProgramManager : ScriptableObject
 {
     // References
+    public Material lineMaterial;
     [HideInInspector] public Main main;
+    [HideInInspector] public SensorManager sensorManager;
 
     // Sensors
     [HideInInspector] public List<SensorData> sensorDatas = new();
 
-    // Script
+    // Globally accessed variables
     [HideInInspector] public bool programStarted = false;
-    [HideInInspector] public bool doOnSettingsChanged;
+    [HideInInspector] public bool doOnSettingsChanged = false;
     [HideInInspector] public float globalBrightnessFactor = 1;
     [HideInInspector] public float timeScale = 1;
-    [HideInInspector] public bool isAnySensorSettingsViewActive;
+    [HideInInspector] public bool isAnySensorSettingsViewActive = false;
     [HideInInspector] public bool programPaused = false;
+    private const float MaxDeltaTime = 1 / 30.0f;
+    private const float MinTimeScaleForRunningProgram = 0.01f;
+
+    // Private - Camera
+    private Camera uiCam;
+    private Vector2 uiViewMin;
+    private Vector2 uiViewDims;
+    private bool viewTransformInitiated;
+
+    // Private - Animated texture scrolling
+    private const float ScrollSpeed = 0.5f;
+    private float offset;
+
+    // Singleton
+    private static ProgramManager _instance;
+    public static ProgramManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = Resources.Load<ProgramManager>("ProgramManagerAsset");
+            }
+            return _instance;
+        }
+    }
 
     public void Start()
     {
-        main.ScriptStart();
+        SetReferences();
 
+        sensorManager.StartScript(main);
+        main.StartScript();
+
+        globalBrightnessFactor = 1;
         programStarted = true;
         programPaused = false;
     }
@@ -30,7 +62,10 @@ public class ProgramManager : ScriptableObject
     {
         isAnySensorSettingsViewActive = CheckIfAnySensorSettingsViewActive();
 
-        float clampedDeltaTime = Mathf.Min(Time.deltaTime, 1 / 30.0f);
+        float clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
+
+        if (isAnySensorSettingsViewActive) UpdateAnimatedDashedLineOffset(clampedDeltaTime);
+
         LerpGlobalBrightness(clampedDeltaTime);
         LerpTimeScale(clampedDeltaTime);
         LerpSensorUIScale(clampedDeltaTime);
@@ -41,16 +76,37 @@ public class ProgramManager : ScriptableObject
             doOnSettingsChanged = false;
         }
 
-        float minTimeScale = 0.01f;
-        if (timeScale > minTimeScale) main.ScriptUpdate();
+        if (timeScale > MinTimeScaleForRunningProgram) main.ScriptUpdate();
 
         foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
     }
 
+    private void UpdateAnimatedDashedLineOffset(float deltaTime)
+    {
+        offset += deltaTime * ScrollSpeed;
+        lineMaterial.mainTextureOffset = new Vector2(offset, 0);
+    }
+    private void SetReferences()
+    {
+        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
+    }
+
+    public void ResetDatas()
+    {
+        programStarted = false;
+        doOnSettingsChanged = false;
+        isAnySensorSettingsViewActive = false;
+        programPaused = false;
+    }
+
     public void AddSensor(ref SensorUI sensorUI, Sensor sensor)
     {
-        sensorUI.sensorIndex = sensorDatas.Count;
-        sensorDatas.Add(new SensorData(sensor, sensorUI.gameObject, false));
+        int sensorIndex = sensorDatas.Count;
+        sensorUI.sensorIndex = sensorIndex;
+        sensorDatas.Add(new SensorData(sensor, sensorUI, sensorUI.gameObject, false));
+
+        sensorUI.OnSettingsViewStatusChanged += (isActive) => SetSensorSettingsViewStatus(sensorIndex, isActive);
     }
 
     public void SetSensorSettingsViewStatus(int sensorIndex, bool isSettingsViewActive)
@@ -65,30 +121,57 @@ public class ProgramManager : ScriptableObject
         return false;
     }
 
+    public (Vector2, Vector2) GetUIBoundaries()
+    {
+        if (!programStarted) return (Vector2.zero, Vector2.zero);
+        if (viewTransformInitiated) return (uiViewMin, uiViewDims);
+        if (uiCam == null) uiCam = GameObject.FindGameObjectWithTag("UICamera").GetComponent<Camera>();
+
+        if (!uiCam.orthographic)
+        {
+            Debug.LogError("Main Camera is not orthographic.");
+            return (Vector2.zero, Vector2.zero);
+        }
+
+        float size = uiCam.orthographicSize;
+        float aspect = uiCam.aspect;
+
+        float yMax = size;
+        float yMin = -size;
+        float xMax = size * aspect;
+        float xMin = -size * aspect;
+
+        uiViewMin = new(xMin, yMin);
+        uiViewDims = new(xMax - xMin, yMax - yMin);
+
+        viewTransformInitiated = true;
+
+        return (uiViewMin, uiViewDims);
+    }
+
     private void LerpGlobalBrightness(float deltaTime)
     {
         float target = 1f - main.SettingsViewDarkTintPercent * (isAnySensorSettingsViewActive ? 1f : 0f);
-        globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, deltaTime * main.GlobalBrightnessChangeSpeed);
+        globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, deltaTime * main.GlobalSettingsViewChangeSpeed);
     }
 
     private void LerpTimeScale(float deltaTime)
     {
         float target = isAnySensorSettingsViewActive ? 0f : 1f;
-        timeScale = Mathf.Lerp(timeScale, target, deltaTime * main.GlobalBrightnessChangeSpeed);
+        timeScale = Mathf.Lerp(timeScale, target, deltaTime * main.GlobalSettingsViewChangeSpeed);
     }
 
     private void LerpSensorUIScale(float deltaTime)
     {
         foreach (SensorData sensorData in sensorDatas)
-        {
-            float targetScaleValue = sensorData.isSettingsViewActive ? 1.2f : 0.6f;
-            Vector3 currentScale = sensorData.sensorUI.transform.localScale;
-            Vector3 targetScale = Vector3.one * targetScaleValue;
+        {   
+            Vector3 targetScale = sensorData.sensorUI.GetTotalScale(sensorData.isSettingsViewActive);
+            Vector3 currentScale = sensorData.sensorUIObject.transform.localScale;
 
-            Vector3 newScale = Vector3.Lerp(currentScale, targetScale, deltaTime * main.GlobalBrightnessChangeSpeed);
-            sensorData.sensorUI.transform.localScale = newScale;
+            Vector3 newScale = Vector3.Lerp(currentScale, targetScale, deltaTime * main.GlobalSettingsViewChangeSpeed);
+            sensorData.sensorUIObject.transform.localScale = newScale;
             // Manage the draw order
-            sensorData.sensorUI.transform.SetSiblingIndex(sensorData.isSettingsViewActive ? sensorDatas.Count - 1 : 0);
+            sensorData.sensorUIObject.transform.SetSiblingIndex(sensorData.isSettingsViewActive ? sensorDatas.Count - 1 : 0);
         }
     }
 }

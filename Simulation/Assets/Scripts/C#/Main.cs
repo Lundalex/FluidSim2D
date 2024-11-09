@@ -104,7 +104,7 @@ public class Main : MonoBehaviour
     public Texture2D backgroundTexture;
     public float3 BackgroundBrightness;
     public float BackgroundUpScaleFactor;
-    public float GlobalBrightnessChangeSpeed;
+    public float GlobalSettingsViewChangeSpeed;
 
     [Header("References")]
     // Textures
@@ -120,8 +120,6 @@ public class Main : MonoBehaviour
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
     public ComputeShader sortShader;
-    // Scriptable Objects
-    public ProgramManager programManager;
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -186,7 +184,7 @@ public class Main : MonoBehaviour
     private int FrameCount = 0;
     private bool FrameStep = false;
 
-    public void ScriptStart()
+    public void StartScript()
     {
         SceneSetup();
 
@@ -226,8 +224,8 @@ public class Main : MonoBehaviour
         PauseControls();
 
         bool simulateThisFrame = false;
-        if (!programManager.programPaused || FrameStep) simulateThisFrame = true;
-        if (programManager.programPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
+        if (!ProgramManager.Instance.programPaused || FrameStep) simulateThisFrame = true;
+        if (ProgramManager.Instance.programPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
         
         if (!simulateThisFrame) return;
 
@@ -261,13 +259,13 @@ public class Main : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
-            programManager.programPaused = !programManager.programPaused;
-            if (programManager.programPaused) Debug.Log("Program paused");
+            ProgramManager.Instance.programPaused = !ProgramManager.Instance.programPaused;
+            if (ProgramManager.Instance.programPaused) Debug.Log("Program paused");
         }
         if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
-    public void OnValidate() => programManager.doOnSettingsChanged = true;
+    public void OnValidate() => ProgramManager.Instance.doOnSettingsChanged = true;
 
     public void OnSettingsChanged() => UpdateShaderData();
 
@@ -299,8 +297,8 @@ public class Main : MonoBehaviour
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        pSimShader.SetBool("LMousePressed", mousePressed.x && !programManager.isAnySensorSettingsViewActive);
-        pSimShader.SetBool("RMousePressed", mousePressed.y && !programManager.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("LMousePressed", mousePressed.x && !ProgramManager.Instance.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("RMousePressed", mousePressed.y && !ProgramManager.Instance.isAnySensorSettingsViewActive);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         rbSimShader.SetBool("RMousePressed", mousePressed.x);
@@ -346,7 +344,7 @@ public class Main : MonoBehaviour
     {
         float deltaTime = TimeStep / SubTimeStepsPerFrame;
         if (TimeStepType == TimeStepType.Dynamic) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
-        return deltaTime * programManager.timeScale;
+        return deltaTime * ProgramManager.Instance.timeScale;
     }
 
     void SetConstants()
@@ -532,7 +530,7 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
     
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        renderShader.SetFloat("GlobalBrightnessFactor", programManager.globalBrightnessFactor);
+        renderShader.SetFloat("GlobalBrightnessFactor", ProgramManager.Instance.globalBrightnessFactor);
 
         RunRenderShader();
 

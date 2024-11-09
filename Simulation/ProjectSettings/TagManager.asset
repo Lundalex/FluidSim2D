@@ -13,6 +13,8 @@ TagManager:
   - PTypeInput
   - MaterialInput
   - EditorSettings
+  - UICamera
+  - SensorOutlineContainer
   layers:
   - Default
   - TransparentFX

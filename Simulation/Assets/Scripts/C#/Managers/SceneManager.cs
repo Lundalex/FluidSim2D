@@ -6,11 +6,33 @@ using UnityEngine;
 
 public class SceneManager : MonoBehaviour
 {
+    // Public
     public int MaxAtlasDims;
-    Vector2 sceneMin;
-    Vector2 sceneMax;
-    Main main;
-    SensorManager sensorManager;
+
+    // Private variables
+    private Vector2 sceneMin;
+    private Vector2 sceneMax;
+    private bool referencesHaveBeenSet = false;
+
+    // Private references
+    private Transform sensorUIContainer;
+    private Transform sensorOutlineContainer;
+    private Main main;
+    private SensorManager sensorManager;
+    private Vector2 canvasResolution;
+
+    private void SetReferences()
+    {
+        sensorUIContainer = GameObject.FindGameObjectWithTag("SensorUIContainer").GetComponent<Transform>();
+        sensorOutlineContainer = GameObject.FindGameObjectWithTag("SensorOutlineContainer").GetComponent<Transform>();
+        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
+        Rect uiCanvasRect = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<RectTransform>().rect;
+        canvasResolution = new Vector2(uiCanvasRect.width, uiCanvasRect.height);
+
+        referencesHaveBeenSet = true;
+    }
+
     public int2 GetBounds(int maxInfluenceRadius)
     {
         int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
@@ -26,7 +48,7 @@ public class SceneManager : MonoBehaviour
 
     public bool IsPointInsideBounds(Vector2 point)
     {
-        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        if (!referencesHaveBeenSet) SetReferences();
 
         sceneMin.x = transform.position.x - transform.localScale.x * 0.5f + main.FluidPadding;
         sceneMin.y = transform.position.y - transform.localScale.y * 0.5f + main.FluidPadding;
@@ -127,8 +149,7 @@ public class SceneManager : MonoBehaviour
     {
         float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
 
-        if (sensorManager == null) sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
-        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        if (!referencesHaveBeenSet) SetReferences();
 
         GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
         SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
@@ -177,7 +198,8 @@ public class SceneManager : MonoBehaviour
                     if (sensor is RigidBodySensor rigidBodySensor)
                     rigidBodySensor.linkedRBIndex = i;
                     sensors.Add(sensor);
-                    sensor.StartSensor();
+                    sensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
+                    sensor.Initialize();
                 }
             }
         }
@@ -187,7 +209,8 @@ public class SceneManager : MonoBehaviour
         foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
         {
             sensors.Add(fluidSensor);
-            fluidSensor.StartSensor();
+            fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
+            fluidSensor.Initialize();
             sensorAreas.Add(fluidSensor.GetSensorAreaData());
         }
 

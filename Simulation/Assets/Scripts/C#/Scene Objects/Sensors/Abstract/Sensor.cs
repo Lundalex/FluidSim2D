@@ -1,18 +1,23 @@
 using UnityEngine;
 using System;
+using Unity.Mathematics;
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
     public int numDecimals;
     public Color primaryColor;
+    public Vector2 targetPosition;
+    public PositionType positionType;
+    public bool UseFixedScaleForDashedRectangle;
 
     [Header("References")]
-    public ProgramManager programManager;
-    public GameObject sensorUIPrefab;
+    [SerializeField] private GameObject sensorUIPrefab;
+    [SerializeField] private GameObject sensorUIOutlinePrefab;
     public Canvas mainCanvas;
 
     // Private references
-    [NonSerialized] public Transform sensorContainer;
+    [NonSerialized] public Transform sensorUIContainer;
+    [NonSerialized] public Transform sensorOutlineContainer;
     [NonSerialized] public Main main;
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public Vector2 canvasResolution;
@@ -20,34 +25,41 @@ public abstract class Sensor : MonoBehaviour
     // Display
     [NonSerialized] public SensorUI sensorUI;
 
-    public void StartSensor()
+    // Private
+    private Vector2 boundaryDims = Vector2.zero;
+
+    public void Initialize()
     {
-        SetReferences();
         InitSensorUI();
         InitSensor();
 
-        programManager.AddSensor(ref sensorUI, this);
+        ProgramManager.Instance.AddSensor(ref sensorUI, this);
     }
 
-    public void SetReferences()
+    public void SetReferences(Transform sensorUIContainer, Transform sensorOutlineContainer, Main main, SensorManager sensorManager, Vector2 canvasResolution)
     {
-        sensorContainer = GameObject.FindGameObjectWithTag("SensorUIContainer").GetComponent<Transform>();
-        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
-        sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
-        Rect uiCanvasRect = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<RectTransform>().rect;
-        canvasResolution = new Vector2(uiCanvasRect.width, uiCanvasRect.height);
+        this.sensorUIContainer = sensorUIContainer;
+        this.sensorOutlineContainer = sensorOutlineContainer;
+        this.main = main;
+        this.sensorManager = sensorManager;
+        this.canvasResolution = canvasResolution;
     }
 
     private void InitSensorUI()
     {
-        GameObject sensorUIGameObject = Instantiate(sensorUIPrefab, sensorContainer);
+        GameObject sensorUIGameObject = Instantiate(sensorUIPrefab, sensorUIContainer);
+        GameObject sensorUIOutline = Instantiate(sensorUIOutlinePrefab, sensorOutlineContainer);
+        sensorUIOutline.SetActive(false);
         sensorUI = sensorUIGameObject.GetComponent<SensorUI>();
+        sensorUI.dashedRectangleObject = sensorUIOutline;
+        sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;
         sensorUI.swayElementC.mainCanvas = mainCanvas;
         sensorUI.swayElementD.mainCanvas = mainCanvas;
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
+        sensorUI.sliderScale = sensorUI.scaleSlider.value;
         InitSensorTitle();
         sensorUIGameObject.name = "UI - " + this.name;
     }
@@ -59,5 +71,19 @@ public abstract class Sensor : MonoBehaviour
 
     public void UpdateScript() => UpdatePosition();
 
-    public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords) => (simCoords / new Vector2(main.BoundaryDims.x, main.BoundaryDims.y) - new Vector2(0.5f, 0.5f)) * canvasResolution;
+    public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords)
+        => (simCoords / GetBoundaryDims() - new Vector2(0.5f, 0.5f)) * canvasResolution;
+
+    public Vector2 CanvasSpaceToSimSpace(Vector2 canvasCoords)
+        => (canvasCoords / canvasResolution + new Vector2(0.5f, 0.5f)) * GetBoundaryDims();
+
+    private Vector2 GetBoundaryDims()
+    {
+        if (boundaryDims == Vector2.zero)
+        {
+            int2 boundaryDimsInt2 = ProgramManager.Instance.main.BoundaryDims;
+            boundaryDims = new(boundaryDimsInt2.x, boundaryDimsInt2.y);
+        }
+        return boundaryDims;
+    }
 }
