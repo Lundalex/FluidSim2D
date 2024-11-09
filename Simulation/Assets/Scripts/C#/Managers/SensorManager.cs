@@ -9,6 +9,7 @@ public class SensorManager : MonoBehaviour
     public FluidSensor[] enabledFluidSensors;
     [Range(10.0f, 100.0f)] public float msRigidBodyDataRetrievalInterval;
     [Range(10.0f, 100.0f)] public float msFluidDataRetrievalInterval;
+    [Range(100.0f, 1000.0f)] public float msGraphUpdateFrequency;
 
     // Retrieved data
     [NonSerialized] public RBData[] retrievedRBDatas;
@@ -84,8 +85,5 @@ public class SensorManager : MonoBehaviour
         }
     }
 
-    void OnDestroy()
-    {
-        programRunning = false;
-    }
+    void OnDestroy() => programRunning = false;
 }

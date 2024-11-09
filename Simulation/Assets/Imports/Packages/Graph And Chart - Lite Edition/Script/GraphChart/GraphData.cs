@@ -616,7 +616,7 @@ namespace ChartAndGraph
         {
             if (mData.ContainsKey(category) == false)
             {
-                Debug.LogWarning("Invalid category name. Make sure the category is present in the graph");
+                Debug.LogWarning("Invalid category name (" + category + "). Make sure the category is present in the graph");
                 return;
             }
 

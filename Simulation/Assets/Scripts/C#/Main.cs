@@ -182,7 +182,6 @@ public class Main : MonoBehaviour
     private float DeltaTime;
     private const int CalcStickyRequestsFrequency = 3;
     private int FrameCount = 0;
-    private bool FrameStep = false;
 
     public void StartScript()
     {
@@ -221,11 +220,9 @@ public class Main : MonoBehaviour
 
     public void ScriptUpdate()
     {
-        PauseControls();
-
         bool simulateThisFrame = false;
-        if (!ProgramManager.Instance.programPaused || FrameStep) simulateThisFrame = true;
-        if (ProgramManager.Instance.programPaused && FrameStep) { Debug.Log("Stepped forward 1 frame"); FrameStep = false; }
+        if (!ProgramManager.Instance.programPaused || ProgramManager.Instance.FrameStep) simulateThisFrame = true;
+        if (ProgramManager.Instance.programPaused && ProgramManager.Instance.FrameStep) { Debug.Log("Stepped forward 1 frame"); ProgramManager.Instance.FrameStep = false; }
         
         if (!simulateThisFrame) return;
 
@@ -253,16 +250,6 @@ public class Main : MonoBehaviour
                 pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
             }
         }
-    }
-
-    private void PauseControls()
-    {
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            ProgramManager.Instance.programPaused = !ProgramManager.Instance.programPaused;
-            if (ProgramManager.Instance.programPaused) Debug.Log("Program paused");
-        }
-        if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
     public void OnValidate() => ProgramManager.Instance.doOnSettingsChanged = true;

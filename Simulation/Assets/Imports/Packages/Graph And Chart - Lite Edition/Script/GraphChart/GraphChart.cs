@@ -606,8 +606,8 @@ namespace ChartAndGraph
                     SelectActiveText(b);
             }
 
-            string xString = StringFromAxisFormat(point, mHorizontalAxis,true);
-            string yString = StringFromAxisFormat(point, mVerticalAxis,false);
+            string xString = StringFromAxisFormat(point, mHorizontalAxis, true);
+            string yString = StringFromAxisFormat(point, mVerticalAxis, false);
             OnItemHoverted(new GraphEventArgs(idx,pos, point.ToDoubleVector2(),(float)point.z, category, xString, yString));
         }
 

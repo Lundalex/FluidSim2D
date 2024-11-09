@@ -19,6 +19,8 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public float timeScale = 1;
     [HideInInspector] public bool isAnySensorSettingsViewActive = false;
     [HideInInspector] public bool programPaused = false;
+    [HideInInspector] public bool FrameStep = false;
+    [HideInInspector] public float totalTimeElapsed = 0;
     private const float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
 
@@ -28,7 +30,7 @@ public class ProgramManager : ScriptableObject
     private Vector2 uiViewDims;
     private bool viewTransformInitiated;
 
-    // Private - Animated texture scrolling
+    // Private - Animated Texture Scrolling
     private const float ScrollSpeed = 0.5f;
     private float offset;
 
@@ -60,12 +62,13 @@ public class ProgramManager : ScriptableObject
 
     public void Update()
     {
+        CheckKeyInputs();
+
         isAnySensorSettingsViewActive = CheckIfAnySensorSettingsViewActive();
 
         float clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
 
         if (isAnySensorSettingsViewActive) UpdateAnimatedDashedLineOffset(clampedDeltaTime);
-
         LerpGlobalBrightness(clampedDeltaTime);
         LerpTimeScale(clampedDeltaTime);
         LerpSensorUIScale(clampedDeltaTime);
@@ -76,9 +79,24 @@ public class ProgramManager : ScriptableObject
             doOnSettingsChanged = false;
         }
 
-        if (timeScale > MinTimeScaleForRunningProgram) main.ScriptUpdate();
+        if (!programPaused && timeScale > MinTimeScaleForRunningProgram)
+        {
+            totalTimeElapsed += clampedDeltaTime;
+            
+            main.ScriptUpdate();
 
-        foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
+            foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
+        }
+    }
+
+    private void CheckKeyInputs()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            programPaused = !programPaused;
+            if (programPaused) Debug.Log("Program paused");
+        }
+        if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
     }
 
     private void UpdateAnimatedDashedLineOffset(float deltaTime)
@@ -98,6 +116,7 @@ public class ProgramManager : ScriptableObject
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
+        totalTimeElapsed = 0;
     }
 
     public void AddSensor(ref SensorUI sensorUI, Sensor sensor)

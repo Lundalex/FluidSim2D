@@ -39,6 +39,8 @@ public class DashedRectangle : MonoBehaviour
 
     public void Initialize()
     {
+        if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
+        
         // Generate positions
         List<Vector3> positions = GenerateRoundedRectanglePositions(width * scale.x, height * scale.y, cornerRadius, cornerSegments);
         lineRenderer.positionCount = positions.Count;

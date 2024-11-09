@@ -4,8 +4,10 @@ public class FluidTemperatureSensor : FluidSensor
 {
     public override void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas)
     {
-        sensorUI.SetMeasurement(Utils.KelvinToCelcius(sumFluidDatas.totTemp / sumFluidDatas.numContributions), numDecimals);
+        float avgTemperature = Utils.KelvinToCelcius(sumFluidDatas.totTemp / sumFluidDatas.numContributions);
+        sensorUI.SetMeasurement(avgTemperature, numDecimals);
         sensorUI.SetUnit("°C");
+        AddSensorDataToGraph(avgTemperature);
     }
 
     public override void InitSensorTitle()

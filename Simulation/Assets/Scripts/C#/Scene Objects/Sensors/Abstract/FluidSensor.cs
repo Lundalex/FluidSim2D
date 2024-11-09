@@ -20,6 +20,7 @@ public abstract class FluidSensor : Sensor
 
     private void InitMeasurementChunkKeys()
     {
+        if (main == null) return;
         int2 chunksNum = main.ChunksNum;
         float maxInfluenceRadius = main.MaxInfluenceRadius;
 

@@ -27,6 +27,7 @@ public class FluidEnergySensor : FluidSensor
 
         sensorUI.SetMeasurement(energy, numDecimals);
         sensorUI.SetUnit("e.u");
+        AddSensorDataToGraph(energy);
     }
 
     public override void InitSensorTitle()

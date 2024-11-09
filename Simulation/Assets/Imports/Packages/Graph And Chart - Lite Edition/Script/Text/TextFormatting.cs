@@ -14,13 +14,13 @@ namespace ChartAndGraph
     {
 
         [SerializeField]
-        private string prefix = "";
+        public string prefix = "";
 
         [SerializeField]
-        private string suffix = "";
+        public string suffix = "";
 
         [SerializeField]
-        private string customFormat = "";
+        public string customFormat = "";
 
         public string Suffix
         {

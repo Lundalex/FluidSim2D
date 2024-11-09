@@ -16,6 +16,8 @@ public class SensorUI : MonoBehaviour
     [SerializeField] private TMP_InputField positionXInput;
     [SerializeField] private TMP_InputField positionYInput;
     [SerializeField] private Image containerTrimImage;
+    [SerializeField] private WindowManager dataViewWindowManager;
+    [SerializeField] private WindowManager settingsViewWindowManager;
     [SerializeField] public Slider scaleSlider;
     [SerializeField] public RectTransform rectTransform;
     [SerializeField] public DemoElementSway swayElementA;
@@ -25,23 +27,31 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public CustomTwinButtonToggleParent swayParentAB;
     [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
     [SerializeField] public PointerHoverArea pointerHoverArea;
+    [SerializeField] public ChartAndGraph.GraphChart graphChart;
 
     // Events
     public event Action<bool> OnSettingsViewStatusChanged;
 
-    // Private/NonSerialized
+    // NonSerialized
     [NonSerialized] public Sensor sensor;
     [NonSerialized] public GameObject dashedRectangleObject;
     [NonSerialized] public DashedRectangle dashedRectangle;
     [NonSerialized] public int sensorIndex;
     [NonSerialized] public float sliderScale;
     [NonSerialized] public float userScale;
+
+    // Private - Pointer Hover
     private float pointerHoverTimer = 0.3f;
     private bool isPointerHovering = false;
-    private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
     private const float PointerHoverCooldown = 0.5f;
-    private const float MaxDeltaTime = 1f / 30f;
+
+    // Private - Scale
+    private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
     private const float SettingsViewActiveFixedScale = 2.0f;
+    private const float GraphViewActiveFixedScale = 1.5f;
+
+    // Private - Time
+    private const float MaxDeltaTime = 1f / 30f;
 
     public void OnPositionChanged()
     {
@@ -52,12 +62,15 @@ public class SensorUI : MonoBehaviour
 
     public Vector3 GetTotalScale(bool settingsViewActive = false)
     {
-        return (settingsViewActive ? SettingsViewActiveFixedScale : sliderScale) * BaseScale;
+        float graphViewScaleFactor = CheckIfGraphViewIsActive() ? GraphViewActiveFixedScale : 1;
+        return (settingsViewActive ? SettingsViewActiveFixedScale : sliderScale) * graphViewScaleFactor * BaseScale;
     }
+
+    private bool CheckIfGraphViewIsActive() => dataViewWindowManager.currentWindowIndex == 0 && settingsViewWindowManager.currentWindowIndex == 0;
 
     public Vector3 GetTotalDashedRectangleScale()
     {
-        return sensor.UseFixedScaleForDashedRectangle ? BaseScale : userScale * BaseScale;
+        return sensor.useFixedScaleForDashedRectangle ? BaseScale : userScale * BaseScale;
     }
 
     public void OnScaleChanged()
@@ -75,7 +88,7 @@ public class SensorUI : MonoBehaviour
         sensor.positionType = PositionType.Fixed;
         sensor.targetPosition = pos;
     }
-
+    
     private Vector2 GetPositionFromInputFields()
     {
         float.TryParse(positionXInput.text, out float positionX);
@@ -119,6 +132,7 @@ public class SensorUI : MonoBehaviour
             isPointerHovering = false;
             pointerHoverTimer = 0.0f;
         }
+        sensor.graphController.isPointerHovering = isPointerHovering;
 
         rectTransform.localPosition = ClampPosToScreenBounds(pos);
     }

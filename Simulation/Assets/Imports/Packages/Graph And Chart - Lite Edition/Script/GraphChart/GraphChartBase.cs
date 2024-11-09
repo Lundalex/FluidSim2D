@@ -98,7 +98,7 @@ namespace ChartAndGraph
 
 
         [SerializeField]
-        private string itemFormat = "<?x>:<?y>";
+        private string itemFormat = "<?y>";
 
         public string ItemFormat
         {

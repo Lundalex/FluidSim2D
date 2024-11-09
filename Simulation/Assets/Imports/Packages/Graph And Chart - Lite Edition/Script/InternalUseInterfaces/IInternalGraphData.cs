@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ChartAndGraph
 {
-    interface IInternalGraphData
+    public interface IInternalGraphData
     {
         /// <summary>
         /// 

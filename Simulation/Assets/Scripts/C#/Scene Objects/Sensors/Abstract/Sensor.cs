@@ -8,11 +8,12 @@ public abstract class Sensor : MonoBehaviour
     public Color primaryColor;
     public Vector2 targetPosition;
     public PositionType positionType;
-    public bool UseFixedScaleForDashedRectangle;
+    public bool useFixedScaleForDashedRectangle;
 
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;
     [SerializeField] private GameObject sensorUIOutlinePrefab;
+    [NonSerialized] public GraphController graphController;
     public Canvas mainCanvas;
 
     // Private references
@@ -32,6 +33,7 @@ public abstract class Sensor : MonoBehaviour
     {
         InitSensorUI();
         InitSensor();
+        graphController.InitGraph();
 
         ProgramManager.Instance.AddSensor(ref sensorUI, this);
     }
@@ -43,6 +45,8 @@ public abstract class Sensor : MonoBehaviour
         this.main = main;
         this.sensorManager = sensorManager;
         this.canvasResolution = canvasResolution;
+
+        graphController = gameObject.GetComponent<GraphController>();
     }
 
     private void InitSensorUI()
@@ -60,6 +64,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.sliderScale = sensorUI.scaleSlider.value;
+        graphController.graphChart = sensorUI.graphChart;
         InitSensorTitle();
         sensorUIGameObject.name = "UI - " + this.name;
     }
@@ -86,4 +91,6 @@ public abstract class Sensor : MonoBehaviour
         }
         return boundaryDims;
     }
+
+    public void AddSensorDataToGraph(float y) => graphController.AddPointsToGraph(new Vector2(ProgramManager.Instance.totalTimeElapsed, y));
 }

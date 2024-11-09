@@ -11,8 +11,8 @@ public class MarkerSampleDataInitializer : MonoBehaviour
 	void Start ()
     {
         graph.DataSource.ClearCategory("Player 1");
-        var point = FindObjectOfType<MarkerText>();
-        var line = FindObjectOfType<MarkerTextLine>();
+        var point = FindFirstObjectByType<MarkerText>();
+        var line = FindFirstObjectByType<MarkerTextLine>();
         double prevY = 0.0;
         for (int i=0; i<10; i++)
         {

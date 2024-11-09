@@ -12,12 +12,14 @@ public class FluidVelocitySensor : FluidSensor
                 float vel0 = Func.Magnitude(sumFluidDatas.totVelComponents) / sumFluidDatas.numContributions;
                 sensorUI.SetMeasurement(vel0, numDecimals);
                 sensorUI.SetUnit("l.e/s");
+                AddSensorDataToGraph(vel0);
                 break;
 
             case VelocityType.Absolute_Summative:
                 float vel1 = sumFluidDatas.totVelAbs / sumFluidDatas.numContributions;
                 sensorUI.SetMeasurement(vel1, numDecimals);
                 sensorUI.SetUnit("l.e/s");
+                AddSensorDataToGraph(vel1);
                 break;
             
             default:

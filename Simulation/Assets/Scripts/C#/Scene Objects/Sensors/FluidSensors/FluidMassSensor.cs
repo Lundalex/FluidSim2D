@@ -4,6 +4,7 @@ public class FluidMassSensor : FluidSensor
     {
         sensorUI.SetMeasurement(sumFluidDatas.totMass, numDecimals);
         sensorUI.SetUnit("m/s");
+        AddSensorDataToGraph(sumFluidDatas.totMass);
     }
 
     public override void InitSensorTitle()

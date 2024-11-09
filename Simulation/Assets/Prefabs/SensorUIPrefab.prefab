@@ -648,7 +648,7 @@ RectTransform:
   m_GameObject: {fileID: 543588523128582091}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
+  m_LocalScale: {x: 0.36, y: 0.36, z: 0.36}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5537250773018950084}
@@ -679,8 +679,10 @@ MonoBehaviour:
   titleText: {fileID: 2782841974491381270}
   positionXInput: {fileID: 3289415416902342344}
   positionYInput: {fileID: 328911897847118210}
-  scaleSlider: {fileID: 511360547658252353}
   containerTrimImage: {fileID: 186902482154560783}
+  dataViewWindowManager: {fileID: 842384485323577335}
+  settingsViewWindowManager: {fileID: 2325410310991316828}
+  scaleSlider: {fileID: 511360547658252353}
   rectTransform: {fileID: 2794395079724738030}
   swayElementA: {fileID: 7667835766353093857}
   swayElementB: {fileID: 1982323990350571400}
@@ -688,8 +690,8 @@ MonoBehaviour:
   swayElementD: {fileID: 2481297512208739221}
   swayParentAB: {fileID: 4958512371956149978}
   swayParentCD: {fileID: 8942965374414593879}
-  programManager: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
   pointerHoverArea: {fileID: 6256592944797468065}
+  graphChart: {fileID: 8532512742259236329}
 --- !u!1 &561190224003969640
 GameObject:
   m_ObjectHideFlags: 0
@@ -765,37 +767,6 @@ MonoBehaviour:
   elements:
   - {fileID: 2481297512208739221}
   - {fileID: 7665831530194344898}
---- !u!1 &599064512936085311
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 759485707126032283}
-  m_Layer: 5
-  m_Name: New Game Object
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &759485707126032283
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 599064512936085311}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -285.5, y: -161, z: 0}
-  m_LocalScale: {x: 0.7986014, y: 0.7986014, z: 0.7986014}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3451446637981870744}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &635165196564966770
 GameObject:
   m_ObjectHideFlags: 0
@@ -2113,7 +2084,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8582812305814626441}
   m_HandleRect: {fileID: 4237380234397245507}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -3749,7 +3720,7 @@ MonoBehaviour:
     windowObject: {fileID: 3979578274548061481}
     buttonObject: {fileID: 0}
     firstSelected: {fileID: 0}
-  currentWindowIndex: 1
+  currentWindowIndex: 0
   cullWindows: 1
   initializeButtons: 1
   onWindowChange:
@@ -6340,7 +6311,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3979578274548061481}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -7803,7 +7774,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5506016586386424143}
   m_Enabled: 1
-  m_Alpha: 0
+  m_Alpha: 1
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -11034,7 +11005,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0.00015258789}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &7460060393538992993
@@ -11282,10 +11253,10 @@ RectTransform:
   m_GameObject: {fileID: 8275580583166314258}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5309314, y: 1.5309314, z: 1.5309314}
+  m_LocalScale: {x: 1.45, y: 1.45, z: 1.45}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 759485707126032283}
+  - {fileID: 5403025451761619529}
   m_Father: {fileID: 340192652922321315}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11313,19 +11284,19 @@ MonoBehaviour:
   paperEffectText: 0
   vRSpaceText: 0
   vRSpaceScale: 0.1
-  maintainLabelSize: 0
+  maintainLabelSize: 1
   autoScrollHorizontally: 0
   horizontalScrolling: 0
-  autoScrollVertically: 0
+  autoScrollVertically: 1
   verticalScrolling: 0
   raycastTarget: 1
   MousePan:
     m_PersistentCalls:
       m_Calls: []
   horizontalPanning: 1
-  verticalPanning: 0
-  heightRatio: 309
-  widthRatio: 715
+  verticalPanning: 1
+  heightRatio: 290
+  widthRatio: 770
   PointClicked:
     m_PersistentCalls:
       m_Calls: []
@@ -11335,40 +11306,20 @@ MonoBehaviour:
   NonHovered:
     m_PersistentCalls:
       m_Calls: []
-  itemFormat: <?x>:<?y>
+  itemFormat: <?y>
   Data:
-    automaticVerticalViewGap: 0
-    automaticVerticallView: 0
+    automaticVerticalViewGap: 3
+    automaticVerticallView: 1
     automaticcHorizontaViewGap: 0
     automaticHorizontalView: 0
-    horizontalViewSize: 10
+    horizontalViewSize: 5
     horizontalViewOrigin: 0
-    verticalViewSize: 30
+    verticalViewSize: 10
     verticalViewOrigin: 0
     mSerializedData:
-    - Name: Player 1
+    - Name: SensorDatas
       InitialData: []
-      IsBezierCurve: 0
-      SegmentsPerCurve: 10
-      Depth: 0
-      LineHoverPrefab: {fileID: 11494010, guid: 87cd6d8b7ca9527449e32ecefc4015c5, type: 3}
-      PointHoverPrefab: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
-      MaskPoints: 0
-      Material: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
-      LineTiling:
-        EnableTiling: 0
-        TileFactor: 45.5
-      InnerFill: {fileID: 2100000, guid: b8ab27c4271a3e64d8491c967d324fd0, type: 2}
-      LineThickness: 2.5799999237060547
-      StetchFill: 0
-      DotPrefab: {fileID: 0}
-      PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
-      PointSize: 6.619999885559082
-      ViewOrder: 0
-      AllowNonFunctionsBeta: 0
-    - Name: Player 2
-      InitialData: []
-      IsBezierCurve: 0
+      IsBezierCurve: 1
       SegmentsPerCurve: 10
       Depth: 0
       LineHoverPrefab: {fileID: 11494010, guid: 03f590f99c8285244a7299bf1058a4fb, type: 3}
@@ -11378,13 +11329,13 @@ MonoBehaviour:
       LineTiling:
         EnableTiling: 0
         TileFactor: 45.5
-      InnerFill: {fileID: 2100000, guid: 249108b1a0be0c8488d35a2e5266f04d, type: 2}
-      LineThickness: 2.5799999237060547
+      InnerFill: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
+      LineThickness: 5
       StetchFill: 0
       DotPrefab: {fileID: 0}
       PointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
-      PointSize: 6
-      ViewOrder: 1
+      PointSize: 20
+      ViewOrder: 0
       AllowNonFunctionsBeta: 0
   LineClicked:
     m_PersistentCalls:
@@ -11395,10 +11346,10 @@ MonoBehaviour:
   fitToContainer: 0
   negativeFill: 0
   fitMargin:
-    left: 0
+    left: 1
     top: 0
     right: 0
-    bottom: 0
+    bottom: 1
 --- !u!114 &6638746259359667578
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11420,7 +11371,7 @@ MonoBehaviour:
   mainDivisions:
     messure: 0
     unitsPerDivision: 0
-    total: 3
+    total: 1
     material: {fileID: 2100000, guid: 387acf3cc0524344980e92fa3f38dfd1, type: 2}
     materialTiling:
       EnableTiling: 1
@@ -11434,20 +11385,20 @@ MonoBehaviour:
     markDepth:
       Automatic: 1
       Value: 0.5
-    markThickness: 3
+    markThickness: 5
     textPrefab: {fileID: 0}
     textPrefix: 
     textSuffix: 
-    fractionDigits: 2
-    fontSize: 12
+    fractionDigits: 0
+    fontSize: 16
     fontSharpness: 3
     textDepth: 0
-    textSeperation: -31.51
+    textSeperation: -40
     alignment: 1
   subDivisions:
     messure: 0
     unitsPerDivision: 0
-    total: 3
+    total: 4
     material: {fileID: 2100000, guid: 387acf3cc0524344980e92fa3f38dfd1, type: 2}
     materialTiling:
       EnableTiling: 1
@@ -11461,15 +11412,15 @@ MonoBehaviour:
     markDepth:
       Automatic: 1
       Value: 0.5
-    markThickness: 3
+    markThickness: 5
     textPrefab: {fileID: 0}
     textPrefix: 
     textSuffix: 
-    fractionDigits: 2
-    fontSize: 12
+    fractionDigits: 0
+    fontSize: 16
     fontSharpness: 3
     textDepth: 0
-    textSeperation: -31.51
+    textSeperation: -40
     alignment: 1
 --- !u!114 &2692146671104755765
 MonoBehaviour:
@@ -11492,11 +11443,11 @@ MonoBehaviour:
   mainDivisions:
     messure: 0
     unitsPerDivision: 0
-    total: 3
+    total: 2
     material: {fileID: 2100000, guid: 387acf3cc0524344980e92fa3f38dfd1, type: 2}
     materialTiling:
       EnableTiling: 1
-      TileFactor: 11.52
+      TileFactor: 10
     markBackLength:
       Automatic: 1
       Value: 0.5
@@ -11510,11 +11461,11 @@ MonoBehaviour:
     textPrefab: {fileID: 0}
     textPrefix: 
     textSuffix: 
-    fractionDigits: 2
-    fontSize: 12
+    fractionDigits: 0
+    fontSize: 16
     fontSharpness: 3
     textDepth: 0
-    textSeperation: -13.17
+    textSeperation: -37
     alignment: 1
   subDivisions:
     messure: 0
@@ -11523,7 +11474,7 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 387acf3cc0524344980e92fa3f38dfd1, type: 2}
     materialTiling:
       EnableTiling: 1
-      TileFactor: 11.52
+      TileFactor: 10
     markBackLength:
       Automatic: 1
       Value: 0.5
@@ -11537,11 +11488,11 @@ MonoBehaviour:
     textPrefab: {fileID: 0}
     textPrefix: 
     textSuffix: 
-    fractionDigits: 2
-    fontSize: 12
+    fractionDigits: 0
+    fontSize: 16
     fontSharpness: 3
     textDepth: 0
-    textSeperation: -13.17
+    textSeperation: -37
     alignment: 1
 --- !u!114 &7928123733147140088
 MonoBehaviour:
@@ -11571,16 +11522,16 @@ MonoBehaviour:
   textPrefab: {fileID: 114000011523374616, guid: 7c86db16ee4151f4d9ed59479b2fdfbf, type: 3}
   textFormat:
     prefix: 
-    suffix: 
+    suffix: ' m/s'
     customFormat: 
-  fontSize: 14
-  fontSharpness: 1
-  seperation: 14.03
+  fontSize: 35
+  fontSharpness: 2
+  seperation: 80
   location:
-    Breadth: 0
-    Depth: 0
+    Breadth: 10
+    Depth: 10
   alignment: 0
-  fractionDigits: 0
+  fractionDigits: 1
 --- !u!114 &9078510517109572239
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11606,8 +11557,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   errorMargin: 5
-  ZoomSpeed: 20
-  MaxViewSize: 35
+  ZoomSpeed: 0
+  MaxViewSize: 5
   MinViewSize: 0.1
 --- !u!1 &8298726198146423296
 GameObject:
@@ -12276,6 +12227,41 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!1 &8885380771183011127
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5403025451761619529}
+  m_Layer: 5
+  m_Name: New Game Object
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5403025451761619529
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8885380771183011127}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3451446637981870744}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8937769684209109154
 GameObject:
   m_ObjectHideFlags: 0
