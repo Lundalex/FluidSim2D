@@ -21,6 +21,7 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public bool programPaused = false;
     [HideInInspector] public bool FrameStep = false;
     [HideInInspector] public float totalTimeElapsed = 0;
+    [HideInInspector] public float clampedDeltaTime = 0;
     private const float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
 
@@ -66,7 +67,7 @@ public class ProgramManager : ScriptableObject
 
         isAnySensorSettingsViewActive = CheckIfAnySensorSettingsViewActive();
 
-        float clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
+        clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
 
         if (isAnySensorSettingsViewActive) UpdateAnimatedDashedLineOffset(clampedDeltaTime);
         LerpGlobalBrightness(clampedDeltaTime);

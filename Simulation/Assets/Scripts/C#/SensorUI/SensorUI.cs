@@ -5,6 +5,7 @@ using System.Globalization;
 using Unity.Mathematics;
 using Michsky.MUIP;
 using System;
+using ChartAndGraph;
 
 public class SensorUI : MonoBehaviour
 {
@@ -27,7 +28,7 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public CustomTwinButtonToggleParent swayParentAB;
     [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
     [SerializeField] public PointerHoverArea pointerHoverArea;
-    [SerializeField] public ChartAndGraph.GraphChart graphChart;
+    [SerializeField] public Transform graphChartContainer;
 
     // Events
     public event Action<bool> OnSettingsViewStatusChanged;
@@ -139,9 +140,10 @@ public class SensorUI : MonoBehaviour
 
     private Vector2 ClampPosToScreenBounds(Vector2 pos)
     {
-        Vector2 offset = new(28, -83);
-        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale;
-        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale;
+        Vector2 offset = new(40, -120);
+        Vector3 scaleFactor = new(0.73f, 0.7f, 1);
+        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale * scaleFactor;
+        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale * scaleFactor;
 
         int2 ResolutionInt2 = ProgramManager.Instance.main.Resolution;
         Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
@@ -184,17 +186,15 @@ public class SensorUI : MonoBehaviour
         Vector2 simPos = sensor.CanvasSpaceToSimSpace(rectTransform.localPosition);
         positionXInput.text = ((int)simPos.x).ToString();
         positionYInput.text = ((int)simPos.y).ToString();
-
+ 
         dashedRectangle.SetPosition(simPos);
         dashedRectangle.SetScale(GetTotalDashedRectangleScale());
     }
+
     public void SetSettingsViewAsDisabled()
     {
         OnSettingsViewStatusChanged?.Invoke(false);
 
         dashedRectangleObject.SetActive(false);
     }
-
-    public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
-    public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
 }

@@ -23,7 +23,7 @@ public class Main : MonoBehaviour
     public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
     public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
     public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
-    public float FloatIntPrecisionRB = 50000.0f; // Float-Int storage precision used for rbSimShader
+    public float FloatIntPrecisionRB = 20000.0f; // Float-Int storage precision used for rbSimShader
     public float FloatIntPrecisionP = 1000.0f; // Float-Int storage precision used in pSimShader
 
     [Header("Fluid Simulation")]
@@ -194,11 +194,11 @@ public class Main : MonoBehaviour
 
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
-
+ 
         (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
         TextureHelper.TextureFromGradient(ref VelocityGradientTexture, VelocityGradientResolution, VelocityGradient);
-
+ 
         SetConstants();
 
         InitializeBuffers();

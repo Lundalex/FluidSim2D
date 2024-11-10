@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
+using System.Globalization;
 
 namespace Resources2
 {
@@ -203,5 +204,13 @@ namespace Resources2
         {
             return new Vector3(a.x, a.y, 1);
         }
+
+        public static float MsToSeconds(float ms) => ms / 1000.0f;
+    }
+
+    public static class StringUtils
+    {
+        public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
+        public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     }
 }

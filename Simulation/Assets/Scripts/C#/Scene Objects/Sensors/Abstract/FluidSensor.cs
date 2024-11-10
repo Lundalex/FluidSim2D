@@ -42,14 +42,14 @@ public abstract class FluidSensor : Sensor
 
     private void OnValidate()
     {
-        if (ProgramManager.Instance != null) if (ProgramManager.Instance.programStarted) InitMeasurementChunkKeys();
+        if (ProgramManager.Instance.programStarted) InitMeasurementChunkKeys();
     }
 
     public override void InitSensor()
     {
         UpdatePosition();
         InitMeasurementChunkKeys();
-    }
+    } 
 
     public SensorArea GetSensorAreaData()
     {

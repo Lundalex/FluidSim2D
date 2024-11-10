@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using Unity.Mathematics;
+using ChartAndGraph;
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
@@ -13,6 +14,7 @@ public abstract class Sensor : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;
     [SerializeField] private GameObject sensorUIOutlinePrefab;
+    [SerializeField] private GameObject graphChartPrefab;
     [NonSerialized] public GraphController graphController;
     public Canvas mainCanvas;
 
@@ -22,6 +24,7 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public Main main;
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public Vector2 canvasResolution;
+    [NonSerialized] private GraphChart graphChart;
 
     // Display
     [NonSerialized] public SensorUI sensorUI;
@@ -33,7 +36,8 @@ public abstract class Sensor : MonoBehaviour
     {
         InitSensorUI();
         InitSensor();
-        graphController.InitGraph();
+        graphController.InitGraph(graphChart);
+        ProgramManager.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
 
         ProgramManager.Instance.AddSensor(ref sensorUI, this);
     }
@@ -51,10 +55,12 @@ public abstract class Sensor : MonoBehaviour
 
     private void InitSensorUI()
     {
-        GameObject sensorUIGameObject = Instantiate(sensorUIPrefab, sensorUIContainer);
+        GameObject sensorUIObject = Instantiate(sensorUIPrefab, sensorUIContainer);
         GameObject sensorUIOutline = Instantiate(sensorUIOutlinePrefab, sensorOutlineContainer);
+        sensorUI = sensorUIObject.GetComponent<SensorUI>();
+        GameObject sensorUIGraphChartObject = Instantiate(graphChartPrefab, sensorUI.graphChartContainer);
+        graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
         sensorUIOutline.SetActive(false);
-        sensorUI = sensorUIGameObject.GetComponent<SensorUI>();
         sensorUI.dashedRectangleObject = sensorUIOutline;
         sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
@@ -64,9 +70,8 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.sliderScale = sensorUI.scaleSlider.value;
-        graphController.graphChart = sensorUI.graphChart;
         InitSensorTitle();
-        sensorUIGameObject.name = "UI - " + this.name;
+        sensorUIObject.name = "UI - " + this.name;
     }
 
     public abstract void InitSensor();
