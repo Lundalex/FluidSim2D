@@ -252,11 +252,12 @@ MonoBehaviour:
   AllowLinkedRBCollisions: 1
   RB_RBCollisionCorrectionFactor: 1
   RB_RBCollisionSlop: 0.0181
-  TimeStepsPerFrame: 2
+  TimeStepsPerFrame: 5
   SubTimeStepsPerFrame: 3
   TimeStepType: 1
+  TargetFrameRate: 120
   TimeStep: 0.03
-  ProgramSpeed: 6
+  ProgramSpeed: 10
   MaxInteractionRadius: 50
   InteractionAttractionPower: 4
   InteractionFountainPower: 4

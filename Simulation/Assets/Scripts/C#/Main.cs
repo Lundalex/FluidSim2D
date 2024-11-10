@@ -47,6 +47,7 @@ public class Main : MonoBehaviour
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public TimeStepType TimeStepType;
+    public int TargetFrameRate;
     public float TimeStep = 0.02f;
     public float ProgramSpeed = 2.0f;
 
@@ -226,6 +227,8 @@ public class Main : MonoBehaviour
         
         if (!simulateThisFrame) return;
 
+        DeltaTime = GetDeltaTime();
+
         for (int _ = 0; _ < TimeStepsPerFrame; _++)
         {
             UpdateShaderTimeStep();
@@ -275,8 +278,6 @@ public class Main : MonoBehaviour
     
     public void UpdateShaderTimeStep()
     {
-        DeltaTime = GetDeltaTime();
-        
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
         // (Left?, Right?)
         bool2 mousePressed = Utils.GetMousePressed();
@@ -329,9 +330,22 @@ public class Main : MonoBehaviour
 
     float GetDeltaTime()
     {
-        float deltaTime = TimeStep / SubTimeStepsPerFrame;
-        if (TimeStepType == TimeStepType.Dynamic) deltaTime = Mathf.Min(deltaTime, Time.deltaTime * ProgramSpeed / SubTimeStepsPerFrame);
-        return deltaTime * ProgramManager.Instance.timeScale;
+        float stepsPerFrame = TimeStepsPerFrame * SubTimeStepsPerFrame;
+        float deltaTime;
+
+        if (TimeStepType == TimeStepType.Fixed)
+        {
+            deltaTime = TimeStep / stepsPerFrame;
+        }
+        else // TimeStepType == TimeStepType.Dynamic
+        {
+            float calculatedDelta = ProgramManager.Instance.clampedDeltaTime / stepsPerFrame;
+            deltaTime = Mathf.Min(calculatedDelta, TimeStep);
+        }
+
+        deltaTime *= ProgramManager.Instance.timeScale * ProgramSpeed;
+
+        return deltaTime;
     }
 
     void SetConstants()

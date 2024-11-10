@@ -28,13 +28,11 @@ const bool AllowLinkedRBCollisions;
 const float RB_MaxInteractionRadius;
 const float RB_InteractionAttractionPower;
 
-// User Interaction
+// Per-timestep-set constants
+const float DeltaTime;
 const float2 MousePos;
 const bool RMousePressed;
 const bool LMousePressed;
-
-// Per-timestep-set constants
-const float DeltaTime;
 
 // Particles - Buffers
 StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)

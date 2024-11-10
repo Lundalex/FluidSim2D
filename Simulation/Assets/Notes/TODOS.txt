@@ -39,3 +39,5 @@ GENERAL TASKS:
 
 Fix bright build render
 Disable error logging in the player settings, bottom tab
+
+IF THE KEY SHORTCUTS GET MESSED UP, USE (Win + Spacebar) TO FIX THEM
