@@ -1,11 +1,10 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
-using System.Globalization;
 using Unity.Mathematics;
 using Michsky.MUIP;
 using System;
-using ChartAndGraph;
+using PM = ProgramManager;
 
 public class SensorUI : MonoBehaviour
 {
@@ -27,6 +26,10 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public DemoElementSway swayElementD;
     [SerializeField] public CustomTwinButtonToggleParent swayParentAB;
     [SerializeField] public CustomTwinButtonToggleParent swayParentCD;
+    [SerializeField] public GameObject rigidBodySensorTypeSelectObject;
+    [SerializeField] public GameObject fluidSensorTypeSelectObject;
+    [SerializeField] public CustomDropdown rigidBodySensorTypeSelect;
+    [SerializeField] public CustomDropdown fluidSensorTypeSelect;
     [SerializeField] public PointerHoverArea pointerHoverArea;
     [SerializeField] public Transform graphChartContainer;
 
@@ -40,6 +43,12 @@ public class SensorUI : MonoBehaviour
     [NonSerialized] public int sensorIndex;
     [NonSerialized] public float sliderScale;
     [NonSerialized] public float userScale;
+
+    // Private - Dropdown Select
+    private RigidBodySensorType selectedRigidBodySensorType;
+    private bool rigidBodySensorTypeDropdownUsed = false;
+    private FluidSensorType selectedFluidSensorType;
+    private bool fluidSensorTypeDropdownUsed = false;
 
     // Private - Pointer Hover
     private float pointerHoverTimer = 0.3f;
@@ -88,6 +97,17 @@ public class SensorUI : MonoBehaviour
         rectTransform.localPosition = ClampPosToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
         sensor.positionType = PositionType.Fixed;
         sensor.targetPosition = pos;
+
+        if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
+        {
+            sensor.graphController.ResetGraph();
+            rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
+        }
+        else if (fluidSensorTypeDropdownUsed && sensor is FluidSensor fluidSensor)
+        {
+            sensor.graphController.ResetGraph();
+            fluidSensor.SetFluidSensorType(selectedFluidSensorType);
+        }
     }
     
     private Vector2 GetPositionFromInputFields()
@@ -123,7 +143,7 @@ public class SensorUI : MonoBehaviour
     public void SetPosition(Vector2 pos)
     {
         pointerHoverTimer += Mathf.Min(Time.deltaTime, MaxDeltaTime);
-        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > PointerHoverCooldown) || ProgramManager.Instance.isAnySensorSettingsViewActive)
+        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > PointerHoverCooldown) || PM.Instance.isAnySensorSettingsViewActive)
         {
             pos = rectTransform.localPosition;
             isPointerHovering = true;
@@ -145,7 +165,7 @@ public class SensorUI : MonoBehaviour
         Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale * scaleFactor;
         Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale * scaleFactor;
 
-        int2 ResolutionInt2 = ProgramManager.Instance.main.Resolution;
+        int2 ResolutionInt2 = PM.Instance.main.Resolution;
         Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
 
         Vector2 min = -Resolution * 0.5f - localContainerMin;
@@ -196,5 +216,25 @@ public class SensorUI : MonoBehaviour
         OnSettingsViewStatusChanged?.Invoke(false);
 
         dashedRectangleObject.SetActive(false);
+    }
+
+    public void OnNewRigidBodySensorType(int rigidBodySensorTypeInt)
+    {
+        if (sensor is RigidBodySensor)
+        {
+            selectedRigidBodySensorType = (RigidBodySensorType)rigidBodySensorTypeInt;
+            rigidBodySensorTypeDropdownUsed = true;
+        }
+        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown: " + this.name);
+    }
+
+    public void OnNewFluidSensorType(int fluidSensorTypeInt)
+    {
+        if (sensor is FluidSensor)
+        {
+            selectedFluidSensorType = (FluidSensorType)fluidSensorTypeInt;
+            fluidSensorTypeDropdownUsed = true;
+        }
+        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown: " + this.name);
     }
 }

@@ -186,6 +186,9 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("NumFluidSensors", m.SensorAreas.Length);
 
         renderShader.SetVector("GlobalBrightness", new Vector3(m.GlobalBrightness.x, m.GlobalBrightness.y, m.GlobalBrightness.z));
+        renderShader.SetFloat("Contrast", m.Contrast);
+        renderShader.SetFloat("Saturation", m.Saturation);
+        renderShader.SetFloat("Gamma", m.Gamma);
     }
 
     public void UpdateSortShaderVariables(ComputeShader sortShader)

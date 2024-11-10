@@ -16,7 +16,7 @@ public class DashedRectangle : MonoBehaviour
 
     // Private variables
     private Vector3 scale = Vector3.one;
-    private readonly Vector2 CenterOffset = new(0.026f, -0.085f);
+    private readonly Vector2 CenterOffset = new(0.026f, -0.076f);
 
     public void SetPosition(Vector2 pos)
     {

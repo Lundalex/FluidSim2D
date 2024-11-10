@@ -45,8 +45,12 @@ const int ParticlesNum;
 const uint NumRigidBodies;
 const uint NumFluidSensors;
 
+// Rendering adjustments
 const float3 GlobalBrightness;
 const float GlobalBrightnessFactor;
+const float Contrast;
+const float Saturation;
+const float Gamma;
 
 // Per-timestep-set constants
 const float RealTimeElapsed;
@@ -87,7 +91,7 @@ float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm flo
     uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
-    return sampleCol * GlobalBrightness;
+    return sampleCol;
 }
 
 float4 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
@@ -97,7 +101,7 @@ float4 SampleGradient(float u, Texture2D<unorm float4> gradientTex)
     x = clamp(x, 0, gradientWidth-1);
     float4 sample = gradientTex.Load(int3(x, 0, 0));
 
-    return float4(sample.rgb * GlobalBrightness, sample.a);
+    return float4(sample.rgb, sample.a);
 }
 
 float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
@@ -110,9 +114,38 @@ float3 GetMaterialColor(Mat mat, float2 uv, Texture2D<unorm float4> atlas)
     else return mat.baseCol;
 }
 
+void AdjustContrast(inout float3 color)
+{
+    color = (color - 0.5) * Contrast + 0.5;
+}
+
+void AdjustSaturation(inout float3 color)
+{
+    float grey = dot(color, float3(0.3, 0.59, 0.11));
+    color = lerp(float3(grey, grey, grey), color, Saturation);
+}
+
+void ApplyGammaCorrection(inout float3 color)
+{
+    float invGamma = 1.0 / Gamma;
+    color.x = pow(max(color.x, 0.0), invGamma);
+    color.y = pow(max(color.y, 0.0), invGamma);
+    color.z = pow(max(color.z, 0.0), invGamma);
+}
+
 void SetResultColor(uint2 id, float3 color)
 {
-    Result[id] = float4(color * GlobalBrightnessFactor, 1.0);
+    // Apply rendering adjustments
+    AdjustContrast(color);
+    AdjustSaturation(color);
+    ApplyGammaCorrection(color);
+
+    // Apply brightness factors
+    color *= GlobalBrightness * GlobalBrightnessFactor;
+
+    color = saturate(color);
+
+    Result[id] = float4(color, 1.0);
 }
 
 bool ValidChunk(int2 chunk)
@@ -133,31 +166,6 @@ uint GetPixelKey(uint2 threadID)
 bool IsOutsideResolutionDims(uint2 threadID)
 {
     return threadID.x > Resolution.x || threadID.y > Resolution.y;
-}
-
-float3 TemperatureToRGB(float temperature)
-{
-    float normalizedTemp = saturate((temperature - 273.0) / (373.0 - 273.0));
-
-    float3 color;
-
-    if (normalizedTemp < 0.1)
-    {
-        // Light blue to dark blue transition
-        color = lerp(float3(0.5, 0.5, 1.0), float3(0.0, 0.0, 1.0), 2.5 * normalizedTemp);
-    }
-    else if (normalizedTemp < 0.5)
-    {
-        // Dark blue to green transition
-        color = lerp(float3(0.0, 0.0, 1.0), float3(0.0, 1.0, 0.0), 2.5 * (normalizedTemp - 0.1));
-    }
-    else
-    {
-        // Green to red transition
-        color = lerp(float3(0.0, 1.0, 0.0), float3(1.0, 0.0, 0.0), 2.5 * (normalizedTemp - 0.5));
-    }
-
-    return color;
 }
 
 bool IsPointInsideRB(float2 pos, RigidBody rb)
@@ -715,7 +723,6 @@ void RenderUI(uint3 id : SV_DispatchThreadID)
 {
     if (IsOutsideResolutionDims(id.xy))return;
 
-    // UI COLOR SET WITH OPACITY AUTO! HOW???
     float4 uiColor = UITexture[id.xy];
     if (uiColor.a != 0) Result[id.xy] = uiColor;
 }

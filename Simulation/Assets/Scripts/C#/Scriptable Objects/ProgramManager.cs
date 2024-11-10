@@ -88,6 +88,7 @@ public class ProgramManager : ScriptableObject
 
             foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
         }
+        else main.RunRenderShader();
     }
 
     private void CheckKeyInputs()

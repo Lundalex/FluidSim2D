@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Resources2;
+using PM = ProgramManager;
 
 public class GraphController : MonoBehaviour
 {
@@ -25,11 +26,11 @@ public class GraphController : MonoBehaviour
     [NonSerialized] private GraphChart graphChart;
 
     // Private
-    private List<Vector2> pointList = new();
-    private List<Vector2> storedPoints = new();
-    private bool isFirstPointDrawn = false;
-    private float pointSubmissionTimer = 0;
-    private Stopwatch stopwatch = new();
+    private List<Vector2> pointList;
+    private List<Vector2> storedPoints;
+    private bool isFirstPointDrawn;
+    private float pointSubmissionTimer;
+    private Stopwatch stopwatch;
 
     public void InitGraph(GraphChart graphChartInput)
     {
@@ -40,6 +41,15 @@ public class GraphController : MonoBehaviour
             overrideGraphDataCategory = false;
         }
 
+        stopwatch = new();
+        stopwatch.Start();
+
+        ResetGraph();
+    }
+
+    public void ResetGraph()
+    {
+        // Reset graph
         if (overrideGraphDataCategory)
         {
             graphChart.DataSource.Clear();
@@ -51,8 +61,11 @@ public class GraphController : MonoBehaviour
             graphChart.DataSource.AddCategory("SensorDatas", lineMaterial, lineThickness, new MaterialTiling(), fillMaterial, false, pointMaterial, pointSize, false);
         }
 
+        // Reset data
+        pointList = new();
+        storedPoints = new();
+        isFirstPointDrawn = false;
         pointSubmissionTimer = 0;
-        stopwatch.Start();
     }
 
     public void AddPointsToGraph(params Vector2[] points)
@@ -64,7 +77,7 @@ public class GraphController : MonoBehaviour
         stopwatch.Restart();
         
         // Add points to storedPoints
-        float pointSubmissionFrequency = Func.MsToSeconds(ProgramManager.Instance.sensorManager.msGraphPointSubmissionFrequency);
+        float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
         foreach (Vector2 point in points)
         {
             if (float.IsNaN(point.x) || float.IsNaN(point.y)) continue;
@@ -78,7 +91,7 @@ public class GraphController : MonoBehaviour
 
     public void UpdateGraph()
     {
-        if (ProgramManager.Instance.programPaused || isPointerHovering || storedPoints.Count == 0) return;
+        if (PM.Instance.programPaused || isPointerHovering || storedPoints.Count == 0) return;
 
         // Update the graph
         foreach (Vector2 point in storedPoints)
@@ -125,6 +138,6 @@ public class GraphController : MonoBehaviour
         storedPoints = new();
 
         // Automatic scrolling
-        graphChart.HorizontalScrolling = Mathf.Max(ProgramManager.Instance.totalTimeElapsed - HorizontalViewLength, 0);
+        graphChart.HorizontalScrolling = Mathf.Max(PM.Instance.totalTimeElapsed - HorizontalViewLength, 0);
     }
 }

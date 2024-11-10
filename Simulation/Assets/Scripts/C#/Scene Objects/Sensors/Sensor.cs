@@ -2,10 +2,11 @@ using UnityEngine;
 using System;
 using Unity.Mathematics;
 using ChartAndGraph;
+
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
-    public int numDecimals;
+    [Range(0, 2)] public int numDecimals;
     public Color primaryColor;
     public Vector2 targetPosition;
     public PositionType positionType;
@@ -13,7 +14,7 @@ public abstract class Sensor : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;
-    [SerializeField] private GameObject sensorUIOutlinePrefab;
+    [SerializeField] private GameObject dashedRectanglePrefab;
     [SerializeField] private GameObject graphChartPrefab;
     [NonSerialized] public GraphController graphController;
     public Canvas mainCanvas;
@@ -56,7 +57,7 @@ public abstract class Sensor : MonoBehaviour
     private void InitSensorUI()
     {
         GameObject sensorUIObject = Instantiate(sensorUIPrefab, sensorUIContainer);
-        GameObject sensorUIOutline = Instantiate(sensorUIOutlinePrefab, sensorOutlineContainer);
+        GameObject sensorUIOutline = Instantiate(dashedRectanglePrefab, sensorOutlineContainer);
         sensorUI = sensorUIObject.GetComponent<SensorUI>();
         GameObject sensorUIGraphChartObject = Instantiate(graphChartPrefab, sensorUI.graphChartContainer);
         graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
@@ -67,17 +68,22 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.swayElementB.mainCanvas = mainCanvas;
         sensorUI.swayElementC.mainCanvas = mainCanvas;
         sensorUI.swayElementD.mainCanvas = mainCanvas;
+        bool isRigidBodySensor = this is RigidBodySensor;
+        sensorUI.rigidBodySensorTypeSelectObject.SetActive(isRigidBodySensor);
+        sensorUI.fluidSensorTypeSelectObject.SetActive(!isRigidBodySensor);
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.sliderScale = sensorUI.scaleSlider.value;
-        InitSensorTitle();
+        InitSensorTitleAndUnit();
+        InitSensorTypeDropdown();
         sensorUIObject.name = "UI - " + this.name;
     }
 
     public abstract void InitSensor();
     public abstract void UpdatePosition();
     public abstract void UpdateSensor();
-    public abstract void InitSensorTitle();
+    public abstract void InitSensorTitleAndUnit();
+    public abstract void InitSensorTypeDropdown();
 
     public void UpdateScript() => UpdatePosition();
 

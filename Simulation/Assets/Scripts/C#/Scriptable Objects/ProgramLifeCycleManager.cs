@@ -1,4 +1,5 @@
 using UnityEngine;
+using PM = ProgramManager;
 
 public class ProgramLifeCycleManager : MonoBehaviour
 {
@@ -6,8 +7,8 @@ public class ProgramLifeCycleManager : MonoBehaviour
 
     private void Awake()
     {
-        ProgramManager.Instance.main = main;
-        ProgramManager.Instance.Start();
+        PM.Instance.main = main;
+        PM.Instance.Start();
 
         if (main.TargetFrameRate > 0)
         {
@@ -21,7 +22,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
         }
     }
 
-    private void Update() => ProgramManager.Instance.Update();
+    private void Update() => PM.Instance.Update();
 
-    private void OnDestroy() => ProgramManager.Instance.ResetDatas();
+    private void OnDestroy() => PM.Instance.ResetDatas();
 }

@@ -210,6 +210,11 @@ namespace Resources2
 
     public static class StringUtils
     {
+        public static void LogEditor(string message)
+        {
+            if (Application.isEditor) Debug.Log(message);
+        }
+
         public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
         public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     }

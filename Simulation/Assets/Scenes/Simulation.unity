@@ -274,10 +274,14 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
+  LightingSettings: 0
   GlobalBrightness:
-    x: 1.2
-    y: 1.2
-    z: 1.2
+    x: 1
+    y: 1
+    z: 1
+  Contrast: 1
+  Saturation: 1
+  Gamma: 1
   SettingsViewDarkTintPercent: 0.8
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
@@ -466,8 +470,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enabledFluidSensors:
-  - {fileID: 913262253}
-  - {fileID: 957404539}
+  - {fileID: 7783249810643629543}
+  - {fileID: 1124441013}
+  - {fileID: 1179035742}
   msRigidBodyDataRetrievalInterval: 15
   msFluidDataRetrievalInterval: 30
   msGraphPointSubmissionFrequency: 250
@@ -661,7 +666,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: approximatedSpringForce
-      value: 29891.312
+      value: 29642.205
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: LinkedSensors.Array.size
@@ -685,12 +690,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: approximatedSpringLength
-      value: 139.78262
+      value: 139.28441
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[0]'
       value: 
-      objectReference: {fileID: 851272582}
+      objectReference: {fileID: 1715977836}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[1]'
       value: 
@@ -1039,33 +1044,11 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &851272582 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-  m_PrefabInstance: {fileID: 1082940497101622488}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1715977834}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b53051fb16c15ae4189e0992a74b9760, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &876135944 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
   m_PrefabInstance: {fileID: 7783249810643629540}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &913262253 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 984015996368962036, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
-  m_PrefabInstance: {fileID: 7783249810643629540}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7783249810643629541}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ace3a078a4c7a49adbcb27a47b293459, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &942307212
 GameObject:
   m_ObjectHideFlags: 0
@@ -1107,17 +1090,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2208215544800290204, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
   m_PrefabInstance: {fileID: 7996076036689904629}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &957404539 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7261939996400553395, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
-  m_PrefabInstance: {fileID: 7996076036689904629}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1124441011}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5448423d5bc4ad641a173f19768d8882, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &958384779
 GameObject:
   m_ObjectHideFlags: 0
@@ -1327,6 +1299,38 @@ MonoBehaviour:
   pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
   lineThickness: 5
   pointSize: 20
+--- !u!114 &1124441013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1124441011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numDecimals: 2
+  primaryColor: {r: 0.69945145, g: 0, b: 1, a: 1}
+  targetPosition: {x: 100, y: 50}
+  positionType: 1
+  useFixedScaleForDashedRectangle: 1
+  sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
+  dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+  graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
+  mainCanvas: {fileID: 1093615697}
+  fluidSensorType: 7
+  lineColor: {r: 0.003921569, g: 0.003921569, b: 0.003921569, a: 1}
+  areaColor: {r: 1, g: 0.11372549, b: 0, a: 0.23529412}
+  measurementZone:
+    serializedVersion: 2
+    x: 130
+    y: 15
+    width: 20
+    height: 20
+  patternModulo: 10
+  SampleDensity: 1
 --- !u!1 &1179035738 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5986382794826103088, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
@@ -1353,6 +1357,38 @@ MonoBehaviour:
   pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
   lineThickness: 5
   pointSize: 20
+--- !u!114 &1179035742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1179035738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numDecimals: 2
+  primaryColor: {r: 1, g: 0.6640022, b: 0, a: 1}
+  targetPosition: {x: 50, y: 50}
+  positionType: 1
+  useFixedScaleForDashedRectangle: 1
+  sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
+  dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+  graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
+  mainCanvas: {fileID: 1093615697}
+  fluidSensorType: 0
+  lineColor: {r: 0.003921569, g: 0.003921569, b: 0.003921569, a: 1}
+  areaColor: {r: 1, g: 0.11372549, b: 0, a: 0.3137255}
+  measurementZone:
+    serializedVersion: 2
+    x: 20
+    y: 20
+    width: 60
+    height: 150
+  patternModulo: 10
+  SampleDensity: 1
 --- !u!1 &1200880607
 GameObject:
   m_ObjectHideFlags: 0
@@ -1382,9 +1418,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 876135944}
   - {fileID: 135673741}
   - {fileID: 2028896046}
+  - {fileID: 876135944}
   - {fileID: 115960608}
   - {fileID: 957404538}
   m_Father: {fileID: 2002973397}
@@ -1535,11 +1571,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   main: {fileID: 486541}
---- !u!1 &1419077489 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8164099255059512354, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-  m_PrefabInstance: {fileID: 7127550308942418413}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1543420958
 GameObject:
   m_ObjectHideFlags: 0
@@ -1642,32 +1673,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1715977834 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1748573168355749617, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+--- !u!114 &1715977836 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
   m_PrefabInstance: {fileID: 1082940497101622488}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1715977835
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1715977834}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3108e11523352974f8968a3b6aafafc0, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b82a672b70239f4691ede71a633f89a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  overrideGraphDataCategory: 0
-  isBezierCurve: 1
-  bezierTension: 0.5
-  HorizontalViewLength: 5
-  lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
-  fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
-  pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
-  lineThickness: 5
-  pointSize: 20
 --- !u!1 &1751344378
 GameObject:
   m_ObjectHideFlags: 0
@@ -1912,38 +1928,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2083877552 stripped
+--- !u!114 &2083877554 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+  m_CorrespondingSourceObject: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
   m_PrefabInstance: {fileID: 7127550308942418413}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1419077489}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 61f3fd8a41512cb458cdbc6ea534cbf2, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b82a672b70239f4691ede71a633f89a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2083877553
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1419077489}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3108e11523352974f8968a3b6aafafc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  overrideGraphDataCategory: 0
-  isBezierCurve: 1
-  bezierTension: 0.5
-  HorizontalViewLength: 5
-  lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
-  fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
-  pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
-  lineThickness: 5
-  pointSize: 20
 --- !u!1001 &614223046216948198
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1999,7 +1994,7 @@ PrefabInstance:
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: 'LinkedSensors.Array.data[0]'
       value: 
-      objectReference: {fileID: 2083877552}
+      objectReference: {fileID: 2083877554}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.includeInSimulation
       value: 1
@@ -2113,56 +2108,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: SpringDynamometerPrefab
       objectReference: {fileID: 0}
-    - target: {fileID: 1748573168355749617, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: mainCanvas
       value: 
       objectReference: {fileID: 1093615697}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: positionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: primaryColor.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: primaryColor.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: primaryColor.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: primaryColor.r
-      value: 0.13335514
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: programManager
-      value: 
-      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: sensorUIPrefab
-      value: 
-      objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: graphChartPrefab
-      value: 
-      objectReference: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: targetPosition.y
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: sensorUIOutlinePrefab
-      value: 
-      objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
-    - target: {fileID: 3466693451037991815, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      propertyPath: useFixedScaleForDashedRectangle
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8622674090623328263, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
@@ -2208,10 +2159,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1748573168355749617, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1715977835}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
 --- !u!1001 &1154502044018435254
 PrefabInstance:
@@ -2298,6 +2246,10 @@ PrefabInstance:
       value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 5103234227717517998, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+      propertyPath: dashedRectanglePrefab
+      value: 
+      objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+    - target: {fileID: 5103234227717517998, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       propertyPath: sensorUIOutlinePrefab
       value: 
       objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
@@ -2360,6 +2312,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5986382794826103088, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1179035740}
+    - targetCorrespondingSourceObject: {fileID: 5986382794826103088, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1179035742}
   m_SourcePrefab: {fileID: 100100000, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
 --- !u!1001 &7127550308942418413
 PrefabInstance:
@@ -2369,54 +2324,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1200880608}
     m_Modifications:
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: offset.x
-      value: 40
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: mainCanvas
-      value: 
-      objectReference: {fileID: 1093615697}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: positionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: primaryColor.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: primaryColor.b
-      value: 0.98764133
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: primaryColor.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: primaryColor.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: programManager
-      value: 
-      objectReference: {fileID: 11400000, guid: b5658081166ac4256861e36a2a7c7ac7, type: 2}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: sensorUIPrefab
-      value: 
-      objectReference: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: graphChartPrefab
-      value: 
-      objectReference: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: sensorUIOutlinePrefab
-      value: 
-      objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
-    - target: {fileID: 4367299488891241314, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: useFixedScaleForDashedRectangle
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6569177160939710243, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: m_LocalPosition.x
       value: -147.4932
@@ -2461,17 +2368,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: VelocitySensor
       objectReference: {fileID: 0}
-    - target: {fileID: 8164099255059512354, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
+    - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: mainCanvas
+      value: 
+      objectReference: {fileID: 1093615697}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8164099255059512354, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2083877553}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
 --- !u!1001 &7783249810643629540
 PrefabInstance:
@@ -2578,6 +2482,10 @@ PrefabInstance:
       value: 1.26
       objectReference: {fileID: 0}
     - target: {fileID: 984015996368962036, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: dashedRectanglePrefab
+      value: 
+      objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+    - target: {fileID: 984015996368962036, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
       propertyPath: sensorUIOutlinePrefab
       value: 
       objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
@@ -2632,6 +2540,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 942823825645345921, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7783249810643629542}
+    - targetCorrespondingSourceObject: {fileID: 942823825645345921, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7783249810643629543}
   m_SourcePrefab: {fileID: 100100000, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
 --- !u!1 &7783249810643629541 stripped
 GameObject:
@@ -2659,6 +2570,38 @@ MonoBehaviour:
   pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
   lineThickness: 5
   pointSize: 20
+--- !u!114 &7783249810643629543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7783249810643629541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numDecimals: 2
+  primaryColor: {r: 0, g: 0.796659, b: 1, a: 1}
+  targetPosition: {x: 0, y: 50}
+  positionType: 1
+  useFixedScaleForDashedRectangle: 1
+  sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
+  dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+  graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
+  mainCanvas: {fileID: 1093615697}
+  fluidSensorType: 11
+  lineColor: {r: 0.003921569, g: 0.003921569, b: 0.003921569, a: 1}
+  areaColor: {r: 1, g: 0.11022433, b: 0, a: 0.39215687}
+  measurementZone:
+    serializedVersion: 2
+    x: 100
+    y: 10
+    width: 100
+    height: 50
+  patternModulo: 10
+  SampleDensity: 2
 --- !u!1001 &7996076036689904629
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2788,6 +2731,10 @@ PrefabInstance:
       value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 7261939996400553395, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
+      propertyPath: dashedRectanglePrefab
+      value: 
+      objectReference: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+    - target: {fileID: 7261939996400553395, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
       propertyPath: measurementZone.width
       value: 10
       objectReference: {fileID: 0}
@@ -2810,6 +2757,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 526785133951612108, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1124441012}
+    - targetCorrespondingSourceObject: {fileID: 526785133951612108, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1124441013}
   m_SourcePrefab: {fileID: 100100000, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
 --- !u!1001 &8142432084846364063
 PrefabInstance:

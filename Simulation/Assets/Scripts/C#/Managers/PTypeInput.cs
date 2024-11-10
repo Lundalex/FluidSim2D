@@ -1,11 +1,12 @@
 using Resources2;
 using UnityEngine;
+using PM = ProgramManager;
 
 public class PTypeInput : MonoBehaviour
 {
     public PTypeState[] particleTypeStates;
 
-    public void OnValidate() => ProgramManager.Instance.doOnSettingsChanged = true;
+    public void OnValidate() => PM.Instance.doOnSettingsChanged = true;
     
     public PType[] GetParticleTypes()
     {

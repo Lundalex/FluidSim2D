@@ -65,8 +65,12 @@
         <uie:PropertyField binding-path="RenderOrder" name="PropertyField" />
     </ui:Foldout>
     <ui:Foldout text="Render Display" name="RenderDisplay" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
-        <uie:PropertyField binding-path="Resolution" label="Resolution" tooltip="The resolution of the output image." />
+        <uie:PropertyField binding-path="Resolution" label="Resolution" tooltip="The resolution of the output image." name="PropertyField" />
+        <uie:PropertyField binding-path="LightingSettings" label="Lighting Settings" tooltip="Recommended: Set to the target platform. Global render lighting settings." />
         <uie:PropertyField binding-path="GlobalBrightness" label="Global Brightness" tooltip="Brightness modifier used for all textures" />
+        <ui:Slider label="Contrast" value="1" high-value="2" binding-path="Contrast" tooltip="Render color contrast" show-input-field="true" fill="true" name="Slider" />
+        <ui:Slider label="Saturation" value="1" high-value="2" binding-path="Saturation" tooltip="Render color saturation" show-input-field="true" fill="true" name="Slider" />
+        <ui:Slider label="Gamma" value="1" high-value="2" binding-path="Gamma" tooltip="Render color Gamma" show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Settings View Dark Tint" value="0.4" high-value="1" binding-path="SettingsViewDarkTintPercent" tooltip="Darkness modifier applied to the whole render texture whenever a sensor settings view is active" show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Brightness Speed" value="0.4" high-value="10" binding-path="GlobalBrightnessChangeSpeed" tooltip="The speed of the interpolation between the target global brightness, and the current value" show-input-field="true" fill="true" name="Slider" low-value="0.1" />
         <ui:Foldout text="Rigid Body Springs" value="false" style="-unity-font-style: bold;">

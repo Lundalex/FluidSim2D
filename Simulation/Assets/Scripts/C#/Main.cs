@@ -3,10 +3,10 @@ using Unity.Mathematics;
 using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
-
-// Import utils from Resources2.cs
 using Resources2;
 using System.Collections.Generic;
+using PM = ProgramManager;
+
 public class Main : MonoBehaviour
 {
     [Header("Shader Compilation - Particle Simulation")]
@@ -57,6 +57,7 @@ public class Main : MonoBehaviour
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
+
     // Rigid Bodies
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
@@ -80,14 +81,20 @@ public class Main : MonoBehaviour
 
     [Header("Render Display")]
     public int2 Resolution = new(1920, 1280);
+    public LightingSettings LightingSettings;
     public float3 GlobalBrightness;
+    public float Contrast;
+    public float Saturation;
+    public float Gamma;
     public float SettingsViewDarkTintPercent;
+
     // Rigid Body Springs
     public float SpringRenderWidth;
     public float SpringRenderMatWidth;
     public float SpringRenderRodLength;
     public int SpringRenderNumPeriods;
     public float TaperThresoldNormalised = 0.2f;
+
     // Fluids
     public float VisualParticleRadii = 0.4f;
     public float MetaballsThreshold = 1.0f;
@@ -96,11 +103,14 @@ public class Main : MonoBehaviour
     public Gradient VelocityGradient;
     public int VelocityGradientResolution;
     public float VelocityGradientMaxValue;
+
     // Rigid Bodies
     public float RBEdgeWidth = 0.5f;
+
     // Sensor Areas
     public float FluidSensorEdgeWidth = 3.0f;
     public float SensorAreaAnimationSpeed = 2.0f;
+
     // Background
     public Texture2D backgroundTexture;
     public float3 BackgroundBrightness;
@@ -111,11 +121,13 @@ public class Main : MonoBehaviour
     // Textures
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
+
     // Scripts
     public MaterialInput materialInput;
     public PTypeInput pTypeInput;
     public SceneManager sceneManager;
     public ShaderHelper shaderHelper;
+
     // Compute Shaders
     public ComputeShader renderShader;
     public ComputeShader pSimShader;
@@ -216,32 +228,33 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
-        Debug.Log("Simulation started with " + ParticlesNum + " particles");
+        StringUtils.LogEditor("Simulation started with " + ParticlesNum + " particles");
     }
 
     public void ScriptUpdate()
     {
         bool simulateThisFrame = false;
-        if (!ProgramManager.Instance.programPaused || ProgramManager.Instance.FrameStep) simulateThisFrame = true;
-        if (ProgramManager.Instance.programPaused && ProgramManager.Instance.FrameStep) { Debug.Log("Stepped forward 1 frame"); ProgramManager.Instance.FrameStep = false; }
+        if (!PM.Instance.programPaused || PM.Instance.FrameStep) simulateThisFrame = true;
+        if (PM.Instance.programPaused && PM.Instance.FrameStep) { Debug.Log("Stepped forward 1 frame"); PM.Instance.FrameStep = false; }
         
         if (!simulateThisFrame) return;
 
         DeltaTime = GetDeltaTime();
 
-        for (int _ = 0; _ < TimeStepsPerFrame; _++)
+        for (int i = 0; i < TimeStepsPerFrame; i++)
         {
             UpdateShaderTimeStep();
 
-            // GPUSortSpringLookUp() have to be called in succession to GPUSortChunkLookUp()
             GPUSortChunkLookUp();
             GPUSortSpringLookUp();
 
-            for (int i = 0; i < SubTimeStepsPerFrame; i++)
-            {
-                pSimShader.SetBool("TransferSpringData", i == 0);
+            if (i == 0) RunRenderShader();
 
-                RunPSimShader(i);
+            for (int j = 0; j < SubTimeStepsPerFrame; j++)
+            {
+                pSimShader.SetBool("TransferSpringData", j == 0);
+
+                RunPSimShader(j);
 
                 RunRbSimShader();
 
@@ -255,12 +268,13 @@ public class Main : MonoBehaviour
         }
     }
 
-    public void OnValidate() => ProgramManager.Instance.doOnSettingsChanged = true;
+    public void OnValidate() => PM.Instance.doOnSettingsChanged = true;
 
     public void OnSettingsChanged() => UpdateShaderData();
 
     private void UpdateShaderData()
     {
+        SetLightingSettings();
         SetConstants();
         UpdateSettings();
     }
@@ -272,6 +286,7 @@ public class Main : MonoBehaviour
         MaterialBuffer.SetData(Mats);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
+        shaderHelper.UpdateNewRBSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
     }
@@ -285,8 +300,8 @@ public class Main : MonoBehaviour
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        pSimShader.SetBool("LMousePressed", mousePressed.x && !ProgramManager.Instance.isAnySensorSettingsViewActive);
-        pSimShader.SetBool("RMousePressed", mousePressed.y && !ProgramManager.Instance.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("LMousePressed", mousePressed.x && !PM.Instance.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("RMousePressed", mousePressed.y && !PM.Instance.isAnySensorSettingsViewActive);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         rbSimShader.SetBool("RMousePressed", mousePressed.x);
@@ -322,13 +337,43 @@ public class Main : MonoBehaviour
         pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
     }
 
-    void SceneSetup()
+    private void SceneSetup()
     {
         Camera.main.transform.position = new Vector3(BoundaryDims.x / 2, BoundaryDims.y / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(BoundaryDims.x * 0.75f, BoundaryDims.y * 1.5f);
     }
 
-    float GetDeltaTime()
+    private void SetLightingSettings()
+    {
+        switch (LightingSettings)
+        {
+            case LightingSettings.Custom:
+                break;
+            case LightingSettings.WindowsDefault:
+                GlobalBrightness = 1;
+                Contrast = 1;
+                Saturation = 1;
+                Gamma = 1;
+                SettingsViewDarkTintPercent = 0.8f;
+                break;
+            case LightingSettings.MacDefault:
+                GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
+                Contrast = 1.1f;
+                Saturation = 1.0f;
+                Gamma = 0.8f;
+                SettingsViewDarkTintPercent = 0.8f;
+                break;
+            case LightingSettings.WebDefault:
+                GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
+                Contrast = 1.1f;
+                Saturation = 1.0f;
+                Gamma = 0.8f;
+                SettingsViewDarkTintPercent = 0.8f;
+                break;
+        }
+    }
+
+    private float GetDeltaTime()
     {
         float stepsPerFrame = TimeStepsPerFrame * SubTimeStepsPerFrame;
         float deltaTime;
@@ -339,16 +384,16 @@ public class Main : MonoBehaviour
         }
         else // TimeStepType == TimeStepType.Dynamic
         {
-            float calculatedDelta = ProgramManager.Instance.clampedDeltaTime / stepsPerFrame;
+            float calculatedDelta = PM.Instance.clampedDeltaTime / stepsPerFrame;
             deltaTime = Mathf.Min(calculatedDelta, TimeStep);
         }
 
-        deltaTime *= ProgramManager.Instance.timeScale * ProgramSpeed;
+        deltaTime *= PM.Instance.timeScale * ProgramSpeed;
 
         return deltaTime;
     }
 
-    void SetConstants()
+    private void SetConstants()
     {
         MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
         InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
@@ -356,7 +401,7 @@ public class Main : MonoBehaviour
         ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
     }
 
-    void InitializeBuffers()
+    private void InitializeBuffers()
     {
         ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas);
         ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
@@ -379,7 +424,7 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
     }
 
-    void GPUSortChunkLookUp()
+    private void GPUSortChunkLookUp()
     {
         int threadGroupsNum = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
         int threadGroupsNumHalfCeil = (int)Math.Ceiling(threadGroupsNum * 0.5f);
@@ -409,7 +454,7 @@ public class Main : MonoBehaviour
         ComputeHelper.DispatchKernel (sortShader, "PopulateStartIndices", threadGroupsNum);
     }
 
-    void GPUSortSpringLookUp()
+    private void GPUSortSpringLookUp()
     {
         if (DoSimulateParticleSprings)
         {
@@ -436,43 +481,7 @@ public class Main : MonoBehaviour
         }
     }
 
-    void GPUSortStickynessRequests()
-    {
-        int StickyRequestsCount = Func.NextPow2(4096);
-        if (StickyRequestsCount == 0) {return;}
-        
-        int threadGroupsNum = Utils.GetThreadGroupsNums(StickyRequestsCount, 512);
-        int threadGroupsNumHalfCeil = Mathf.CeilToInt(threadGroupsNum * 0.5f);
-
-        ComputeHelper.DispatchKernel (sortShader, "PopulateSortedStickyRequests", threadGroupsNum);
-
-        int len = StickyRequestsCount;
-        int lenLog2 = Func.Log2(len);
-        sortShader.SetInt("SortedStickyRequestsLength", len);
-        sortShader.SetInt("SortedStickyRequestsLog2Length", lenLog2);
-
-        int basebBlockLen = 2;
-        while (basebBlockLen != 2*len) // basebBlockLen = len is the last outer iteration
-        {
-            int blockLen = basebBlockLen;
-            while (blockLen != 1) // BlockLen = 2 is the last inner iteration
-            {
-                int blocksNum = len / blockLen;
-                bool BrownPinkSort = blockLen == basebBlockLen;
-
-                sortShader.SetInt("SRBlockLen", blockLen);
-                sortShader.SetInt("SRblocksNum", blocksNum);
-                sortShader.SetBool("SRBrownPinkSort", BrownPinkSort);
-
-                ComputeHelper.DispatchKernel (sortShader, "SRSortIteration", threadGroupsNumHalfCeil);
-
-                blockLen /= 2;
-            }
-            basebBlockLen *= 2;
-        }
-    }
-
-    void RunPSimShader(int step)
+    private void RunPSimShader(int step)
     {
         ComputeHelper.DispatchKernel (pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
         ComputeHelper.DispatchKernel (pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
@@ -489,7 +498,7 @@ public class Main : MonoBehaviour
         ComputeHelper.DispatchKernel (pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize);
     }
 
-    void RunRbSimShader()
+    private void RunRbSimShader()
     {
         if (RBVectors.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
@@ -499,29 +508,32 @@ public class Main : MonoBehaviour
         if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
     }
 
-void DispatchRenderStep(RenderStep step, int2 threadsNum)
-{
-    switch (step)
+    private void DispatchRenderStep(RenderStep step, int2 threadsNum)
     {
-        case RenderStep.Background:
-            ComputeHelper.DispatchKernel(renderShader, "RenderBackground", threadsNum, renderShaderThreadSize);
-            break;
-        case RenderStep.Fluids:
-            ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
-            break;
-        case RenderStep.RigidBodies:
-            ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
-            break;
-        case RenderStep.RigidBodySprings:
-            ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
-            break;
-        case RenderStep.UI:
-            ComputeHelper.DispatchKernel(renderShader, "RenderUI", threadsNum, renderShaderThreadSize);
-            break;
+        switch (step)
+        {
+            case RenderStep.Background:
+                ComputeHelper.DispatchKernel(renderShader, "RenderBackground", threadsNum, renderShaderThreadSize);
+                break;
+            case RenderStep.Fluids:
+                ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
+                break;
+            case RenderStep.RigidBodies:
+                ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
+                break;
+            case RenderStep.RigidBodySprings:
+                ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
+                break;
+            case RenderStep.UI:
+                ComputeHelper.DispatchKernel(renderShader, "RenderUI", threadsNum, renderShaderThreadSize);
+                break;
+        }
     }
-}
-    void RunRenderShader()
+
+    public void RunRenderShader()
     {
+        renderShader.SetFloat("GlobalBrightnessFactor", PM.Instance.globalBrightnessFactor);
+
         int2 threadsNum = new(renderTexture.width, renderTexture.height);
         foreach (RenderStep step in RenderOrder)
         {
@@ -529,14 +541,7 @@ void DispatchRenderStep(RenderStep step, int2 threadsNum)
         }
     }
     
-    public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        renderShader.SetFloat("GlobalBrightnessFactor", ProgramManager.Instance.globalBrightnessFactor);
-
-        RunRenderShader();
-
-        Graphics.Blit(renderTexture, dest);
-    }
+    public void OnRenderImage(RenderTexture src, RenderTexture dest) => Graphics.Blit(renderTexture, dest);
 
     void OnDestroy()
     {

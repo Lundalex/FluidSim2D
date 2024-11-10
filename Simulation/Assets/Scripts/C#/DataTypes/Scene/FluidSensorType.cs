@@ -1,0 +1,15 @@
+public enum FluidSensorType
+{
+    Energy_Total_Kinetic,
+    Energy_Total_Thermal,
+    Energy_Total_Both,
+    Energy_Average_Kinetic,
+    Energy_Average_Thermal,
+    Energy_Average_Both,
+    TotalMass,
+    AveragePressure,
+    AverageTemperatureCelcius,
+    AverageTemperatureKelvin,
+    Velocity_Absolute_Destructive,
+    Velocity_Absolute_Summative
+}
