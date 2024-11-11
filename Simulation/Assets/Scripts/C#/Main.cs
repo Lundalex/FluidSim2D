@@ -30,8 +30,8 @@ public class Main : MonoBehaviour
     public float LookAheadTime = 0.017f;
     public float StateThresholdPadding = 3.0f;
     public int MaxInfluenceRadius = 2;
-    [SerializeField] private int MaxParticlesNum = 20000;
-    [SerializeField] private int ExtraParticleSlots = 10000;
+    [SerializeField] private int MaxParticlesNum = 30000;
+    [SerializeField] private int MaxStartingParticlesNum = 20000;
     [SerializeField] private int MaxSpringsPerParticle = 150;
 
     [Header("Scene Boundary")]
@@ -180,7 +180,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public Texture2D VelocityGradientTexture;
 
     // Particle data
-    private PData[] PDatas;
+    private List<PData> PDatas;
 
     // Rigid Bodies
     public RBVector[] RBVectors;
@@ -201,8 +201,8 @@ public class Main : MonoBehaviour
     {
         SceneSetup();
 
-        PDatas = sceneManager.GenerateParticles(MaxParticlesNum);
-        ParticlesNum = PDatas.Length;
+        PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
+        ParticlesNum = PDatas.Count;
 
         BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
 
@@ -229,7 +229,7 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
-        StringUtils.LogEditor("Simulation started with " + ParticlesNum + " particles");
+        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
     }
 
     public void ScriptUpdate()
@@ -259,8 +259,11 @@ public class Main : MonoBehaviour
 
                 RunRbSimShader();
 
-                int ThreadNums2 = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
-                if (ParticlesNum != 0) pSimShader.Dispatch(5, ThreadNums2, 1, 1);
+                if (ParticlesNum > 0)
+                {
+                    int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
+                    pSimShader.Dispatch(5, ThreadNums, 1, 1);
+                }
                 
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
@@ -404,7 +407,7 @@ public class Main : MonoBehaviour
 
     private void InitializeBuffers()
     {
-        ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas);
+        ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas.ToArray());
         ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
         ComputeHelper.CreateStructuredBuffer<RecordedFluidData>(ref RecordedFluidDataBuffer, ChunksNumAll);
 

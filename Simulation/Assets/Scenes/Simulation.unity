@@ -242,8 +242,8 @@ MonoBehaviour:
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
-  MaxParticlesNum: 20000
-  ExtraParticleSlots: 10000
+  MaxParticlesNum: 30000
+  MaxStartingParticlesNum: 20000
   MaxSpringsPerParticle: 150
   BoundaryDims:
     x: 300

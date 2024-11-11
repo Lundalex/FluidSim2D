@@ -1,14 +1,20 @@
 using UnityEditor;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
+using System.Diagnostics;
 
 [CustomEditor(typeof(Main))]
 public class MainEditor : Editor
 {
     public VisualTreeAsset m_UXML;
+    public Stopwatch warningCooldownStopwatch;
 
     public override VisualElement CreateInspectorGUI()
     {
+        // Initialize stopwatch
+        warningCooldownStopwatch = new();
+        warningCooldownStopwatch.Start();
+
         // Create a root VisualElement
         var root = new VisualElement();
 
@@ -18,18 +24,18 @@ public class MainEditor : Editor
         // Find the existing PropertyFields and TextField in the UXML by their name or binding path
         var maxSpringsPerParticleField = root.Q<PropertyField>("MaxSpringsPerParticle");
         var maxParticlesNumField = root.Q<PropertyField>("MaxParticlesNum");
-        var extraParticleSlotsField = root.Q<PropertyField>("ExtraParticleSlots");
+        var maxStartingParticlesNumField = root.Q<PropertyField>("MaxStartingParticlesNum");
         var totalParticleSpringsField = root.Q<TextField>("TotalParticleSprings");
 
         // Find the properties in the serialized object
         var serializedMaxSpringsPerParticle = serializedObject.FindProperty("MaxSpringsPerParticle");
         var serializedMaxParticlesNum = serializedObject.FindProperty("MaxParticlesNum");
-        var serializedExtraParticleSlots = serializedObject.FindProperty("ExtraParticleSlots");
+        var serializedMaxStartingParticlesNum = serializedObject.FindProperty("MaxStartingParticlesNum");
 
         // Bind the PropertyFields to the serialized properties
         maxSpringsPerParticleField.BindProperty(serializedMaxSpringsPerParticle);
         maxParticlesNumField.BindProperty(serializedMaxParticlesNum);
-        extraParticleSlotsField.BindProperty(serializedExtraParticleSlots);
+        maxStartingParticlesNumField.BindProperty(serializedMaxStartingParticlesNum);
 
         // Make the TextField read-only (so it behaves like a display field)
         totalParticleSpringsField.isReadOnly = true;
@@ -42,18 +48,29 @@ public class MainEditor : Editor
 
             int numSpringsPerParticle = serializedMaxSpringsPerParticle.intValue;
             int numParticles = serializedMaxParticlesNum.intValue;
-            int numExtraParticleSlots = serializedExtraParticleSlots.intValue;
-            int numParticleSprings = numSpringsPerParticle * (numParticles + numExtraParticleSlots);
+            int numParticleSprings = numSpringsPerParticle * numParticles;
 
             totalParticleSpringsField.value = numParticleSprings.ToString(); // Display the result
+
+            // Ensure MaxStartingParticlesNum does not exceed MaxParticlesNum
+            if (serializedMaxStartingParticlesNum.intValue > numParticles)
+            {
+                if (warningCooldownStopwatch.Elapsed.TotalSeconds > 1.0f)
+                {
+                    warningCooldownStopwatch.Restart();
+                    UnityEngine.Debug.LogWarning("MaxStartingParticlesNum cannot exceed MaxParticlesNum");
+                }
+                serializedMaxStartingParticlesNum.intValue = numParticles;
+                serializedObject.ApplyModifiedProperties(); // Apply the change to enforce the limit
+            }
         }
 
-        // Subscribe to value changes to update the TextField dynamically
+        // Subscribe to value changes to update the TextField and enforce validation dynamically
         maxSpringsPerParticleField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
         maxParticlesNumField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
-        extraParticleSlotsField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
+        maxStartingParticlesNumField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
 
-        // Initialize the TextField value on creation
+        // Initialize the TextField value and validation on creation
         UpdateResult();
 
         // --- Control the visibility of the AdvancedSettings foldout based on the ShowAdvanced toggle ---
@@ -74,15 +91,6 @@ public class MainEditor : Editor
         {
             advancedSettingsFoldout.style.display = evt.newValue ? DisplayStyle.Flex : DisplayStyle.None;
         });
-
-        // #if true
-
-        //     // Create a foldout for the full inspector (if needed)
-        //     var foldOut = new Foldout() { viewDataKey = "MainFullInspectorFoldout", text = "Full Inspector" };
-        //     InspectorElement.FillDefaultInspector(foldOut, serializedObject, this);
-        //     root.Add(foldOut);
-
-        // #endif
 
         return root;
     }

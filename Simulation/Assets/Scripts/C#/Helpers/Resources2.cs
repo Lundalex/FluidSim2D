@@ -210,7 +210,7 @@ namespace Resources2
 
     public static class StringUtils
     {
-        public static void LogEditor(string message)
+        public static void LogIfInEditor(string message)
         {
             if (Application.isEditor) Debug.Log(message);
         }

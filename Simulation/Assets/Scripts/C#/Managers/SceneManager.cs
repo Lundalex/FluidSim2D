@@ -79,7 +79,7 @@ public class SceneManager : MonoBehaviour
         Rect[] rects = new Rect[0];
         if (textures.Count > 0) rects = atlas.PackTextures(textures.ToArray(), 1, MaxAtlasDims);
 
-        StringUtils.LogEditor("Texture atlas constructed with " + rects.Length + " textures. Width: " + atlas.width + ". Height: " + atlas.height);
+        StringUtils.LogIfInEditor("Texture atlas constructed with " + rects.Length + " textures. Width: " + atlas.width + ". Height: " + atlas.height);
 
         int2 GetTexLoc(Rect rect) => new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height));
         int2 GetTexDims(Rect rect) => new((int)(rect.width * atlas.width), (int)(rect.height * atlas.height));
@@ -119,7 +119,7 @@ public class SceneManager : MonoBehaviour
         };
     }
 
-    public PData[] GenerateParticles(int maxParticlesNum, float gridDensity = 0)
+    public List<PData> GenerateParticles(int maxParticlesNum, float gridDensity = 0)
     {
         // Get all fluid instances
         GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
@@ -138,11 +138,11 @@ public class SceneManager : MonoBehaviour
             foreach (var pData in pDatas)
             {
                 allPDatas.Add(pData);
-                if (--maxParticlesNum <= 0) return allPDatas.ToArray();
+                if (--maxParticlesNum <= 0) return allPDatas;
             }
         }
 
-        return allPDatas.ToArray();
+        return allPDatas;
     }
 
     public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridDensityInput = null)
