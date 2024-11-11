@@ -8,10 +8,10 @@ using Resources2;
 public class SensorManager : MonoBehaviour
 {
     public FluidSensor[] enabledFluidSensors;
-    [Range(10.0f, 100.0f)] public float msRigidBodyDataRetrievalInterval;
-    [Range(10.0f, 100.0f)] public float msFluidDataRetrievalInterval;
+    [Range(10.0f, 100.0f), SerializeField] private float msRigidBodyDataRetrievalInterval;
+    [Range(10.0f, 100.0f), SerializeField] private float msFluidDataRetrievalInterval;
     [Range(20.0f, 500.0f)] public float msGraphPointSubmissionFrequency;
-    [Range(100.0f, 2000.0f)] public float msGraphUpdateFrequency;
+    [Range(100.0f, 2000.0f), SerializeField] private float msGraphUpdateFrequency;
 
     // Retrieved data
     [NonSerialized] public RBData[] retrievedRBDatas;
@@ -24,7 +24,7 @@ public class SensorManager : MonoBehaviour
     [NonSerialized] public List<Sensor> sensors;
     private Main main;
 
-    private bool programRunning = false;
+    private bool programRunning;
     public void StartScript(Main main)
     {
         this.main = main;
@@ -110,5 +110,5 @@ public class SensorManager : MonoBehaviour
         }
     }
 
-    void OnDestroy() => programRunning = false;
+    private void OnDestroy() => programRunning = false;
 }

@@ -206,6 +206,8 @@ namespace Resources2
         }
 
         public static float MsToSeconds(float ms) => ms / 1000.0f;
+
+        public static float SecondsToMs(float s) => s * 1000.0f;
     }
 
     public static class StringUtils

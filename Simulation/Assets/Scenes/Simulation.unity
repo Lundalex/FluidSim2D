@@ -1285,6 +1285,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &1155876220 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+  m_PrefabInstance: {fileID: 5705782571177992559}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1155876221 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 329644324870296486, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+  m_PrefabInstance: {fileID: 5705782571177992559}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ea5b4795a09484595d90e285e44f73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1179035742 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1018250808677557837, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
@@ -1296,6 +1312,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1184897558
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1184897559}
+  - component: {fileID: 1184897560}
+  m_Layer: 0
+  m_Name: FluidSpawnerManager
+  m_TagString: FluidSpawnerManager
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1184897559
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1184897558}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 156.62721, y: 104.48815, z: 6.6450777}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1184897560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1184897558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 310329f0205b89d4494a974e3586162e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enabledFluidSpawners:
+  - {fileID: 1155876221}
 --- !u!1 &1200880607
 GameObject:
   m_ObjectHideFlags: 0
@@ -1724,6 +1786,7 @@ Transform:
   - {fileID: 955280876}
   - {fileID: 376927702}
   - {fileID: 36166908}
+  - {fileID: 1155876220}
   - {fileID: 1200880608}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2080,6 +2143,10 @@ PrefabInstance:
       propertyPath: mainCanvas
       value: 
       objectReference: {fileID: 1093615697}
+    - target: {fileID: 1018250808677557837, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+      propertyPath: targetPosition.y
+      value: 80
+      objectReference: {fileID: 0}
     - target: {fileID: 5986382794826103088, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       propertyPath: m_Name
       value: FluidEnergySensor
@@ -2129,6 +2196,71 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+--- !u!1001 &5705782571177992559
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2002973397}
+    m_Modifications:
+    - target: {fileID: 329644324870296486, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: msSpawnInterval
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 329644324870296486, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: MaxSpawnedParticlesPerUpdate
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 121.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 120.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6.6450777
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2164227265186375724, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
+      propertyPath: m_Name
+      value: FluidSpawner
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
 --- !u!1001 &7127550308942418413
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2463,6 +2595,7 @@ SceneRoots:
   - {fileID: 486540}
   - {fileID: 1751344380}
   - {fileID: 155133419}
+  - {fileID: 1184897559}
   - {fileID: 2045799466}
   - {fileID: 415270256}
   - {fileID: 2002973397}

@@ -5,7 +5,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
 {
     [SerializeField] private Main main;
 
-    private void Awake()
+    private void Start()
     {
         PM.Instance.main = main;
         PM.Instance.Start();

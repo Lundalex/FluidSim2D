@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Resources2;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
@@ -8,6 +9,7 @@ public class ProgramManager : ScriptableObject
     public Material lineMaterial;
     [HideInInspector] public Main main;
     [HideInInspector] public SensorManager sensorManager;
+    [HideInInspector] public FluidSpawnerManager fluidSpawnerManager;
 
     // Sensors
     [HideInInspector] public List<SensorData> sensorDatas = new();
@@ -53,8 +55,9 @@ public class ProgramManager : ScriptableObject
     {
         SetReferences();
 
-        sensorManager.StartScript(main);
         main.StartScript();
+        sensorManager.StartScript(main);
+        fluidSpawnerManager.StartScript();
 
         globalBrightnessFactor = 1;
         programStarted = true;
@@ -80,13 +83,23 @@ public class ProgramManager : ScriptableObject
             doOnSettingsChanged = false;
         }
 
-        if (!programPaused && timeScale > MinTimeScaleForRunningProgram)
+        bool simulateThisFrame = false;
+        if (!programPaused || FrameStep) simulateThisFrame = true;
+        if (programPaused && FrameStep)
         {
-            totalTimeElapsed += clampedDeltaTime;
-            
-            main.ScriptUpdate();
+            StringUtils.LogIfInEditor("Stepped forward 1 frame");
+            FrameStep = false;
+        }
+
+        if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
+        {
+            fluidSpawnerManager.UpdateScript();
+
+            main.UpdateScript();
 
             foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
+
+            totalTimeElapsed += clampedDeltaTime;
         }
         else main.RunRenderShader();
     }
@@ -108,8 +121,9 @@ public class ProgramManager : ScriptableObject
     }
     private void SetReferences()
     {
-        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
+        main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        fluidSpawnerManager = GameObject.FindGameObjectWithTag("FluidSpawnerManager").GetComponent<FluidSpawnerManager>();
     }
 
     public void ResetDatas()

@@ -198,9 +198,6 @@ public class Main : MonoBehaviour
     private const int CalcStickyRequestsFrequency = 3;
     private int FrameCount = 0;
 
-    [ContextMenu("Add 1000 Particles")]
-    public void Add1000Particles() => SubmitParticlesToSimulation(sceneManager.GenerateParticles(1000).ToArray());
-
     public void SubmitParticlesToSimulation(PData[] particlesToAdd) => NewPDatas.AddRange(particlesToAdd);
 
     public void StartScript()
@@ -238,15 +235,9 @@ public class Main : MonoBehaviour
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
     }
 
-    public void ScriptUpdate()
+    public void UpdateScript()
     {
         UpdateSimulationPDatas();
-
-        bool simulateThisFrame = false;
-        if (!PM.Instance.programPaused || PM.Instance.FrameStep) simulateThisFrame = true;
-        if (PM.Instance.programPaused && PM.Instance.FrameStep) { Debug.Log("Stepped forward 1 frame"); PM.Instance.FrameStep = false; }
-
-        if (!simulateThisFrame) return;
 
         DeltaTime = GetDeltaTime();
 
@@ -280,28 +271,28 @@ public class Main : MonoBehaviour
         }
     }
 
-    private void UpdateSimulationPDatas()
+private void UpdateSimulationPDatas()
+{
+    int particlesToAdd = NewPDatas.Count;
+    int availableSpace = MaxParticlesNum - ParticlesNum;
+
+    if (particlesToAdd > 0 && availableSpace > 0)
     {
-        int particlesToAdd = NewPDatas.Count;
+        particlesToAdd = Mathf.Min(particlesToAdd, availableSpace);
+
         if (particlesToAdd > 0)
         {
-            ParticlesNum = Mathf.Min(ParticlesNum + particlesToAdd, MaxParticlesNum);
+            ParticlesNum += particlesToAdd;
+            SetConstants();
+            UpdateSettings();
 
-            sceneManager.GenerateParticles(1000);
-
-            if (particlesToAdd > 0)
-            {
-                PDatas.AddRange(NewPDatas);
-                NewPDatas = new();
-                ParticlesNum = PDatas.Count;
-                SetConstants();
-                UpdateSettings();
-
-                // Transfer the new particle data to the GPU
-                PDataBuffer.SetData(PDatas.ToArray(), ParticlesNum - particlesToAdd, ParticlesNum - particlesToAdd, particlesToAdd);
-            }
+            // Transfer the new particle data to the GPU
+            PDataBuffer.SetData(NewPDatas.ToArray(), 0, ParticlesNum - particlesToAdd, particlesToAdd);
         }
+
+        NewPDatas = new();
     }
+}
 
     public void OnValidate() => PM.Instance.doOnSettingsChanged = true;
 
@@ -581,7 +572,7 @@ public class Main : MonoBehaviour
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest) => Graphics.Blit(renderTexture, dest);
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         ComputeHelper.Release(
             SpatialLookupBuffer,

@@ -151,7 +151,7 @@ public class FluidSensor : Sensor
                     break;
 
                 case FluidSensorType.AverageTemperatureCelcius:
-                    value = Utils.CelsiusToKelvin(avgTemperature);
+                    value = Utils.KelvinToCelcius(avgTemperature);
                     break;
 
                 case FluidSensorType.AverageTemperatureKelvin:

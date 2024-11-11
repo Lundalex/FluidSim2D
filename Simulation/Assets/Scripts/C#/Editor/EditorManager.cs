@@ -186,7 +186,7 @@ public class EditorManager : Editor
 
         if (fluid.editorRenderMethod == EditorRenderMethod.Particles)
         {
-            fluid.Points = fluid.GeneratePoints(-1);
+            fluid.Points = fluid.GeneratePoints(-1).ToArray();
 
             int iterationCount = 0;
             Gizmos.color = fluid.BodyColor;
@@ -241,6 +241,55 @@ public class EditorManager : Editor
             // Draw the quad
             Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
         }
+    }
+
+    // Draw rigid body objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidSpawnerObjects(FluidSpawner fluidSpawner, GizmoType gizmoType)
+    {
+        if (fluidSpawner == null) return;
+
+        // Update points
+        fluidSpawner.SetPolygonData();
+
+        // --- Draw the filled body using triangulation ---
+        if (fluidSpawner.DoDrawBody)
+        {
+            if (fluidSpawner.MeshPoints.Count < 3)
+            {
+                // Cannot create a polygon with less than 3 points
+                return;
+            }
+
+            // Triangulate the polygon
+            Vector2[] polygonPoints = fluidSpawner.MeshPoints.ToArray();
+            Triangulator triangulator = new Triangulator(polygonPoints);
+            int[] indices = triangulator.Triangulate();
+
+            // Convert Vector2 to Vector3 (z = 0)
+            Vector3[] vertices = new Vector3[polygonPoints.Length];
+            for (int i = 0; i < polygonPoints.Length; i++)
+            {
+                vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
+            }
+
+            // Draw triangles
+            Handles.color = fluidSpawner.BodyColor;
+            for (int i = 0; i < indices.Length; i += 3)
+            {
+                Vector3[] triangleVertices = new Vector3[3];
+                triangleVertices[0] = vertices[indices[i]];
+                triangleVertices[1] = vertices[indices[i + 1]];
+                triangleVertices[2] = vertices[indices[i + 2]];
+
+                // Draw the triangle
+                Handles.DrawAAConvexPolygon(triangleVertices);
+            }
+        }
+
+        // Draw wiremesh
+        Vector2[] meshVertices = fluidSpawner.MeshPoints.ToArray();
+        DrawMeshWireframe(meshVertices, fluidSpawner.LineColor, sceneObjectLineThickness);
     }
 
     // Draw fluid sensor objects

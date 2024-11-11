@@ -5,6 +5,7 @@ using Resources2;
 using System.Linq;
 using UnityEditor;
 using Unity.Mathematics;
+using PM = ProgramManager;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
@@ -12,7 +13,7 @@ public class SceneFluid : Polygon
     public EditorRenderMethod editorRenderMethod;
     public int MaxGizmosIterations = 20000;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
-    
+
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
     [SerializeField] private float particleTemperatureCelcius = 20.0f;
@@ -24,14 +25,7 @@ public class SceneFluid : Polygon
     private PTypeInput pTypeInput;
     private Main main;
 
-    private void OnValidate()
-    {
-        if (ProgramStarted)
-        {
-            if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
-            main.OnValidate();
-        }
-    }
+    private void OnValidate() => PM.Instance.doOnSettingsChanged = true;
     
     public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
     {
@@ -39,21 +33,21 @@ public class SceneFluid : Polygon
         if (pTypeInput == null) pTypeInput = GameObject.FindGameObjectWithTag("PTypeInput").GetComponent<PTypeInput>();
 
         SetPolygonData();
-        Vector2[] generatedPoints = GeneratePoints(gridDensity);
+        List<Vector2> generatedPoints = GeneratePoints(gridDensity);
 
         // Check if pTypeIndex is within range of all pTypes
         if (pTypeIndex >= pTypeInput.particleTypeStates.Length * 3) Debug.LogError("pTypeIndex outside valid range. SceneFluid: " + this.name);
 
-        PData[] pDatas = new PData[generatedPoints.Length];
+        PData[] pDatas = new PData[generatedPoints.Count];
         for (int i = 0; i < pDatas.Length; i++)
         {
-            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, new(0, 0), particleTemperatureCelcius);
+            pDatas[i] = InitPData(generatedPoints[i] + pointOffset, particleTemperatureCelcius);
         }
 
         return pDatas;
     }
 
-    public Vector2[] GeneratePoints(float gridDensity = 0)
+    public List<Vector2> GeneratePoints(float gridDensity = 0)
     {
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
@@ -76,23 +70,23 @@ public class SceneFluid : Polygon
 
                 if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point))
                 {
-                    if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints.ToArray();
+                    if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints;
 
                     generatedPoints.Add(point);
                 }
             }
         }
 
-        return generatedPoints.ToArray();
+        return generatedPoints;
     }
 
-    PData InitPData(Vector2 pos, Vector2 vel, float tempCelsius)
+    private PData InitPData(Vector2 pos, float tempCelsius)
     {
         return new PData
         {
             predPos = new float2(0.0f, 0.0f),
             pos = pos,
-            vel = vel,
+            vel = new(0, 0),
             lastVel = new float2(0.0f, 0.0f),
             density = 0.0f,
             nearDensity = 0.0f,
