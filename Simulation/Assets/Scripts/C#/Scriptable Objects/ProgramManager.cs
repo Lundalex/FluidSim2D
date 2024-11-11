@@ -22,7 +22,7 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public bool FrameStep = false;
     [HideInInspector] public float totalTimeElapsed = 0;
     [HideInInspector] public float clampedDeltaTime = 0;
-    private const float MaxDeltaTime = 1 / 30.0f;
+    [HideInInspector] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
 
     // Private - Camera
@@ -65,7 +65,7 @@ public class ProgramManager : ScriptableObject
     {
         CheckKeyInputs();
 
-        isAnySensorSettingsViewActive = CheckIfAnySensorSettingsViewActive();
+        isAnySensorSettingsViewActive = CheckAnySensorSettingsViewActive();
 
         clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
 
@@ -133,11 +133,20 @@ public class ProgramManager : ScriptableObject
     public void SetSensorSettingsViewStatus(int sensorIndex, bool isSettingsViewActive)
         => sensorDatas[sensorIndex].isSettingsViewActive = isSettingsViewActive;
 
-    public bool CheckIfAnySensorSettingsViewActive()
+    public bool CheckAnySensorSettingsViewActive()
     {
         foreach (SensorData sensorData in sensorDatas)
         {
             if (sensorData.isSettingsViewActive) return true;
+        }
+        return false;
+    }
+
+    public bool CheckAnySensorHovered()
+    {
+        foreach (SensorData sensorData in sensorDatas)
+        {
+            if (sensorData.sensorUI.isPointerHovering) return true;
         }
         return false;
     }

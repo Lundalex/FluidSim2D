@@ -9,7 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6659919282265780785}
-  - component: {fileID: 984015996368962036}
+  - component: {fileID: 4070848776831518849}
+  - component: {fileID: 3858022677190404988}
   m_Layer: 0
   m_Name: FluidVelocitySensorPrefab
   m_TagString: Untagged
@@ -25,14 +26,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 942823825645345921}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 141.02443, y: 106.50041, z: -1.2331525}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &984015996368962036
+--- !u!114 &4070848776831518849
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,17 +42,47 @@ MonoBehaviour:
   m_GameObject: {fileID: 942823825645345921}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ace3a078a4c7a49adbcb27a47b293459, type: 3}
+  m_Script: {fileID: 11500000, guid: 3108e11523352974f8968a3b6aafafc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numDecimals: 1
-  sensorUIPrefab: {fileID: 1956925353773926560, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
-  SampleDensity: 2
+  overrideGraphDataCategory: 0
+  isBezierCurve: 1
+  bezierTension: 0.5
+  HorizontalViewLength: 5
+  lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+  fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
+  pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+  lineThickness: 5
+  pointSize: 20
+--- !u!114 &3858022677190404988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942823825645345921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numDecimals: 2
+  primaryColor: {r: 0, g: 0.796659, b: 1, a: 1}
+  targetPosition: {x: 0, y: 50}
   positionType: 1
-  targetPosition: {x: 0, y: 30}
+  useFixedScaleForDashedRectangle: 1
+  sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
+  dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
+  graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
+  mainCanvas: {fileID: 0}
+  fluidSensorType: 11
+  lineColor: {r: 0.003921569, g: 0.003921569, b: 0.003921569, a: 1}
+  areaColor: {r: 1, g: 0.11022433, b: 0, a: 0.39215687}
   measurementZone:
     serializedVersion: 2
     x: 100
     y: 10
     width: 100
     height: 50
+  patternModulo: 10
+  SampleDensity: 2

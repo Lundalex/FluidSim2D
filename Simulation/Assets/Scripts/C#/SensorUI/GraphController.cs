@@ -40,6 +40,10 @@ public class GraphController : MonoBehaviour
             UnityEngine.Debug.LogWarning("The bezier curve setting cannot be combined with graph data category override. The graph data category will not be overridden");
             overrideGraphDataCategory = false;
         }
+        if (overrideGraphDataCategory)
+        {
+            graphChart.DataSource.AddCategory("SensorDatas", lineMaterial, lineThickness, new MaterialTiling(), fillMaterial, false, pointMaterial, pointSize, false);
+        }
 
         stopwatch = new();
         stopwatch.Start();
@@ -50,15 +54,9 @@ public class GraphController : MonoBehaviour
     public void ResetGraph()
     {
         // Reset graph
-        if (overrideGraphDataCategory)
+        if (graphChart.DataSource.HasCategory("SensorDatas"))
         {
-            graphChart.DataSource.Clear();
-            if (graphChart.DataSource.HasCategory("SensorDatas"))
-            {
-                graphChart.DataSource.ClearCategory("SensorDatas");
-                graphChart.DataSource.RemoveCategory("SensorDatas");
-            }
-            graphChart.DataSource.AddCategory("SensorDatas", lineMaterial, lineThickness, new MaterialTiling(), fillMaterial, false, pointMaterial, pointSize, false);
+            graphChart.DataSource.ClearCategory("SensorDatas");
         }
 
         // Reset data
@@ -96,7 +94,8 @@ public class GraphController : MonoBehaviour
         // Update the graph
         foreach (Vector2 point in storedPoints)
         {
-            pointList.Add(pointList.Count == 0 ? new(0, point.y) : point);
+
+            pointList.Add(pointList.Count == 0 ? new(point.x > 2.0f ? point.x : 0, point.y) : point);
 
             if (isBezierCurve)
             {

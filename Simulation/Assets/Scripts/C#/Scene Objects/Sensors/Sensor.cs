@@ -6,6 +6,7 @@ using ChartAndGraph;
 public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
+    [SerializeField] private DataView defaultDataView;
     [Range(0, 2)] public int numDecimals;
     public Color primaryColor;
     public Vector2 targetPosition;
@@ -74,6 +75,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.sliderScale = sensorUI.scaleSlider.value;
+        sensorUI.SetDataWindow(defaultDataView == DataView.Numeric ? "NumericDisplay" : "GraphDisplay");
         InitSensorTitleAndUnit();
         InitSensorTypeDropdown();
         sensorUIObject.name = "UI - " + this.name;

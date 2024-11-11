@@ -295,13 +295,14 @@ public class Main : MonoBehaviour
     {
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
         // (Left?, Right?)
-        bool2 mousePressed = Utils.GetMousePressed();
+        bool allowMouseInputs = !PM.Instance.CheckAnySensorHovered() && !PM.Instance.isAnySensorSettingsViewActive;
+        bool2 mousePressed = allowMouseInputs ? Utils.GetMousePressed() : false;
 
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        pSimShader.SetBool("LMousePressed", mousePressed.x && !PM.Instance.isAnySensorSettingsViewActive);
-        pSimShader.SetBool("RMousePressed", mousePressed.y && !PM.Instance.isAnySensorSettingsViewActive);
+        pSimShader.SetBool("LMousePressed", mousePressed.x);
+        pSimShader.SetBool("RMousePressed", mousePressed.y);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
         rbSimShader.SetBool("RMousePressed", mousePressed.x);

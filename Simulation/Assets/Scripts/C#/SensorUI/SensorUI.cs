@@ -43,6 +43,7 @@ public class SensorUI : MonoBehaviour
     [NonSerialized] public int sensorIndex;
     [NonSerialized] public float sliderScale;
     [NonSerialized] public float userScale;
+    [NonSerialized] public bool isPointerHovering = false;
 
     // Private - Dropdown Select
     private RigidBodySensorType selectedRigidBodySensorType;
@@ -52,16 +53,12 @@ public class SensorUI : MonoBehaviour
 
     // Private - Pointer Hover
     private float pointerHoverTimer = 0.3f;
-    private bool isPointerHovering = false;
     private const float PointerHoverCooldown = 0.5f;
 
     // Private - Scale
     private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
     private const float SettingsViewActiveFixedScale = 2.0f;
     private const float GraphViewActiveFixedScale = 1.5f;
-
-    // Private - Time
-    private const float MaxDeltaTime = 1f / 30f;
 
     public void OnPositionChanged()
     {
@@ -75,6 +72,8 @@ public class SensorUI : MonoBehaviour
         float graphViewScaleFactor = CheckIfGraphViewIsActive() ? GraphViewActiveFixedScale : 1;
         return (settingsViewActive ? SettingsViewActiveFixedScale : sliderScale) * graphViewScaleFactor * BaseScale;
     }
+
+    public void SetDataWindow(string windowName) => dataViewWindowManager.OpenPanel(windowName); // 0 -> graph view, 1 -> numeric view
 
     private bool CheckIfGraphViewIsActive() => dataViewWindowManager.currentWindowIndex == 0 && settingsViewWindowManager.currentWindowIndex == 0;
 
@@ -97,6 +96,8 @@ public class SensorUI : MonoBehaviour
         rectTransform.localPosition = ClampPosToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
         sensor.positionType = PositionType.Fixed;
         sensor.targetPosition = pos;
+
+        sensor.graphController.ResetGraph();
 
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
@@ -142,7 +143,7 @@ public class SensorUI : MonoBehaviour
 
     public void SetPosition(Vector2 pos)
     {
-        pointerHoverTimer += Mathf.Min(Time.deltaTime, MaxDeltaTime);
+        pointerHoverTimer += Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
         if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > PointerHoverCooldown) || PM.Instance.isAnySensorSettingsViewActive)
         {
             pos = rectTransform.localPosition;
@@ -162,8 +163,9 @@ public class SensorUI : MonoBehaviour
     {
         Vector2 offset = new(40, -120);
         Vector3 scaleFactor = new(0.73f, 0.7f, 1);
-        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale * scaleFactor;
-        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale * scaleFactor;
+        Vector2 boundsPadding = new(0, 0);
+        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale * scaleFactor - boundsPadding;
+        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale * scaleFactor + boundsPadding;
 
         int2 ResolutionInt2 = PM.Instance.main.Resolution;
         Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
