@@ -31,6 +31,7 @@ public class Main : MonoBehaviour
     public float StateThresholdPadding = 3.0f;
     public int MaxInfluenceRadius = 2;
     [SerializeField] private int MaxParticlesNum = 20000;
+    [SerializeField] private int ExtraParticleSlots = 10000;
     [SerializeField] private int MaxSpringsPerParticle = 150;
 
     [Header("Scene Boundary")]
@@ -294,7 +295,6 @@ public class Main : MonoBehaviour
     public void UpdateShaderTimeStep()
     {
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
-        // (Left?, Right?)
         bool allowMouseInputs = !PM.Instance.CheckAnySensorHovered() && !PM.Instance.isAnySensorSettingsViewActive;
         bool2 mousePressed = allowMouseInputs ? Utils.GetMousePressed() : false;
 

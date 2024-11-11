@@ -243,6 +243,7 @@ MonoBehaviour:
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
   MaxParticlesNum: 20000
+  ExtraParticleSlots: 10000
   MaxSpringsPerParticle: 150
   BoundaryDims:
     x: 300

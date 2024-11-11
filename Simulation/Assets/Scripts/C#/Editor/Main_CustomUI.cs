@@ -18,15 +18,18 @@ public class MainEditor : Editor
         // Find the existing PropertyFields and TextField in the UXML by their name or binding path
         var maxSpringsPerParticleField = root.Q<PropertyField>("MaxSpringsPerParticle");
         var maxParticlesNumField = root.Q<PropertyField>("MaxParticlesNum");
+        var extraParticleSlotsField = root.Q<PropertyField>("ExtraParticleSlots");
         var totalParticleSpringsField = root.Q<TextField>("TotalParticleSprings");
 
         // Find the properties in the serialized object
         var serializedMaxSpringsPerParticle = serializedObject.FindProperty("MaxSpringsPerParticle");
         var serializedMaxParticlesNum = serializedObject.FindProperty("MaxParticlesNum");
+        var serializedExtraParticleSlots = serializedObject.FindProperty("ExtraParticleSlots");
 
         // Bind the PropertyFields to the serialized properties
         maxSpringsPerParticleField.BindProperty(serializedMaxSpringsPerParticle);
         maxParticlesNumField.BindProperty(serializedMaxParticlesNum);
+        extraParticleSlotsField.BindProperty(serializedExtraParticleSlots);
 
         // Make the TextField read-only (so it behaves like a display field)
         totalParticleSpringsField.isReadOnly = true;
@@ -39,7 +42,8 @@ public class MainEditor : Editor
 
             int numSpringsPerParticle = serializedMaxSpringsPerParticle.intValue;
             int numParticles = serializedMaxParticlesNum.intValue;
-            int numParticleSprings = numSpringsPerParticle * numParticles;
+            int numExtraParticleSlots = serializedExtraParticleSlots.intValue;
+            int numParticleSprings = numSpringsPerParticle * (numParticles + numExtraParticleSlots);
 
             totalParticleSpringsField.value = numParticleSprings.ToString(); // Display the result
         }
@@ -47,6 +51,7 @@ public class MainEditor : Editor
         // Subscribe to value changes to update the TextField dynamically
         maxSpringsPerParticleField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
         maxParticlesNumField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
+        extraParticleSlotsField.RegisterCallback<ChangeEvent<int>>(evt => UpdateResult());
 
         // Initialize the TextField value on creation
         UpdateResult();
