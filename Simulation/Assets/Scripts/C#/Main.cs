@@ -180,7 +180,8 @@ public class Main : MonoBehaviour
     [NonSerialized] public Texture2D VelocityGradientTexture;
 
     // Particle data
-    private List<PData> PDatas;
+    private List<PData> PDatas = new();
+    private List<PData> NewPDatas = new();
 
     // Rigid Bodies
     public RBVector[] RBVectors;
@@ -197,6 +198,11 @@ public class Main : MonoBehaviour
     private const int CalcStickyRequestsFrequency = 3;
     private int FrameCount = 0;
 
+    [ContextMenu("Add 1000 Particles")]
+    public void Add1000Particles() => SubmitParticlesToSimulation(sceneManager.GenerateParticles(1000).ToArray());
+
+    public void SubmitParticlesToSimulation(PData[] particlesToAdd) => NewPDatas.AddRange(particlesToAdd);
+
     public void StartScript()
     {
         SceneSetup();
@@ -208,11 +214,11 @@ public class Main : MonoBehaviour
 
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
- 
+
         (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
         TextureHelper.TextureFromGradient(ref VelocityGradientTexture, VelocityGradientResolution, VelocityGradient);
- 
+
         SetConstants();
 
         InitializeBuffers();
@@ -234,10 +240,12 @@ public class Main : MonoBehaviour
 
     public void ScriptUpdate()
     {
+        UpdateSimulationPDatas();
+
         bool simulateThisFrame = false;
         if (!PM.Instance.programPaused || PM.Instance.FrameStep) simulateThisFrame = true;
         if (PM.Instance.programPaused && PM.Instance.FrameStep) { Debug.Log("Stepped forward 1 frame"); PM.Instance.FrameStep = false; }
-        
+
         if (!simulateThisFrame) return;
 
         DeltaTime = GetDeltaTime();
@@ -264,10 +272,33 @@ public class Main : MonoBehaviour
                     int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
                     pSimShader.Dispatch(5, ThreadNums, 1, 1);
                 }
-                
+
                 FrameCount++;
                 pSimShader.SetInt("FrameCount", FrameCount);
                 pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
+            }
+        }
+    }
+
+    private void UpdateSimulationPDatas()
+    {
+        int particlesToAdd = NewPDatas.Count;
+        if (particlesToAdd > 0)
+        {
+            ParticlesNum = Mathf.Min(ParticlesNum + particlesToAdd, MaxParticlesNum);
+
+            sceneManager.GenerateParticles(1000);
+
+            if (particlesToAdd > 0)
+            {
+                PDatas.AddRange(NewPDatas);
+                NewPDatas = new();
+                ParticlesNum = PDatas.Count;
+                SetConstants();
+                UpdateSettings();
+
+                // Transfer the new particle data to the GPU
+                PDataBuffer.SetData(PDatas.ToArray(), ParticlesNum - particlesToAdd, ParticlesNum - particlesToAdd, particlesToAdd);
             }
         }
     }
@@ -294,7 +325,7 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
     }
-    
+
     public void UpdateShaderTimeStep()
     {
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
@@ -401,13 +432,14 @@ public class Main : MonoBehaviour
     {
         MaxInfluenceRadiusSqr = MaxInfluenceRadius * MaxInfluenceRadius;
         InvMaxInfluenceRadius = 1.0f / MaxInfluenceRadius;
-        ParticleSpringsCombinedHalfLength = ParticlesNum * MaxSpringsPerParticle / 2;
-        ParticlesNum_NextPow2 = Func.NextPow2(ParticlesNum);
+        ParticleSpringsCombinedHalfLength = MaxParticlesNum * MaxSpringsPerParticle / 2;
+        ParticlesNum_NextPow2 = Func.NextPow2(MaxParticlesNum);
+        ParticlesNum_NextLog2 = (int)Math.Log(ParticlesNum_NextPow2, 2);
     }
 
     private void InitializeBuffers()
     {
-        ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, PDatas.ToArray());
+        ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, MaxParticlesNum);
         ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
         ComputeHelper.CreateStructuredBuffer<RecordedFluidData>(ref RecordedFluidDataBuffer, ChunksNumAll);
 
@@ -417,7 +449,7 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbA, ChunksNumAll);
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbB, ChunksNumAll);
         ComputeHelper.CreateStructuredBuffer<int>(ref SpringStartIndicesBuffer_dbC, ChunksNumAll);
-        ComputeHelper.CreateStructuredBuffer<Spring>(ref ParticleSpringsCombinedBuffer, ParticlesNum * MaxSpringsPerParticle);
+        ComputeHelper.CreateStructuredBuffer<Spring>(ref ParticleSpringsCombinedBuffer, MaxParticlesNum * MaxSpringsPerParticle);
 
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
@@ -426,6 +458,8 @@ public class Main : MonoBehaviour
         ComputeHelper.CreateStructuredBuffer<SensorArea>(ref SensorAreaBuffer, SensorAreas);
 
         ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
+
+        PDataBuffer.SetData(PDatas.ToArray(), 0, 0, ParticlesNum);
     }
 
     private void GPUSortChunkLookUp()
@@ -433,12 +467,12 @@ public class Main : MonoBehaviour
         int threadGroupsNum = Utils.GetThreadGroupsNums(ParticlesNum_NextPow2, sortShaderThreadSize);
         int threadGroupsNumHalfCeil = (int)Math.Ceiling(threadGroupsNum * 0.5f);
 
-        ComputeHelper.DispatchKernel (sortShader, "CalculateChunkKeys", threadGroupsNum);
+        ComputeHelper.DispatchKernel(sortShader, "CalculateChunkKeys", threadGroupsNum);
 
         int len = ParticlesNum_NextPow2;
 
         int basebBlockLen = 2;
-        while (basebBlockLen != 2*len) // basebBlockLen == len is the last outer iteration
+        while (basebBlockLen != 2 * len) // basebBlockLen == len is the last outer iteration
         {
             int blockLen = basebBlockLen;
             while (blockLen != 1) // blockLen == 2 is the last inner iteration
@@ -448,14 +482,14 @@ public class Main : MonoBehaviour
                 sortShader.SetInt("BlockLen", blockLen);
                 sortShader.SetBool("BrownPinkSort", BrownPinkSort);
 
-                ComputeHelper.DispatchKernel (sortShader, "SortIteration", threadGroupsNumHalfCeil);
+                ComputeHelper.DispatchKernel(sortShader, "SortIteration", threadGroupsNumHalfCeil);
 
                 blockLen /= 2;
             }
             basebBlockLen *= 2;
         }
 
-        ComputeHelper.DispatchKernel (sortShader, "PopulateStartIndices", threadGroupsNum);
+        ComputeHelper.DispatchKernel(sortShader, "PopulateStartIndices", threadGroupsNum);
     }
 
     private void GPUSortSpringLookUp()
@@ -465,9 +499,9 @@ public class Main : MonoBehaviour
             // Spring buffer kernels
             int threadGroupsNum = Utils.GetThreadGroupsNums(ChunksNumAll, sortShaderThreadSize);
 
-            ComputeHelper.DispatchKernel (sortShader, "PopulateChunkSizes", threadGroupsNum);
-            ComputeHelper.DispatchKernel (sortShader, "PopulateSpringCapacities", threadGroupsNum);
-            ComputeHelper.DispatchKernel (sortShader, "CopySpringCapacities", threadGroupsNum);
+            ComputeHelper.DispatchKernel(sortShader, "PopulateChunkSizes", threadGroupsNum);
+            ComputeHelper.DispatchKernel(sortShader, "PopulateSpringCapacities", threadGroupsNum);
+            ComputeHelper.DispatchKernel(sortShader, "CopySpringCapacities", threadGroupsNum);
 
             // Calculate prefix sums (SpringStartIndices)
             bool StepBufferCycle = false;
@@ -478,38 +512,38 @@ public class Main : MonoBehaviour
                 sortShader.SetBool("StepBufferCycle", StepBufferCycle);
                 sortShader.SetInt("Offset2", offset);
 
-                ComputeHelper.DispatchKernel (sortShader, "ParallelPrefixSumScan", threadGroupsNum);
+                ComputeHelper.DispatchKernel(sortShader, "ParallelPrefixSumScan", threadGroupsNum);
             }
 
-            if (StepBufferCycle == true) { ComputeHelper.DispatchKernel (sortShader, "CopySpringStartIndicesBuffer", threadGroupsNum); } // copy to result buffer if necessary
+            if (StepBufferCycle == true) { ComputeHelper.DispatchKernel(sortShader, "CopySpringStartIndicesBuffer", threadGroupsNum); } // copy to result buffer if necessary
         }
     }
 
     private void RunPSimShader(int step)
     {
-        ComputeHelper.DispatchKernel (pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
-        ComputeHelper.DispatchKernel (pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
 
         if (step == 0 && DoSimulateParticleSprings)
         {
-            ComputeHelper.DispatchKernel (pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
-            ComputeHelper.DispatchKernel (pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
+            ComputeHelper.DispatchKernel(pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
+            ComputeHelper.DispatchKernel(pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
         }
 
-        ComputeHelper.DispatchKernel (pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize);
 
-        ComputeHelper.DispatchKernel (pSimShader, "ResetFluidData", ChunksNumAll, pSimShaderThreadSize2);
-        ComputeHelper.DispatchKernel (pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "ResetFluidData", ChunksNumAll, pSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize);
     }
 
     private void RunRbSimShader()
     {
-        if (RBVectors.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRBSprings", RBDatas.Length, rbSimShaderThreadSize2);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
-        if (ParticlesNum > 0) ComputeHelper.DispatchKernel (rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel (rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBVectors.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRBSprings", RBDatas.Length, rbSimShaderThreadSize2);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
+        if (ParticlesNum > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
+        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
     }
 
     private void DispatchRenderStep(RenderStep step, int2 threadsNum)
@@ -544,7 +578,7 @@ public class Main : MonoBehaviour
             DispatchRenderStep(step, threadsNum);
         }
     }
-    
+
     public void OnRenderImage(RenderTexture src, RenderTexture dest) => Graphics.Blit(renderTexture, dest);
 
     void OnDestroy()
