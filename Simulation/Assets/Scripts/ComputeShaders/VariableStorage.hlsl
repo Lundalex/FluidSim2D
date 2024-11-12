@@ -1,6 +1,6 @@
 // Constants for int min and max values
-static const int INT_MAX = 2147483647;
-static const int INT_MIN = -2147483648;
+static const int INT_MAX = 2147483646;
+static const int INT_MIN = -2147483647;
 
 // Float <-> Int conversions with overflow protection
 float IntToFloat(int a, float precision)

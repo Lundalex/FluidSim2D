@@ -275,7 +275,7 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
-  LightingSettings: 0
+  LightingSettings: 3
   GlobalBrightness:
     x: 1
     y: 1
@@ -2210,7 +2210,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 329644324870296486, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
       propertyPath: MaxSpawnedParticlesPerUpdate
-      value: 20
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2136458157360612637, guid: 3b25a5b5b676b5a489f5091a1fb15a2d, type: 3}
       propertyPath: m_LocalPosition.x
