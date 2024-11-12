@@ -12,6 +12,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 201037
   packageName: Water Caustics Effect for URP v2
-  packageVersion: 2.0.8
-  assetPath: Assets/WaterCausticsModules/WaterCausticsTexGenerator/Shaders/GenCausticsShader.shader
-  uploadId: 694275
+  packageVersion: 2.1.0
+  assetPath: Assets/Imports/Packages/WaterCausticsModules/WaterCausticsTexGenerator/Shaders/GenCausticsShader.shader
+  uploadId: 707945

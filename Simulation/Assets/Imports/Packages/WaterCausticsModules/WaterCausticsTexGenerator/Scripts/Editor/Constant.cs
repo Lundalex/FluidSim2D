@@ -18,8 +18,8 @@ namespace MH.WaterCausticsModules {
         public const string URL_HOW_TO_ADD_FEATURE = "https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@14.0/manual/urp-renderer-feature-how-to-add.html";
         public const string README_MENU_ITEM_PATH = "Window/WaterCausticsModules/Readme";
 
-        public const string WCE_VERSION_STR = "2.0.8"; // アセットバージョン ※下のWCE_VERSION_INTと合わせること
-        public const int WCE_VERSION_INT = 20008; // アセットバージョン
+        public const string WCE_VERSION_STR = "2.1.0"; // アセットバージョン ※下のWCE_VERSION_INTと合わせること
+        public const int WCE_VERSION_INT = 20100; // アセットバージョン
 
 #if UNITY_EDITOR
         static public bool CheckPackageName (string packageName) {
