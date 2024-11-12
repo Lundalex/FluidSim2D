@@ -87,15 +87,13 @@ namespace Resources2
             double logValue = Math.Log(a, 2);
             return doCeil ? (int)Math.Ceiling(logValue) : (int)logValue;
         }
+
         public static int Pow2(int a)
         {
             double powValue = Mathf.Pow(2, a);
             return (int)powValue;
         }
-        public static int RandInt(int min, int max)
-        {
-            return UnityEngine.Random.Range(min, max+1);
-        }
+
         public static int NextPow2(int a)
         {
             int nextPow2 = 1;
@@ -114,6 +112,7 @@ namespace Resources2
             }
             a = nextPow2;
         }
+        
         public static int NextLog2(int a)
         {
             return Log2(NextPow2(a));
@@ -208,6 +207,11 @@ namespace Resources2
         public static float MsToSeconds(float ms) => ms / 1000.0f;
 
         public static float SecondsToMs(float s) => s * 1000.0f;
+
+        public static int RandInt(int min, int max)
+        {
+            return UnityEngine.Random.Range(min, max+1);
+        }
     }
 
     public static class StringUtils

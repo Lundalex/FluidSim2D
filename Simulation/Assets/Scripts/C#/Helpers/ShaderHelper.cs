@@ -82,7 +82,8 @@ public class ShaderHelper : MonoBehaviour
 
         renderShader.SetTexture(1, "Result", m.renderTexture);
         renderShader.SetTexture(1, "Caustics", m.causticsTexture);
-        renderShader.SetTexture(1, "VelocityGradient", m.VelocityGradientTexture);
+        renderShader.SetTexture(1, "LiquidVelocityGradient", m.LiquidVelocityGradientTexture);
+        renderShader.SetTexture(1, "GasVelocityGradient", m.GasVelocityGradientTexture);
         renderShader.SetTexture(1, "Background", m.backgroundTexture);
         renderShader.SetTexture(1, "Atlas", m.AtlasTexture);
 
@@ -162,10 +163,14 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("MetaballsThreshold", m.MetaballsThreshold);
         renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
         renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
+        renderShader.SetFloat("GasNoiseStrength", m.GasNoiseStrength);
+        renderShader.SetFloat("GasNoiseDensityDarkeningFactor", m.GasNoiseDensityDarkeningFactor);
+        renderShader.SetFloat("GasNoiseDensityOpacityFactor", m.GasNoiseDensityOpacityFactor);
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetFloat("FluidSensorEdgeWidth", m.FluidSensorEdgeWidth);
         renderShader.SetFloat("SensorAreaAnimationSpeed", m.SensorAreaAnimationSpeed);
-        renderShader.SetFloat("InvVelocityGradientMaxValue", 1 / m.VelocityGradientMaxValue);
+        renderShader.SetFloat("InvLiquidVelocityGradientMaxValue", 1 / m.LiquidVelocityGradientMaxValue);
+        renderShader.SetFloat("InvGasVelocityGradientMaxValue", 1 / m.GasVelocityGradientMaxValue);
         renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 

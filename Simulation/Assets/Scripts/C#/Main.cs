@@ -101,9 +101,20 @@ public class Main : MonoBehaviour
     public float MetaballsThreshold = 1.0f;
     public float MetaballsEdgeDensityWidth = 0.3f;
     public float FluidEdgeWidth = 1.0f;
-    public Gradient VelocityGradient;
-    public int VelocityGradientResolution;
-    public float VelocityGradientMaxValue;
+    public float GasNoiseStrength = 1.0f;
+    public float GasNoiseDensityDarkeningFactor;
+    public float GasNoiseDensityOpacityFactor;
+    public float TimeSetRandInterval = 0.5f;
+
+    // Liquid Velocity Gradient
+    public Gradient LiquidVelocityGradient;
+    public int LiquidVelocityGradientResolution;
+    public float LiquidVelocityGradientMaxValue;
+
+    // Gas Velocity Gradient
+    public Gradient GasVelocityGradient;
+    public int GasVelocityGradientResolution;
+    public float GasVelocityGradientMaxValue;
 
     // Rigid Bodies
     public float RBEdgeWidth = 0.5f;
@@ -177,7 +188,8 @@ public class Main : MonoBehaviour
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
     [NonSerialized] public Texture2D AtlasTexture;
-    [NonSerialized] public Texture2D VelocityGradientTexture;
+    [NonSerialized] public Texture2D LiquidVelocityGradientTexture;
+    [NonSerialized] public Texture2D GasVelocityGradientTexture;
 
     // Particle data
     private List<PData> PDatas = new();
@@ -196,7 +208,9 @@ public class Main : MonoBehaviour
     // Other
     private float DeltaTime;
     private const int CalcStickyRequestsFrequency = 3;
-    private int FrameCount = 0;
+    private int StepCount = 0;
+    private int timeSetRand;
+    private bool2 MousePressed = false; // (left, right)
 
     public void SubmitParticlesToSimulation(PData[] particlesToAdd) => NewPDatas.AddRange(particlesToAdd);
 
@@ -214,9 +228,11 @@ public class Main : MonoBehaviour
 
         (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
-        TextureHelper.TextureFromGradient(ref VelocityGradientTexture, VelocityGradientResolution, VelocityGradient);
+        TextureHelper.TextureFromGradient(ref LiquidVelocityGradientTexture, LiquidVelocityGradientResolution, LiquidVelocityGradient);
+        TextureHelper.TextureFromGradient(ref GasVelocityGradientTexture, GasVelocityGradientResolution, GasVelocityGradient);
 
         SetConstants();
+        InitTimeSetRand();
 
         InitializeBuffers();
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
@@ -264,9 +280,7 @@ public class Main : MonoBehaviour
                     pSimShader.Dispatch(5, ThreadNums, 1, 1);
                 }
 
-                FrameCount++;
-                pSimShader.SetInt("FrameCount", FrameCount);
-                pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
+                StepCount++;
             }
         }
     }
@@ -320,18 +334,24 @@ private void UpdateSimulationPDatas()
     public void UpdateShaderTimeStep()
     {
         Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
-        bool allowMouseInputs = !PM.Instance.CheckAnySensorHovered() && !PM.Instance.isAnySensorSettingsViewActive;
-        bool2 mousePressed = allowMouseInputs ? Utils.GetMousePressed() : false;
+
+        bool2 currentMouseInputs = Utils.GetMousePressed();
+        bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
+        if (!skipUpdatingMouseInputs)
+        {
+            bool disallowMouseInputs = PM.Instance.CheckAnySensorHovered() || PM.Instance.isAnySensorSettingsViewActive;
+            MousePressed = disallowMouseInputs ? false : currentMouseInputs;
+        }
 
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
         pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        pSimShader.SetBool("LMousePressed", mousePressed.x);
-        pSimShader.SetBool("RMousePressed", mousePressed.y);
+        pSimShader.SetBool("LMousePressed", MousePressed.x);
+        pSimShader.SetBool("RMousePressed", MousePressed.y);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
-        rbSimShader.SetBool("RMousePressed", mousePressed.x);
-        rbSimShader.SetBool("LMousePressed", mousePressed.y);
+        rbSimShader.SetBool("RMousePressed", MousePressed.x);
+        rbSimShader.SetBool("LMousePressed", MousePressed.y);
         renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
 
         // Multi-compilation - renderShader
@@ -360,7 +380,8 @@ private void UpdateSimulationPDatas()
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
         pSimShader.SetBool("FrameBufferCycle", FrameBufferCycle);
 
-        pSimShader.SetInt("FrameRand", Func.RandInt(0, 99999));
+        pSimShader.SetInt("StepCount", StepCount);
+        pSimShader.SetInt("StepRand", Func.RandInt(0, 99999));
     }
 
     private void SceneSetup()
@@ -561,13 +582,34 @@ private void UpdateSimulationPDatas()
 
     public void RunRenderShader()
     {
+        // TimeSetRand
+        PM.Instance.timeSetRandTimer += PM.Instance.clampedDeltaTime;
+        if (TimeSetRandInterval == 0) TimeSetRandInterval = 0.01f;
+        if (PM.Instance.timeSetRandTimer > TimeSetRandInterval)
+        {
+            renderShader.SetInt("LastTimeSetRand", timeSetRand);
+            timeSetRand = Func.RandInt(0, 99999);
+            renderShader.SetInt("NextTimeSetRand", timeSetRand);
+            PM.Instance.timeSetRandTimer %= TimeSetRandInterval;
+        }
+        renderShader.SetFloat("TimeSetLerpFactor", PM.Instance.timeSetRandTimer / TimeSetRandInterval);
+
+        // Global brightness
         renderShader.SetFloat("GlobalBrightnessFactor", PM.Instance.globalBrightnessFactor);
 
+        // Dispatch render steps
         int2 threadsNum = new(renderTexture.width, renderTexture.height);
         foreach (RenderStep step in RenderOrder)
         {
             DispatchRenderStep(step, threadsNum);
         }
+    }
+
+    private void InitTimeSetRand()
+    {
+        renderShader.SetInt("LastTimeSetRand", Func.RandInt(0, 99999));
+        timeSetRand = Func.RandInt(0, 99999);
+        renderShader.SetInt("NextTimeSetRand", timeSetRand);
     }
 
     public void OnRenderImage(RenderTexture src, RenderTexture dest) => Graphics.Blit(renderTexture, dest);

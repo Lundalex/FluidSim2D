@@ -256,7 +256,7 @@ MonoBehaviour:
   TimeStepsPerFrame: 6
   SubTimeStepsPerFrame: 3
   TimeStepType: 1
-  TargetFrameRate: 60
+  TargetFrameRate: 120
   TimeStep: 0.03
   ProgramSpeed: 10
   MaxInteractionRadius: 50
@@ -275,7 +275,7 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
-  LightingSettings: 3
+  LightingSettings: 2
   GlobalBrightness:
     x: 1
     y: 1
@@ -293,7 +293,11 @@ MonoBehaviour:
   MetaballsThreshold: 1.9
   MetaballsEdgeDensityWidth: 0.8
   FluidEdgeWidth: 0.5
-  VelocityGradient:
+  GasNoiseStrength: 1.5
+  GasNoiseDensityDarkeningFactor: 0.05
+  GasNoiseDensityOpacityFactor: 0.05
+  TimeSetRandInterval: 1
+  LiquidVelocityGradient:
     serializedVersion: 2
     key0: {r: 0, g: 0.24705884, b: 1, a: 0.23529412}
     key1: {r: 0.3137255, g: 1, b: 0.56078434, a: 1}
@@ -323,8 +327,40 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  VelocityGradientResolution: 256
-  VelocityGradientMaxValue: 30
+  LiquidVelocityGradientResolution: 256
+  LiquidVelocityGradientMaxValue: 40
+  GasVelocityGradient:
+    serializedVersion: 2
+    key0: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 0.19607843}
+    key1: {r: 0.3137255, g: 1, b: 0.56078434, a: 0.39215687}
+    key2: {r: 1, g: 0.9215687, b: 0, a: 0}
+    key3: {r: 0.97647065, g: 0.34509805, b: 0.03137255, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 3932
+    ctime1: 32768
+    ctime2: 45875
+    ctime3: 65535
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 13107
+    atime1: 32768
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 2
+    m_ColorSpace: -1
+    m_NumColorKeys: 4
+    m_NumAlphaKeys: 2
+  GasVelocityGradientResolution: 256
+  GasVelocityGradientMaxValue: 25
   RBEdgeWidth: 0.3
   FluidSensorEdgeWidth: 1
   SensorAreaAnimationSpeed: 10
@@ -1425,8 +1461,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materialInputs:
   - colorTexture: {fileID: 0}
-    colorTextureUpScaleFactor: 3
-    opacity: 0.85
+    colorTextureUpScaleFactor: 1
+    opacity: 0.6
     baseColor:
       x: 0
       y: 0
@@ -1447,9 +1483,9 @@ MonoBehaviour:
       y: 0
       z: 0
     sampleColorMultiplier:
-      x: 2
-      y: 2
-      z: 2
+      x: 3
+      y: 3
+      z: 3
     edgeColor:
       x: 1
       y: 1
@@ -1465,6 +1501,21 @@ MonoBehaviour:
       x: 4
       y: 4
       z: 4
+    edgeColor:
+      x: 1
+      y: 1
+      z: 1
+  - colorTexture: {fileID: 0}
+    colorTextureUpScaleFactor: 1
+    opacity: 0.4
+    baseColor:
+      x: 0.2
+      y: 0.2
+      z: 0.7
+    sampleColorMultiplier:
+      x: 1
+      y: 1
+      z: 1
     edgeColor:
       x: 1
       y: 1
@@ -1609,24 +1660,24 @@ MonoBehaviour:
       influenceRadius: 2
       matIndex: 0
     gasState:
-      fluidSpringGroup: 1
+      fluidSpringGroup: 0
       springPlasticity: 3
       springTolDeformation: 0
-      springStiffness: 5
+      springStiffness: 0
       thermalConductivity: 1
       specificHeatCapacity: 10
       freezeThreshold: 0
       vaporizeThreshold: 100
-      pressure: 3000
-      nearPressure: 5
-      mass: 1
-      targetDensity: 2
+      pressure: 100
+      nearPressure: 0
+      mass: 0.3
+      targetDensity: 1
       damping: 0.7
       passiveDamping: 0
       viscosity: 1.5
-      gravity: 5
+      gravity: 0
       influenceRadius: 2
-      matIndex: 0
+      matIndex: 3
 --- !u!4 &1543420960
 Transform:
   m_ObjectHideFlags: 0
@@ -2578,6 +2629,10 @@ PrefabInstance:
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: MaxGizmosIterations
       value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: particleTemperatureCelcius
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 7844964519482188911, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Name

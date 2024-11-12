@@ -32,8 +32,8 @@
         <uie:PropertyField binding-path="RigidBodyPadding" />
     </ui:Foldout>
     <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
-        <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies over time." />
-        <ui:Slider label="Rigid Body Correction" value="42" high-value="1" binding-path="RB_RBCollisionCorrectionFactor" fill="true" page-size="0" show-input-field="true" tooltip="Correction amount at RB-RB collisions. A low value results in a smoother simulation, but slightly decreases simulation accuracy" />
+        <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies." />
+        <ui:Slider label="Rigid Body Correction" value="42" high-value="1" binding-path="RB_RBCollisionCorrectionFactor" fill="true" page-size="0" show-input-field="true" tooltip="Correction amount for RB-RB collisions. A low value results in a smoother simulation, but slightly decreases simulation accuracy" />
         <ui:Slider label="Rigid Body Slop" value="42" high-value="0.1" binding-path="RB_RBCollisionSlop" show-input-field="true" fill="true" tooltip="Allowed RB-RB collision penetration distance. A high value reduces potential jittering, but slightly decreases collision solver accuracy" />
     </ui:Foldout>
     <ui:Foldout text="Simulation Time" name="SimulationTime" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
@@ -74,6 +74,33 @@
         <ui:Slider label="Gamma" value="1" high-value="2" binding-path="Gamma" tooltip="Render color Gamma" show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Settings View Dark Tint" value="0.4" high-value="1" binding-path="SettingsViewDarkTintPercent" tooltip="Darkness modifier applied to the whole render texture whenever a sensor settings view is active" show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Brightness Speed" value="0.4" high-value="10" binding-path="GlobalBrightnessChangeSpeed" tooltip="The speed of the interpolation between the target global brightness, and the current value" show-input-field="true" fill="true" name="Slider" low-value="0.1" />
+        <ui:Foldout text="Fluids" name="Fluids" value="false" style="-unity-font-style: bold;">
+            <ui:Foldout text="Liquids" name="Liquids" value="false">
+                <uie:PropertyField binding-path="VisualParticleRadii" label="Particle Radius" />
+                <uie:PropertyField binding-path="MetaballsThreshold" label="Metaballs Threshold" />
+                <uie:PropertyField binding-path="MetaballsEdgeDensityWidth" label="Metaballs Edge Width" tooltip="Metaballs Edge Density Width" />
+                <uie:PropertyField binding-path="FluidEdgeWidth" label="Edge Width" name="PropertyField" />
+                <ui:Foldout text="VelocityGradient" name="VelocityGradient">
+                    <uie:PropertyField binding-path="LiquidVelocityGradient" label="Gradient" tooltip="The gradient used for liquid particle velocity tinting." />
+                    <uie:PropertyField binding-path="LiquidVelocityGradientResolution" label="Resolution" tooltip="The resolution (width) of the generated liquid velocity gradient texture." />
+                    <uie:PropertyField binding-path="LiquidVelocityGradientMaxValue" label="MaxValue" tooltip="The maximum (velocity) value used to normalize the particle velocities when sampling from the liquid velocity gradient texture." />
+                </ui:Foldout>
+            </ui:Foldout>
+            <ui:Foldout text="Gases" name="Gases" value="false">
+                <uie:PropertyField binding-path="GasNoiseStrength" label="Gas Noise Strength" name="PropertyField" tooltip="The strength of the noise effect applied to gasses" />
+                <uie:PropertyField binding-path="GasNoiseDensityDarkeningFactor" label="Gas Density Darkening" name="PropertyField" tooltip="The factor used for color darkening as a linear function of the metaballs density." />
+                <uie:PropertyField binding-path="GasNoiseDensityOpacityFactor" label="Gas Density Opacification" name="PropertyField" tooltip="The factor used for opacification as a linear function of the metaballs density." />
+                <uie:PropertyField binding-path="TimeSetRandInterval" label="Time Noise Interval" name="PropertyField" tooltip="The interval (in seconds) between the generation of seeds used for gas noise calculations. A low value results in a faster noise animation" />
+                <ui:Foldout text="VelocityGradient" name="VelocityGradient">
+                    <uie:PropertyField binding-path="GasVelocityGradient" label="Gradient" tooltip="The gradient used for gas particle velocity tinting." />
+                    <uie:PropertyField binding-path="GasVelocityGradientResolution" label="Resolution" tooltip="The resolution (width) of the generated gas velocity gradient texture." />
+                    <uie:PropertyField binding-path="GasVelocityGradientMaxValue" label="MaxValue" tooltip="The maximum (velocity) value used to normalize the gas particle velocities when sampling from the gas velocity gradient texture." />
+                </ui:Foldout>
+            </ui:Foldout>
+        </ui:Foldout>
+        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="RBEdgeWidth" label="Edge Width" />
+        </ui:Foldout>
         <ui:Foldout text="Rigid Body Springs" value="false" style="-unity-font-style: bold;">
             <uie:PropertyField binding-path="SpringRenderWidth" label="Sprite Width" tooltip="The total width of the spring." />
             <uie:PropertyField binding-path="SpringRenderMatWidth" label="Material Width" tooltip="The width of the spring material, i.e. the spring thickness" />
@@ -81,21 +108,7 @@
             <uie:PropertyField binding-path="SpringRenderNumPeriods" label="Num Periods" tooltip="The total number of periods for the function representing the spring shape." />
             <ui:Slider label="Normalised Taper" value="42" high-value="0.5" binding-path="TaperThresoldNormalised" fill="true" show-input-field="true" tooltip="How close to the spring start- and end rods to begin linearly lowering the amplitude of the spring pattern." low-value="0.05" />
         </ui:Foldout>
-        <ui:Foldout text="Fluids" name="Fluids" value="false" style="-unity-font-style: bold;">
-            <uie:PropertyField binding-path="VisualParticleRadii" label="Particle Radius" />
-            <uie:PropertyField binding-path="MetaballsThreshold" label="Metaballs Threshold" />
-            <uie:PropertyField binding-path="MetaballsEdgeDensityWidth" label="Metaballs Edge Width" tooltip="Metaballs Edge Density Width" />
-            <uie:PropertyField binding-path="FluidEdgeWidth" label="Edge Width" />
-            <ui:Foldout text="VelocityGradient" name="VelocityGradient">
-                <uie:PropertyField binding-path="VelocityGradient" label="Gradient" tooltip="The gradient used for particle velocity tinting." />
-                <uie:PropertyField binding-path="VelocityGradientResolution" label="Resolution" tooltip="The resolution (width) of the generated gradient texture." />
-                <uie:PropertyField binding-path="VelocityGradientMaxValue" label="MaxValue" tooltip="The maximum (velocity) value used to normalize the particle velocities when sampling from the gradient texture." />
-            </ui:Foldout>
-        </ui:Foldout>
-        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false" style="-unity-font-style: bold;">
-            <uie:PropertyField binding-path="RBEdgeWidth" label="Edge Width" />
-        </ui:Foldout>
-        <ui:Foldout text="Fluid Sensors">
+        <ui:Foldout text="Fluid Sensors" value="false">
             <uie:PropertyField binding-path="FluidSensorEdgeWidth" label="Edge Width" tooltip="The edge width of fluid sensor area borders" />
             <uie:PropertyField binding-path="SensorAreaAnimationSpeed" label="Animation Speed" tooltip="Animation speed, measured in simulation area units per real life second" />
         </ui:Foldout>

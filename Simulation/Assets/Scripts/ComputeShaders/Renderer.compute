@@ -20,10 +20,14 @@ const float VisualParticleRadii;
 const float MetaballsThreshold;
 const float MetaballsEdgeDensityWidth;
 const float FluidEdgeWidth;
+const float GasNoiseStrength;
+const float GasNoiseDensityDarkeningFactor;
+const float GasNoiseDensityOpacityFactor;
 const float RBEdgeWidth;
 const float FluidSensorEdgeWidth;
 const float SensorAreaAnimationSpeed;
-const float InvVelocityGradientMaxValue;
+const float InvLiquidVelocityGradientMaxValue;
+const float InvGasVelocityGradientMaxValue;
 const float BackgroundUpScaleFactor;
 const float3 BackgroundBrightness;
 
@@ -45,7 +49,7 @@ const int ParticlesNum;
 const uint NumRigidBodies;
 const uint NumFluidSensors;
 
-// Rendering adjustments
+// Global rendering settings
 const float3 GlobalBrightness;
 const float GlobalBrightnessFactor;
 const float Contrast;
@@ -54,12 +58,16 @@ const float Gamma;
 
 // Per-timestep-set constants
 const float RealTimeElapsed;
+const int LastTimeSetRand;
+const int NextTimeSetRand;
+const float TimeSetLerpFactor;
 
 RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
 
 Texture2D<unorm float4> Caustics;
-Texture2D<unorm float4> VelocityGradient;
+Texture2D<unorm float4> LiquidVelocityGradient;
+Texture2D<unorm float4> GasVelocityGradient;
 Texture2D<unorm float4> UITexture;
 Texture2D<unorm float4> Background;
 Texture2D<unorm float4> Atlas;
@@ -221,10 +229,26 @@ float DstToRB(float2 pos, RigidBody rb)
     return dst;
 }
 
-float MetaballsDensity(float dstSqr, float invRadius)
+float MetaballsDensity(float dst, float invRadius)
 {
-    float dstR = sqrt(dstSqr) * invRadius;
+    float dstR = dst * invRadius;
     return (1 - dstR);
+}
+
+// Function to calculate noise density remains the same
+float NoiseDensity(float dst, float invRadius, int pSeed)
+{
+    int lastRandSeed = LastTimeSetRand * ParticlesNum + pSeed;
+    int nextRandSeed = NextTimeSetRand * ParticlesNum + pSeed;
+
+    float lastNoise = randNormalized(lastRandSeed);
+    float nextNoise = randNormalized(nextRandSeed);
+    float lerpNoise = lerp(lastNoise, nextNoise, TimeSetLerpFactor);
+
+    float densityFactor = (1.0 + lerpNoise * GasNoiseStrength) / (1.0 + GasNoiseStrength);
+    float noiseDensity = dst * invRadius * densityFactor;
+
+    return noiseDensity;
 }
 
 float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
@@ -295,10 +319,11 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     float2 pixelPos = GetPixelPos(id.xy);
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
-    const bool DO_EARLY_EXIT = false; // (== true) causes rendering artifacts
-    int lastChunkKey_PType_POrder;
+    int nearestLastChunkKey_PType_POrder;
+    bool nearestIsNotGas = false;
     float totDensity = 0;
-    bool particleFound = false;
+    float totNoiseDensity = 0;
+    bool doDrawFluid = false;
     bool drawOutline = false;
     bool doContinue = true;
     #if !USE_METABALLS
@@ -328,6 +353,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 PData pData = PDatas[pIndex];
 
                 float dstSqr = dot2(pixelPos - pData.pos);
+                int lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
 
                 #if USE_METABALLS
                     if (dstSqr < MaxInfluenceRadiusSqr)
@@ -336,15 +362,21 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             totVelocities += length(pData.vel);
                             numParticles++;
                         #endif
-
-                        totDensity += MetaballsDensity(dstSqr, InvMaxInfluenceRadius);
+                        
+                        float dst = sqrt(dstSqr);
+                        totDensity += MetaballsDensity(dst, InvMaxInfluenceRadius);
+                        totNoiseDensity += NoiseDensity(dst, InvMaxInfluenceRadius, pIndex);
+                        
+                        int pTypeIndex = Extract_PType(lastChunkKey_PType_POrder);
+                        bool isGas = ((uint)pTypeIndex % 3) == 2;
+                        if (!isGas) nearestIsNotGas = true;
 
                         #if DRAW_FLUID_OUTLINES
-                            if (totDensity > MetaballsThreshold - MetaballsEdgeDensityWidth)
+                            if (totDensity > MetaballsThreshold - MetaballsEdgeDensityWidth * (isGas ? 0.4 : 1))
                             {
                                 drawOutline = true;
-                                lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
-                                particleFound = true;
+                                nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                                doDrawFluid = true;
                             }
                         #endif
 
@@ -353,14 +385,9 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             #if DRAW_FLUID_OUTLINES
                                 drawOutline = false;
                             #else
-                                lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
-                                particleFound = true;
+                            nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                                doDrawFluid = true;
                             #endif
-                            if (DO_EARLY_EXIT)
-                            {
-                                doContinue = false;
-                                break;
-                            }
                         }
                     }
                 #else
@@ -371,12 +398,12 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             numParticles++;
                         #endif
 
-                        lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
-                        particleFound = true;
+                        nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                        doDrawFluid = true;
                         minDstSqr = dstSqr;
 
                         #if DRAW_FLUID_OUTLINES
-                            if (sqrt(dstSqr) > minRadius - FluidEdgeWidth) drawOutline = true;
+                            if (sqrt(dstSqr) > minRadius - FluidEdgeWidth * (isGas ? 0.4 : 1)) drawOutline = true;
                             else drawOutline = false;
                         #endif
                     }
@@ -418,20 +445,44 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    if (particleFound)
+    if (doDrawFluid)
     {
-        Mat mat = Materials[PTypes[Extract_PType(lastChunkKey_PType_POrder)].matIndex];
-
+        int nearestPTypeIndex = Extract_PType(nearestLastChunkKey_PType_POrder);
+        Mat mat = Materials[PTypes[nearestPTypeIndex].matIndex];
+        
         if (drawOutline) result = mat.edgeCol;
         else
-        {
-            float3 color = (SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol) * GlobalBrightness;
-        
-            result = BlendWithBackground(color, mat.opacity, id.xy);
-            
+        {   
+            float3 color;
+            float opacity;
             #if DISPLAY_FLUID_VELOCITIES
                 float avgVel = totVelocities / numParticles;
-                float4 gradientCol = SampleGradient(avgVel * InvVelocityGradientMaxValue, VelocityGradient);
+                float4 gradientCol;
+            #endif
+            if (nearestIsNotGas)
+            {
+                color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
+                opacity = mat.opacity;
+
+                #if DISPLAY_FLUID_VELOCITIES
+                    gradientCol = SampleGradient(avgVel * InvLiquidVelocityGradientMaxValue, LiquidVelocityGradient);
+                #endif
+            }
+            else // isGas
+            {
+                opacity = mat.opacity * max(1.0 + totDensity * GasNoiseDensityOpacityFactor, 0.0);
+
+                color = mat.baseCol + max(1.0 - totNoiseDensity * GasNoiseDensityDarkeningFactor, 0.0);
+
+                #if DISPLAY_FLUID_VELOCITIES
+                    float gradientFactor = avgVel * InvGasVelocityGradientMaxValue;
+                    gradientCol = SampleGradient(gradientFactor, GasVelocityGradient);
+                #endif
+            }
+            color *= GlobalBrightness;
+            result = BlendWithBackground(color, opacity, id.xy);
+                
+            #if DISPLAY_FLUID_VELOCITIES
                 result = lerp(result, gradientCol.rgb, gradientCol.a);
             #endif
         }
@@ -444,13 +495,13 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 
     #if DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
         // If no particle was found, but the pixel is inside a sensor area
-        if (!particleFound && isInsideAnySensorArea)
+        if (!doDrawFluid && isInsideAnySensorArea)
         {
             // Optionally, blend with background if needed
             float3 background = BlendWithBackground(0, 0, id.xy);
             result = sensorAreaTint.rgb * sensorAreaTint.a + background * (1.0 - sensorAreaTint.a);
         }
-        else if (particleFound) { } // Do nothing
+        else if (doDrawFluid) { } // Do nothing
         else
         {
             // Set result to background color color

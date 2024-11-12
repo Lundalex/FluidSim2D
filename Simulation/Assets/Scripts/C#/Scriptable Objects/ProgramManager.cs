@@ -21,9 +21,10 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public float timeScale = 1;
     [HideInInspector] public bool isAnySensorSettingsViewActive = false;
     [HideInInspector] public bool programPaused = false;
-    [HideInInspector] public bool FrameStep = false;
+    [HideInInspector] public bool frameStep = false;
     [HideInInspector] public float totalTimeElapsed = 0;
     [HideInInspector] public float clampedDeltaTime = 0;
+    [HideInInspector] public float timeSetRandTimer = 0;
     [HideInInspector] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
 
@@ -84,11 +85,11 @@ public class ProgramManager : ScriptableObject
         }
 
         bool simulateThisFrame = false;
-        if (!programPaused || FrameStep) simulateThisFrame = true;
-        if (programPaused && FrameStep)
+        if (!programPaused || frameStep) simulateThisFrame = true;
+        if (programPaused && frameStep)
         {
             StringUtils.LogIfInEditor("Stepped forward 1 frame");
-            FrameStep = false;
+            frameStep = false;
         }
 
         if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
@@ -111,7 +112,17 @@ public class ProgramManager : ScriptableObject
             programPaused = !programPaused;
             if (programPaused) Debug.Log("Program paused");
         }
-        if (Input.GetKeyDown(KeyCode.F)) FrameStep = !FrameStep;
+        if (Input.GetKeyDown(KeyCode.F)) frameStep = !frameStep;
+        if (Input.GetKeyDown(KeyCode.Escape)) CloseAllSensorUISettingsPanels();
+    }
+
+    private void CloseAllSensorUISettingsPanels()
+    {
+        foreach (SensorData sensorData in sensorDatas)
+        {
+            sensorData.sensorUI.settingsViewWindowManager.OpenPanel("DefaultDisplay");
+            sensorData.sensorUI.SetSettingsViewAsDisabled();
+        }
     }
 
     private void UpdateAnimatedDashedLineOffset(float deltaTime)

@@ -35,7 +35,6 @@ public class FluidSpawner : Polygon
         {
             SetPolygonData();
             generatedPoints = GeneratePoints();
-            StringUtils.LogIfInEditor("FluidSpawner spawn points set. Total number of spawn points: " + generatedPoints.Count);
         }
 
         // Check if pTypeIndex is within range of all pTypes

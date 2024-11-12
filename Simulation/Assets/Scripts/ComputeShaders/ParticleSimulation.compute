@@ -41,8 +41,8 @@ const float InteractionTemperaturePower;
 const float DeltaTime;
 const float SRDeltaTime;
 const bool TransferSpringData;
-const int FrameCount;
-const int FrameRand;
+const int StepCount;
+const int StepRand;
 
 const float2 MousePos;
 const bool RMousePressed;
@@ -435,7 +435,7 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     if (id.x >= ParticlesNum) return;
     // index from SpatialLookup to improve memory access coherency
     int i = SpatialLookup[id.x].x;
-    uint state = id.y * BoundaryDims.x + id.x + FrameRand;
+    uint state = id.y * BoundaryDims.x + id.x + StepRand;
 
     PData pData = PDatas[i];
     PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
@@ -596,7 +596,7 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
     if (id.x >= ParticlesNum) return;
     // index from SpatialLookup to improve memory access coherency
     uint i = SpatialLookup[id.x].x;
-    uint state = id.y * BoundaryDims.x + id.x + FrameRand;
+    uint state = id.y * BoundaryDims.x + id.x + StepRand;
 
     PData pData = PDatas[i];
     PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];

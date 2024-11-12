@@ -17,7 +17,7 @@ public class SensorUI : MonoBehaviour
     [SerializeField] private TMP_InputField positionYInput;
     [SerializeField] private Image containerTrimImage;
     [SerializeField] private WindowManager dataViewWindowManager;
-    [SerializeField] private WindowManager settingsViewWindowManager;
+    [SerializeField] public WindowManager settingsViewWindowManager;
     [SerializeField] public Slider scaleSlider;
     [SerializeField] public RectTransform rectTransform;
     [SerializeField] public DemoElementSway swayElementA;
