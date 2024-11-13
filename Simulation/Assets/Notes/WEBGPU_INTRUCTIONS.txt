@@ -27,7 +27,7 @@ If there are any, these might relate to some RenderTexture type mismatch between
 
 Use google chrome version 119 (or later)
 
---- Debug (the following steps might be unnecessary) ---
+--- Debug (the following steps might not be necessary) ---
 
 Browser WebGPU status:
  - Navigate to "chrome://gpu" in the address bar.
