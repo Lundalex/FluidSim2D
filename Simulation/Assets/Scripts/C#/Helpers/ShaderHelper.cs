@@ -159,18 +159,24 @@ public class ShaderHelper : MonoBehaviour
 
     public void UpdateRenderShaderVariables(ComputeShader renderShader)
     {
-        renderShader.SetFloat("VisualParticleRadii", m.VisualParticleRadii);
-        renderShader.SetFloat("MetaballsThreshold", m.MetaballsThreshold);
-        renderShader.SetFloat("MetaballsEdgeDensityWidth", m.MetaballsEdgeDensityWidth);
-        renderShader.SetFloat("FluidEdgeWidth", m.FluidEdgeWidth);
+        renderShader.SetFloat("LiquidMetaballsThreshold", m.LiquidMetaballsThreshold);
+        renderShader.SetFloat("LiquidMetaballsEdgeDensityWidth", m.LiquidMetaballsEdgeDensityWidth);
+        renderShader.SetFloat("VisualLiquidParticleRadius", m.VisualLiquidParticleRadius);
+        renderShader.SetFloat("LiquidEdgeWidth", m.LiquidEdgeWidth);
+        renderShader.SetFloat("InvLiquidVelocityGradientMaxValue", 1 / m.LiquidVelocityGradientMaxValue);
+
+        renderShader.SetFloat("GasMetaballsThreshold", m.GasMetaballsThreshold);
+        renderShader.SetFloat("GasMetaballsEdgeDensityWidth", m.GasMetaballsEdgeDensityWidth);
+        renderShader.SetFloat("VisualGasParticleRadius", m.VisualGasParticleRadius);
+        renderShader.SetFloat("GasEdgeWidth", m.GasEdgeWidth);
+        renderShader.SetFloat("InvGasVelocityGradientMaxValue", 1 / m.GasVelocityGradientMaxValue);
         renderShader.SetFloat("GasNoiseStrength", m.GasNoiseStrength);
         renderShader.SetFloat("GasNoiseDensityDarkeningFactor", m.GasNoiseDensityDarkeningFactor);
         renderShader.SetFloat("GasNoiseDensityOpacityFactor", m.GasNoiseDensityOpacityFactor);
+
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetFloat("FluidSensorEdgeWidth", m.FluidSensorEdgeWidth);
         renderShader.SetFloat("SensorAreaAnimationSpeed", m.SensorAreaAnimationSpeed);
-        renderShader.SetFloat("InvLiquidVelocityGradientMaxValue", 1 / m.LiquidVelocityGradientMaxValue);
-        renderShader.SetFloat("InvGasVelocityGradientMaxValue", 1 / m.GasVelocityGradientMaxValue);
         renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
         renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 

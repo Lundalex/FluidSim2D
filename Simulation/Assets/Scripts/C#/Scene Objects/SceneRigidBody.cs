@@ -16,9 +16,9 @@ public class SceneRigidBody : Polygon
     public float approximatedSpringForce;
     [NonSerialized] public Vector2[] Points;
 
-    public Vector2[] GeneratePoints(float gridDensity, Vector2 offset)
+    public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
     {
-        if (gridDensity == 0) gridDensity = defaultGridDensity;
+        if (gridSpacing == 0) gridSpacing = defaultGridDensity;
 
         SetPolygonData();
 
@@ -29,9 +29,9 @@ public class SceneRigidBody : Polygon
         Vector2 max = Func.MaxVector2(Edges.Select(edge => Func.MaxVector2(edge.start, edge.end)).ToArray());
 
         // Generate grid points within the bounding box
-        for (float x = min.x; x <= max.x; x += gridDensity)
+        for (float x = min.x; x <= max.x; x += gridSpacing)
         {
-            for (float y = min.y; y <= max.y; y += gridDensity)
+            for (float y = min.y; y <= max.y; y += gridSpacing)
             {
                 Vector2 point = new Vector2(x, y) + offset;
 
@@ -45,11 +45,11 @@ public class SceneRigidBody : Polygon
         return generatedPoints.ToArray();
     }
 
-    public Vector2 ComputeCentroid(float gridDensity)
+    public Vector2 ComputeCentroid(float gridSpacing)
     {
         if (RBInput.overrideCentroid) return transform.position;
 
-        Vector2[] points = GeneratePoints(gridDensity, Vector2.zero);
+        Vector2[] points = GeneratePoints(gridSpacing, Vector2.zero);
         int numPoints = points.Length;
 
         // Centroid
@@ -62,9 +62,9 @@ public class SceneRigidBody : Polygon
 
     public (float, float) ComputeInertiaAndBalanceRigidBody(ref Vector2[] vectors, ref Vector2 rigidBodyPosition, Vector2 offset, float? gridDensityInput = null)
     {
-        float gridDensity = gridDensityInput ?? 0.2f;
+        float gridSpacing = gridDensityInput ?? 0.2f;
         
-        Vector2[] points = GeneratePoints(gridDensity, offset);
+        Vector2[] points = GeneratePoints(gridSpacing, offset);
         int numPoints = points.Length;
         float pointMass = RBInput.mass / numPoints;
 

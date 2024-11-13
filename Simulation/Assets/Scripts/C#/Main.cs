@@ -97,19 +97,26 @@ public class Main : MonoBehaviour
     public float TaperThresoldNormalised = 0.2f;
 
     // Fluids
-    public float VisualParticleRadii = 0.4f;
-    public float MetaballsThreshold = 1.0f;
-    public float MetaballsEdgeDensityWidth = 0.3f;
-    public float FluidEdgeWidth = 1.0f;
-    public float GasNoiseStrength = 1.0f;
-    public float GasNoiseDensityDarkeningFactor;
-    public float GasNoiseDensityOpacityFactor;
-    public float TimeSetRandInterval = 0.5f;
+    // Liquids
+    public float LiquidMetaballsThreshold = 1.0f;
+    public float LiquidMetaballsEdgeDensityWidth = 0.3f;
+    public float VisualLiquidParticleRadius = 0.4f;
+    public float LiquidEdgeWidth = 1.0f;
 
     // Liquid Velocity Gradient
     public Gradient LiquidVelocityGradient;
     public int LiquidVelocityGradientResolution;
     public float LiquidVelocityGradientMaxValue;
+
+    // Gasses
+    public float GasMetaballsThreshold = 1.0f;
+    public float GasMetaballsEdgeDensityWidth = 0.3f;
+    public float VisualGasParticleRadius = 0.4f;
+    public float GasEdgeWidth = 1.0f;
+    public float GasNoiseStrength = 1.0f;
+    public float GasNoiseDensityDarkeningFactor;
+    public float GasNoiseDensityOpacityFactor;
+    public float TimeSetRandInterval = 0.5f;
 
     // Gas Velocity Gradient
     public Gradient GasVelocityGradient;

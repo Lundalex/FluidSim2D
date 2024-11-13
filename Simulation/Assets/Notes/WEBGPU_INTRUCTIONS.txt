@@ -2,7 +2,7 @@
 
 1. Open the project files -> ProjectSettings -> ProjectSettings.asset -> Add "webGLEnableWebGPU: 1" anywhere in the file (and save)
 2. Use unity editor version 6
-3. Open "File" -> "Build Profiles" -> "Web" -> "Switch Profile" (if available)
+3. Open "File" -> "Build Profiles" -> "Web" -> "Switch Profile" (if currently not using the web build target)
 4. Still in "Web" -> "Player Settings" -> "Other Settings" -> "Graphics APIs" -> "+" -> "WebGPU"
 5. Move "WebGPU" to the highest priority (above "WebGL" / "WebGL2")
 

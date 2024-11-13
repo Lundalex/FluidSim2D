@@ -27,13 +27,13 @@ public class SceneFluid : Polygon
 
     private void OnValidate() => PM.Instance.doOnSettingsChanged = true;
     
-    public PData[] GenerateParticles(Vector2 pointOffset, float gridDensity = 0)
+    public PData[] GenerateParticles(Vector2 pointOffset, float gridSpacing = 0)
     {
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         if (pTypeInput == null) pTypeInput = GameObject.FindGameObjectWithTag("PTypeInput").GetComponent<PTypeInput>();
 
         SetPolygonData();
-        List<Vector2> generatedPoints = GeneratePoints(gridDensity);
+        List<Vector2> generatedPoints = GeneratePoints(gridSpacing);
 
         // Check if pTypeIndex is within range of all pTypes
         if (pTypeIndex >= pTypeInput.particleTypeStates.Length * 3) Debug.LogError("pTypeIndex outside valid range. SceneFluid: " + this.name);
@@ -47,12 +47,12 @@ public class SceneFluid : Polygon
         return pDatas;
     }
 
-    public List<Vector2> GeneratePoints(float gridDensity = 0)
+    public List<Vector2> GeneratePoints(float gridSpacing = 0)
     {
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
-        bool editorView = gridDensity == -1;
-        if (gridDensity == 0 || gridDensity == -1) gridDensity = defaultGridDensity;
+        bool editorView = gridSpacing == -1;
+        if (gridSpacing == 0 || gridSpacing == -1) gridSpacing = defaultGridDensity;
 
         List<Vector2> generatedPoints = new();
 
@@ -62,9 +62,9 @@ public class SceneFluid : Polygon
 
         // Generate grid points within the bounding box
         int iterationCount = 0;
-        for (float x = min.x; x <= max.x; x += gridDensity)
+        for (float x = min.x; x <= max.x; x += gridSpacing)
         {
-            for (float y = min.y; y <= max.y; y += gridDensity)
+            for (float y = min.y; y <= max.y; y += gridSpacing)
             {
                 Vector2 point = new(x, y);
 

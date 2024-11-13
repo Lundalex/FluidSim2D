@@ -16,18 +16,27 @@
 #include "DataTypes.hlsl"
 #include "Constants.hlsl"
 
-const float VisualParticleRadii;
-const float MetaballsThreshold;
-const float MetaballsEdgeDensityWidth;
-const float FluidEdgeWidth;
+// Liquid rendering settings
+const float LiquidMetaballsThreshold;
+const float LiquidMetaballsEdgeDensityWidth;
+const float VisualLiquidParticleRadius;
+const float LiquidEdgeWidth;
+const float InvLiquidVelocityGradientMaxValue;
+
+// Gas rendering settings
+const float GasMetaballsThreshold;
+const float GasMetaballsEdgeDensityWidth;
+const float VisualGasParticleRadius;
+const float GasEdgeWidth;
+const float InvGasVelocityGradientMaxValue;
 const float GasNoiseStrength;
 const float GasNoiseDensityDarkeningFactor;
 const float GasNoiseDensityOpacityFactor;
+
+// Other
 const float RBEdgeWidth;
 const float FluidSensorEdgeWidth;
 const float SensorAreaAnimationSpeed;
-const float InvLiquidVelocityGradientMaxValue;
-const float InvGasVelocityGradientMaxValue;
 const float BackgroundUpScaleFactor;
 const float3 BackgroundBrightness;
 
@@ -327,8 +336,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     bool drawOutline = false;
     bool doContinue = true;
     #if !USE_METABALLS
-        float minRadius = min(MaxInfluenceRadius, VisualParticleRadii);
-        float minRadiusSqr = minRadius*minRadius;
+        float minLiquidRadius = min(MaxInfluenceRadius, VisualLiquidParticleRadius);
+        float minLiquidRadiusSqr = minLiquidRadius * minLiquidRadius;
+        float minGasRadius = min(MaxInfluenceRadius, VisualGasParticleRadius);
+        float minGasRadiusSqr = minGasRadius * minGasRadius;
         float minDstSqr = 1.#INF;
     #endif
     #if DISPLAY_FLUID_VELOCITIES
@@ -354,6 +365,8 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 
                 float dstSqr = dot2(pixelPos - pData.pos);
                 int lastChunkKey_PType_POrder = pData.lastChunkKey_PType_POrder;
+                int pTypeIndex = Extract_PType(lastChunkKey_PType_POrder);
+                bool isGas = ((uint)pTypeIndex % 3) == 2;
 
                 #if USE_METABALLS
                     if (dstSqr < MaxInfluenceRadiusSqr)
@@ -367,12 +380,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                         totDensity += MetaballsDensity(dst, InvMaxInfluenceRadius);
                         totNoiseDensity += NoiseDensity(dst, InvMaxInfluenceRadius, pIndex);
                         
-                        int pTypeIndex = Extract_PType(lastChunkKey_PType_POrder);
-                        bool isGas = ((uint)pTypeIndex % 3) == 2;
                         if (!isGas) nearestIsNotGas = true;
 
                         #if DRAW_FLUID_OUTLINES
-                            if (totDensity > MetaballsThreshold - MetaballsEdgeDensityWidth * (isGas ? 0.4 : 1))
+                            if (totDensity > (isGas ? (GasMetaballsThreshold - GasMetaballsEdgeDensityWidth) : (LiquidMetaballsThreshold - LiquidMetaballsEdgeDensityWidth)))
                             {
                                 drawOutline = true;
                                 nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
@@ -380,18 +391,18 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             }
                         #endif
 
-                        if (totDensity > MetaballsThreshold)
+                        if (totDensity > (isGas ? GasMetaballsThreshold : LiquidMetaballsThreshold))
                         {
                             #if DRAW_FLUID_OUTLINES
                                 drawOutline = false;
                             #else
-                            nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                                nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                                 doDrawFluid = true;
                             #endif
                         }
                     }
                 #else
-                    if (dstSqr < min(minRadiusSqr, minDstSqr))
+                    if (dstSqr < (isGas ? min(minGasRadius, minDstSqr) : min(minLiquidRadiusSqr, minDstSqr)))
                     {
                         #if DISPLAY_FLUID_VELOCITIES
                             totVelocities += length(pData.vel);
@@ -402,8 +413,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                         doDrawFluid = true;
                         minDstSqr = dstSqr;
 
+                        if (!isGas) nearestIsNotGas = true;
+
                         #if DRAW_FLUID_OUTLINES
-                            if (sqrt(dstSqr) > minRadius - FluidEdgeWidth * (isGas ? 0.4 : 1)) drawOutline = true;
+                            if (sqrt(dstSqr) > (isGas ? (minGasRadius - GasEdgeWidth) : (minLiquidRadius - LiquidEdgeWidth))) drawOutline = true;
                             else drawOutline = false;
                         #endif
                     }

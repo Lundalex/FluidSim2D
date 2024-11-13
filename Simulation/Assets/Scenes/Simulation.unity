@@ -289,14 +289,10 @@ MonoBehaviour:
   SpringRenderRodLength: 3
   SpringRenderNumPeriods: 10
   TaperThresoldNormalised: 0.05
-  VisualParticleRadii: 1.3
-  MetaballsThreshold: 1.9
-  MetaballsEdgeDensityWidth: 0.8
-  FluidEdgeWidth: 0.5
-  GasNoiseStrength: 1.5
-  GasNoiseDensityDarkeningFactor: 0.05
-  GasNoiseDensityOpacityFactor: 0.05
-  TimeSetRandInterval: 1
+  LiquidMetaballsThreshold: 2
+  LiquidMetaballsEdgeDensityWidth: 1
+  VisualLiquidParticleRadius: 1.5
+  LiquidEdgeWidth: 0.5
   LiquidVelocityGradient:
     serializedVersion: 2
     key0: {r: 0, g: 0.24705884, b: 1, a: 0.23529412}
@@ -329,6 +325,14 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   LiquidVelocityGradientResolution: 256
   LiquidVelocityGradientMaxValue: 40
+  GasMetaballsThreshold: 1
+  GasMetaballsEdgeDensityWidth: 0.3
+  VisualGasParticleRadius: 2
+  GasEdgeWidth: 0.15
+  GasNoiseStrength: 1.5
+  GasNoiseDensityDarkeningFactor: 0.05
+  GasNoiseDensityOpacityFactor: 0.05
+  TimeSetRandInterval: 0.1
   GasVelocityGradient:
     serializedVersion: 2
     key0: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 0.19607843}
@@ -2632,7 +2636,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: particleTemperatureCelcius
-      value: 120
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 7844964519482188911, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Name

@@ -119,7 +119,7 @@ public class SceneManager : MonoBehaviour
         };
     }
 
-    public List<PData> GenerateParticles(int maxParticlesNum, float gridDensity = 0)
+    public List<PData> GenerateParticles(int maxParticlesNum, float gridSpacing = 0)
     {
         // Get all fluid instances
         GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
@@ -133,7 +133,7 @@ public class SceneManager : MonoBehaviour
         // Get the particle positions for each fluid object in the scene
         foreach (SceneFluid fluid in allFluids)
         {
-            PData[] pDatas = fluid.GenerateParticles(offset, gridDensity);
+            PData[] pDatas = fluid.GenerateParticles(offset, gridSpacing);
 
             foreach (var pData in pDatas)
             {
