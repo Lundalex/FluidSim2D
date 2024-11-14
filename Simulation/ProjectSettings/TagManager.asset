@@ -17,6 +17,7 @@ TagManager:
   - SensorOutlineContainer
   - FluidSpawner
   - FluidSpawnerManager
+  - CausticsGenerator
   layers:
   - Default
   - TransparentFX

@@ -185,6 +185,7 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("SpringRenderHalfMatWidth", m.SpringRenderMatWidth / 2.0f);
         renderShader.SetFloat("SpringRenderRodLength", Mathf.Max(m.SpringRenderRodLength, 0.01f));
         renderShader.SetFloat("TaperThresoldNormalised", m.TaperThresoldNormalised);
+        renderShader.SetVector("SpringTextureUVFactor", new Vector2(m.SpringTextureUVFactor.x, m.SpringTextureUVFactor.y));
 
         renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));

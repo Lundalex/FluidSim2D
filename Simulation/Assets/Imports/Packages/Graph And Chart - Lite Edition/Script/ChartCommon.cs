@@ -435,7 +435,7 @@ namespace ChartAndGraph
             billboard.transform.localPosition = new Vector3(x, y, z);
             return billboardText;
         }
-
+        private GameObject UIText;
         internal static BillboardText CreateBillboardText(BillboardText item, MonoBehaviour prefab, Transform parentTransform, string text, float x, float y, float z, float angle, Transform relativeFrom, bool hideHirarechy, int fontSize, float sharpness)
         {
             if (item != null)
@@ -445,7 +445,7 @@ namespace ChartAndGraph
                 GameObject g = Resources.Load("Chart And Graph/DefaultText") as GameObject;
                 prefab = g.GetComponent<Text>();
             }
-
+            
             GameObject UIText = (GameObject)GameObject.Instantiate(prefab.gameObject);
             GameObject billboard = new GameObject();
             ChartCommon.HideObject(UIText, hideHirarechy);

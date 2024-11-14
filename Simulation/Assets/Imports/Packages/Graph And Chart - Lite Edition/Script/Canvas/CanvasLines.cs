@@ -302,7 +302,7 @@ namespace ChartAndGraph
             mMinModifyIndex = 0;
             SetAllDirty();
             ClearEvents(); // clear previous animations
-            if(EnableOptimization)
+            if(true)
                 Rebuild(CanvasUpdate.PostLayout);
             else
                 Rebuild(CanvasUpdate.PreRender);

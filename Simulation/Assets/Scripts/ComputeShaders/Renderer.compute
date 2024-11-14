@@ -7,6 +7,7 @@
 #pragma multi_compile _ DRAW_RB_CENTROIDS
 #pragma multi_compile _ DRAW_FLUID_OUTLINES
 #pragma multi_compile _ DISPLAY_FLUID_VELOCITIES
+#pragma multi_compile _ USE_CAUSTICS
 #pragma multi_compile _ DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
@@ -46,6 +47,7 @@ const float SpringRenderWidth;
 const float SpringRenderHalfMatWidth;
 const float SpringRenderRodLength;
 const float TaperThresoldNormalised;
+const float2 SpringTextureUVFactor;
 
 const uint2 Resolution;
 const uint2 BoundsDims;
@@ -474,7 +476,12 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             #endif
             if (nearestIsNotGas)
             {
-                color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
+                #if USE_CAUSTICS
+                    color = SampleCaustics(id.xy, mat.sampleColMul) + mat.baseCol;
+                #else
+                    color = mat.baseCol;
+                #endif
+                
                 opacity = mat.opacity;
 
                 #if DISPLAY_FLUID_VELOCITIES
@@ -772,8 +779,9 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
         Mat mat = Materials[matIndex];
 
         float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundsDims);
+        uv *= SpringTextureUVFactor;
 
-        float3 result = GetMaterialColor(mat, uv, Atlas);
+        float3 result = GetMaterialColor(mat, uv, Atlas) + mat.baseCol;
 
         float redTint = RED_TINT_FACTOR * springForce;
         TintRed(result, redTint);

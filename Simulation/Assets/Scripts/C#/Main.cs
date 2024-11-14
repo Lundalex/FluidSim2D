@@ -67,6 +67,7 @@ public class Main : MonoBehaviour
     [SerializeField] private FluidRenderMethod FluidRenderMethod;
     [SerializeField] private bool DoDrawFluidOutlines = true;
     [SerializeField] private bool DoDisplayFluidVelocities = true;
+    [SerializeField] public bool DoUseCaustics = true;
     [SerializeField] private bool DoDrawUnoccupiedFluidSensorArea = false;
     [SerializeField] private bool DoDrawRBOutlines = true;
     [SerializeField] private bool DoDrawRBCentroids = false;
@@ -95,6 +96,7 @@ public class Main : MonoBehaviour
     public float SpringRenderRodLength;
     public int SpringRenderNumPeriods;
     public float TaperThresoldNormalised = 0.2f;
+    public float2 SpringTextureUVFactor = new(10.0f, 1.0f);
 
     // Fluids
     // Liquids
@@ -197,6 +199,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public Texture2D AtlasTexture;
     [NonSerialized] public Texture2D LiquidVelocityGradientTexture;
     [NonSerialized] public Texture2D GasVelocityGradientTexture;
+    [NonSerialized] public GameObject causticsGen;
 
     // Particle data
     private List<PData> PDatas = new();
@@ -255,6 +258,10 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
+        SetLightingSettings();
+        SetShaderKeywords();
+        InitCausticsGen();
+
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
     }
 
@@ -292,28 +299,28 @@ public class Main : MonoBehaviour
         }
     }
 
-private void UpdateSimulationPDatas()
-{
-    int particlesToAdd = NewPDatas.Count;
-    int availableSpace = MaxParticlesNum - ParticlesNum;
-
-    if (particlesToAdd > 0 && availableSpace > 0)
+    private void UpdateSimulationPDatas()
     {
-        particlesToAdd = Mathf.Min(particlesToAdd, availableSpace);
+        int particlesToAdd = NewPDatas.Count;
+        int availableSpace = MaxParticlesNum - ParticlesNum;
 
-        if (particlesToAdd > 0)
+        if (particlesToAdd > 0 && availableSpace > 0)
         {
-            ParticlesNum += particlesToAdd;
-            SetConstants();
-            UpdateSettings();
+            particlesToAdd = Mathf.Min(particlesToAdd, availableSpace);
 
-            // Transfer the new particle data to the GPU
-            PDataBuffer.SetData(NewPDatas.ToArray(), 0, ParticlesNum - particlesToAdd, particlesToAdd);
+            if (particlesToAdd > 0)
+            {
+                ParticlesNum += particlesToAdd;
+                SetConstants();
+                UpdateSettings();
+
+                // Transfer the new particle data to the GPU
+                PDataBuffer.SetData(NewPDatas.ToArray(), 0, ParticlesNum - particlesToAdd, particlesToAdd);
+            }
+
+            NewPDatas = new();
         }
-
-        NewPDatas = new();
     }
-}
 
     public void OnValidate() => PM.Instance.doOnSettingsChanged = true;
 
@@ -324,6 +331,14 @@ private void UpdateSimulationPDatas()
         SetLightingSettings();
         SetConstants();
         UpdateSettings();
+        SetShaderKeywords();
+        InitCausticsGen();
+    }
+
+    private void InitCausticsGen()
+    {
+        if (causticsGen == null) causticsGen = GameObject.FindGameObjectWithTag("CausticsGenerator");
+        causticsGen.SetActive(DoUseCaustics);
     }
 
     public void UpdateSettings()
@@ -361,20 +376,6 @@ private void UpdateSimulationPDatas()
         rbSimShader.SetBool("LMousePressed", MousePressed.y);
         renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
 
-        // Multi-compilation - renderShader
-        if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
-        else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
-        if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
-        else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
-        if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
-        else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
-        if (DoDrawUnoccupiedFluidSensorArea) renderShader.EnableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
-        else renderShader.DisableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
-        if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
-        else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
-        if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");
-        else renderShader.DisableKeyword("USE_METABALLS");
-
         // Multi-compilation - pSimShader
         if (DoSimulateParticleViscosity) pSimShader.EnableKeyword("SIMULATE_PARTICLE_VISCOSITY");
         else pSimShader.DisableKeyword("SIMULATE_PARTICLE_VISCOSITY");
@@ -389,6 +390,24 @@ private void UpdateSimulationPDatas()
 
         pSimShader.SetInt("StepCount", StepCount);
         pSimShader.SetInt("StepRand", Func.RandInt(0, 99999));
+    }
+
+    private void SetShaderKeywords()
+    {
+        if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
+        else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
+        if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
+        else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
+        if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
+        else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
+        if (DoUseCaustics) renderShader.EnableKeyword("USE_CAUSTICS");
+        else renderShader.DisableKeyword("USE_CAUSTICS");
+        if (DoDrawUnoccupiedFluidSensorArea) renderShader.EnableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
+        else renderShader.DisableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
+        if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
+        else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
+        if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");
+        else renderShader.DisableKeyword("USE_METABALLS");
     }
 
     private void SceneSetup()

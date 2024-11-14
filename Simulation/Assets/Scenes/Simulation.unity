@@ -268,6 +268,7 @@ MonoBehaviour:
   FluidRenderMethod: 0
   DoDrawFluidOutlines: 1
   DoDisplayFluidVelocities: 1
+  DoUseCaustics: 1
   DoDrawUnoccupiedFluidSensorArea: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 1
@@ -289,6 +290,9 @@ MonoBehaviour:
   SpringRenderRodLength: 3
   SpringRenderNumPeriods: 10
   TaperThresoldNormalised: 0.05
+  SpringTextureUVFactor:
+    x: 10
+    y: 1
   LiquidMetaballsThreshold: 2
   LiquidMetaballsEdgeDensityWidth: 1
   VisualLiquidParticleRadius: 1.5
@@ -1494,17 +1498,17 @@ MonoBehaviour:
       x: 1
       y: 1
       z: 1
-  - colorTexture: {fileID: 2800000, guid: 7e9936c5ed724d84295c98fdd6381305, type: 3}
-    colorTextureUpScaleFactor: 200
+  - colorTexture: {fileID: 2800000, guid: 088c9683d0588d84eb1c17165c2d629a, type: 3}
+    colorTextureUpScaleFactor: 20
     opacity: 1
     baseColor:
-      x: 0
-      y: 0
-      z: 0
+      x: 0.3
+      y: 0.3
+      z: 0.3
     sampleColorMultiplier:
-      x: 4
-      y: 4
-      z: 4
+      x: 2
+      y: 2
+      z: 2
     edgeColor:
       x: 1
       y: 1
@@ -1862,7 +1866,7 @@ GameObject:
   - component: {fileID: 2045799465}
   m_Layer: 0
   m_Name: TexGenerator
-  m_TagString: Untagged
+  m_TagString: CausticsGenerator
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

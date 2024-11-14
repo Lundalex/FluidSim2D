@@ -130,6 +130,7 @@ public class ProgramManager : ScriptableObject
         offset += deltaTime * ScrollSpeed;
         lineMaterial.mainTextureOffset = new Vector2(offset, 0);
     }
+
     private void SetReferences()
     {
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();

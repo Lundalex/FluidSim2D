@@ -60,6 +60,7 @@
         <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing of the fluids." />
         <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at &quot;RenderFluids&quot; render step)." />
         <ui:Toggle label="Fluid Velocities" value="true" binding-path="DoDisplayFluidVelocities" tooltip="Whether to display fluid velocities by tinting the red color channel with the average velocity of the neighbouring particles." />
+        <ui:Toggle label="Use Caustics" binding-path="DoUseCaustics" tooltip="Whether to use the caustics generator for fluid rendering. This may affect performance (depending on the caustics generator settings)." />
         <ui:Toggle label="Unoccupied Area" binding-path="DoDrawUnoccupiedFluidSensorArea" tooltip="Whether to tint unoccupied fluid sensor area." value="true" />
         <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)." binding-path="DoDrawRBOutlines" />
         <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)." />
@@ -111,6 +112,7 @@
             <uie:PropertyField binding-path="SpringRenderRodLength" label="Rod Length" tooltip="The length of the start- and end spring rods attached to the rigid bodies." />
             <uie:PropertyField binding-path="SpringRenderNumPeriods" label="Num Periods" tooltip="The total number of periods for the function representing the spring shape." />
             <ui:Slider label="Normalised Taper" value="42" high-value="0.5" binding-path="TaperThresoldNormalised" fill="true" show-input-field="true" tooltip="How close to the spring start- and end rods to begin linearly lowering the amplitude of the spring pattern." low-value="0.05" />
+            <uie:PropertyField binding-path="SpringTextureUVFactor" label="Texture UV Factor" style="color: rgb(255, 255, 255); -unity-font-style: bold;" />
         </ui:Foldout>
         <ui:Foldout text="Fluid Sensors" value="false">
             <uie:PropertyField binding-path="FluidSensorEdgeWidth" label="Edge Width" tooltip="The edge width of fluid sensor area borders" />
