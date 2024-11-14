@@ -33,7 +33,7 @@ public class FluidSensor : Sensor
         {
             for (int y = minY; y <= maxY; y += SampleDensity)
             {
-                measurementChunkKeys.Add(GetChunkKey(x, y));
+                if (0 <= x && x < chunksNum.x && 0 <= y && y < chunksNum.y) measurementChunkKeys.Add(GetChunkKey(x, y));
             }
         }
         sampleDensityCorrection = (maxX - minX) * (maxY - minY) / (float)measurementChunkKeys.Count;

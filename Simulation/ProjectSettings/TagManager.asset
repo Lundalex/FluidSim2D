@@ -18,6 +18,7 @@ TagManager:
   - FluidSpawner
   - FluidSpawnerManager
   - CausticsGenerator
+  - SceneManager
   layers:
   - Default
   - TransparentFX

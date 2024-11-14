@@ -246,7 +246,7 @@ MonoBehaviour:
   MaxStartingParticlesNum: 8000
   MaxSpringsPerParticle: 150
   BoundaryDims:
-    x: 300
+    x: 400
     y: 200
   FluidPadding: 2
   RigidBodyPadding: 3
@@ -264,7 +264,7 @@ MonoBehaviour:
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
   RB_MaxInteractionRadius: 60
-  RB_InteractionAttractionPower: 10
+  RB_InteractionAttractionPower: 0
   FluidRenderMethod: 0
   DoDrawFluidOutlines: 1
   DoDisplayFluidVelocities: 1
@@ -1725,7 +1725,7 @@ GameObject:
   - component: {fileID: 1751344379}
   m_Layer: 0
   m_Name: SceneManager
-  m_TagString: Untagged
+  m_TagString: SceneManager
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1794,8 +1794,8 @@ Transform:
   m_GameObject: {fileID: 1751344378}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 150, y: 100, z: 0}
-  m_LocalScale: {x: 300, y: 200, z: 1}
+  m_LocalPosition: {x: 200, y: 100, z: 0}
+  m_LocalScale: {x: 400, y: 200, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2078,7 +2078,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 136.1
+      value: 113.4
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2536,11 +2536,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 203.5
+      value: 192.72
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 131.22
+      value: 133.08
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.z

@@ -355,7 +355,7 @@ public class Main : MonoBehaviour
 
     public void UpdateShaderTimeStep()
     {
-        Vector2 mouseWorldPos = Utils.GetMouseWorldPos(BoundaryDims);
+        Vector2 mouseWorldPos = Utils.GetMouseSimPos(BoundaryDims);
 
         bool2 currentMouseInputs = Utils.GetMousePressed();
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);

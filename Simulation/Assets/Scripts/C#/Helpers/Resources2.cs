@@ -4,17 +4,18 @@ using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 using System.Globalization;
+using PM = ProgramManager;
 
 namespace Resources2
 {
     public static class Utils
     {
-        public static Vector2 GetMouseWorldPos(int2 dims)
+        public static Vector2 GetMouseSimPos(int2 dims)
         {
-            Vector3 MousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x , Input.mousePosition.y , -Camera.main.transform.position.z));
-            Vector2 MouseWorldPos = new(((MousePos.x - dims.x/2) * 0.55f + dims.x) / 2, ((MousePos.y - dims.y/2) * 0.55f + dims.y) / 2);
+            Vector3 mousePos = Camera.main.ScreenToViewportPoint(Input.mousePosition);
+            Debug.Log(mousePos);
 
-            return MouseWorldPos;
+            return mousePos;
         }
 
         public static bool2 GetMousePressed()

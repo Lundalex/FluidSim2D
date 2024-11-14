@@ -187,6 +187,11 @@ bool IsOutsideResolutionDims(uint2 threadID)
     return threadID.x > Resolution.x || threadID.y > Resolution.y;
 }
 
+bool IsOutsideSimBounds(float2 pixelPos)
+{
+    return 0 > pixelPos.x || pixelPos.x > (float)BoundsDims.x || 0 > pixelPos.y || pixelPos.y > (float)BoundsDims.y;
+}
+
 bool IsPointInsideRB(float2 pos, RigidBody rb)
 {
     // Transform the point position into the local coordinate space of the rigid body
@@ -213,6 +218,11 @@ bool IsPointInsideRB(float2 pos, RigidBody rb)
     bool isInside = (intersections % 2) == 1;
 
     return isInside;
+}
+
+bool IsInsideArea(float2 pos, float2 min2, float2 max2)
+{
+    return pos.x >= min2.x && pos.x <= max2.x && pos.y >= min2.y && pos.y <= max2.y;
 }
 
 float DstToRB(float2 pos, RigidBody rb)
@@ -304,12 +314,35 @@ float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
 
 float2 GetPixelPos(uint2 pixelID)
 {
-    return (float2(pixelID) + .5) * BoundsDims / (float2)Resolution;
-}
+    // Calculate aspect ratios
+    float boundsAspect = (float)BoundsDims.x / (float)BoundsDims.y;
+    float resolutionAspect = (float)Resolution.x / (float)Resolution.y;
 
-bool IsInsideArea(float2 pos, float2 min2, float2 max2)
-{
-    return pos.x >= min2.x && pos.x <= max2.x && pos.y >= min2.y && pos.y <= max2.y;
+    float scale;
+    float2 offset = 0;
+
+    if (resolutionAspect > boundsAspect)
+    {
+        // Wider resolution: scale based on height
+        scale = (float)BoundsDims.y / (float)Resolution.y;
+        float scaledWidth = Resolution.x * scale;
+        offset.x = (BoundsDims.x - scaledWidth) / 2.0f;
+        
+        float2 pos = ((float2)pixelID + 0.5f) * scale + float2(offset.x, 0.0f);
+        
+        return pos;
+    }
+    else
+    {
+        // Taller resolution: scale based on width
+        scale = (float)BoundsDims.x / (float)Resolution.x;
+        float scaledHeight = Resolution.y * scale;
+        offset.y = (BoundsDims.y - scaledHeight) / 2.0f;
+        
+        float2 pos = ((float2)pixelID + 0.5f) * scale + float2(0.0f, offset.y);
+        
+        return pos;
+    }
 }
 
 float DstToBorder(float2 pos, float2 min2, float2 max2)
@@ -325,9 +358,15 @@ float DstToBorder(float2 pos, float2 min2, float2 max2)
 [numthreads(TN_R,TN_R,1)]
 void RenderFluids(uint3 id : SV_DispatchThreadID)
 {
-    if (IsOutsideResolutionDims(id.xy))return;
+    if (IsOutsideResolutionDims(id.xy)) return;
 
     float2 pixelPos = GetPixelPos(id.xy);
+    if (IsOutsideSimBounds(pixelPos))
+    {
+        SetResultColor(id.xy, 0.1);
+        return;
+    }
+
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
     int nearestLastChunkKey_PType_POrder;
@@ -481,7 +520,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                 #else
                     color = mat.baseCol;
                 #endif
-                
+
                 opacity = mat.opacity;
 
                 #if DISPLAY_FLUID_VELOCITIES

@@ -161,6 +161,8 @@ public class SensorUI : MonoBehaviour
 
     private Vector2 ClampPosToScreenBounds(Vector2 pos)
     {
+        pos /= PM.Instance.ScreenToViewFactor;
+
         Vector2 offset = new(40, -120);
         Vector3 scaleFactor = new(0.73f, 0.7f, 1);
         Vector2 boundsPadding = new(0, 0);
@@ -176,6 +178,8 @@ public class SensorUI : MonoBehaviour
         Vector2 clampedPos;
         clampedPos.x = Mathf.Clamp(pos.x, min.x, max.x);
         clampedPos.y = Mathf.Clamp(pos.y, min.y, max.y);
+
+        clampedPos *= PM.Instance.ScreenToViewFactor;
 
         return clampedPos;
     }

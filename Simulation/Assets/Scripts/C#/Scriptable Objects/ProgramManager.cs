@@ -27,6 +27,7 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public float timeSetRandTimer = 0;
     [HideInInspector] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
+    public Vector2 ScreenToViewFactor;
 
     // Private - Camera
     private Camera uiCam;
@@ -54,6 +55,8 @@ public class ProgramManager : ScriptableObject
 
     public void Start()
     {
+        ScreenToViewFactor = GetScreenToViewFactor();
+
         SetReferences();
 
         main.StartScript();
@@ -229,5 +232,36 @@ public class ProgramManager : ScriptableObject
             // Manage the draw order
             sensorData.sensorUIObject.transform.SetSiblingIndex(sensorData.isSettingsViewActive ? sensorDatas.Count - 1 : 0);
         }
+    }
+
+    private Vector2 GetScreenToViewFactor() 
+    {
+        float boundsAspect = main.BoundaryDims.x / (float)main.BoundaryDims.y;
+        float resolutionAspect = main.Resolution.x / (float)main.Resolution.y;
+
+        float scaleX = 1.0f;
+        float scaleY = 1.0f;
+        Vector2 offset = Vector2.zero;
+
+        if (boundsAspect > resolutionAspect)
+        {
+            // Bounds are wider than resolutionAspect: scale Y down
+            scaleY = resolutionAspect / boundsAspect; // e.g., 1 / 2 = 0.5
+            scaleX = 1.0f;
+
+            float scaledHeight = main.BoundaryDims.y * scaleY;
+            offset = new Vector2(0.0f, (main.BoundaryDims.y - scaledHeight) / 2.0f);
+        }
+        else
+        {
+            // Bounds are taller or equal to resolutionAspect: scale X down
+            scaleX = boundsAspect / resolutionAspect;
+            scaleY = 1.0f;
+
+            float scaledWidth = main.BoundaryDims.x * scaleX;
+            offset = new Vector2((main.BoundaryDims.x - scaledWidth) / 2.0f, 0.0f);
+        }
+
+        return new Vector2(scaleX, scaleY);
     }
 }
