@@ -2133,14 +2133,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1200880608}
     m_Modifications:
+    - target: {fileID: 363200428517597308, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: isBezierCurve
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1748573168355749617, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: m_Name
       value: SpringDynamometerPrefab
       objectReference: {fileID: 0}
     - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: offset.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: offset.y
+      value: -108
+      objectReference: {fileID: 0}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: mainCanvas
       value: 
       objectReference: {fileID: 1093615697}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: scaleFactor.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: boundsPadding.x
+      value: -70
+      objectReference: {fileID: 0}
+    - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
+      propertyPath: boundsPadding.y
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 3938379136269829720, guid: b3c6499a90f77a94ea364859c34a9c71, type: 3}
       propertyPath: startingDataView
       value: 1
@@ -2209,6 +2233,10 @@ PrefabInstance:
     - target: {fileID: 5986382794826103088, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       propertyPath: m_Name
       value: FluidEnergySensor
+      objectReference: {fileID: 0}
+    - target: {fileID: 7614056071803656669, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
+      propertyPath: isBezierCurve
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8920560762308977371, guid: 697afb8bfa17d8243a02e8e777d8bd80, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2328,6 +2356,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1200880608}
     m_Modifications:
+    - target: {fileID: 1779848012781042100, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: isBezierCurve
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6569177160939710243, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: m_LocalPosition.x
       value: -147.4932
@@ -2401,6 +2433,10 @@ PrefabInstance:
       propertyPath: mainCanvas
       value: 
       objectReference: {fileID: 1093615697}
+    - target: {fileID: 4070848776831518849, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: isBezierCurve
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2509,6 +2545,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8907069666673537392, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
+      propertyPath: isBezierCurve
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8997896239640069800, guid: d725470f8cbcb7f49ab46af50744d437, type: 3}
       propertyPath: mainCanvas
       value: 
@@ -2536,11 +2576,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 192.72
+      value: 111.3
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 133.08
+      value: 93.77
       objectReference: {fileID: 0}
     - target: {fileID: 1072806492360560044, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_LocalPosition.z

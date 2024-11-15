@@ -215,9 +215,11 @@ public class Main : MonoBehaviour
     // Materials
     private Mat[] Mats;
 
+    // Constants
+    readonly Vector2 Vector2Half = new(0.5f, 0.5f);
+
     // Other
     private float DeltaTime;
-    private const int CalcStickyRequestsFrequency = 3;
     private int StepCount = 0;
     private int timeSetRand;
     private bool2 MousePressed = false; // (left, right)
@@ -355,7 +357,7 @@ public class Main : MonoBehaviour
 
     public void UpdateShaderTimeStep()
     {
-        Vector2 mouseWorldPos = Utils.GetMouseSimPos(BoundaryDims);
+        Vector2 mouseSimPos = GetMousePosInSimSpace();
 
         bool2 currentMouseInputs = Utils.GetMousePressed();
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
@@ -366,12 +368,11 @@ public class Main : MonoBehaviour
         }
 
         pSimShader.SetFloat("DeltaTime", DeltaTime);
-        pSimShader.SetFloat("SRDeltaTime", DeltaTime * CalcStickyRequestsFrequency);
-        pSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
+        pSimShader.SetVector("MousePos", mouseSimPos);
         pSimShader.SetBool("LMousePressed", MousePressed.x);
         pSimShader.SetBool("RMousePressed", MousePressed.y);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
-        rbSimShader.SetVector("MousePos", new Vector2(mouseWorldPos.x, mouseWorldPos.y));
+        rbSimShader.SetVector("MousePos", mouseSimPos);
         rbSimShader.SetBool("RMousePressed", MousePressed.x);
         rbSimShader.SetBool("LMousePressed", MousePressed.y);
         renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
@@ -390,6 +391,17 @@ public class Main : MonoBehaviour
 
         pSimShader.SetInt("StepCount", StepCount);
         pSimShader.SetInt("StepRand", Func.RandInt(0, 99999));
+    }
+
+    public Vector2 GetMousePosInSimSpace()
+    {
+        Vector3 mousePosVector3 = Camera.main.ScreenToViewportPoint(Input.mousePosition);
+        Vector2 mousePos = new(mousePosVector3.x, mousePosVector3.y);
+
+        Vector2 normalisedMousePos = (mousePos - Vector2Half) / PM.Instance.ScreenToViewFactor + Vector2Half;
+        Vector2 simSpacePos = normalisedMousePos * new Vector2(BoundaryDims.x, BoundaryDims.y);
+
+        return simSpacePos;
     }
 
     private void SetShaderKeywords()

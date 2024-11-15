@@ -39,7 +39,6 @@ const float InteractionTemperaturePower;
 
 // Per-timestep-set constants
 const float DeltaTime;
-const float SRDeltaTime;
 const bool TransferSpringData;
 const int StepCount;
 const int StepRand;

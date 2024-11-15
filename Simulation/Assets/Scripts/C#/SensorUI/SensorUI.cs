@@ -57,6 +57,7 @@ public class SensorUI : MonoBehaviour
 
     // Private - Scale
     private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
+    private readonly Vector3 ScaleFactor = new(0.65f, 1.0f, 1.0f);
     private const float SettingsViewActiveFixedScale = 2.0f;
     private const float GraphViewActiveFixedScale = 1.5f;
 
@@ -93,7 +94,7 @@ public class SensorUI : MonoBehaviour
         Vector2 pos = GetPositionFromInputFields();
 
         sliderScale = userScale;
-        rectTransform.localPosition = ClampPosToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
+        rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
         sensor.positionType = PositionType.Fixed;
         sensor.targetPosition = pos;
 
@@ -156,33 +157,40 @@ public class SensorUI : MonoBehaviour
         }
         sensor.graphController.isPointerHovering = isPointerHovering;
 
-        rectTransform.localPosition = ClampPosToScreenBounds(pos);
+        rectTransform.localPosition = ClampToScreenBounds(pos);
     }
 
-    private Vector2 ClampPosToScreenBounds(Vector2 pos)
+    private Vector2 ClampToScreenBounds(Vector2 pos)
     {
+        // Scale position based on screen to view factor
         pos /= PM.Instance.ScreenToViewFactor;
 
-        Vector2 offset = new(40, -120);
-        Vector3 scaleFactor = new(0.73f, 0.7f, 1);
-        Vector2 boundsPadding = new(0, 0);
-        Vector2 localContainerMin = (new Vector2(-400, -250) + offset) * transform.localScale * scaleFactor - boundsPadding;
-        Vector2 localContainerMax = (new Vector2(400, 250) + offset) * transform.localScale * scaleFactor + boundsPadding;
+        // Define base bounds based on BoundaryDims
+        Vector2 baseMin = new(-PM.Instance.main.BoundaryDims.x, -PM.Instance.main.BoundaryDims.y);
+        Vector2 baseMax = -baseMin;
 
-        int2 ResolutionInt2 = PM.Instance.main.Resolution;
-        Vector2 Resolution = new(ResolutionInt2.x, ResolutionInt2.y);
+        // Calculate container bounds by applying scale and padding
+        Vector2 localContainerMin = (baseMin + PM.Instance.boundsOffset) * (Vector2)transform.localScale * ScaleFactor - PM.Instance.boundsPadding;
+        Vector2 localContainerMax = (baseMax + PM.Instance.boundsOffset * ScaleFactor) * (Vector2)transform.localScale * ScaleFactor + PM.Instance.boundsPadding;
 
-        Vector2 min = -Resolution * 0.5f - localContainerMin;
-        Vector2 max = Resolution * 0.5f - localContainerMax;
+        // Retrieve screen resolution
+        Vector2 resolution = new(PM.Instance.main.Resolution.x, PM.Instance.main.Resolution.y);
 
+        // Determine min and max bounds for clamping within the screen
+        Vector2 minBound = -resolution * 0.5f - localContainerMin;
+        Vector2 maxBound = resolution * 0.5f - localContainerMax;
+
+        // Clamp position within calculated bounds
         Vector2 clampedPos;
-        clampedPos.x = Mathf.Clamp(pos.x, min.x, max.x);
-        clampedPos.y = Mathf.Clamp(pos.y, min.y, max.y);
+        clampedPos.x = Mathf.Clamp(pos.x, minBound.x, maxBound.x);
+        clampedPos.y = Mathf.Clamp(pos.y, minBound.y, maxBound.y);
 
+        // Reapply screen to view factor for final positioning
         clampedPos *= PM.Instance.ScreenToViewFactor;
 
         return clampedPos;
     }
+
 
     [ContextMenu("Set Measurement (Default)")]
     public void SetMeasurementDefault()

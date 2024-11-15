@@ -6,6 +6,8 @@ using UnityEngine;
 public class ProgramManager : ScriptableObject
 {
     // References
+    public Vector2 boundsPadding;
+    public Vector2 boundsOffset;
     public Material lineMaterial;
     [HideInInspector] public Main main;
     [HideInInspector] public SensorManager sensorManager;
@@ -27,7 +29,7 @@ public class ProgramManager : ScriptableObject
     [HideInInspector] public float timeSetRandTimer = 0;
     [HideInInspector] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
-    public Vector2 ScreenToViewFactor;
+    [HideInInspector] public Vector2 ScreenToViewFactor;
 
     // Private - Camera
     private Camera uiCam;

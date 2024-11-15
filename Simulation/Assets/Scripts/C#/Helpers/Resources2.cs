@@ -4,20 +4,11 @@ using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 using System.Globalization;
-using PM = ProgramManager;
 
 namespace Resources2
 {
     public static class Utils
     {
-        public static Vector2 GetMouseSimPos(int2 dims)
-        {
-            Vector3 mousePos = Camera.main.ScreenToViewportPoint(Input.mousePosition);
-            Debug.Log(mousePos);
-
-            return mousePos;
-        }
-
         public static bool2 GetMousePressed()
         {
             bool LMousePressed = Input.GetMouseButton(0);

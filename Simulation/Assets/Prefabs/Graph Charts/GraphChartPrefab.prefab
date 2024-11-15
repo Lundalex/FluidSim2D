@@ -133,8 +133,8 @@ MonoBehaviour:
     mSerializedData:
     - Name: SensorDatas
       InitialData: []
-      IsBezierCurve: 1
-      SegmentsPerCurve: 10
+      IsBezierCurve: 0
+      SegmentsPerCurve: 1
       Depth: 0
       LineHoverPrefab: {fileID: 11494010, guid: 03f590f99c8285244a7299bf1058a4fb, type: 3}
       PointHoverPrefab: {fileID: 11475216, guid: 57ee497f5c86d764fa20628075109b20, type: 3}
