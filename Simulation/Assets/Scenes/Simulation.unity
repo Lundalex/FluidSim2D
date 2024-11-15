@@ -276,7 +276,7 @@ MonoBehaviour:
   Resolution:
     x: 1920
     y: 1280
-  LightingSettings: 2
+  LightingSettings: 3
   GlobalBrightness:
     x: 1
     y: 1
@@ -763,7 +763,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.localLinkPosOtherRB.x
-      value: 99.67
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: RBInput.localLinkPosOtherRB.y

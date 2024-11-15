@@ -16,6 +16,8 @@ public class SceneRigidBody : Polygon
     public float approximatedSpringForce;
     [NonSerialized] public Vector2[] Points;
 
+    private Vector2 cashedCentroid
+
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
     {
         if (gridSpacing == 0) gridSpacing = defaultGridDensity;

@@ -1,9 +1,5 @@
-using System;
-using System.Drawing.Drawing2D;
-using Resources2;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 
 public class EditorManager : Editor
 {
@@ -110,6 +106,11 @@ public class EditorManager : Editor
 
         // Update points
         rigidBody.SetPolygonData();
+        Vector2 oofset = Vector2.zero;
+        if (rigidBody.RBInput.linkType == LinkType.Rigid)
+        {
+            oofset = rigidBody.RBInput.linkedRigidBody.ComputeCentroid(1.0f) - rigidBody.ComputeCentroid(1.0f) + new Vector2(rigidBody.RBInput.localLinkPosOtherRB.x, rigidBody.RBInput.localLinkPosOtherRB.y);
+        }
 
         // --- Draw the filled body using triangulation ---
         if (rigidBody.DoDrawBody)
@@ -122,6 +123,11 @@ public class EditorManager : Editor
 
             // Triangulate the polygon
             Vector2[] polygonPoints = rigidBody.MeshPoints.ToArray();
+            for (int i = 0; i < polygonPoints.Length; i++)
+            {
+                polygonPoints[i] += oofset;
+            }
+
             Triangulator triangulator = new Triangulator(polygonPoints);
             int[] indices = triangulator.Triangulate();
 
@@ -148,6 +154,10 @@ public class EditorManager : Editor
 
         // Draw wiremesh
         Vector2[] meshVertices = rigidBody.MeshPoints.ToArray();
+        for (int i = 0; i < meshVertices.Length; i++)
+        {
+            meshVertices[i] += oofset;
+        }
         DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
 
         // Draw spring
