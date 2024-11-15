@@ -151,7 +151,7 @@ public class EditorManager : Editor
         DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
 
         // Draw spring
-        if (rigidBody.RBInput.enableSpringLink && rigidBody.RBInput.linkedRigidBody != null)
+        if (rigidBody.RBInput.linkType == LinkType.Spring && rigidBody.RBInput.linkedRigidBody != null)
         {   
             float gridDensity = 3.0f; // A lower value results in a higher performance cost, but also slightly increases centroid approximation accuracy
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridDensity);

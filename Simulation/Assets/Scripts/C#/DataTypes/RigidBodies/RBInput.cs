@@ -15,8 +15,7 @@ public struct RBInput
     public float rotationVelocity;
 
     // Inter-RB spring links
-    public bool enableSpringLink;
-    public bool rigidConstraint;
+    public LinkType linkType;
     public float springStiffness;
     public float springRestLength;
     public float damping;

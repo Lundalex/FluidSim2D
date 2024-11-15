@@ -176,11 +176,11 @@ public class SceneManager : MonoBehaviour
             // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.RBInput;
             int springLinkedRBIndex = rbInput.linkedRigidBody == null ? -1 : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
-            if (rigidBody.RBInput.enableSpringLink && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            if (rigidBody.RBInput.linkType == LinkType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
             else if (i == springLinkedRBIndex)
             {
                 Debug.LogWarning("Attempted to link rigid body via spring to itself. Link will be removed");
-                rbInput.enableSpringLink = false;
+                rbInput.linkType = LinkType.None;
             }
 
             // Initialize the rigid body data
@@ -247,10 +247,10 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = rbInput.enableSpringLink ? linkedRBIndex : -1,
-            springStiffness = rbInput.rigidConstraint ? 0 : rbInput.springStiffness,
-            springRestLength = rbInput.rigidConstraint ? 0 : rbInput.springRestLength,
-            damping = rbInput.rigidConstraint ? 0 : rbInput.damping,
+            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid) ? linkedRBIndex : -1,
+            springStiffness = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springStiffness,
+            springRestLength = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springRestLength,
+            damping = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.damping,
             localLinkPosThisRB = rbInput.localLinkPosThisRB,
             localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
             // Recorded spring force
