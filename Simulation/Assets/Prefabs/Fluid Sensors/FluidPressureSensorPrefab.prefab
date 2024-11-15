@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2208215544800290204}
-  - component: {fileID: 8907069666673537392}
   - component: {fileID: 8997896239640069800}
+  - component: {fileID: 8907069666673537392}
   m_Layer: 0
   m_Name: FluidPressureSensorPrefab
   m_TagString: Untagged
@@ -33,27 +33,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8907069666673537392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 526785133951612108}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3108e11523352974f8968a3b6aafafc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  overrideGraphDataCategory: 0
-  isBezierCurve: 1
-  bezierTension: 0.5
-  HorizontalViewLength: 5
-  lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
-  fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
-  pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
-  lineThickness: 5
-  pointSize: 20
 --- !u!114 &8997896239640069800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,8 +45,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  defaultDataView: 0
   numDecimals: 2
   primaryColor: {r: 0.69945145, g: 0, b: 1, a: 1}
+  sensorScale: 0.9
   targetPosition: {x: 100, y: 50}
   positionType: 1
   useFixedScaleForDashedRectangle: 1
@@ -86,3 +67,24 @@ MonoBehaviour:
     height: 20
   patternModulo: 10
   SampleDensity: 1
+--- !u!114 &8907069666673537392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526785133951612108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3108e11523352974f8968a3b6aafafc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  overrideGraphDataCategory: 0
+  isBezierCurve: 0
+  bezierTension: 0.5
+  HorizontalViewLength: 5
+  lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
+  fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
+  pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}
+  lineThickness: 5
+  pointSize: 20

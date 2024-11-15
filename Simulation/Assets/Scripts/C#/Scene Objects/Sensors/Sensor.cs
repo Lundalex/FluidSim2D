@@ -9,6 +9,7 @@ public abstract class Sensor : MonoBehaviour
     [SerializeField] private DataView defaultDataView;
     [Range(0, 2)] public int numDecimals;
     public Color primaryColor;
+    [Range(0.5f, 2.0f)] public float sensorScale = 1;
     public Vector2 targetPosition;
     public PositionType positionType;
     public bool useFixedScaleForDashedRectangle;
@@ -74,7 +75,8 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.fluidSensorTypeSelectObject.SetActive(!isRigidBodySensor);
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
-        sensorUI.sliderScale = sensorUI.scaleSlider.value;
+        sensorUI.scaleSlider.value = sensorScale;
+        sensorUI.sliderScale = sensorScale;
         sensorUI.SetDataWindow(defaultDataView == DataView.Numeric ? "NumericDisplay" : "GraphDisplay");
         InitSensorTitleAndUnit();
         InitSensorTypeDropdown();

@@ -268,13 +268,13 @@ public class Main : MonoBehaviour
         renderTexture = TextureHelper.CreateTexture(Resolution, 3);
 
         shaderHelper.SetPSimShaderBuffers(pSimShader);
-        shaderHelper.SetNewRBSimShaderBuffers(rbSimShader);
+        shaderHelper.SetRBSimShaderBuffers(rbSimShader);
         shaderHelper.SetRenderShaderBuffers(renderShader);
         shaderHelper.SetRenderShaderTextures(renderShader);
         shaderHelper.SetSortShaderBuffers(sortShader);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
-        shaderHelper.UpdateNewRBSimShaderVariables(rbSimShader);
+        shaderHelper.UpdateRBSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
@@ -371,7 +371,7 @@ public class Main : MonoBehaviour
         MaterialBuffer.SetData(Mats);
 
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
-        shaderHelper.UpdateNewRBSimShaderVariables(rbSimShader);
+        shaderHelper.UpdateRBSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
     }

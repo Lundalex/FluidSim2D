@@ -216,7 +216,7 @@ public class ShaderHelper : MonoBehaviour
 
     // --- Ner RB shader ---
 
-    public void SetNewRBSimShaderBuffers(ComputeShader rbSimShader)
+    public void SetRBSimShaderBuffers(ComputeShader rbSimShader)
     {
         rbSimShader.SetBuffer(0, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(0, "RBVectors", m.RBVectorBuffer);
@@ -243,10 +243,10 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetBuffer(5, "RBVectors", m.RBVectorBuffer);
     }
 
-    public void UpdateNewRBSimShaderVariables(ComputeShader rbSimShader)
+    public void UpdateRBSimShaderVariables(ComputeShader rbSimShader)
     {
         rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
-        rbSimShader.SetFloat("RigidBodyPadding", m.FluidPadding + m.RigidBodyPadding);
+        rbSimShader.SetFloat("RigidBodyPadding", m.RigidBodyPadding);
 
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         rbSimShader.SetInt("NumVectors", m.RBVectors.Length);

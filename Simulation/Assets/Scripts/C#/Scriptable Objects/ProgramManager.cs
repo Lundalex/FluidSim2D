@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Resources2;
 using UnityEngine;
@@ -9,27 +10,27 @@ public class ProgramManager : ScriptableObject
     public Vector2 boundsPadding;
     public Vector2 boundsOffset;
     public Material lineMaterial;
-    [HideInInspector] public Main main;
-    [HideInInspector] public SensorManager sensorManager;
-    [HideInInspector] public FluidSpawnerManager fluidSpawnerManager;
+    [NonSerialized] public Main main;
+    [NonSerialized] public SensorManager sensorManager;
+    [NonSerialized] public FluidSpawnerManager fluidSpawnerManager;
 
     // Sensors
-    [HideInInspector] public List<SensorData> sensorDatas = new();
+    [NonSerialized] public List<SensorData> sensorDatas = new();
 
     // Globally accessed variables
-    [HideInInspector] public bool programStarted = false;
-    [HideInInspector] public bool doOnSettingsChanged = false;
-    [HideInInspector] public float globalBrightnessFactor = 1;
-    [HideInInspector] public float timeScale = 1;
-    [HideInInspector] public bool isAnySensorSettingsViewActive = false;
-    [HideInInspector] public bool programPaused = false;
-    [HideInInspector] public bool frameStep = false;
-    [HideInInspector] public float totalTimeElapsed = 0;
-    [HideInInspector] public float clampedDeltaTime = 0;
-    [HideInInspector] public float timeSetRandTimer = 0;
-    [HideInInspector] public readonly float MaxDeltaTime = 1 / 30.0f;
+    [NonSerialized] public bool programStarted = false;
+    [NonSerialized] public bool doOnSettingsChanged = false;
+    [NonSerialized] public float globalBrightnessFactor = 1;
+    [NonSerialized] public float timeScale = 1;
+    [NonSerialized] public bool isAnySensorSettingsViewActive = false;
+    [NonSerialized] public bool programPaused = false;
+    [NonSerialized] public bool frameStep = false;
+    [NonSerialized] public float totalTimeElapsed = 0;
+    [NonSerialized] public float clampedDeltaTime = 0;
+    [NonSerialized] public float timeSetRandTimer = 0;
+    [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
-    [HideInInspector] public Vector2 ScreenToViewFactor;
+    [NonSerialized] public Vector2 ScreenToViewFactor;
 
     // Private - Camera
     private Camera uiCam;
@@ -57,17 +58,14 @@ public class ProgramManager : ScriptableObject
 
     public void Start()
     {
-        ScreenToViewFactor = GetScreenToViewFactor();
-
+        ResetDatas();
         SetReferences();
 
-        main.StartScript();
-        sensorManager.StartScript(main);
-        fluidSpawnerManager.StartScript();
+        ScreenToViewFactor = GetScreenToViewFactor();
 
-        globalBrightnessFactor = 1;
-        programStarted = true;
-        programPaused = false;
+        main.StartScript();
+        fluidSpawnerManager.StartScript();
+        sensorManager.StartScript(main);
     }
 
     public void Update()
@@ -145,11 +143,12 @@ public class ProgramManager : ScriptableObject
 
     public void ResetDatas()
     {
-        programStarted = false;
+        programStarted = true;
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
         totalTimeElapsed = 0;
+        globalBrightnessFactor = 1;
     }
 
     public void AddSensor(ref SensorUI sensorUI, Sensor sensor)
@@ -241,29 +240,28 @@ public class ProgramManager : ScriptableObject
         float boundsAspect = main.BoundaryDims.x / (float)main.BoundaryDims.y;
         float resolutionAspect = main.Resolution.x / (float)main.Resolution.y;
 
-        float scaleX = 1.0f;
-        float scaleY = 1.0f;
-        Vector2 offset = Vector2.zero;
-
+        float scaleX;
+        float scaleY;
         if (boundsAspect > resolutionAspect)
         {
-            // Bounds are wider than resolutionAspect: scale Y down
-            scaleY = resolutionAspect / boundsAspect; // e.g., 1 / 2 = 0.5
+            // Scale Y down
+            scaleY = resolutionAspect / boundsAspect;
             scaleX = 1.0f;
-
-            float scaledHeight = main.BoundaryDims.y * scaleY;
-            offset = new Vector2(0.0f, (main.BoundaryDims.y - scaledHeight) / 2.0f);
         }
         else
         {
-            // Bounds are taller or equal to resolutionAspect: scale X down
+            // Scale X down
             scaleX = boundsAspect / resolutionAspect;
             scaleY = 1.0f;
-
-            float scaledWidth = main.BoundaryDims.x * scaleX;
-            offset = new Vector2((main.BoundaryDims.x - scaledWidth) / 2.0f, 0.0f);
         }
 
         return new Vector2(scaleX, scaleY);
+    }
+
+    private void OnDisable()
+    {
+    #if UNITY_EDITOR
+        ResetDatas();
+    #endif
     }
 }
