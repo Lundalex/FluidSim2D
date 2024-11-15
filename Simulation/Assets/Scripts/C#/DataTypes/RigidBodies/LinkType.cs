@@ -1,6 +1,6 @@
 public enum LinkType
 {
     Spring,
-    Rigid,
+    Rigid_CURRENTLY_NOT_SUPPORTED,
     None
 };

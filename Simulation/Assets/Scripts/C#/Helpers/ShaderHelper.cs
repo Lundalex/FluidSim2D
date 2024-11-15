@@ -152,6 +152,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("StateThresholdPadding", m.StateThresholdPadding);
         pSimShader.SetFloat("FluidPadding", m.FluidPadding);
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
+        pSimShader.SetFloat("MaxPVel", m.MaxPVel);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
         pSimShader.SetFloat("InteractionTemperaturePower", m.InteractionTemperaturePower);
@@ -254,6 +255,9 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
         rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);
         rbSimShader.SetBool("AllowLinkedRBCollisions", m.AllowLinkedRBCollisions);
+
+        rbSimShader.SetFloat("MaxRBRotVel", m.MaxRBRotVel);
+        rbSimShader.SetFloat("MaxRBVel", m.MaxRBVel);
 
         rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
         rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);

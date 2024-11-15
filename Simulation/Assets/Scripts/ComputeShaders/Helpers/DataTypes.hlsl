@@ -97,6 +97,9 @@ struct RigidBody
     float2 localLinkPosThisRB;
     float2 localLinkPosOtherRB;
 
+    // Heating
+    float heatingStrength;
+
     // Recorded spring force
     float recordedSpringForce;
 

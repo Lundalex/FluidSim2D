@@ -12,10 +12,10 @@
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
 
-#include "MathResources.hlsl"
-#include "Composition.hlsl"
-#include "DataTypes.hlsl"
-#include "Constants.hlsl"
+#include "./Helpers/MathResources.hlsl"
+#include "./Helpers/Composition.hlsl"
+#include "./Helpers/DataTypes.hlsl"
+#include "./Helpers/Constants.hlsl"
 
 // Liquid rendering settings
 const float LiquidMetaballsThreshold;
@@ -369,7 +369,8 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 
     int2 chunk = (int2)(pixelPos * InvMaxInfluenceRadius);
 
-    int nearestLastChunkKey_PType_POrder;
+    int nearestGasLastChunkKey_PType_POrder;
+    int nearestNonGasLastChunkKey_PType_POrder;
     bool nearestIsNotGas = false;
     float totDensity = 0;
     float totNoiseDensity = 0;
@@ -427,8 +428,9 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             if (totDensity > (isGas ? (GasMetaballsThreshold - GasMetaballsEdgeDensityWidth) : (LiquidMetaballsThreshold - LiquidMetaballsEdgeDensityWidth)))
                             {
                                 drawOutline = true;
-                                nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                                 doDrawFluid = true;
+                                if (isGas) nearestGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                                else nearestNonGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                             }
                         #endif
 
@@ -437,8 +439,9 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             #if DRAW_FLUID_OUTLINES
                                 drawOutline = false;
                             #else
-                                nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                                 doDrawFluid = true;
+                                if (isGas) nearestGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                                else nearestNonGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                             #endif
                         }
                     }
@@ -450,9 +453,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
                             numParticles++;
                         #endif
 
-                        nearestLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
                         doDrawFluid = true;
                         minDstSqr = dstSqr;
+                        if (isGas) nearestGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
+                        else nearestNonGasLastChunkKey_PType_POrder = lastChunkKey_PType_POrder;
 
                         if (!isGas) nearestIsNotGas = true;
 
@@ -499,6 +503,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         }
     }
 
+    int nearestLastChunkKey_PType_POrder = nearestIsNotGas ? nearestNonGasLastChunkKey_PType_POrder : nearestGasLastChunkKey_PType_POrder;
     if (doDrawFluid)
     {
         int nearestPTypeIndex = Extract_PType(nearestLastChunkKey_PType_POrder);

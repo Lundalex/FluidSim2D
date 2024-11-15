@@ -24,6 +24,9 @@ public struct RBData
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
 
+    // Heating
+    public float heatingStrength;
+    
     // Recorded spring force
     public float recordedSpringForce;
 

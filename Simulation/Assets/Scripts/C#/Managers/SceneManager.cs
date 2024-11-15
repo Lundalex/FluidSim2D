@@ -247,12 +247,14 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid) ? linkedRBIndex : -1,
-            springStiffness = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springStiffness,
-            springRestLength = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springRestLength,
-            damping = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.damping,
+            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED) ? linkedRBIndex : -1,
+            springStiffness = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.springStiffness,
+            springRestLength = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.springRestLength,
+            damping = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.damping,
             localLinkPosThisRB = rbInput.localLinkPosThisRB,
             localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
+            // Heating
+            heatingStrength = rbInput.heatingStrength,
             // Recorded spring force
             recordedSpringForce = 0,
             // Display

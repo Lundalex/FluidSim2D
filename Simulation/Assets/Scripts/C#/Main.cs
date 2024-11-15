@@ -9,7 +9,7 @@ using PM = ProgramManager;
 
 public class Main : MonoBehaviour
 {
-    [Header("Shader Compilation - Particle Simulation")]
+#region Shader Compilation - Particle Simulation
     // Fluids
     public bool DoSimulateParticleViscosity = true;
     public bool DoSimulateParticleSprings = true;
@@ -17,42 +17,55 @@ public class Main : MonoBehaviour
 
     // Shader Thread Group Sizes
     public int renderShaderThreadSize = 32; // /32, AxA thread groups
-    public int pSimShaderThreadSize = 512; // /1024
+    public int pSimShaderThreadSize1 = 512; // /1024
     public int pSimShaderThreadSize2 = 512; // /1024
     public int sortShaderThreadSize = 512; // /1024
     public int rbSimShaderThreadSize1 = 64; // Rigid Body Simulation
     public int rbSimShaderThreadSize2 = 32; // Rigid Body Simulation
     public int rbSimShaderThreadSize3 = 512; // Rigid Body Simulation
-    public float FloatIntPrecisionRB = 20000.0f; // Float-Int storage precision used for rbSimShader
-    public float FloatIntPrecisionP = 1000.0f; // Float-Int storage precision used in pSimShader
 
-    [Header("Fluid Simulation")]
+    // Variable storage precision
+    public float FloatIntPrecisionRB = 20000.0f; // Rigid Body Simulation
+    public float FloatIntPrecisionP = 1000.0f; // Particle Simulation
+#endregion
+
+#region Fluid Simulation
+    // Safety
+    public float MaxPVel = 100;
+    public float MaxRBRotVel = 100;
+    public float MaxRBVel = 100;
+
+    // (Other settings)
     public float LookAheadTime = 0.017f;
     public float StateThresholdPadding = 3.0f;
     public int MaxInfluenceRadius = 2;
     [SerializeField] private int MaxParticlesNum = 30000;
     [SerializeField] private int MaxStartingParticlesNum = 20000;
     [SerializeField] private int MaxSpringsPerParticle = 150;
+#endregion
 
-    [Header("Scene Boundary")]
+#region Scene Boundary
     public int2 BoundaryDims = new(300, 200);
     public float FluidPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
+#endregion
 
-    [Header("Rigid Body Simulation")]
+#region Rigid Body Simulation
     public bool AllowLinkedRBCollisions = false;
     public float RB_RBCollisionCorrectionFactor = 0.8f;
     public float RB_RBCollisionSlop = 0.01f;
+#endregion
 
-    [Header("Simulation Time")]
+#region Simulation Time
     public int TimeStepsPerFrame = 3;
     public int SubTimeStepsPerFrame = 3;
     public TimeStepType TimeStepType;
     public int TargetFrameRate;
     public float TimeStep = 0.02f;
     public float ProgramSpeed = 2.0f;
+#endregion
 
-    [Header("Mouse Interaction")]
+#region Mouse Interaction
     // Particles
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
@@ -62,8 +75,9 @@ public class Main : MonoBehaviour
     // Rigid Bodies
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
+#endregion
 
-    [Header("Render Pipeline")]
+#region Render Pipeline
     [SerializeField] private FluidRenderMethod FluidRenderMethod;
     [SerializeField] private bool DoDrawFluidOutlines = true;
     [SerializeField] private bool DoDisplayFluidVelocities = true;
@@ -80,8 +94,9 @@ public class Main : MonoBehaviour
         RenderStep.RigidBodySprings,
         RenderStep.UI
     };
+#endregion
 
-    [Header("Render Display")]
+#region Render Display
     public int2 Resolution = new(1920, 1280);
     public LightingSettings LightingSettings;
     public float3 GlobalBrightness;
@@ -137,8 +152,9 @@ public class Main : MonoBehaviour
     public float3 BackgroundBrightness;
     public float BackgroundUpScaleFactor;
     public float GlobalSettingsViewChangeSpeed;
+#endregion
 
-    [Header("References")]
+#region References
     // Textures
     public RenderTexture uiTexture;
     public RenderTexture causticsTexture;
@@ -154,6 +170,8 @@ public class Main : MonoBehaviour
     public ComputeShader pSimShader;
     public ComputeShader rbSimShader;
     public ComputeShader sortShader;
+    public ComputeShader debugShader;
+#endregion
 
     // Bitonic mergesort
     public ComputeBuffer SpatialLookupBuffer;
@@ -264,6 +282,9 @@ public class Main : MonoBehaviour
         SetShaderKeywords();
         InitCausticsGen();
 
+        ComputeShaderDebugger debugger = new();
+        debugger.CheckShaderConstants(this, debugShader);
+
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
     }
 
@@ -292,7 +313,7 @@ public class Main : MonoBehaviour
 
                 if (ParticlesNum > 0)
                 {
-                    int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize);
+                    int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize1);
                     pSimShader.Dispatch(5, ThreadNums, 1, 1);
                 }
 
@@ -571,19 +592,19 @@ public class Main : MonoBehaviour
 
     private void RunPSimShader(int step)
     {
-        ComputeHelper.DispatchKernel(pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize);
-        ComputeHelper.DispatchKernel(pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "PreCalculations", ParticlesNum, pSimShaderThreadSize1);
+        ComputeHelper.DispatchKernel(pSimShader, "CalculateDensities", ParticlesNum, pSimShaderThreadSize1);
 
         if (step == 0 && DoSimulateParticleSprings)
         {
-            ComputeHelper.DispatchKernel(pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
-            ComputeHelper.DispatchKernel(pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize);
+            ComputeHelper.DispatchKernel(pSimShader, "PrepSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize1);
+            ComputeHelper.DispatchKernel(pSimShader, "TransferAllSpringData", ParticleSpringsCombinedHalfLength, pSimShaderThreadSize1);
         }
 
-        ComputeHelper.DispatchKernel(pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "ParticleForces", ParticlesNum, pSimShaderThreadSize1);
 
         ComputeHelper.DispatchKernel(pSimShader, "ResetFluidData", ChunksNumAll, pSimShaderThreadSize2);
-        ComputeHelper.DispatchKernel(pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize);
+        ComputeHelper.DispatchKernel(pSimShader, "RecordFluidData", ParticlesNum, pSimShaderThreadSize1);
     }
 
     private void RunRbSimShader()

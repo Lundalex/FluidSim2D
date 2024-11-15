@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 public class EditorManager : Editor
 {
@@ -8,6 +9,7 @@ public class EditorManager : Editor
     private const float springsceneObjectLineThickness = 2.0f;
     private const float springAmplitude = 7.0f;
     private const int numSpringPoints = 15;
+    private const float springForceFactor = 1 / 50000.0f;
 
     void OnEnable() => EditorApplication.update += OnEditorUpdate;
 
@@ -103,13 +105,20 @@ public class EditorManager : Editor
     static void DrawRigidBodyObjects(SceneRigidBody rigidBody, GizmoType gizmoType)
     {
         if (rigidBody == null) return;
-
+        
         // Update points
         rigidBody.SetPolygonData();
-        Vector2 oofset = Vector2.zero;
-        if (rigidBody.RBInput.linkType == LinkType.Rigid)
+        if (rigidBody.RBInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED)
         {
-            oofset = rigidBody.RBInput.linkedRigidBody.ComputeCentroid(1.0f) - rigidBody.ComputeCentroid(1.0f) + new Vector2(rigidBody.RBInput.localLinkPosOtherRB.x, rigidBody.RBInput.localLinkPosOtherRB.y);
+            Vector2 thisCentroid = rigidBody.cashedCentroid;
+            Vector2 otherCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
+            Vector2 thisCentroidRelative = thisCentroid - rigidBody.cashedPosition;
+            Vector2 localLinkPosThis = new(rigidBody.RBInput.localLinkPosThisRB.x, rigidBody.RBInput.localLinkPosThisRB.y);
+            Vector2 localLinkPosOther = new(rigidBody.RBInput.localLinkPosOtherRB.x, rigidBody.RBInput.localLinkPosOtherRB.y);
+            
+            rigidBody.transform.position = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
+            rigidBody.cashedThisCentroidRelative = thisCentroid + localLinkPosThis;
+            rigidBody.cashedOtherCentroidRelative = otherCentroid + localLinkPosOther;
         }
 
         // --- Draw the filled body using triangulation ---
@@ -123,10 +132,6 @@ public class EditorManager : Editor
 
             // Triangulate the polygon
             Vector2[] polygonPoints = rigidBody.MeshPoints.ToArray();
-            for (int i = 0; i < polygonPoints.Length; i++)
-            {
-                polygonPoints[i] += oofset;
-            }
 
             Triangulator triangulator = new Triangulator(polygonPoints);
             int[] indices = triangulator.Triangulate();
@@ -154,36 +159,99 @@ public class EditorManager : Editor
 
         // Draw wiremesh
         Vector2[] meshVertices = rigidBody.MeshPoints.ToArray();
-        for (int i = 0; i < meshVertices.Length; i++)
-        {
-            meshVertices[i] += oofset;
-        }
         DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
 
         // Draw spring
         if (rigidBody.RBInput.linkType == LinkType.Spring && rigidBody.RBInput.linkedRigidBody != null)
         {   
-            float gridDensity = 3.0f; // A lower value results in a higher performance cost, but also slightly increases centroid approximation accuracy
+            float gridDensity = 3.0f; // A higher value results in a lower performance cost, but also slightly decreases centroid approximation accuracy
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridDensity);
 
             float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
             float approxForce = rigidBody.RBInput.springStiffness * Mathf.Abs(rigidBody.RBInput.springRestLength - approxLength);
             
-            rigidBody.approximatedSpringLength = approxLength;
-            rigidBody.approximatedSpringForce = approxForce;
+            rigidBody.approximatedSpringLength = approxLength.ToString();
+            rigidBody.approximatedSpringForce = approxForce.ToString();
 
             Color springBaseColor = Color.green;
             Color springStressedColor = Color.red;
-            Color lerpColor = Color.Lerp(springBaseColor, springStressedColor, approxForce / 50000.0f);
+            Color lerpColor = Color.Lerp(springBaseColor, springStressedColor, approxForce * springForceFactor);
 
             // Draw spring
             DrawZigZagSpring(startPoint, endPoint, lerpColor, springsceneObjectLineThickness, springAmplitude, numSpringPoints);
 
-            Gizmos.color = Color.red;
             float radius = 2.5f;
+            Gizmos.color = Color.red;
             Gizmos.DrawSphere(startPoint, radius);
             Gizmos.DrawSphere(endPoint, radius);
         }
+        else
+        {
+            if (rigidBody.RBInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED)
+            {
+                Vector2 startPoint = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
+                Vector2 endPoint = rigidBody.cashedCentroid;
+
+                // Draw dashed line
+                DrawDashedLine(Color.magenta, startPoint, endPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
+                
+                // Draw start and end points
+                float radius = 2.5f;
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(startPoint, radius);
+                Gizmos.DrawSphere(endPoint, radius);
+            }
+
+            rigidBody.approximatedSpringLength = "No Active Spring Link";
+            rigidBody.approximatedSpringForce = "No Active Spring Link";
+        }
+    }
+
+    public static void DrawDashedLine(Color lineColor, Vector3 from, Vector3 to, float dashLength, float lineThickness, float animationSpeed, bool drawArrowHead = false, float arrowHeadSize = 5.0f) // float arrowHeadSize
+    {
+        Vector3 direction = (to - from).normalized;
+        float distance = Vector3.Distance(from, to);
+        int dashCount = Mathf.CeilToInt(distance / dashLength);
+
+        // Calculate repeating animation offset
+        float offset = ((Time.realtimeSinceStartup * animationSpeed) % (dashLength * 2)) / dashLength * dashLength;
+
+        Handles.color = lineColor;
+        for (int i = 0; i < dashCount; i++)
+        {
+            float startOffset = i * dashLength * 2 - offset;
+            float endOffset = startOffset + dashLength;
+
+            // Skip segments that are completely out of bounds
+            if (startOffset >= distance) break;
+            if (endOffset <= 0) continue;
+
+            // Clamp the start and end points to the valid range
+            startOffset = Mathf.Max(0, startOffset);
+            endOffset = Mathf.Min(distance, endOffset);
+
+            Vector3 start = from + direction * startOffset;
+            Vector3 end = from + direction * endOffset;
+            DrawThickLine(start, end, lineThickness);
+        }
+
+        // Draw arrowhead
+        if (drawArrowHead)
+        {
+            Vector3 arrowBase = to - direction * arrowHeadSize;
+            Vector3 left = Quaternion.AngleAxis(135, Vector3.forward) * direction * arrowHeadSize * 0.5f;
+            Vector3 right = Quaternion.AngleAxis(-135, Vector3.forward) * direction * arrowHeadSize * 0.5f;
+
+            Vector3[] triangle = { to, arrowBase + left, arrowBase + right };
+            Handles.DrawAAConvexPolygon(triangle);
+        }
+    }
+
+    private static void DrawThickLine(Vector3 start, Vector3 end, float thickness)
+    {
+        Vector3 offset = thickness * 0.5f * Vector3.Cross((end - start).normalized, Vector3.forward);
+        Vector3[] quad = { start - offset, start + offset, end + offset, end - offset };
+        Handles.DrawAAConvexPolygon(quad);
     }
 
     // Draw fluid objects

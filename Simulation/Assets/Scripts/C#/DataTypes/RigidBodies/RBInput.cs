@@ -23,6 +23,9 @@ public struct RBInput
     public float2 localLinkPosOtherRB;
     public SceneRigidBody linkedRigidBody;
 
+    // Heating
+    public float heatingStrength;
+
     // Display
     public int renderPriority;
     public int matIndex;

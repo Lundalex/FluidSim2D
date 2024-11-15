@@ -3,24 +3,43 @@ using System.Collections.Generic;
 using System.Linq;
 using Resources2;
 using UnityEngine;
+using UnityEditor;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneRigidBody : Polygon
 {
+    // Public
     public bool DoDrawBody = true;
+    public float EditorLineAnimationSpeed = 10;
     [Header("Simulation Object Settings")]
-    [Range(0.1f, 10.0f)] public float defaultGridDensity = 0.5f;
+    [Range(0.1f, 10.0f)] public float defaultGridSpacing = 0.5f;
     public Sensor[] LinkedSensors;
     public RBInput RBInput;
-    public float approximatedSpringLength;
-    public float approximatedSpringForce;
-    [NonSerialized] public Vector2[] Points;
+    public string approximatedSpringLength;
+    public string approximatedSpringForce;
 
-    private Vector2 cashedCentroid
+    // NonSerialized
+    [NonSerialized] public Vector2[] Points;
+    [NonSerialized] public Vector2 cashedPosition = Vector2.zero;
+    [NonSerialized] public Vector2 cashedCentroid = Vector2.zero;
+    [NonSerialized] public Vector2 cashedThisCentroidRelative;
+    [NonSerialized] public Vector2 cashedOtherCentroidRelative;
+
+    private void OnValidate()
+    {
+    #if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            cashedCentroid = ComputeCentroid(defaultGridSpacing);
+
+            cashedPosition = transform.position;
+        }
+    #endif
+    }
 
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
     {
-        if (gridSpacing == 0) gridSpacing = defaultGridDensity;
+        if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
 
         SetPolygonData();
 

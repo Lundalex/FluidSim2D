@@ -1,10 +1,11 @@
 static const float MIR = 2.0; // MaxInfluenceRadius
-static const int ChunkNum_copy = ceil(400 / MIR) * ceil(200 / MIR);
-static const int PTypesNum_copy = 2 * 3;
+static const int2 BOUNDARY_DIMS = int2(400, 200);
+static const int ChunkNum_copy = ceil(BOUNDARY_DIMS.x / MIR) * ceil(BOUNDARY_DIMS.y / MIR);
+static const int PTYPES_NUM_COPY = 1 * 3;
 
 int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
 {
-    int composedPOrder = POrder * (ChunkNum_copy * PTypesNum_copy);
+    int composedPOrder = POrder * (ChunkNum_copy * PTYPES_NUM_COPY);
     int composedPType = PType * ChunkNum_copy;
     int composedLastChunkKey = LastChunkKey;
 
@@ -18,12 +19,12 @@ int Extract_LastChunkKey(int LastChunkKey_PType_POrder)
 
 int Extract_PType(int LastChunkKey_PType_POrder)
 {
-    return ((uint)LastChunkKey_PType_POrder % (ChunkNum_copy * PTypesNum_copy)) / ChunkNum_copy;
+    return ((uint)LastChunkKey_PType_POrder % (ChunkNum_copy * PTYPES_NUM_COPY)) / ChunkNum_copy;
 }
 
 int Extract_POrder(int LastChunkKey_PType_POrder)
 {
-    return (uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy);
+    return (uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTYPES_NUM_COPY);
 }
 
 void Set_LastChunkKey(inout int LastChunkKey_PType_POrder, int NewLastChunkKey)
@@ -33,7 +34,7 @@ void Set_LastChunkKey(inout int LastChunkKey_PType_POrder, int NewLastChunkKey)
 
 void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType)
 {
-    int pOrderVal = ((uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTypesNum_copy)) * (ChunkNum_copy * PTypesNum_copy);
+    int pOrderVal = ((uint)LastChunkKey_PType_POrder / (ChunkNum_copy * PTYPES_NUM_COPY)) * (ChunkNum_copy * PTYPES_NUM_COPY);
     int lastChunkKeyVal = (uint)LastChunkKey_PType_POrder % ChunkNum_copy;
 
     LastChunkKey_PType_POrder = pOrderVal + (NewPType * ChunkNum_copy) + lastChunkKeyVal;
@@ -41,7 +42,7 @@ void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType)
 
 void Set_POrder(inout int LastChunkKey_PType_POrder, int NewPOrder)
 {
-    int pType_lastChunkKey_Val = (uint)LastChunkKey_PType_POrder % (ChunkNum_copy * PTypesNum_copy);
+    int pType_lastChunkKey_Val = (uint)LastChunkKey_PType_POrder % (ChunkNum_copy * PTYPES_NUM_COPY);
 
-    LastChunkKey_PType_POrder = (NewPOrder * (ChunkNum_copy * PTypesNum_copy)) + pType_lastChunkKey_Val;
+    LastChunkKey_PType_POrder = (NewPOrder * (ChunkNum_copy * PTYPES_NUM_COPY)) + pType_lastChunkKey_Val;
 }

@@ -144,7 +144,6 @@ float SmoothViscosityLaplacian(float dst, float radius)
 	return result;
 }
 
-
 // -- General math functions --
 
 
@@ -155,9 +154,9 @@ float SmoothViscosityLaplacian(float dst, float radius)
 // diff_T: difference in temperature
 // dst: absDst
 // Δt: DeltaTime
-float LiquidTemperatureExchangeModel(float avg_k, float diff_T, float W, float dst, float DeltaTime)
+float LiquidTemperatureExchangeModel(float avg_k, float diff_T, float W, float dst, float deltaTime)
 {
-    return DeltaTime * avg_k * diff_T * W / dst;
+    return deltaTime * avg_k * diff_T * W / dst;
 }
 
 float LiquidSpringForceModel(float stiffness, float restLen, float maxLen, float curLen)

@@ -11,10 +11,10 @@
 #pragma multi_compile _ SIMULATE_PARTICLE_SPRINGS
 #pragma multi_compile _ SIMULATE_PARTICLE_TEMPERATURE
 
-#include "DataTypes.hlsl"
-#include "Constants.hlsl"
-#include "MathResources.hlsl"
-#include "Composition.hlsl"
+#include "./Helpers/DataTypes.hlsl"
+#include "./Helpers/Constants.hlsl"
+#include "./Helpers/MathResources.hlsl"
+#include "./Helpers/Composition.hlsl"
 
 // Constants
 const int2 ChunksNum;
@@ -31,6 +31,9 @@ const float LookAheadTime;
 const float StateThresholdPadding;
 const float FluidPadding;
 const float MaxInteractionRadius;
+
+// Safety
+const float MaxPVel;
 
 // Interation settings
 const float InteractionAttractionPower;
@@ -526,6 +529,13 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
     PDatas[i].recordedPressure = totAbsPressure;
 }
 
+float2 SafeFloat2(float2 value, float max)
+{
+    if (value.x == 0 && value.y == 0) return 0;
+    
+    return normalize(value) * min(length(value), max);
+}
+
 [numthreads(TN_PS,1,1)]
 void UpdatePositions (uint3 id : SV_DispatchThreadID)
 {
@@ -535,20 +545,23 @@ void UpdatePositions (uint3 id : SV_DispatchThreadID)
     int pTypeIndex = Extract_PType(pData.lastChunkKey_PType_POrder);
     PType pType = PTypes[pTypeIndex];
 
-    // Update particle position and velocity
+    // Ensure the velocity is within the valid range
+    pData.vel = SafeFloat2(pData.vel, MaxPVel);
+
+    // Update the particle position and velocity
     pData.pos += pData.vel * DeltaTime;
     float4 PosVelData = BoundraryCheck(pData.pos, pData.vel, pType.damping);
     PDatas[i].pos = float2(PosVelData.x, PosVelData.y);
     float2 newVelocity = float2(PosVelData.z, PosVelData.w);
 
-    // Decrease velocity vector length with respect to the passive damping factor
+    // Decrease the velocity vector length with respect to the passive damping factor
     newVelocity *= max(length(newVelocity) - pType.passiveDamping * DeltaTime, 0) / length(newVelocity);
     PDatas[i].vel = newVelocity;
 
-    // Update particle temperature
+    // Update the particle temperature
     PDatas[i].temperature += pData.temperatureExchangeBuffer / pType.specificHeatCapacity;
 
-    // State changes
+    // Check state changes
     int stateKey = (uint)pTypeIndex % 3;
     switch(stateKey)
     {
@@ -593,6 +606,7 @@ void ResetFluidData (uint3 id : SV_DispatchThreadID)
 void RecordFluidData (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= ParticlesNum) return;
+    
     // index from SpatialLookup to improve memory access coherency
     uint i = SpatialLookup[id.x].x;
     uint state = id.y * BoundaryDims.x + id.x + StepRand;
@@ -608,16 +622,16 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
 
     float thermalEnergy = mass * temperature * pType.specificHeatCapacity;
 
-    int2 vel_Int2 = Float2AsInt2(pData.vel, IntFloatPrecisionP);
-    int totVelAbs_Int = FloatAsInt(length(pData.vel), IntFloatPrecisionP);
+    int2 vel_Int2 = Float2AsInt2(pData.vel, INT_FLOAT_PRECISION_P);
+    int totVelAbs_Int = FloatAsInt(length(pData.vel), INT_FLOAT_PRECISION_P);
 
     // Record data with InterlockedAdd to ensure there are no race conditions
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(temperature, IntFloatPrecisionP));
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totThermalEnergy_Int, FloatAsInt(thermalEnergy, IntFloatPrecisionP));
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totTemp_Int, FloatAsInt(temperature, INT_FLOAT_PRECISION_P));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totThermalEnergy_Int, FloatAsInt(thermalEnergy, INT_FLOAT_PRECISION_P));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totPressure_Int, FloatAsInt(pData.recordedPressure, INT_FLOAT_PRECISION_P));
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.x, vel_Int2.x);
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVel_Int2.y, vel_Int2.y);
     InterlockedAdd(RecordedFluidDatas[chunkKey].totVelAbs_Int, totVelAbs_Int);
-    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(mass, IntFloatPrecisionP));
+    InterlockedAdd(RecordedFluidDatas[chunkKey].totMass_Int, FloatAsInt(mass, INT_FLOAT_PRECISION_P));
     InterlockedAdd(RecordedFluidDatas[chunkKey].numContributions, 1);
 }

@@ -7,17 +7,23 @@
         </ui:Foldout>
         <ui:Toggle label="Show Advanced" name="ShowAdvanced" tooltip="Recommended: Keep default values. Enables editing of advanced program settings. " style="display: flex;" />
         <ui:Foldout text="Advanced Settings" name="AdvancedSettings" tooltip="Recommended: Keep default values. Advanced program settings. " value="true" toggle-on-label-click="false" style="display: flex;">
-            <uie:PropertyField binding-path="renderShaderThreadSize" label="Render Shader Thread Group Size" tooltip="Number of threads per group during GPU shader processing" />
-            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" binding-path="pSimShaderThreadSize" label="Particle Simulation Shader Thread Group Size" />
-            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" binding-path="sortShaderThreadSize" label="Sorting Shader Thread Group Size" />
-            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 1)" binding-path="rbSimShaderThreadSize1" />
-            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 2)" binding-path="rbSimShaderThreadSize2" />
-            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing" label="Rigid Body Simulation Shader Thread Group Size (kernel group 3)" binding-path="rbSimShaderThreadSize3" />
+            <uie:PropertyField binding-path="renderShaderThreadSize" label="Render Shader Thread Group Size" tooltip="Number of threads per group during GPU shader processing." />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." binding-path="pSimShaderThreadSize1" label="Particle Simulation Shader Thread Group Size (kernel group 1)" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." binding-path="pSimShaderThreadSize2" label="Particle Simulation Shader Thread Group Size (kernel group 1)" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." binding-path="sortShaderThreadSize" label="Sorting Shader Thread Group Size" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." label="Rigid Body Simulation Shader Thread Group Size (kernel group 1)" binding-path="rbSimShaderThreadSize1" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." label="Rigid Body Simulation Shader Thread Group Size (kernel group 2)" binding-path="rbSimShaderThreadSize2" />
+            <uie:PropertyField tooltip="Number of threads per group during GPU shader processing." label="Rigid Body Simulation Shader Thread Group Size (kernel group 3)" binding-path="rbSimShaderThreadSize3" />
             <uie:PropertyField binding-path="FloatIntPrecisionRB" label="Float-Int Precision RB" tooltip="Precision used for float-to-integer storage solutions." />
             <uie:PropertyField tooltip="Precision used for float-to-integer storage solutions." binding-path="FloatIntPrecisionP" label="Float-Int Precision P" />
         </ui:Foldout>
     </ui:Foldout>
     <ui:Foldout text="Fluid Simulation" name="FluidSimulation" value="true" style="-unity-font-style: bold; font-size: 12px; flex-direction: column; background-color: rgba(46, 46, 46, 0); background-position-x: center 0; background-position-y: center 0; -unity-background-scale-mode: stretch-to-fill; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); border-bottom-width: 2px; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
+        <ui:Foldout text="Safety" name="Safety" value="true" tooltip="Recommended: Keep these settings at high values unless simulation stability issues are encountered" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="MaxPVel" label="Max Particle Velocity" tooltip="Recommended: Keep at a high value unless simulation stability issues are encountered. Particle velocities cannot exceed this value." />
+            <uie:PropertyField binding-path="MaxRBRotVel" label="Max Rigid Body Angular Velocity" tooltip="Recommended: Keep at a high value unless simulation stability issues are encountered. Angular rigid body velocities cannot exceed this value." />
+            <uie:PropertyField binding-path="MaxRBVel" label="Max Rigid Body Velocity" tooltip="Recommended: Keep at a high value unless simulation stability issues are encountered. Rigid body velocities cannot exceed this value." />
+        </ui:Foldout>
         <ui:Slider label="Look-Ahead-Time" value="42" high-value="0.1" binding-path="LookAheadTime" focusable="true" tooltip="Look-ahead-time (seconds) used for inter-particle force calculations" show-input-field="true" fill="true" />
         <ui:Slider label="State Transfer Padding" value="42" high-value="5" binding-path="StateThresholdPadding" focusable="true" tooltip="State transfer padding required for particles to surpass before transitioning between temperature states, preventing rapid flickering." show-input-field="true" fill="true" name="StateThresholdPadding" />
         <uie:PropertyField binding-path="MaxInfluenceRadius" label="Max Influence Radius" tooltip="Recommended: Keep as default. Maximum influence radius between particles." />
@@ -139,5 +145,6 @@
         <uie:ObjectField label="Particle Simulation" binding-path="pSimShader" />
         <uie:ObjectField label="Rigid Body Simulation" binding-path="rbSimShader" />
         <uie:ObjectField label="Spatial Sorting" binding-path="sortShader" />
+        <uie:ObjectField label="Debug" binding-path="debugShader" />
     </ui:Foldout>
 </ui:UXML>

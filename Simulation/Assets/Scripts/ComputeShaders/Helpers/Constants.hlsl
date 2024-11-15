@@ -2,7 +2,6 @@ static const uint MAX_RIGIDBODIES_NUM = 8;
 
 // --- Thread Nums ---
 
-static const uint TN_MS = 32; // Marching Squares
 static const uint TN_PS = 512; // Particle Simulation
 static const uint TN_PS2 = 512; // Particle Simulation
 static const uint TN_R = 32; // Renderer
@@ -19,5 +18,5 @@ static const float RED_TINT_FACTOR = 0.00002;
 // --- Float-Int storage precision values ---
 
 // A higher value may cause the half precision to be insufficient, leading to incorrect calculations
-static const float IntFloatPrecisionRB = 2000.0;
-static const float IntFloatPrecisionP = 1000.0;
+static const float INT_FLOAT_PRECISION_RB = 50000.0;
+static const float INT_FLOAT_PRECISION_P = 1000.0;
