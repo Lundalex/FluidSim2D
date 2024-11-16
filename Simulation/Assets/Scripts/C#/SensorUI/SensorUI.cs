@@ -102,12 +102,10 @@ public class SensorUI : MonoBehaviour
 
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
-            sensor.graphController.ResetGraph();
             rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
         }
         else if (fluidSensorTypeDropdownUsed && sensor is FluidSensor fluidSensor)
         {
-            sensor.graphController.ResetGraph();
             fluidSensor.SetFluidSensorType(selectedFluidSensorType);
         }
     }

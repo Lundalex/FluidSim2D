@@ -241,6 +241,9 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     uint rbAIndex = id.x;
     RigidBody baseRB = RigidBodies[rbAIndex];
 
+    bool isNotCollider = baseRB.elasticity == -1;
+    if (isNotCollider) return;
+
     [unroll(MAX_RIGIDBODIES_NUM)]
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < MAX_RIGIDBODIES_NUM; rbBIndex++)
     {
@@ -249,13 +252,14 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         RigidBody rbA = baseRB;
         RigidBody rbB = RigidBodies[rbBIndex];
         
-        // Don't allow collision checks for rigid bodies linked by a rigid constraint
+        // Don't allow collision checks for rigid bodies linked by a rigid constraint, or if the isCollider flag of rbB is not set
         bool rigidConstraintFlagA = rbA.springStiffness == 0;
         bool rigidConstraintFlagB = rbB.springStiffness == 0;
+        bool isNotColliderB = rbB.elasticity == -1;
         bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rigidConstraintFlagB) || ((int)rbBIndex == rbA.linkedRBIndex && rigidConstraintFlagA) || !AllowLinkedRBCollisions;
         
         // Exit early if both rigid bodies are flagged as stationary, or rigidConstraint == true
-        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint) return;
+        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotColliderB) return;
 
         // Record initial positions
         float2 posRecA = rbA.pos;
@@ -420,6 +424,9 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
     for (int rbIndex = 0; rbIndex < (int)NumRigidBodies; rbIndex++)
     {
         RigidBody rb = RigidBodies[rbIndex];
+
+        bool isNotCollider = rb.elasticity == -1;
+        if (isNotCollider) continue;
 
         // Check P_RB collision
         if (dot2(rb.pos - pData.pos) <= rb.maxRadiusSqr)
@@ -771,47 +778,51 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     bool canMove = rb.mass > 0;
     if (canMove)
     {
-        // Make sure rigid body is inside simulation bounds
-        if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
+        bool isCollider = rb.elasticity != -1;
+        if (isCollider)
         {
-            float2 boundsMin = float2(1.#INF, 1.#INF);
-            float2 boundsMax = float2(-1.#INF, -1.#INF);
-            float2 minXVec = float2(1.#INF, 0);
-            float2 maxXVec = float2(-1.#INF, 0);
-            float2 minYVec = float2(0, 1.#INF);
-            float2 maxYVec = float2(0, -1.#INF);
-            GetRBBounds(rb, boundsMin, boundsMax, minXVec, maxXVec, minYVec, maxYVec);
-
-            // Left boundary collision
-            if (boundsMin.x < RigidBodyPadding)
+            // Make sure rigid body is inside simulation bounds
+            if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
             {
-                float2 collisionNormal = float2(1, 0); // right
-                float2 collisionPoint = minXVec;
-                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-            }
+                float2 boundsMin = float2(1.#INF, 1.#INF);
+                float2 boundsMax = float2(-1.#INF, -1.#INF);
+                float2 minXVec = float2(1.#INF, 0);
+                float2 maxXVec = float2(-1.#INF, 0);
+                float2 minYVec = float2(0, 1.#INF);
+                float2 maxYVec = float2(0, -1.#INF);
+                GetRBBounds(rb, boundsMin, boundsMax, minXVec, maxXVec, minYVec, maxYVec);
 
-            // Right boundary collision
-            if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
-            {
-                float2 collisionNormal = float2(-1, 0); // left
-                float2 collisionPoint = maxXVec;
-                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-            }
+                // Left boundary collision
+                if (boundsMin.x < RigidBodyPadding)
+                {
+                    float2 collisionNormal = float2(1, 0); // right
+                    float2 collisionPoint = minXVec;
+                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+                }
 
-            // Bottom boundary collision
-            if (boundsMin.y < RigidBodyPadding)
-            {
-                float2 collisionNormal = float2(0, 1); // up
-                float2 collisionPoint = minYVec;
-                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-            }
+                // Right boundary collision
+                if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
+                {
+                    float2 collisionNormal = float2(-1, 0); // left
+                    float2 collisionPoint = maxXVec;
+                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+                }
 
-            // Top boundary collision
-            if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
-            {
-                float2 collisionNormal = float2(0, -1); // down
-                float2 collisionPoint = maxYVec;
-                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+                // Bottom boundary collision
+                if (boundsMin.y < RigidBodyPadding)
+                {
+                    float2 collisionNormal = float2(0, 1); // up
+                    float2 collisionPoint = minYVec;
+                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+                }
+
+                // Top boundary collision
+                if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
+                {
+                    float2 collisionNormal = float2(0, -1); // down
+                    float2 collisionPoint = maxYVec;
+                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+                }
             }
         }
 
@@ -821,13 +832,9 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         // Update position
         rb.pos += Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * DeltaTime;
 
-        // Forces
+        // Apply forces
         float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
         rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, INT_FLOAT_PRECISION_RB);
-
-        // Damping
-        float Damping = 0.1;
-        rb.vel_AsInt2 = Float2AsInt2(Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * (1 - Damping * DeltaTime), INT_FLOAT_PRECISION_RB);
     }
 
     RigidBodies[i] = rb;

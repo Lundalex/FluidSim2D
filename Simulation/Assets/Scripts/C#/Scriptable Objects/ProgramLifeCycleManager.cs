@@ -23,6 +23,4 @@ public class ProgramLifeCycleManager : MonoBehaviour
     }
 
     private void Update() => PM.Instance.Update();
-
-    private void OnDestroy() => PM.Instance.ResetDatas();
 }

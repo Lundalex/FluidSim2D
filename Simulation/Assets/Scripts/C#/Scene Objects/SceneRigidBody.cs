@@ -11,10 +11,13 @@ public class SceneRigidBody : Polygon
     // Public
     public bool DoDrawBody = true;
     public float EditorLineAnimationSpeed = 10;
+    
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridSpacing = 0.5f;
     public Sensor[] LinkedSensors;
     public RBInput RBInput;
+
+    [Header("Approximated Spring Values")]
     public string approximatedSpringLength;
     public string approximatedSpringForce;
 

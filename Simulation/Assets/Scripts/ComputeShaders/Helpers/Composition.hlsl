@@ -1,5 +1,5 @@
 static const float MIR = 2.0; // MaxInfluenceRadius
-static const int2 BOUNDARY_DIMS = int2(500, 300);
+static const int2 BOUNDARY_DIMS = int2(300, 200);
 static const int ChunkNum_copy = ceil(BOUNDARY_DIMS.x / MIR) * ceil(BOUNDARY_DIMS.y / MIR);
 static const int PTYPES_NUM_COPY = 1 * 3;
 

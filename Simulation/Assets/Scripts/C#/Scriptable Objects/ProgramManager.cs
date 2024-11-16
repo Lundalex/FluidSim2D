@@ -161,7 +161,12 @@ public class ProgramManager : ScriptableObject
     }
 
     public void SetSensorSettingsViewStatus(int sensorIndex, bool isSettingsViewActive)
-        => sensorDatas[sensorIndex].isSettingsViewActive = isSettingsViewActive;
+    {
+        sensorDatas[sensorIndex].isSettingsViewActive = isSettingsViewActive;
+
+        // Move to the front by setting the sibling index to be the highest of all sensorUI elements
+        if (isSettingsViewActive) sensorDatas[sensorIndex].sensorUIObject.transform.SetSiblingIndex(sensorDatas.Count - 1);
+    }
 
     public bool CheckAnySensorSettingsViewActive()
     {
@@ -230,8 +235,6 @@ public class ProgramManager : ScriptableObject
 
             Vector3 newScale = Vector3.Lerp(currentScale, targetScale, deltaTime * main.GlobalSettingsViewChangeSpeed);
             sensorData.sensorUIObject.transform.localScale = newScale;
-            // Manage the draw order
-            sensorData.sensorUIObject.transform.SetSiblingIndex(sensorData.isSettingsViewActive ? sensorDatas.Count - 1 : 0);
         }
     }
 

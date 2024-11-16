@@ -14,7 +14,7 @@ public class FluidSpawner : Polygon
     [SerializeField] private Vector2 velocity;
     [SerializeField] private float tempCelcius;
     [SerializeField] private float spawnDensity;
-    [SerializeField] private int MaxSpawnedParticlesPerUpdate;
+    [SerializeField] private int maxSpawnedParticlesPerUpdate;
 
     // References
     private SceneManager sceneManager;
@@ -69,7 +69,7 @@ public class FluidSpawner : Polygon
 
                 if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point))
                 {
-                    if (++iterationCount > MaxSpawnedParticlesPerUpdate) return generatedPoints;
+                    if (++iterationCount > maxSpawnedParticlesPerUpdate) return generatedPoints;
 
                     generatedPoints.Add(point);
                 }

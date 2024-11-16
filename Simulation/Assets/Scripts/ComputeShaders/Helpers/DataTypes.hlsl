@@ -12,20 +12,23 @@ struct Mat
 };
 struct PType 
 {
+    // Inter-Particle Springs
     int fluidSpringGroup;
-
     float springPlasticity;
     float springTolDeformation;
     float springStiffness;
 
+    // Thermals
     float thermalConductivity;
     float specificHeatCapacity;
     float freezeThreshold;
     float vaporizeThreshold;
 
+    // Pressure
     float pressure;
     float nearPressure;
 
+    // Runtime Properties
     float mass;
     float targetDensity;
     float damping;
@@ -33,9 +36,11 @@ struct PType
     float viscosity;
     float gravity;
 
-    float influenceRadius;
-
+    // Material
     int matIndex;
+
+    // Simulation Engine
+    float influenceRadius;
 };
 struct PData
 {
