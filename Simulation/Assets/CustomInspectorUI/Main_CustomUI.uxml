@@ -28,7 +28,7 @@
         <ui:Slider label="State Transfer Padding" value="42" high-value="5" binding-path="StateThresholdPadding" focusable="true" tooltip="State transfer padding required for particles to surpass before transitioning between temperature states, preventing rapid flickering." show-input-field="true" fill="true" name="StateThresholdPadding" />
         <uie:PropertyField binding-path="MaxInfluenceRadius" label="Max Influence Radius" tooltip="Recommended: Keep as default. Maximum influence radius between particles." />
         <uie:PropertyField binding-path="MaxParticlesNum" label="Max Particles Num" name="MaxParticlesNum" focusable="false" tooltip="Max particles allowed in total during runtime. This includes both particles spawned at start, and any particles spawned in by particles spawner objects." />
-        <uie:PropertyField binding-path="MaxStartingParticlesNum" label="MaxStartingParticlesNum" tooltip="Maximum number of particles spawned at start." name="MaxStartingParticlesNum" />
+        <uie:PropertyField binding-path="MaxStartingParticlesNum" label="Max Starting Particles Num" tooltip="Maximum number of particles spawned at start." name="MaxStartingParticlesNum" />
         <uie:PropertyField name="MaxSpringsPerParticle" binding-path="MaxSpringsPerParticle" tooltip="Spring memory slots created for each particle. Any additional particle springs will lose their data between frames." usage-hints="None" label="Max Springs Per Particle" />
         <ui:TextField label="Total Particle Springs: " placeholder-text="num springs" name="TotalParticleSprings" tooltip="Total number of generated spring memory slots." enabled="true" style="padding-top: 5px; -unity-text-align: upper-left; padding-left: 0; width: auto; margin-right: 0; position: relative; left: auto; align-items: auto; flex-direction: row; justify-content: space-between; align-self: center; display: flex;" />
     </ui:Foldout>
@@ -64,7 +64,7 @@
     </ui:Foldout>
     <ui:Foldout text="Render Pipeline" name="RenderPipeline" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing of the fluids." />
-        <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at &quot;RenderFluids&quot; render step)." />
+        <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at the &quot;RenderFluids&quot; render step)." />
         <ui:Toggle label="Fluid Velocities" value="true" binding-path="DoDisplayFluidVelocities" tooltip="Whether to display fluid velocities by tinting the red color channel with the average velocity of the neighbouring particles." />
         <ui:Toggle label="Use Caustics" binding-path="DoUseCaustics" tooltip="Whether to use the caustics generator for fluid rendering. This may affect performance (depending on the caustics generator settings)." />
         <ui:Toggle label="Unoccupied Area" binding-path="DoDrawUnoccupiedFluidSensorArea" tooltip="Whether to tint unoccupied fluid sensor area." value="true" />

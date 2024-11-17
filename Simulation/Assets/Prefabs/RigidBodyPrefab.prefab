@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 9057636485085405133}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 209.54, y: 114.62, z: -0.2767014}
+  m_LocalPosition: {x: 209.64, y: 114.62, z: -0.2767014}
   m_LocalScale: {x: 10, y: 30, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -48,32 +48,35 @@ MonoBehaviour:
   LineColor: {r: 0, g: 0, b: 0, a: 1}
   BodyColor: {r: 0, g: 1, b: 0.060328007, a: 1}
   DoDrawBody: 1
-  defaultGridDensity: 0.5
+  EditorLineAnimationSpeed: 10
+  defaultGridSpacing: 0.5
   LinkedSensors:
   - {fileID: 0}
   RBInput:
     includeInSimulation: 1
+    overrideCentroid: 0
+    isCollider: 0
+    canMove: 0
+    canRotate: 1
     mass: 2000
     gravity: 5
     elasticity: 0.3
-    canMove: 0
-    velocity:
-      x: 0
-      y: 0
-    canRotate: 1
-    rotationVelocity: 0
-    enableSpringLink: 0
-    rigidConstraint: 0
+    heatingStrength: 0
+    linkType: 0
     springStiffness: 0
     springRestLength: 0
     damping: 0
     localLinkPosThisRB:
-      x: 0
+      x: 0.1
       y: 0
     localLinkPosOtherRB:
       x: 0
       y: 0
     linkedRigidBody: {fileID: 0}
+    angularVelocity: 0
+    velocity:
+      x: 0
+      y: 0
     renderPriority: 1
     matIndex: 1
     springMatIndex: 0

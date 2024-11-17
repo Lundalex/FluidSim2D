@@ -78,13 +78,14 @@ public class Main : MonoBehaviour
 #endregion
 
 #region Render Pipeline
-    [SerializeField] private FluidRenderMethod FluidRenderMethod;
-    [SerializeField] private bool DoDrawFluidOutlines = true;
-    [SerializeField] private bool DoDisplayFluidVelocities = true;
-    [SerializeField] public bool DoUseCaustics = true;
-    [SerializeField] private bool DoDrawUnoccupiedFluidSensorArea = false;
-    [SerializeField] private bool DoDrawRBOutlines = true;
-    [SerializeField] private bool DoDrawRBCentroids = false;
+    public FluidRenderMethod FluidRenderMethod;
+    public bool DoDrawFluidOutlines;
+    public bool DoDisplayFluidVelocities;
+    [SerializeField] public bool DoUseCaustics;
+    public bool DoDrawUnoccupiedFluidSensorArea;
+    public bool DoDrawRBOutlines;
+    public bool DoDrawRBCentroids;
+
     // The list that defines the order of render steps
     public List<RenderStep> RenderOrder = new()
     {
@@ -288,7 +289,7 @@ public class Main : MonoBehaviour
             debugger.CheckShaderConstants(this, debugShader);
         }
 
-        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
+        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies");
     }
 
     public void UpdateScript()
@@ -387,7 +388,7 @@ public class Main : MonoBehaviour
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
         if (!skipUpdatingMouseInputs)
         {
-            bool disallowMouseInputs = PM.Instance.CheckAnySensorHovered() || PM.Instance.isAnySensorSettingsViewActive;
+            bool disallowMouseInputs = PM.Instance.CheckAnyUIElementHovered() || PM.Instance.isAnySensorSettingsViewActive;
             MousePressed = disallowMouseInputs ? false : currentMouseInputs;
         }
 
@@ -433,7 +434,7 @@ public class Main : MonoBehaviour
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
         else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
         if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
-        else renderShader.DisableKeyword("DRAW_FLUID_OUTLINE");
+        else renderShader.DisableKeyword("DRAW_FLUID_OUTLINES");
         if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
         else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
         if (DoUseCaustics) renderShader.EnableKeyword("USE_CAUSTICS");
@@ -628,10 +629,10 @@ public class Main : MonoBehaviour
                 ComputeHelper.DispatchKernel(renderShader, "RenderBackground", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.Fluids:
-                ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
+                if (ParticlesNum > 0) ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.RigidBodies:
-                ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
+                if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.RigidBodySprings:
                 ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);

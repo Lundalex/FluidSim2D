@@ -49,7 +49,7 @@ public abstract class Sensor : MonoBehaviour
         graphController.InitGraph(graphChart);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
 
-        PM.Instance.AddSensor(ref sensorUI, this);
+        PM.Instance.AddSensor(sensorUI, this);
     }
 
     public void SetReferences(Transform sensorUIContainer, Transform sensorOutlineContainer, Main main, SensorManager sensorManager, Vector2 canvasResolution)

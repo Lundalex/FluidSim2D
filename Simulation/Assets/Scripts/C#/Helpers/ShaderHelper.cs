@@ -150,7 +150,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("SubTimeStepsPerFrame", m.SubTimeStepsPerFrame);
         pSimShader.SetFloat("LookAheadTime", m.LookAheadTime);
         pSimShader.SetFloat("StateThresholdPadding", m.StateThresholdPadding);
-        pSimShader.SetFloat("FluidPadding", m.FluidPadding);
+        pSimShader.SetFloat("FluidPadding", Mathf.Max(m.FluidPadding, 0.1f));
         pSimShader.SetFloat("MaxInteractionRadius", m.MaxInteractionRadius);
         pSimShader.SetFloat("MaxPVel", m.MaxPVel);
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
@@ -246,7 +246,7 @@ public class ShaderHelper : MonoBehaviour
     public void UpdateRBSimShaderVariables(ComputeShader rbSimShader)
     {
         rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
-        rbSimShader.SetFloat("RigidBodyPadding", m.RigidBodyPadding);
+        rbSimShader.SetFloat("RigidBodyPadding", Mathf.Max(m.RigidBodyPadding, 0.1f));
 
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         rbSimShader.SetInt("NumVectors", m.RBVectors.Length);

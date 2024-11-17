@@ -597,7 +597,22 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         float dstSqr = dot2(pixelPos - rb.pos);
 
         #if DRAW_RB_CENTROIDS
+            bool doRenderPoint = false;
             if (dstSqr < CENTROID_RADIUS_SQR)
+            {
+                doRenderPoint = true;
+            }
+            else if (rb.springStiffness == 0) // Rigid link
+            {
+                float2 linkPos = rb.pos + rotate2D(rb.localLinkPosThisRB, rb.totRot);
+                float dstSqr = dot2(pixelPos - linkPos);
+                if (dstSqr < CENTROID_RADIUS_SQR)
+                {
+                    doRenderPoint = true;
+                }
+            }
+
+            if (doRenderPoint)
             {
                 Result[id.xy] = COL_RED * GlobalBrightnessFactor;
                 return;

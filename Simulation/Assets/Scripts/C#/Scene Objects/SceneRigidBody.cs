@@ -4,8 +4,9 @@ using System.Linq;
 using Resources2;
 using UnityEngine;
 using UnityEditor;
+using Unity.Mathematics;
 
-[RequireComponent(typeof(PolygonCollider2D))]
+[RequireComponent(typeof(PolygonCollider2D)), ExecuteAlways]
 public class SceneRigidBody : Polygon
 {
     // Public
@@ -17,27 +18,82 @@ public class SceneRigidBody : Polygon
     public Sensor[] LinkedSensors;
     public RBInput RBInput;
 
-    [Header("Approximated Spring Values")]
+    [Header("Estimated Spring Values At Start")]
     public string approximatedSpringLength;
     public string approximatedSpringForce;
 
     // NonSerialized
     [NonSerialized] public Vector2[] Points;
-    [NonSerialized] public Vector2 cashedPosition = Vector2.zero;
+    [NonSerialized] public Vector2 lastPosition = Vector2.zero;
     [NonSerialized] public Vector2 cashedCentroid = Vector2.zero;
-    [NonSerialized] public Vector2 cashedThisCentroidRelative;
-    [NonSerialized] public Vector2 cashedOtherCentroidRelative;
+    [NonSerialized] public Vector2 cashedRelativeLinkPos;
+    [NonSerialized] public LinkType lastLinkType;
+    [NonSerialized] public Vector2 lastLocalLinkPosThisRB;
+    [NonSerialized] public Vector2 lastLocalLinkPosOtherRB;
+    [NonSerialized] public bool lastLinkTypeSet;
+    private int frameCount = 59;
 
-    private void OnValidate()
+    private void OnEnable()
     {
     #if UNITY_EDITOR
+        EditorApplication.update += EditorUpdate;
+    #endif
+    }
+
+    private void OnDisable()
+    {
+    #if UNITY_EDITOR
+        EditorApplication.update -= EditorUpdate;
+    #endif
+    }
+
+    #if UNITY_EDITOR
+    private void EditorUpdate()
+    {
         if (!Application.isPlaying)
         {
-            cashedCentroid = ComputeCentroid(defaultGridSpacing);
+            // Check whether any positional data field has been modified
+            if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 0.01f ||
+                (lastLocalLinkPosThisRB - (Vector2)RBInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
+                (lastLocalLinkPosOtherRB - (Vector2)RBInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
+                frameCount++ % 60 == 0)
+            {
+                UpdateCashedData();
+            }
 
-            cashedPosition = transform.position;
+            // Reset certain data is the linkType has been modified
+            if (!lastLinkTypeSet) lastLinkType = RBInput.linkType;
+            if (lastLinkType != RBInput.linkType)
+            {
+                RBInput.localLinkPosOtherRB = Vector2.zero;
+                RBInput.localLinkPosThisRB = Vector2.zero;
+                lastLinkType = RBInput.linkType;
+            }
         }
+    }
     #endif
+
+    private void UpdateCashedData()
+    {
+        // Recalculate calculation
+        cashedCentroid = ComputeCentroid(defaultGridSpacing);
+
+        if (RBInput.linkType == LinkType.Rigid)
+        {
+            Vector2 thisCentroid = cashedCentroid;
+            Vector2 otherCentroid = RBInput.linkedRigidBody.cashedCentroid;
+            Vector2 thisCentroidRelative = thisCentroid - lastPosition;
+            Vector2 localLinkPosOther = (Vector2)RBInput.localLinkPosOtherRB;
+            Vector2 localLinkPosThis = (Vector2)RBInput.localLinkPosThisRB;
+            
+            transform.position = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
+            cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
+        }
+
+        // Record the current positional data
+        lastPosition = transform.position;
+        lastLocalLinkPosThisRB = (Vector2)RBInput.localLinkPosThisRB;
+        lastLocalLinkPosOtherRB = (Vector2)RBInput.localLinkPosOtherRB;
     }
 
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)

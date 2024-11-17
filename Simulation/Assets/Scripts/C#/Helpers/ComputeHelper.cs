@@ -5,8 +5,7 @@ using UnityEngine;
 using Resources2;
 using UnityEngine.Rendering;
 using System;
-using UnityEditor;
-using Unity.VisualScripting;
+
 public static class ComputeHelper
 {
 
@@ -14,29 +13,35 @@ public static class ComputeHelper
 
     static public void DispatchKernel (ComputeShader cs, string kernelName, int threadsNum, int threadSize)
     {
+        if (threadsNum <= 0) return;
         int threadGroupsNum = Utils.GetThreadGroupsNum(threadsNum, threadSize);
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNum, 1, 1);
     }
     static public void DispatchKernel (ComputeShader cs, string kernelName, int2 threadsNum, int threadSize)
     {
+        if (threadsNum.x <= 0 || threadsNum.y <= 0) return;
         int2 threadGroupsNums = Utils.GetThreadGroupsNum(threadsNum, threadSize);
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNums.x, threadGroupsNums.y, 1);
     }
     static public void DispatchKernel (ComputeShader cs, string kernelName, int3 threadsNum, int threadSize)
     {
+        if (threadsNum.x <= 0 || threadsNum.y <= 0 || threadsNum.z <= 0) return;
         int3 threadGroupNums = Utils.GetThreadGroupsNum(threadsNum, threadSize);
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupNums.x, threadGroupNums.y, threadGroupNums.z);
     }
     static public void DispatchKernel (ComputeShader cs, string kernelName, int threadGroupsNum)
     {
+        if (threadGroupsNum <= 0) return;
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNum, 1, 1);
     }
     static public void DispatchKernel (ComputeShader cs, string kernelName, int2 threadGroupsNums)
     {
+        if (threadGroupsNums.x <= 0 || threadGroupsNums.y <= 0) return;
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNums.x, threadGroupsNums.y, 1);
     }
     static public void DispatchKernel (ComputeShader cs, string kernelName, int3 threadGroupsNums)
     {
+        if (threadGroupsNums.x <= 0 || threadGroupsNums.y <= 0 || threadGroupsNums.z <= 0) return;
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNums.x, threadGroupsNums.y, threadGroupsNums.z);
     }
 

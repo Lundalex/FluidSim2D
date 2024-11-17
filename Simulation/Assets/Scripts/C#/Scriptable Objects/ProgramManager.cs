@@ -16,8 +16,9 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public FluidSpawnerManager fluidSpawnerManager;
     [NonSerialized] public Transform languageSelectDropdown;
 
-    // Sensors
+    // UI elements
     [NonSerialized] public List<SensorData> sensorDatas = new();
+    [NonSerialized] public List<UserInput> userInputs = new();
 
     // Globally accessed variables
     [NonSerialized] public bool programStarted = false;
@@ -61,11 +62,10 @@ public class ProgramManager : ScriptableObject
 
     public void Start()
     {
-        ResetDatas();
         SetReferences();
 
         ScreenToViewFactor = GetScreenToViewFactor();
-        SetLanguageDropdownPosition();
+        SetStaticUIPositions();
 
         main.StartScript();
         fluidSpawnerManager.StartScript();
@@ -152,11 +152,15 @@ public class ProgramManager : ScriptableObject
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
+        
         totalTimeElapsed = 0;
         globalBrightnessFactor = 1;
+
+        sensorDatas = new();
+        userInputs = new();
     }
 
-    public void AddSensor(ref SensorUI sensorUI, Sensor sensor)
+    public void AddSensor(SensorUI sensorUI, Sensor sensor)
     {
         int sensorIndex = sensorDatas.Count;
         sensorUI.sensorIndex = sensorIndex;
@@ -164,6 +168,8 @@ public class ProgramManager : ScriptableObject
 
         sensorUI.OnSettingsViewStatusChanged += (isActive) => SetSensorSettingsViewStatus(sensorIndex, isActive);
     }
+
+    public void AddUserInput(UserInput userInput) => userInputs.Add(userInput);
 
     public void SetSensorSettingsViewStatus(int sensorIndex, bool isSettingsViewActive)
     {
@@ -182,11 +188,15 @@ public class ProgramManager : ScriptableObject
         return false;
     }
 
-    public bool CheckAnySensorHovered()
+    public bool CheckAnyUIElementHovered()
     {
         foreach (SensorData sensorData in sensorDatas)
         {
             if (sensorData.sensorUI.isPointerHovering) return true;
+        }
+        foreach (UserInput userInput in userInputs)
+        {
+            if (userInput.pointerHoverArea.CheckIfHovering()) return true;
         }
         return false;
     }
@@ -266,11 +276,17 @@ public class ProgramManager : ScriptableObject
         return new Vector2(scaleX, scaleY);
     }
 
-    private void SetLanguageDropdownPosition()
+    private void SetStaticUIPositions()
     {
         Vector2 halfResolution = new Vector2(main.Resolution.x, main.Resolution.y) / 2.0f;
         Vector2 pos = halfResolution * ScreenToViewFactor - new Vector2(285, 60);
         languageSelectDropdown.localPosition = pos;
+
+        foreach (UserInput userInput in userInputs)
+        {
+            Vector2 offset = halfResolution - halfResolution * ScreenToViewFactor;
+            userInput.GetComponent<RectTransform>().localPosition = (Vector2)userInput.GetComponent<RectTransform>().localPosition - offset;
+        }
     }
 
     public void SetNewLanguage(int languageIndex)
@@ -280,11 +296,4 @@ public class ProgramManager : ScriptableObject
     }
 
     private void TriggerNewLanguageSelected() => OnNewLanguageSelected?.Invoke();
-
-    private void OnDisable()
-    {
-    #if UNITY_EDITOR
-        ResetDatas();
-    #endif
-    }
 }

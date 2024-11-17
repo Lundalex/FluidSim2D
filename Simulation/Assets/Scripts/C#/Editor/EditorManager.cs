@@ -1,3 +1,4 @@
+using Resources2;
 using UnityEditor;
 using UnityEngine;
 
@@ -107,18 +108,6 @@ public class EditorManager : Editor
         
         // Update points
         rigidBody.SetPolygonData();
-        if (rigidBody.RBInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED)
-        {
-            Vector2 thisCentroid = rigidBody.cashedCentroid;
-            Vector2 otherCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
-            Vector2 thisCentroidRelative = thisCentroid - rigidBody.cashedPosition;
-            Vector2 localLinkPosThis = new(rigidBody.RBInput.localLinkPosThisRB.x, rigidBody.RBInput.localLinkPosThisRB.y);
-            Vector2 localLinkPosOther = new(rigidBody.RBInput.localLinkPosOtherRB.x, rigidBody.RBInput.localLinkPosOtherRB.y);
-            
-            rigidBody.transform.position = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
-            rigidBody.cashedThisCentroidRelative = thisCentroid + localLinkPosThis;
-            rigidBody.cashedOtherCentroidRelative = otherCentroid + localLinkPosOther;
-        }
 
         // --- Draw the filled body using triangulation ---
         if (rigidBody.DoDrawBody)
@@ -186,19 +175,24 @@ public class EditorManager : Editor
         }
         else
         {
-            if (rigidBody.RBInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED)
+            if (rigidBody.RBInput.linkType == LinkType.Rigid)
             {
-                Vector2 startPoint = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
-                Vector2 endPoint = rigidBody.cashedCentroid;
+                // Calculate line points
+                Vector2 pointA = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
+                Vector2 pointB = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+                Vector2 pointC = rigidBody.cashedCentroid;
 
                 // Draw dashed line
-                DrawDashedLine(Color.magenta, startPoint, endPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
+                Color orangeColor = new(1.0f, 0.1f, 0.0f);
+                DrawDashedLine(orangeColor, pointA, pointB, 10, 3, rigidBody.EditorLineAnimationSpeed);
+                DrawDashedLine(orangeColor, pointB, pointC, 10, 3, rigidBody.EditorLineAnimationSpeed);
                 
                 // Draw start and end points
                 float radius = 2.5f;
                 Gizmos.color = Color.red;
-                Gizmos.DrawSphere(startPoint, radius);
-                Gizmos.DrawSphere(endPoint, radius);
+                Gizmos.DrawSphere(pointA, radius);
+                Gizmos.DrawSphere(pointB, radius);
+                Gizmos.DrawSphere(pointC, radius);
             }
 
             rigidBody.approximatedSpringLength = "No Active Spring Link";

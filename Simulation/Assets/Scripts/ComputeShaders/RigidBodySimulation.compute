@@ -570,6 +570,8 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
 
         // Positional correction to enforce the constraint
         float2 correction = constraintError / totalInvMass;
+        
+        correction *= DeltaTime;
 
         // Apply corrections proportionally based on inverse masses
         float2 correctionA = correction * invMassA;

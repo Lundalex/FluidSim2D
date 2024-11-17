@@ -62,16 +62,21 @@ namespace Michsky.MUIP
         private IEnumerator MOD_UpdateTooltipCoroutine()
         {
             yield return new WaitForSeconds(0.1f);
+            
+            // Set transitionSpeed to an epsilon value to avoid seeing the elements on screen
+            float storedTransitionSpeed = transitionSpeed;
+            transitionSpeed = 0.001f;
 
             // Activate hover
-            allowSway = true;
             swayParent.DissolveAll(this);
 
-            yield return new WaitForSeconds(0.001f);
+            yield return new WaitForSeconds(0.1f);
 
             // Deactivate hover
-            allowSway = false;
             swayParent.HighlightAll();
+
+            // Set transitionSpeed to its original value
+            transitionSpeed = storedTransitionSpeed;
         }
 #endregion
 

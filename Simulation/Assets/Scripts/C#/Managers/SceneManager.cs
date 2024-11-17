@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NUnit.Framework.Internal;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
@@ -121,6 +122,8 @@ public class SceneManager : MonoBehaviour
 
     public List<PData> GenerateParticles(int maxParticlesNum, float gridSpacing = 0)
     {
+        if (maxParticlesNum == 0) return new List<PData>();
+
         // Get all fluid instances
         GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
         SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];
@@ -183,6 +186,10 @@ public class SceneManager : MonoBehaviour
                 rbInput.linkType = LinkType.None;
             }
 
+            if (springLinkedRBIndex != -1 && rbInput.localLinkPosThisRB.x != 0 && rbInput.localLinkPosThisRB.y != 0 &&
+                rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.linkType == LinkType.Rigid)
+                Debug.LogWarning("Rigid links should not have points with offsets from each linked rigid body. This may cause to simulation instabilities");
+            
             // Initialize the rigid body data
             allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
             
@@ -195,11 +202,13 @@ public class SceneManager : MonoBehaviour
                 if (sensors.Contains(sensor)) Debug.LogWarning("Duplicate sensor rigid body assignments. Sensor name: " + sensor.name);
                 else
                 {
-                    if (sensor is RigidBodySensor rigidBodySensor)
-                    rigidBodySensor.linkedRBIndex = i;
-                    sensors.Add(sensor);
-                    sensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
-                    sensor.Initialize();
+                    if (sensor is RigidBodySensor rigidBodySensor && rigidBodySensor != null)
+                    {
+                        rigidBodySensor.linkedRBIndex = i;
+                        sensors.Add(sensor);
+                        sensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
+                        sensor.Initialize();
+                    }
                 }
             }
         }
@@ -208,10 +217,13 @@ public class SceneManager : MonoBehaviour
         List<SensorArea> sensorAreas = new();
         foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
         {
-            sensors.Add(fluidSensor);
-            fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
-            fluidSensor.Initialize();
-            sensorAreas.Add(fluidSensor.GetSensorAreaData());
+            if (fluidSensor != null)
+            {
+                sensors.Add(fluidSensor);
+                fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
+                fluidSensor.Initialize();
+                sensorAreas.Add(fluidSensor.GetSensorAreaData());
+            }
         }
 
         // Assign sensors to sensorManager
@@ -247,10 +259,10 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED) ? linkedRBIndex : -1,
-            springStiffness = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.springStiffness,
-            springRestLength = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.springRestLength,
-            damping = rbInput.linkType == LinkType.Rigid_CURRENTLY_NOT_SUPPORTED ? 0 : rbInput.damping,
+            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid) ? linkedRBIndex : -1,
+            springStiffness = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springStiffness,
+            springRestLength = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springRestLength,
+            damping = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.damping,
             localLinkPosThisRB = rbInput.localLinkPosThisRB,
             localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
             // Heating
