@@ -14,7 +14,7 @@ namespace Resources2
             bool LMousePressed = Input.GetMouseButton(0);
             bool RMousePressed = Input.GetMouseButton(1);
 
-            bool2 MousePressed = new bool2(LMousePressed, RMousePressed);
+            bool2 MousePressed = new(LMousePressed, RMousePressed);
 
             return MousePressed;
         }

@@ -614,7 +614,7 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
     PData pData = PDatas[i];
     PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
     int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
-    float mass = pType.mass;
+    float mass = pType.mass * 0.001;
     float temperature = pData.temperature;
 
     int2 chunk = GetChunk(lastChunkKey);

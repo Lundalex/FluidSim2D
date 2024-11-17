@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
+using PM = ProgramManager;
 
 public class FluidSensor : Sensor
 {
@@ -41,7 +42,7 @@ public class FluidSensor : Sensor
 
     private void OnValidate()
     {
-        if (ProgramManager.Instance.programStarted) InitMeasurementChunkKeys();
+        if (PM.Instance.programStarted) InitMeasurementChunkKeys();
     }
 
     public override void InitSensor()
@@ -106,9 +107,8 @@ public class FluidSensor : Sensor
 
     private void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas)
     {
-        float tempFixedEnergyFactor = 0.000000001f;
-        float kineticEnergy = tempFixedEnergyFactor * sumFluidDatas.totMass * Mathf.Pow(sumFluidDatas.totVelAbs, 2) / 2.0f;
-        float thermalEnergy = tempFixedEnergyFactor * sumFluidDatas.totThermalEnergy;
+        float kineticEnergy = sumFluidDatas.totMass * Mathf.Pow(sumFluidDatas.totVelAbs, 2) / 2.0f;
+        float thermalEnergy = sumFluidDatas.totThermalEnergy;
         
         float avgTemperature = sumFluidDatas.totTemp / sumFluidDatas.numContributions;
 
@@ -172,72 +172,90 @@ public class FluidSensor : Sensor
             }
         }
 
-        sensorUI.SetMeasurement(value, numDecimals);
+        (string prefix, float displayValue) = GetMagnitudePrefix(value);
+        SetSensorUnit(prefix);
+
+        sensorUI.SetMeasurement(displayValue, numDecimals);
         AddSensorDataToGraph(value);
     }
 
-    public override void InitSensorTitleAndUnit()
+    public override void SetSensorUnit(string prefix = "")
+    {
+        string unit = prefix;
+        switch (fluidSensorType)
+        {
+            case FluidSensorType.Energy_Total_Kinetic:
+            case FluidSensorType.Energy_Total_Thermal:
+            case FluidSensorType.Energy_Total_Both:
+            case FluidSensorType.Energy_Average_Kinetic:
+            case FluidSensorType.Energy_Average_Thermal:
+            case FluidSensorType.Energy_Average_Both:
+                unit += "J";
+                break;
+
+            case FluidSensorType.TotalMass:
+                unit += "g"; // all particle / rb masses are measured in the base unit of "grams"
+                break;
+
+            case FluidSensorType.AveragePressure:
+                unit += "Pa";
+                break;
+
+            case FluidSensorType.AverageTemperatureCelcius:
+                unit += "°C";
+                break;
+
+            case FluidSensorType.AverageTemperatureKelvin:
+                unit += "°K";
+                break;
+
+            case FluidSensorType.Velocity_Absolute_Destructive:
+            case FluidSensorType.Velocity_Absolute_Summative:
+                unit += "m/s";
+                break;
+
+            default:
+                Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
+                break;
+        }
+
+        // If the new unit differs from the previous unit, update the sensor unit
+        if (unit != lastUnit)
+        {
+            sensorUI.SetUnit(unit);
+            lastUnit = unit;
+        }
+    }
+
+    public override void SetSensorTitle()
     {
         switch (fluidSensorType)
         {
             case FluidSensorType.Energy_Total_Kinetic:
-                sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
-                break;
-
             case FluidSensorType.Energy_Total_Thermal:
-                sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
-                break;
-
             case FluidSensorType.Energy_Total_Both:
-                sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
-                break;
-
             case FluidSensorType.Energy_Average_Kinetic:
-                sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
-                break;
-
             case FluidSensorType.Energy_Average_Thermal:
-                sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
-                break;
-
             case FluidSensorType.Energy_Average_Both:
                 sensorUI.SetTitle("Energy");
-                sensorUI.SetUnit("e.u");
                 break;
 
             case FluidSensorType.TotalMass:
                 sensorUI.SetTitle("Mass");
-                sensorUI.SetUnit("m.u");
                 break;
 
             case FluidSensorType.AveragePressure:
                 sensorUI.SetTitle("Pressure");
-                sensorUI.SetUnit("p.u");
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
-                sensorUI.SetTitle("Temperature");
-                sensorUI.SetUnit("°C");
-                break;
-
             case FluidSensorType.AverageTemperatureKelvin:
                 sensorUI.SetTitle("Temperature");
-                sensorUI.SetUnit("°K");
                 break;
 
             case FluidSensorType.Velocity_Absolute_Destructive:
-                sensorUI.SetTitle("Velocity");
-                sensorUI.SetUnit("v.u");
-                break;
-
             case FluidSensorType.Velocity_Absolute_Summative:
                 sensorUI.SetTitle("Velocity");
-                sensorUI.SetUnit("v.u");
                 break;
 
             default:
@@ -310,6 +328,7 @@ public class FluidSensor : Sensor
     public void SetFluidSensorType(FluidSensorType fluidSensorType)
     {
         this.fluidSensorType = fluidSensorType;
-        InitSensorTitleAndUnit();
+        SetSensorTitle();
+        SetSensorUnit();
     }
 }

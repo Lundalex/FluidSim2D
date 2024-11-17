@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultDataView: 0
   numDecimals: 2
+  NewUnitCooldown: 0.5
   primaryColor: {r: 1, g: 0.6640022, b: 0, a: 1}
   sensorScale: 0.9
   targetPosition: {x: 50, y: 80}

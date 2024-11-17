@@ -683,7 +683,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     if (springForce.x != 0 || springForce.y != 0)
     {
         // Record the springForce exerted on the rigid bodies
-        float absSpringForce = length(springForce);
+        float absSpringForce = length(springForce) * 0.001;
         int recordedSpringForce_Int = FloatAsInt(absSpringForce, INT_FLOAT_PRECISION_RB);
 
         AccumulateSpringForce(i, recordedSpringForce_Int);

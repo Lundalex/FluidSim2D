@@ -282,8 +282,11 @@ public class Main : MonoBehaviour
         SetShaderKeywords();
         InitCausticsGen();
 
-        ComputeShaderDebugger debugger = new();
-        debugger.CheckShaderConstants(this, debugShader);
+        if (Application.isEditor)
+        {
+            ComputeShaderDebugger debugger = new();
+            debugger.CheckShaderConstants(this, debugShader);
+        }
 
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles");
     }

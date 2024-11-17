@@ -2,17 +2,19 @@ using System;
 using System.Collections.Generic;
 using Resources2;
 using UnityEngine;
+using UnityEngine.Localization.Settings;
 
 [CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
 public class ProgramManager : ScriptableObject
 {
-    // References
     public Vector2 boundsPadding;
     public Vector2 boundsOffset;
+    // References
     public Material lineMaterial;
     [NonSerialized] public Main main;
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public FluidSpawnerManager fluidSpawnerManager;
+    [NonSerialized] public Transform languageSelectDropdown;
 
     // Sensors
     [NonSerialized] public List<SensorData> sensorDatas = new();
@@ -31,6 +33,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
+    public event Action OnNewLanguageSelected;
 
     // Private - Camera
     private Camera uiCam;
@@ -62,6 +65,7 @@ public class ProgramManager : ScriptableObject
         SetReferences();
 
         ScreenToViewFactor = GetScreenToViewFactor();
+        SetLanguageDropdownPosition();
 
         main.StartScript();
         fluidSpawnerManager.StartScript();
@@ -139,6 +143,7 @@ public class ProgramManager : ScriptableObject
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         fluidSpawnerManager = GameObject.FindGameObjectWithTag("FluidSpawnerManager").GetComponent<FluidSpawnerManager>();
+        languageSelectDropdown = GameObject.FindGameObjectWithTag("LanguageSelect").GetComponent<Transform>();
     }
 
     public void ResetDatas()
@@ -260,6 +265,21 @@ public class ProgramManager : ScriptableObject
 
         return new Vector2(scaleX, scaleY);
     }
+
+    private void SetLanguageDropdownPosition()
+    {
+        Vector2 halfResolution = new Vector2(main.Resolution.x, main.Resolution.y) / 2.0f;
+        Vector2 pos = halfResolution * ScreenToViewFactor - new Vector2(285, 60);
+        languageSelectDropdown.localPosition = pos;
+    }
+
+    public void SetNewLanguage(int languageIndex)
+    {
+        LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.Locales[languageIndex];
+        TriggerNewLanguageSelected();
+    }
+
+    private void TriggerNewLanguageSelected() => OnNewLanguageSelected?.Invoke();
 
     private void OnDisable()
     {

@@ -45,6 +45,35 @@ namespace Michsky.MUIP
             normalCG.alpha = 1;
             highlightedCG.alpha = 0;
         }
+#region MOD
+        void Start()
+        {
+            ProgramManager.Instance.OnNewLanguageSelected += MOD_UpdateTooltip;
+            MOD_UpdateTooltip();
+        }
+        void Destroy()
+        {
+            ProgramManager.Instance.OnNewLanguageSelected -= MOD_UpdateTooltip;
+        }
+        private void MOD_UpdateTooltip()
+        {
+            if (this.gameObject.activeInHierarchy) StartCoroutine(MOD_UpdateTooltipCoroutine());
+        }
+        private IEnumerator MOD_UpdateTooltipCoroutine()
+        {
+            yield return new WaitForSeconds(0.1f);
+
+            // Activate hover
+            allowSway = true;
+            swayParent.DissolveAll(this);
+
+            yield return new WaitForSeconds(0.001f);
+
+            // Deactivate hover
+            allowSway = false;
+            swayParent.HighlightAll();
+        }
+#endregion
 
         void Update()
         {

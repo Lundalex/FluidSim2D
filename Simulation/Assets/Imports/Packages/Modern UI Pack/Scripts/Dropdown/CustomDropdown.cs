@@ -124,9 +124,17 @@ namespace Michsky.MUIP
                 if (contentCG == null) { contentCG = transform.Find("Content/Item List").GetComponent<CanvasGroup>(); }
                 contentCG.alpha = 1;
 
-                Canvas tempCanvas = contentCG.gameObject.AddComponent<Canvas>();
-                tempCanvas.overrideSorting = true;
-                tempCanvas.sortingOrder = 30000;
+                Canvas tempCanvas = contentCG.GetComponent<Canvas>();
+                if (tempCanvas == null)
+                {
+                    tempCanvas = contentCG.gameObject.AddComponent<Canvas>();
+                }
+
+                if (tempCanvas != null)
+                {
+                    tempCanvas.overrideSorting = true;
+                    tempCanvas.sortingOrder = 30000;
+                }
                 contentCG.gameObject.AddComponent<GraphicRaycaster>();
             }
 

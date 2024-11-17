@@ -1,7 +1,7 @@
 using System;
-using Michsky.MUIP;
 using Resources2;
 using UnityEngine;
+using PM = ProgramManager;
 
 public class RigidBodySensor : Sensor
 {
@@ -70,27 +70,57 @@ public class RigidBodySensor : Sensor
                 break;
         }
 
-        sensorUI.SetMeasurement(value, numDecimals);
+        (string prefix, float displayValue) = GetMagnitudePrefix(value);
+        SetSensorUnit(prefix);
+
+        sensorUI.SetMeasurement(displayValue, numDecimals);
         AddSensorDataToGraph(value);
     }
 
-    public override void InitSensorTitleAndUnit()
+    public override void SetSensorUnit(string prefix = "")
+    {
+        string unit = prefix;
+        switch (rigidBodySensorType)
+        {
+            case RigidBodySensorType.SpringForce:
+                unit += "N";
+                break;
+
+            case RigidBodySensorType.Velocity:
+                unit += "m/s";
+                break;
+
+            case RigidBodySensorType.RotationalVelocity:
+                unit += "r/s";
+                break;
+
+            default:
+                Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
+                break;
+        }
+
+        // If the new unit differs from the previous unit, update the sensor unit
+        if (unit != lastUnit)
+        {
+            sensorUI.SetUnit(unit);
+            lastUnit = unit;
+        }
+    }
+
+    public override void SetSensorTitle()
     {
         switch (rigidBodySensorType)
         {
             case RigidBodySensorType.SpringForce:
                 sensorUI.SetTitle("Drag Force");
-                sensorUI.SetUnit("f.u");
                 break;
 
             case RigidBodySensorType.Velocity:
                 sensorUI.SetTitle("Velocity");
-                sensorUI.SetUnit("v.u");
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
                 sensorUI.SetTitle("Rotation");
-                sensorUI.SetUnit("r.v.u");
                 break;
 
             default:
@@ -127,6 +157,6 @@ public class RigidBodySensor : Sensor
     public void SetRigidBodySensorType(RigidBodySensorType rigidBodySensorType)
     {
         this.rigidBodySensorType = rigidBodySensorType;
-        InitSensorTitleAndUnit();
+        SetSensorTitle();
     }
 }
