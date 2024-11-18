@@ -322,7 +322,7 @@ public class FluidSensor : Sensor
                 break;
         }
 
-        sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
+        // sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
     }
 
     public void SetFluidSensorType(FluidSensorType fluidSensorType)

@@ -107,7 +107,7 @@ namespace Michsky.MUIP
             listRect.sizeDelta = new Vector2(listRect.sizeDelta.x, 0);
         }
 
-        void Initialize()
+        public void Initialize()
         {
             if (enableTrigger && triggerObject != null)
             {

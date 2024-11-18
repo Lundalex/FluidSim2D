@@ -151,7 +151,7 @@ public class RigidBodySensor : Sensor
                 break;
         }
 
-        sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
+        // sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
     }
 
     public void SetRigidBodySensorType(RigidBodySensorType rigidBodySensorType)
