@@ -86,16 +86,15 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.sliderScale = sensorScale;
         sensorUI.SetDataWindow(defaultDataView == DataView.Numeric ? "NumericDisplay" : "GraphDisplay");
         SetSensorTitle();
-        InitSensorTypeDropdown();
         sensorUIObject.name = "UI - " + this.name;
     }
 
     public abstract void InitSensor();
     public abstract void UpdatePosition();
     public abstract void UpdateSensor();
+    public abstract void UpdateSensorTypeDropdown();
     public abstract void SetSensorTitle();
     public abstract void SetSensorUnit(string unit = "");
-    public abstract void InitSensorTypeDropdown();
 
     public (string prefix, float newValue) GetMagnitudePrefix(float value)
     {
@@ -142,7 +141,11 @@ public abstract class Sensor : MonoBehaviour
         }
     }
 
-    public void UpdateScript() => UpdatePosition();
+    public void UpdateScript()
+    {
+        UpdatePosition();
+        if (PM.Instance.programStarted) UpdateSensorTypeDropdown();
+    }
 
     public Vector2 SimSpaceToCanvasSpace(Vector2 simCoords)
         => (simCoords / GetBoundaryDims() - new Vector2(0.5f, 0.5f)) * canvasResolution;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using PM = ProgramManager;
 
 public class ShaderHelper : MonoBehaviour
 {
@@ -145,6 +146,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         pSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
+        pSimShader.SetInt("PTypesNum", m.PTypesNum);
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
         pSimShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         pSimShader.SetInt("SubTimeStepsPerFrame", m.SubTimeStepsPerFrame);
@@ -188,13 +190,15 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("TaperThresoldNormalised", m.TaperThresoldNormalised);
         renderShader.SetVector("SpringTextureUVFactor", new Vector2(m.SpringTextureUVFactor.x, m.SpringTextureUVFactor.y));
 
-        renderShader.SetVector("Resolution", new Vector2(m.Resolution.x, m.Resolution.y));
+        renderShader.SetVector("Resolution", PM.Instance.Resolution);
         renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         renderShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         renderShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        renderShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
+        renderShader.SetInt("PTypesNum", m.PTypesNum);
         renderShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         renderShader.SetInt("NumFluidSensors", m.SensorAreas.Length);
 
@@ -251,6 +255,9 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
         rbSimShader.SetInt("NumVectors", m.RBVectors.Length);
         rbSimShader.SetInt("NumParticles", m.ParticlesNum);
+        rbSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
+        rbSimShader.SetInt("PTypesNum", m.PTypesNum);
+
 
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
         rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);

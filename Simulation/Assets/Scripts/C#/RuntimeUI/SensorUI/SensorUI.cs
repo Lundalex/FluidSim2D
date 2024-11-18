@@ -170,12 +170,9 @@ public class SensorUI : MonoBehaviour
         Vector2 localContainerMin = (baseMin + PM.Instance.boundsOffset) * (Vector2)transform.localScale * ScaleFactor - PM.Instance.boundsPadding;
         Vector2 localContainerMax = (baseMax + PM.Instance.boundsOffset * ScaleFactor) * (Vector2)transform.localScale * ScaleFactor + PM.Instance.boundsPadding;
 
-        // Retrieve screen resolution
-        Vector2 resolution = new(PM.Instance.main.Resolution.x, PM.Instance.main.Resolution.y);
-
         // Determine min and max bounds for clamping within the screen
-        Vector2 minBound = -resolution * 0.5f - localContainerMin;
-        Vector2 maxBound = resolution * 0.5f - localContainerMax;
+        Vector2 minBound = -PM.Instance.Resolution * 0.5f - localContainerMin;
+        Vector2 maxBound = PM.Instance.Resolution * 0.5f - localContainerMax;
 
         // Clamp position within calculated bounds
         Vector2 clampedPos;

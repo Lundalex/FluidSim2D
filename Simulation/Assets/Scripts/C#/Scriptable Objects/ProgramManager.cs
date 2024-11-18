@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Resources2;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
 
@@ -29,8 +30,11 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public bool programPaused = false;
     [NonSerialized] public bool frameStep = false;
     [NonSerialized] public float totalTimeElapsed = 0;
+    [NonSerialized] public int frameCount = 0;
     [NonSerialized] public float clampedDeltaTime = 0;
     [NonSerialized] public float timeSetRandTimer = 0;
+    [NonSerialized] public readonly Vector2 Resolution = new(Screen.width, Screen.height);
+    [NonSerialized] public readonly int2 ResolutionInt2 = new(Screen.width, Screen.height);
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
@@ -45,6 +49,10 @@ public class ProgramManager : ScriptableObject
     // Private - Animated Texture Scrolling
     private const float ScrollSpeed = 0.5f;
     private float offset;
+
+    // Performance tests
+    private const int PerformanceTestFrameLength = 1000;
+    private int performanceMisses = 0;
 
     // Singleton
     private static ProgramManager _instance;
@@ -76,10 +84,14 @@ public class ProgramManager : ScriptableObject
     {
         CheckKeyInputs();
 
+        // Per frame "constants"
         isAnySensorSettingsViewActive = CheckAnySensorSettingsViewActive();
-
         clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
 
+        // Performance report
+        CheckPerformance();
+
+        // Rendering
         if (isAnySensorSettingsViewActive) UpdateAnimatedDashedLineOffset(clampedDeltaTime);
         LerpGlobalBrightness(clampedDeltaTime);
         LerpTimeScale(clampedDeltaTime);
@@ -123,6 +135,22 @@ public class ProgramManager : ScriptableObject
         if (Input.GetKeyDown(KeyCode.Escape)) CloseAllSensorUISettingsPanels();
     }
 
+    private void CheckPerformance()
+    {
+        if (frameCount < PerformanceTestFrameLength)
+        {
+            if (clampedDeltaTime == MaxDeltaTime) performanceMisses++;
+            if (++frameCount == PerformanceTestFrameLength)
+            {
+                int performanceMissesPercent = Mathf.RoundToInt(100 * performanceMisses / (float)PerformanceTestFrameLength);
+                int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
+                string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
+
+                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText);
+            }
+        }
+    }
+
     private void CloseAllSensorUISettingsPanels()
     {
         foreach (SensorData sensorData in sensorDatas)
@@ -154,7 +182,10 @@ public class ProgramManager : ScriptableObject
         programPaused = false;
         
         totalTimeElapsed = 0;
+        frameCount = 0;
         globalBrightnessFactor = 1;
+
+        performanceMisses = 0;
 
         sensorDatas = new();
         userInputs = new();
@@ -256,7 +287,7 @@ public class ProgramManager : ScriptableObject
     private Vector2 GetScreenToViewFactor() 
     {
         float boundsAspect = main.BoundaryDims.x / (float)main.BoundaryDims.y;
-        float resolutionAspect = main.Resolution.x / (float)main.Resolution.y;
+        float resolutionAspect = Resolution.x / Resolution.y;
 
         float scaleX;
         float scaleY;
@@ -278,14 +309,16 @@ public class ProgramManager : ScriptableObject
 
     private void SetStaticUIPositions()
     {
-        Vector2 halfResolution = new Vector2(main.Resolution.x, main.Resolution.y) / 2.0f;
-        Vector2 pos = halfResolution * ScreenToViewFactor - new Vector2(285, 60);
-        languageSelectDropdown.localPosition = pos;
-
+        // Calculate the UI offset
+        Vector2 halfResolution = Resolution / 2.0f;
+        Vector2 offset = halfResolution - halfResolution * ScreenToViewFactor;
+        
+        // Apply the offset
+        languageSelectDropdown.localPosition = (Vector2)languageSelectDropdown.localPosition - offset;
         foreach (UserInput userInput in userInputs)
         {
-            Vector2 offset = halfResolution - halfResolution * ScreenToViewFactor;
-            userInput.GetComponent<RectTransform>().localPosition = (Vector2)userInput.GetComponent<RectTransform>().localPosition - offset;
+            RectTransform rectTransform = userInput.GetComponent<RectTransform>();
+            rectTransform.localPosition = (Vector2)rectTransform.localPosition - offset;
         }
     }
 

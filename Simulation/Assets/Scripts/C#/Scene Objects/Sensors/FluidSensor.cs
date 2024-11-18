@@ -264,7 +264,7 @@ public class FluidSensor : Sensor
         }
     }
 
-    public override void InitSensorTypeDropdown()
+    public override void UpdateSensorTypeDropdown()
     {
         int itemIndex = 0;
         switch (fluidSensorType)
@@ -322,7 +322,7 @@ public class FluidSensor : Sensor
                 break;
         }
 
-        // sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
+        sensorUI.fluidSensorTypeSelect.selectedItemIndex = itemIndex;
     }
 
     public void SetFluidSensorType(FluidSensorType fluidSensorType)

@@ -18,6 +18,8 @@ const float RigidBodyPadding;
 const uint NumRigidBodies;
 const uint NumVectors;
 const uint NumParticles;
+const uint ChunksNumAll;
+const uint PTypesNum;
 
 // Rigid Body Collision solver settings
 const float RB_RBCollisionCorrectionFactor;
@@ -408,6 +410,11 @@ void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out floa
     // Calculate delta velocities for the rigid body
     deltaCenterVel = canMove ? rbImpulse / rb.mass : 0;
     deltaRotVel = canRotate ? torque / rb.inertia : 0;
+}
+
+int Extract_PType(int LastChunkKey_PType_POrder)
+{
+    return ((uint)LastChunkKey_PType_POrder % (ChunksNumAll * PTypesNum)) / ChunksNumAll;
 }
 
 [numthreads(TN_RBS3,1,1)]

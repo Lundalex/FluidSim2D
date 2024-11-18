@@ -56,7 +56,9 @@ const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
 const int NumMaterials;
 const int2 ChunksNum;
+const uint ChunksNumAll;
 const int ParticlesNum;
+const uint PTypesNum;
 const uint NumRigidBodies;
 const uint NumFluidSensors;
 
@@ -95,6 +97,11 @@ StructuredBuffer<RBVector> RBVectors;
 StructuredBuffer<SensorArea> SensorAreas;
 
 StructuredBuffer<Mat> Materials;
+
+int Extract_PType(int LastChunkKey_PType_POrder)
+{
+    return ((uint)LastChunkKey_PType_POrder % (ChunksNumAll * PTypesNum)) / ChunksNumAll;
+}
 
 float2 GetTexDims(Texture2D<unorm float4> tex)
 {

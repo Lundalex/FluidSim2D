@@ -3520,7 +3520,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: NONE
+  - itemName: Sensor
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -11094,7 +11094,7 @@ MonoBehaviour:
   itemPaddingLeft: 8
   itemPaddingRight: 25
   itemSpacing: 8
-  selectedItemIndex: 0
+  selectedItemIndex: 12
   animationType: 0
   panelDirection: 0
   panelSize: 200
@@ -11356,6 +11356,24 @@ MonoBehaviour:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 11
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - itemName: Sensor
+    itemIcon: {fileID: 0}
+    itemIndex: 0
+    OnItemSelection:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 6338154651552807825}
+          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
+          m_MethodName: OnNewFluidSensorType
+          m_Mode: 3
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 12
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0

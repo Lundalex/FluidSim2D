@@ -98,7 +98,6 @@ public class Main : MonoBehaviour
 #endregion
 
 #region Render Display
-    public int2 Resolution = new(1920, 1280);
     public LightingSettings LightingSettings;
     public float3 GlobalBrightness;
     public float Contrast;
@@ -212,6 +211,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
     [NonSerialized] public int ParticlesNum_NextPow2;
     [NonSerialized] public int ParticlesNum_NextLog2;
+    [NonSerialized] public int PTypesNum;
 
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
@@ -266,7 +266,7 @@ public class Main : MonoBehaviour
         InitTimeSetRand();
 
         InitializeBuffers();
-        renderTexture = TextureHelper.CreateTexture(Resolution, 3);
+        renderTexture = TextureHelper.CreateTexture(PM.Instance.ResolutionInt2, 3);
 
         shaderHelper.SetPSimShaderBuffers(pSimShader);
         shaderHelper.SetRBSimShaderBuffers(rbSimShader);
@@ -510,6 +510,7 @@ public class Main : MonoBehaviour
         ParticleSpringsCombinedHalfLength = MaxParticlesNum * MaxSpringsPerParticle / 2;
         ParticlesNum_NextPow2 = Func.NextPow2(MaxParticlesNum);
         ParticlesNum_NextLog2 = (int)Math.Log(ParticlesNum_NextPow2, 2);
+        PTypesNum = pTypeInput.particleTypeStates.Length * 3;
     }
 
     private void InitializeBuffers()

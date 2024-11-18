@@ -20,6 +20,7 @@
 const int2 ChunksNum;
 const uint ChunksNumAll;
 const uint ParticlesNum;
+const uint PTypesNum;
 const int2 BoundaryDims;
 const int ParticleSpringsCombinedHalfLength;
 const int MaxInfluenceRadius;
@@ -79,6 +80,50 @@ int GetChunkKey(int2 chunk)
 int2 GetChunk(int lastChunkKey)
 {
     return int2((uint)lastChunkKey % ChunksNum.x, (int)((uint)lastChunkKey / ChunksNum.x));
+}
+
+int Compose_LastChunkKey_PType_POrder(int POrder, int PType, int LastChunkKey)
+{
+    int composedPOrder = POrder * (ChunksNumAll * PTypesNum);
+    int composedPType = PType * ChunksNumAll;
+    int composedLastChunkKey = LastChunkKey;
+
+    return composedPOrder + composedPType + composedLastChunkKey;
+}
+
+int Extract_LastChunkKey(int LastChunkKey_PType_POrder)
+{
+    return (uint)LastChunkKey_PType_POrder % ChunksNumAll;
+}
+
+int Extract_PType(int LastChunkKey_PType_POrder)
+{
+    return ((uint)LastChunkKey_PType_POrder % (ChunksNumAll * PTypesNum)) / ChunksNumAll;
+}
+
+int Extract_POrder(int LastChunkKey_PType_POrder)
+{
+    return (uint)LastChunkKey_PType_POrder / (ChunksNumAll * PTypesNum);
+}
+
+void Set_LastChunkKey(inout int LastChunkKey_PType_POrder, int NewLastChunkKey)
+{
+    LastChunkKey_PType_POrder = (uint)LastChunkKey_PType_POrder / ChunksNumAll * ChunksNumAll + NewLastChunkKey;
+}
+
+void Set_PType(inout int LastChunkKey_PType_POrder, int NewPType)
+{
+    int pOrderVal = ((uint)LastChunkKey_PType_POrder / (ChunksNumAll * PTypesNum)) * (ChunksNumAll * PTypesNum);
+    int lastChunkKeyVal = (uint)LastChunkKey_PType_POrder % ChunksNumAll;
+
+    LastChunkKey_PType_POrder = pOrderVal + (NewPType * ChunksNumAll) + lastChunkKeyVal;
+}
+
+void Set_POrder(inout int LastChunkKey_PType_POrder, int NewPOrder)
+{
+    int pType_lastChunkKey_Val = (uint)LastChunkKey_PType_POrder % (ChunksNumAll * PTypesNum);
+
+    LastChunkKey_PType_POrder = (NewPOrder * (ChunksNumAll * PTypesNum)) + pType_lastChunkKey_Val;
 }
 
 float2 CalcDensity(int pIndex) // (density, nearDensity)

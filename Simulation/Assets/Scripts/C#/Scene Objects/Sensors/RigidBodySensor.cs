@@ -1,7 +1,6 @@
 using System;
 using Resources2;
 using UnityEngine;
-using PM = ProgramManager;
 
 public class RigidBodySensor : Sensor
 {
@@ -129,7 +128,7 @@ public class RigidBodySensor : Sensor
         }
     }
 
-    public override void InitSensorTypeDropdown()
+    public override void UpdateSensorTypeDropdown()
     {
         int itemIndex = 0;
         switch (rigidBodySensorType)
@@ -151,7 +150,7 @@ public class RigidBodySensor : Sensor
                 break;
         }
 
-        // sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
+        sensorUI.rigidBodySensorTypeSelect.selectedItemIndex = itemIndex;
     }
 
     public void SetRigidBodySensorType(RigidBodySensorType rigidBodySensorType)

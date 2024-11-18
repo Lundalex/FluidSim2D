@@ -49,9 +49,6 @@ void CheckShaderConstants (uint3 id : SV_DispatchThreadID)
     else if (CS_TN_S != TN_S) incorrectVariableKey = 7;
     else if (CS_INT_FLOAT_PRECISION_RB != INT_FLOAT_PRECISION_RB) incorrectVariableKey = 8;
     else if (CS_INT_FLOAT_PRECISION_P != INT_FLOAT_PRECISION_P) incorrectVariableKey = 9;
-    else if (CS_MIR != MIR) incorrectVariableKey = 10;
-    else if (CS_BOUNDARY_DIMS.x != BOUNDARY_DIMS.x || CS_BOUNDARY_DIMS.y != BOUNDARY_DIMS.y) incorrectVariableKey = 11;
-    else if (CS_PTYPES_NUM_COPY > PTYPES_NUM_COPY) incorrectVariableKey = 12;
 
     DebugDatas[id.x] = InitDebugData(incorrectVariableKey);
 }
