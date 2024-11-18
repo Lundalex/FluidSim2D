@@ -23,14 +23,14 @@ public class SceneRigidBody : Polygon
 
     // NonSerialized
     [NonSerialized] public Vector2[] Points;
-    [NonSerialized] public Vector2 lastPosition = Vector2.zero;
-    [NonSerialized] public Vector2 cashedCentroid = Vector2.zero;
+    [NonSerialized] public Vector2 lastPosition = Vector2.positiveInfinity;
+    [NonSerialized] public Vector2 cashedCentroid = Vector2.positiveInfinity;
     [NonSerialized] public Vector2 cashedRelativeLinkPos;
     [NonSerialized] public LinkType lastLinkType;
     [NonSerialized] public Vector2 lastLocalLinkPosThisRB;
     [NonSerialized] public Vector2 lastLocalLinkPosOtherRB;
-    [NonSerialized] public bool lastLinkTypeSet;
-    private int frameCount = 59;
+    [NonSerialized] public bool lastLinkTypeSet = false;
+    private int frameCount = 0;
 
     private void OnEnable()
     {
@@ -51,7 +51,7 @@ public class SceneRigidBody : Polygon
     {
         if (!Application.isPlaying)
         {
-            // Check whether any positional data field has been modified
+            // Check whether any positional data field has been modified, or each second of editor time
             if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 0.01f ||
                 (lastLocalLinkPosThisRB - (Vector2)RBInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
                 (lastLocalLinkPosOtherRB - (Vector2)RBInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
@@ -61,7 +61,11 @@ public class SceneRigidBody : Polygon
             }
 
             // Reset certain data is the linkType has been modified
-            if (!lastLinkTypeSet) lastLinkType = RBInput.linkType;
+            if (!lastLinkTypeSet)
+            {
+                lastLinkType = RBInput.linkType;
+                lastLinkTypeSet = true;
+            }
             if (lastLinkType != RBInput.linkType)
             {
                 RBInput.localLinkPosOtherRB = Vector2.zero;
@@ -85,7 +89,8 @@ public class SceneRigidBody : Polygon
             Vector2 localLinkPosOther = (Vector2)RBInput.localLinkPosOtherRB;
             Vector2 localLinkPosThis = (Vector2)RBInput.localLinkPosThisRB;
             
-            transform.position = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
+            Vector2 newPos = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
+            if (newPos.x < float.MaxValue && newPos.y < float.MaxValue) transform.position = newPos;
             cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
         }
 

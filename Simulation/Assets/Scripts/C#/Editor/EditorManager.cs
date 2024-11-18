@@ -177,21 +177,23 @@ public class EditorManager : Editor
             if (rigidBody.RBInput.linkType == LinkType.Rigid)
             {
                 // Calculate line points
-                Vector2 pointA = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
-                Vector2 pointB = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
-                Vector2 pointC = rigidBody.cashedCentroid;
+                Vector2 thisRBCentroid = rigidBody.cashedCentroid;
+                Vector2 LinkPos = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+                Vector2 otherRBCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
 
                 // Draw dashed line
-                Color orangeColor = new(1.0f, 0.1f, 0.0f);
-                DrawDashedLine(orangeColor, pointA, pointB, 10, 3, rigidBody.EditorLineAnimationSpeed);
-                DrawDashedLine(orangeColor, pointB, pointC, 10, 3, rigidBody.EditorLineAnimationSpeed);
+                Color orangeColor = new(1.0f, 0.15f, 0.0f);
+                DrawDashedLine(orangeColor, LinkPos, thisRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
+                DrawDashedLine(orangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
                 
                 // Draw start and end points
-                float radius = 2.5f;
                 Gizmos.color = Color.red;
-                Gizmos.DrawSphere(pointA, radius);
-                Gizmos.DrawSphere(pointB, radius);
-                Gizmos.DrawSphere(pointC, radius);
+                if (thisRBCentroid != Vector2.positiveInfinity) Gizmos.DrawSphere(thisRBCentroid, 2.5f);
+                if (otherRBCentroid != Vector2.positiveInfinity) Gizmos.DrawSphere(otherRBCentroid, 2.5f);
+                Gizmos.color = new(1.0f, 1.0f, 0.0f);
+                if (LinkPos != Vector2.positiveInfinity) Gizmos.DrawSphere(LinkPos, 4.5f);
+                Gizmos.color = new(1.0f, 0.05f, 0.0f);
+                if (LinkPos != Vector2.positiveInfinity) Gizmos.DrawSphere(LinkPos, 3.5f);
             }
 
             rigidBody.approximatedSpringLength = "No Active Spring Link";

@@ -187,7 +187,7 @@ public class SceneManager : MonoBehaviour
 
             if (springLinkedRBIndex != -1 && rbInput.localLinkPosThisRB.x != 0 && rbInput.localLinkPosThisRB.y != 0 &&
                 rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.linkType == LinkType.Rigid)
-                Debug.LogWarning("Rigid links should not have points with offsets from each linked rigid body. This may cause to simulation instabilities");
+                Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
             
             // Initialize the rigid body data
             allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
