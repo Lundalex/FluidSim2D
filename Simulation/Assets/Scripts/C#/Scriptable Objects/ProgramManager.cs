@@ -8,9 +8,6 @@ using UnityEngine.Localization.Settings;
 [CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
 public class ProgramManager : ScriptableObject
 {
-    public Vector2 boundsPadding;
-    public Vector2 boundsOffset;
-    
     // References
     public Material lineMaterial;
     [NonSerialized] public Main main;
@@ -34,8 +31,8 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public int frameCount = 0;
     [NonSerialized] public float clampedDeltaTime = 0;
     [NonSerialized] public float timeSetRandTimer = 0;
-    [NonSerialized] public readonly Vector2 Resolution = new(Screen.width, Screen.height);
-    [NonSerialized] public readonly int2 ResolutionInt2 = new(Screen.width, Screen.height);
+    [NonSerialized] public Vector2 Resolution;
+    [NonSerialized] public int2 ResolutionInt2;
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
@@ -73,6 +70,7 @@ public class ProgramManager : ScriptableObject
     {
         SetReferences();
 
+        SetResolutionData();
         ScreenToViewFactor = GetScreenToViewFactor();
         SetStaticUIPositions();
 
@@ -306,6 +304,12 @@ public class ProgramManager : ScriptableObject
         }
 
         return new Vector2(scaleX, scaleY);
+    }
+
+    private void SetResolutionData()
+    {
+        Resolution = new(main.Resolution.x, main.Resolution.y);
+        ResolutionInt2 = main.Resolution;
     }
 
     private void SetStaticUIPositions()

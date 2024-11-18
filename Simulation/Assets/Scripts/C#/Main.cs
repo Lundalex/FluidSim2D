@@ -98,6 +98,8 @@ public class Main : MonoBehaviour
 #endregion
 
 #region Render Display
+    public int2 Resolution;
+    public Vector2 UIPadding;
     public LightingSettings LightingSettings;
     public float3 GlobalBrightness;
     public float Contrast;

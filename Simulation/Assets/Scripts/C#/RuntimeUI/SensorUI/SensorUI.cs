@@ -19,6 +19,7 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public WindowManager settingsViewWindowManager;
     [SerializeField] public Slider scaleSlider;
     [SerializeField] public RectTransform rectTransform;
+    [SerializeField] public RectTransform outerContainerRectTransform;
     [SerializeField] public DemoElementSway swayElementA;
     [SerializeField] public DemoElementSway swayElementB;
     [SerializeField] public DemoElementSway swayElementC;
@@ -159,30 +160,49 @@ public class SensorUI : MonoBehaviour
 
     private Vector2 ClampToScreenBounds(Vector2 pos)
     {
-        // Scale position based on screen to view factor
+        // Apply ScreenToView transform
         pos /= PM.Instance.ScreenToViewFactor;
 
-        // Define base bounds based on BoundaryDims
-        Vector2 baseMin = new(-PM.Instance.main.BoundaryDims.x, -PM.Instance.main.BoundaryDims.y);
-        Vector2 baseMax = -baseMin;
+        Vector2 rectTransformSize = new(outerContainerRectTransform.rect.width, outerContainerRectTransform.rect.height);
+        Vector2 containerSize = (Vector2)transform.localScale * ScaleFactor * rectTransformSize * 1.4f / PM.Instance.ScreenToViewFactor;
+        Vector2 containerMin = pos - 0.5f * containerSize;
+        Vector2 containerMax = pos + 0.5f * containerSize;
 
-        // Calculate container bounds by applying scale and padding
-        Vector2 localContainerMin = (baseMin + PM.Instance.boundsOffset) * (Vector2)transform.localScale * ScaleFactor - PM.Instance.boundsPadding;
-        Vector2 localContainerMax = (baseMax + PM.Instance.boundsOffset * ScaleFactor) * (Vector2)transform.localScale * ScaleFactor + PM.Instance.boundsPadding;
+        Vector2 halfResolution = 0.5f * PM.Instance.Resolution;
+        Vector2 screenMin = -halfResolution + PM.Instance.main.UIPadding;
+        Vector2 screenMax = halfResolution - PM.Instance.main.UIPadding;
+        Vector2 minDiff = containerMin - screenMin;
+        Vector2 maxDiff = containerMax - screenMax;
 
-        // Determine min and max bounds for clamping within the screen
-        Vector2 minBound = -PM.Instance.Resolution * 0.5f - localContainerMin;
-        Vector2 maxBound = PM.Instance.Resolution * 0.5f - localContainerMax;
+        Vector2 offset = Vector2.zero;
 
-        // Clamp position within calculated bounds
-        Vector2 clampedPos;
-        clampedPos.x = Mathf.Clamp(pos.x, minBound.x, maxBound.x);
-        clampedPos.y = Mathf.Clamp(pos.y, minBound.y, maxBound.y);
+        // Adjust X axis
+        if (minDiff.x < 0)
+        {
+            offset.x = -minDiff.x;
+        }
+        else if (maxDiff.x > 0)
+        {
+            offset.x = -maxDiff.x;
+        }
 
-        // Reapply screen to view factor for final positioning
-        clampedPos *= PM.Instance.ScreenToViewFactor;
+        // Adjust Y axis
+        if (minDiff.y < 0)
+        {
+            offset.y = -minDiff.y;
+        }
+        else if (maxDiff.y > 0)
+        {
+            offset.y = -maxDiff.y;
+        }
+        
+        // Apply offset
+        pos += offset;
 
-        return clampedPos;
+        // Revert ScreenToView transform
+        pos *= PM.Instance.ScreenToViewFactor;
+
+        return pos;
     }
 
 
