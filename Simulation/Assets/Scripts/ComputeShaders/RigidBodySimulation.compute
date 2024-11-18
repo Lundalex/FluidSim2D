@@ -8,7 +8,6 @@
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
 #include "./Helpers/MathResources.hlsl"
-#include "./Helpers/Composition.hlsl"
 
 // Boundrary settings
 const uint2 BoundaryDims;

@@ -14,7 +14,6 @@
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
 #include "./Helpers/MathResources.hlsl"
-#include "./Helpers/Composition.hlsl"
 
 // https://en.wikipedia.org/wiki/Bitonic_sorter - alternative visual representation
 

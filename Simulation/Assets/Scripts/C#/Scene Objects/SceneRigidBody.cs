@@ -4,7 +4,6 @@ using System.Linq;
 using Resources2;
 using UnityEngine;
 using UnityEditor;
-using Unity.Mathematics;
 
 [RequireComponent(typeof(PolygonCollider2D)), ExecuteAlways]
 public class SceneRigidBody : Polygon

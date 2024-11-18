@@ -13,7 +13,6 @@
 #pragma multi_compile _ USE_METABALLS
 
 #include "./Helpers/MathResources.hlsl"
-#include "./Helpers/Composition.hlsl"
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
 

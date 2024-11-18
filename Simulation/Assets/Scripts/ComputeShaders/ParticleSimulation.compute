@@ -14,7 +14,6 @@
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
 #include "./Helpers/MathResources.hlsl"
-#include "./Helpers/Composition.hlsl"
 
 // Constants
 const int2 ChunksNum;

@@ -1,7 +1,6 @@
 #pragma kernel CheckShaderConstants; // 0
 
 #include "./Helpers/Constants.hlsl"
-#include "./Helpers/Composition.hlsl"
 
 const uint CS_MAX_RIGIDBODIES_NUM; // Key: 00
 
