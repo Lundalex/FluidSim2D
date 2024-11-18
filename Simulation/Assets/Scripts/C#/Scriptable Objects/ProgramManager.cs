@@ -10,6 +10,7 @@ public class ProgramManager : ScriptableObject
 {
     public Vector2 boundsPadding;
     public Vector2 boundsOffset;
+    
     // References
     public Material lineMaterial;
     [NonSerialized] public Main main;
@@ -146,7 +147,7 @@ public class ProgramManager : ScriptableObject
                 int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
                 string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
 
-                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText);
+                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + " Platform: " + Application.platform + ".");
             }
         }
     }

@@ -455,30 +455,32 @@ public class Main : MonoBehaviour
 
     private void SetLightingSettings()
     {
-        switch (LightingSettings)
+        if (LightingSettings == LightingSettings.Custom) return;
+        switch (Application.platform)
         {
-            case LightingSettings.Custom:
-                break;
-            case LightingSettings.WindowsDefault:
+            case RuntimePlatform.WindowsEditor:
                 GlobalBrightness = 1;
                 Contrast = 1;
                 Saturation = 1;
                 Gamma = 1;
                 SettingsViewDarkTintPercent = 0.8f;
                 break;
-            case LightingSettings.MacDefault:
+            case RuntimePlatform.OSXEditor:
                 GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
                 Contrast = 1.1f;
                 Saturation = 1.0f;
                 Gamma = 0.8f;
                 SettingsViewDarkTintPercent = 0.8f;
                 break;
-            case LightingSettings.WebDefault:
+            case RuntimePlatform.WebGLPlayer:
                 GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
                 Contrast = 1.1f;
                 Saturation = 1.0f;
                 Gamma = 0.8f;
                 SettingsViewDarkTintPercent = 0.8f;
+                break;
+            default:
+                Debug.LogError("RuntimePlatform not recognised. Will default to using custom values");
                 break;
         }
     }

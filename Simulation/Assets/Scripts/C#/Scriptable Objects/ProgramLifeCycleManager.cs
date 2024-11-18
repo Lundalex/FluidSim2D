@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using PM = ProgramManager;
 
@@ -9,9 +10,6 @@ public class ProgramLifeCycleManager : MonoBehaviour
 
     private void Start()
     {
-        PM.Instance.main = main;
-        PM.Instance.Start();
-
         if (main.TargetFrameRate > 0)
         {
             QualitySettings.vSyncCount = 0;
@@ -22,6 +20,9 @@ public class ProgramLifeCycleManager : MonoBehaviour
             QualitySettings.vSyncCount = 1;
             Application.targetFrameRate = 0;
         }
+
+        PM.Instance.main = main;
+        PM.Instance.Start();
     }
 
     private void Update() => PM.Instance.Update();

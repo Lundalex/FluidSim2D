@@ -52,7 +52,7 @@ public class SensorUI : MonoBehaviour
 
     // Private - Pointer Hover
     private float pointerHoverTimer = 0.3f;
-    private const float PointerHoverCooldown = 0.5f;
+    private const float PointerHoverCooldown = 0.25f;
 
     // Private - Scale
     private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
