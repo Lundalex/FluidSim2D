@@ -291,6 +291,8 @@ public class Main : MonoBehaviour
             debugger.CheckShaderConstants(this, debugShader);
         }
 
+        GPUSortChunkLookUp();
+
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies. Platform: " + Application.platform);
     }
 
@@ -469,15 +471,15 @@ public class Main : MonoBehaviour
                 break;
             case RuntimePlatform.OSXEditor:
                 GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
-                Contrast = 1.1f;
-                Saturation = 1.0f;
+                Contrast = 1.2f;
+                Saturation = 1.1f;
                 Gamma = 0.8f;
                 SettingsViewDarkTintPercent = 0.8f;
                 break;
             case RuntimePlatform.WebGLPlayer:
                 GlobalBrightness = new float3(0.8f, 0.8f, 0.8f);
-                Contrast = 1.1f;
-                Saturation = 1.0f;
+                Contrast = 1.2f;
+                Saturation = 1.1f;
                 Gamma = 0.8f;
                 SettingsViewDarkTintPercent = 0.8f;
                 break;

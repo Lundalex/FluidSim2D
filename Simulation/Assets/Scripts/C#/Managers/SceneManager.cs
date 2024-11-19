@@ -66,10 +66,6 @@ public class SceneManager : MonoBehaviour
 
     public bool IsSpaceEmpty(Vector2 point, SceneFluid thisFluid)
     {
-        if (thisFluid.name != "Fluid1 (1)")
-        {
-            int a = 0;
-        }
         SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
         SceneFluid[] allFluids = GetAllSceneFluids();
 

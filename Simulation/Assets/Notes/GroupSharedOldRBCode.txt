@@ -45,7 +45,7 @@ private void CheckKeyInputs_DEBUG()
     }
     if (Input.GetKeyDown(KeyCode.F))
     {
-        FrameStep = !FrameStep;
+        frameStep = !frameStep;
     }
 
     // Adjust GlobalBrightness

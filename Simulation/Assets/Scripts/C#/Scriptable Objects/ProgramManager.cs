@@ -35,6 +35,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public int2 ResolutionInt2;
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
+    private const int SceneLoadPauseFrameLength = 10;
     [NonSerialized] public Vector2 ScreenToViewFactor;
     public event Action OnNewLanguageSelected;
 
@@ -108,11 +109,15 @@ public class ProgramManager : ScriptableObject
         }
 
         bool simulateThisFrame = false;
-        if (!programPaused || frameStep) simulateThisFrame = true;
-        if (programPaused && frameStep)
+        bool pauseOnSceneLoadActive = frameCount++ <= SceneLoadPauseFrameLength;
+        if (!pauseOnSceneLoadActive)
         {
-            StringUtils.LogIfInEditor("Stepped forward 1 frame");
-            frameStep = false;
+            if (!programPaused || frameStep) simulateThisFrame = true;
+            if (programPaused && frameStep)
+            {
+                StringUtils.LogIfInEditor("Stepped forward 1 frame");
+                frameStep = false;
+            }
         }
 
         if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
@@ -151,13 +156,13 @@ public class ProgramManager : ScriptableObject
         if (frameCount < PerformanceTestFrameLength)
         {
             if (clampedDeltaTime == MaxDeltaTime) performanceMisses++;
-            if (++frameCount == PerformanceTestFrameLength)
+            if (frameCount == PerformanceTestFrameLength)
             {
                 int performanceMissesPercent = Mathf.RoundToInt(100 * performanceMisses / (float)PerformanceTestFrameLength);
                 int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
                 string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
 
-                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText);
+                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + ". Total test duration: " + PerformanceTestFrameLength + " frames.");
             }
         }
     }

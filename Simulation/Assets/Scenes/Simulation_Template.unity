@@ -252,15 +252,15 @@ MonoBehaviour:
     x: 320
     y: 180
   FluidPadding: 5
-  RigidBodyPadding: 3
+  RigidBodyPadding: 5
   AllowLinkedRBCollisions: 1
   RB_RBCollisionCorrectionFactor: 1
   RB_RBCollisionSlop: 0.0181
-  TimeStepsPerFrame: 6
-  SubTimeStepsPerFrame: 3
+  TimeStepsPerFrame: 4
+  SubTimeStepsPerFrame: 2
   TimeStepType: 1
   TargetFrameRate: 120
-  TimeStep: 0.03
+  TimeStep: 0.002
   ProgramSpeed: 10
   MaxInteractionRadius: 50
   InteractionAttractionPower: 4

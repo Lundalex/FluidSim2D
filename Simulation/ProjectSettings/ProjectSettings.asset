@@ -18,13 +18,13 @@ PlayerSettings:
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 1
-  m_ShowUnitySplashLogo: 0
+  m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
-  m_SplashScreenAnimation: 1
+  m_SplashScreenAnimation: 2
   m_SplashScreenLogoStyle: 1
-  m_SplashScreenDrawMode: 0
-  m_SplashScreenBackgroundAnimationZoom: 1
-  m_SplashScreenLogoAnimationZoom: 1
+  m_SplashScreenDrawMode: 1
+  m_SplashScreenBackgroundAnimationZoom: 0.5825
+  m_SplashScreenLogoAnimationZoom: 0.6061
   m_SplashScreenBackgroundLandscapeAspect: 1
   m_SplashScreenBackgroundPortraitAspect: 1
   m_SplashScreenBackgroundLandscapeUvs:
@@ -39,7 +39,9 @@ PlayerSettings:
     y: 0
     width: 1
     height: 1
-  m_SplashScreenLogos: []
+  m_SplashScreenLogos:
+  - logo: {fileID: 10404, guid: 0000000000000000f000000000000000, type: 0}
+    duration: 3
   m_VirtualRealitySplashScreen: {fileID: 0}
   m_HolographicTrackingLossScreen: {fileID: 0}
   defaultScreenWidth: 1920
@@ -141,7 +143,8 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 1.0
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: 11400000, guid: f34024dd7e0103c4aaf4b37a25cb2607, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -182,7 +185,7 @@ PlayerSettings:
   ForceSDCardPermission: 0
   CreateWallpaper: 0
   androidSplitApplicationBinary: 0
-  keepLoadedShadersAlive: 0
+  keepLoadedShadersAlive: 1
   StripUnusedMeshComponents: 0
   strictShaderVariantMatching: 0
   VertexChannelCompressionMask: 4054
@@ -334,7 +337,8 @@ PlayerSettings:
   openGLRequireES31: 0
   openGLRequireES31AEP: 0
   openGLRequireES32: 0
-  m_TemplateCustomTags: {}
+  m_TemplateCustomTags:
+    PRODUCT_DESCRIPTION: Physics Simulation
   mobileMTRendering:
     Android: 1
     iPhone: 1
@@ -583,7 +587,7 @@ PlayerSettings:
   ps4IncludedModules: []
   ps4attribVROutputEnabled: 0
   monoEnv: 
-  splashScreenBackgroundSourceLandscape: {fileID: 0}
+  splashScreenBackgroundSourceLandscape: {fileID: 21300000, guid: 0ed00857906e8234ebe602f831824696, type: 3}
   splashScreenBackgroundSourcePortrait: {fileID: 0}
   blurSplashScreenBackground: 1
   spritePackerPolicy: 
@@ -595,7 +599,7 @@ PlayerSettings:
   webGLDebugSymbols: 0
   webGLEmscriptenArgs: 
   webGLModulesDirectory: 
-  webGLTemplate: APPLICATION:Default
+  webGLTemplate: APPLICATION:PWA
   webGLAnalyzeBuildSize: 0
   webGLUseEmbeddedResources: 0
   webGLCompressionFormat: 0

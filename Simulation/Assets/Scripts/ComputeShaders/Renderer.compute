@@ -281,9 +281,10 @@ float NoiseDensity(float dst, float invRadius, int pSeed)
 float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
 {
     float2 causticsTexDims = GetTexDims(Caustics);
-    float2 baseRes = 512;
+    float2 baseCausticsRes = 512;
+    float2 baseScreenRes = float2(1920, 1080);
 
-    uint2 wrappedThreadID = (threadID / (baseRes / causticsTexDims)) % causticsTexDims;
+    uint2 wrappedThreadID = (threadID * causticsTexDims * baseScreenRes / (baseCausticsRes * Resolution)) % causticsTexDims;
 
     float3 fluidCol = sampleColMul * Caustics[wrappedThreadID].rgb;
 

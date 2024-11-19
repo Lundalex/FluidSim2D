@@ -12,10 +12,11 @@ public class SceneFluid : Polygon
 {
     public EditorRenderMethod editorRenderMethod;
     public int MaxGizmosIterations = 20000;
+    [Range(0.1f, 10.0f)] public float editorGridSpacing = 0.5f;
     [Range(0.05f, 2.0f)] public float editorPointRadius = 0.05f;
 
     [Header("Simulation Object Settings")]
-    [Range(0.1f, 10.0f)] public float defaultGridDensity = 2.0f;
+    [Range(0.1f, 2.0f)] public float defaultGridSpacing = 2.0f;
     [SerializeField] private float particleTemperatureCelcius = 20.0f;
     [SerializeField] private int pTypeIndex = 0;
 
@@ -52,7 +53,8 @@ public class SceneFluid : Polygon
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
         bool editorView = gridSpacing == -1;
-        if (gridSpacing == 0 || gridSpacing == -1) gridSpacing = defaultGridDensity;
+        if (editorView) gridSpacing = editorGridSpacing;
+        else if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
 
         List<Vector2> generatedPoints = new();
 

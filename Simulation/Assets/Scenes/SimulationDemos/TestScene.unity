@@ -256,11 +256,11 @@ MonoBehaviour:
   AllowLinkedRBCollisions: 1
   RB_RBCollisionCorrectionFactor: 1
   RB_RBCollisionSlop: 0.0181
-  TimeStepsPerFrame: 6
-  SubTimeStepsPerFrame: 3
+  TimeStepsPerFrame: 4
+  SubTimeStepsPerFrame: 2
   TimeStepType: 1
   TargetFrameRate: 120
-  TimeStep: 0.03
+  TimeStep: 0.002
   ProgramSpeed: 10
   MaxInteractionRadius: 50
   InteractionAttractionPower: 4
@@ -946,7 +946,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 116.828995
+      value: 116.82895
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1953,27 +1953,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size
-      value: 6
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
-      value: 3
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
-      value: 3
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
-      value: 3
+      value: -5
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
@@ -1981,19 +1981,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
-      value: -5
+      value: -6
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
-      value: 6
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[4].x
-      value: -5
+      value: -6
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[4].y
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1603245141139881648, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[5].x
@@ -2009,14 +2009,26 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: BodyColor.b
-      value: 0.1782589
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
-      propertyPath: BodyColor.g
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: BodyColor.g
+      value: 0.9043484
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: BodyColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: LineColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: LineColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: LineColor.r
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
@@ -2028,11 +2040,19 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: editorGridSpacing
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: editorPointRadius
-      value: 0.61
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: defaultGridDensity
+      value: 1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: defaultGridSpacing
       value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
@@ -2041,11 +2061,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: MaxGizmosIterations
-      value: 5000
+      value: 2000
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: particleTemperatureCelcius
-      value: 120
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 7844964519482188911, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: m_Name
@@ -2159,7 +2179,7 @@ MonoBehaviour:
     Pause: 0
     m_flowU: 0
     m_flowV: 0
-  m_calcResolution: 512
+  m_calcResolution: 256
   m_renderTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   m_FillGap: 0.3
   m_lightRay: 4
@@ -3675,11 +3695,19 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: editorGridSpacing
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: editorPointRadius
-      value: 0.61
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: defaultGridDensity
+      value: 1.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
+      propertyPath: defaultGridSpacing
       value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
@@ -3688,7 +3716,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: MaxGizmosIterations
-      value: 5000
+      value: 2000
       objectReference: {fileID: 0}
     - target: {fileID: 4245315013079076013, guid: 50e501077191fbb4d8342255e39c0968, type: 3}
       propertyPath: particleTemperatureCelcius
