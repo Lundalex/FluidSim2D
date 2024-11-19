@@ -1106,7 +1106,7 @@ GameObject:
   - component: {fileID: 1360447224}
   m_Layer: 0
   m_Name: LifeCycleManager
-  m_TagString: Untagged
+  m_TagString: LifeCycleManager
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

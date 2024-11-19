@@ -4,7 +4,7 @@ using PM = ProgramManager;
 public class ProgramLifeCycleManager : MonoBehaviour
 {
     [SerializeField] private Main main;
-
+    
     private void Awake() => PM.Instance.ResetDatas();
 
     private void Start()

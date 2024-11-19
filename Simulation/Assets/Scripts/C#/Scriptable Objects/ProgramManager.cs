@@ -81,7 +81,12 @@ public class ProgramManager : ScriptableObject
 
     public void Update()
     {
-        CheckKeyInputs();
+        bool doResetScene = CheckKeyInputs();
+        if (doResetScene)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+            return;
+        }
 
         // Per frame "constants"
         isAnySensorSettingsViewActive = CheckAnySensorSettingsViewActive();
@@ -123,8 +128,13 @@ public class ProgramManager : ScriptableObject
         else main.RunRenderShader();
     }
 
-    private void CheckKeyInputs()
+    private bool CheckKeyInputs()
     {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            Debug.Log("'P' key pressed. Scene resetting...");
+            return true;
+        }
         if (Input.GetKeyDown(KeyCode.P))
         {
             programPaused = !programPaused;
@@ -132,6 +142,8 @@ public class ProgramManager : ScriptableObject
         }
         if (Input.GetKeyDown(KeyCode.F)) frameStep = !frameStep;
         if (Input.GetKeyDown(KeyCode.Escape)) CloseAllSensorUISettingsPanels();
+
+        return false;
     }
 
     private void CheckPerformance()
