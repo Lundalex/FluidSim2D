@@ -516,7 +516,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enabledFluidSensors:
   - {fileID: 7783249810643629543}
-  - {fileID: 0}
   - {fileID: 1124441013}
   msRigidBodyDataRetrievalInterval: 15
   msFluidDataRetrievalInterval: 30
@@ -942,11 +941,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 41.55979
+      value: 41.55976
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 116.82895
+      value: 116.83009
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.z

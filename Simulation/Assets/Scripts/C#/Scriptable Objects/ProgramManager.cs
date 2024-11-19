@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
+using Debug = UnityEngine.Debug;
 
 [CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
 public class ProgramManager : ScriptableObject
@@ -83,6 +85,7 @@ public class ProgramManager : ScriptableObject
     public void Update()
     {
         bool doResetScene = CheckKeyInputs();
+
         if (doResetScene)
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
