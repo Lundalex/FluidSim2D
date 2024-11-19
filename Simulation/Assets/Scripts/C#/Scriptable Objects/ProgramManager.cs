@@ -48,7 +48,7 @@ public class ProgramManager : ScriptableObject
     private const float ScrollSpeed = 0.5f;
     private float offset;
 
-    // Performance tests
+    // Performance test
     private const int PerformanceTestFrameLength = 1000;
     private int performanceMisses = 0;
 
@@ -145,7 +145,7 @@ public class ProgramManager : ScriptableObject
                 int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
                 string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
 
-                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + " Platform: " + Application.platform + ".");
+                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText);
             }
         }
     }

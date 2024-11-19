@@ -291,7 +291,7 @@ public class Main : MonoBehaviour
             debugger.CheckShaderConstants(this, debugShader);
         }
 
-        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies");
+        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies. Platform: " + Application.platform);
     }
 
     public void UpdateScript()
@@ -640,7 +640,7 @@ public class Main : MonoBehaviour
                 if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.RigidBodySprings:
-                ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
+                if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.UI:
                 ComputeHelper.DispatchKernel(renderShader, "RenderUI", threadsNum, renderShaderThreadSize);
