@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
@@ -63,6 +64,36 @@ public class SceneManager : MonoBehaviour
         return isInsideBounds;
     }
 
+    public bool IsSpaceEmpty(Vector2 point, SceneFluid thisFluid)
+    {
+        if (thisFluid.name != "Fluid1 (1)")
+        {
+            int a = 0;
+        }
+        SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
+        SceneFluid[] allFluids = GetAllSceneFluids();
+
+        // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
+        foreach (SceneRigidBody rigidBody in allRigidBodies)
+        {
+            if (rigidBody.IsPointInsidePolygon(point)) return false;
+        }
+
+        // Sort fluids with respect to the sibling indices
+        SceneFluid[] sortedFluids = allFluids
+            .OrderBy(fluid => fluid.transform.GetSiblingIndex())
+            .ToArray();
+        
+        // Check if any other fluid with a lower sibling index occupies the same space.
+        int thisFluidIndex = Array.IndexOf(sortedFluids, thisFluid);
+        for (int i = 0; i < thisFluidIndex; i++)
+        {
+            if (sortedFluids[i].IsPointInsidePolygon(point)) return false;
+        }
+
+        return true;
+    }
+
     public (Texture2D, Mat[]) ConstructTextureAtlas(MatInput[] matInputs)
     {
         List<Texture2D> textures = new();
@@ -90,7 +121,7 @@ public class SceneManager : MonoBehaviour
         {
             MatInput matInput = matInputs[i];
 
-            Mat mat = new();
+            Mat mat;
             if (matInput.colorTexture != null)
             {
                 Rect rect = rects[rectIndex];
@@ -124,15 +155,12 @@ public class SceneManager : MonoBehaviour
         if (maxParticlesNum == 0) return new List<PData>();
 
         // Get all fluid instances
-        GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
-        SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];
-        for (int i = 0; i < fluidObjects.Length; i++) allFluids[i] = fluidObjects[i].GetComponent<SceneFluid>();
-        
-        List<PData> allPDatas = new();
+        SceneFluid[] allFluids = GetAllSceneFluids();
 
         Vector2 offset = GetBoundsOffset();
 
         // Get the particle positions for each fluid object in the scene
+        List<PData> allPDatas = new();
         foreach (SceneFluid fluid in allFluids)
         {
             PData[] pDatas = fluid.GenerateParticles(offset, gridSpacing);
@@ -153,9 +181,7 @@ public class SceneManager : MonoBehaviour
 
         if (!referencesHaveBeenSet) SetReferences();
 
-        GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
-        SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
-        for (int i = 0; i < rigidBodyObjects.Length; i++) allRigidBodies[i] = rigidBodyObjects[i].GetComponent<SceneRigidBody>();
+        SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
 
         Vector2 offset = GetBoundsOffset();
 
@@ -238,6 +264,24 @@ public class SceneManager : MonoBehaviour
         for (int i = 0; i < vectors.Length; i++) vectors[i] = (Vector2)rigidBody.transform.TransformPoint(vectors[i]) + offset - transformedRBPos;
         
         return vectors;
+    }
+
+    private SceneRigidBody[] GetAllSceneRigidBodies()
+    {
+        GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
+        SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
+        for (int i = 0; i < rigidBodyObjects.Length; i++) allRigidBodies[i] = rigidBodyObjects[i].GetComponent<SceneRigidBody>();
+
+        return allRigidBodies;
+    }
+
+    private SceneFluid[] GetAllSceneFluids()
+    {
+        GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
+        SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];
+        for (int i = 0; i < fluidObjects.Length; i++) allFluids[i] = fluidObjects[i].GetComponent<SceneFluid>();
+
+        return allFluids;
     }
 
     private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos)

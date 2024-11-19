@@ -32,6 +32,7 @@ public class SceneRigidBody : Polygon
     [NonSerialized] public bool lastLinkTypeSet = false;
     private int frameCount = 0;
 
+#region Editor
     private void OnEnable()
     {
     #if UNITY_EDITOR
@@ -75,6 +76,7 @@ public class SceneRigidBody : Polygon
         }
     }
     #endif
+#endregion
 
     private void UpdateCashedData()
     {

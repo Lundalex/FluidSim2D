@@ -68,7 +68,7 @@ public class SceneFluid : Polygon
             {
                 Vector2 point = new(x, y);
 
-                if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point))
+                if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point) && sceneManager.IsSpaceEmpty(point, this))
                 {
                     if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints;
 
