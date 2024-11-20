@@ -21,6 +21,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
     private void Awake()
     {
         PM.Instance.ResetDatas();
+        startConfirmationWindow.SetActive(true);
         darkBackground.SetActive(true);
     }
 
