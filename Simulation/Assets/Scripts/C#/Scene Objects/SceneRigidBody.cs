@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using Resources2;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 [RequireComponent(typeof(PolygonCollider2D)), ExecuteAlways]
 public class SceneRigidBody : Polygon
 {
     // Public
+    public bool DoCenterPosition = false;
     public bool DoDrawBody = true;
     public float EditorLineAnimationSpeed = 10;
     
@@ -30,7 +33,11 @@ public class SceneRigidBody : Polygon
     [NonSerialized] public Vector2 lastLocalLinkPosThisRB;
     [NonSerialized] public Vector2 lastLocalLinkPosOtherRB;
     [NonSerialized] public bool lastLinkTypeSet = false;
+
+    // Editor
     private int frameCount = 0;
+    private int framesSinceLastPositionChange = 0;
+    private Vector2 lastFramePosition = Vector2.zero;
 
 #region Editor
     private void OnEnable()
@@ -38,6 +45,8 @@ public class SceneRigidBody : Polygon
     #if UNITY_EDITOR
         EditorApplication.update += EditorUpdate;
     #endif
+
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
     }
 
     private void OnDisable()
@@ -52,11 +61,28 @@ public class SceneRigidBody : Polygon
     {
         if (!Application.isPlaying)
         {
+            // Avoid continuing if the position field is currently being modified
+            if (lastFramePosition.x != transform.position.x || lastFramePosition.y != transform.position.y)
+            {
+                lastFramePosition = transform.position;
+                framesSinceLastPositionChange = 0;
+            }
+            else framesSinceLastPositionChange++;
+            if (framesSinceLastPositionChange < 10) return;
+
+            // Check whether to center the position
+            if (DoCenterPosition)
+            {
+                CenterPolygonPosition();
+                DoCenterPosition = false;
+            }
+
             // Check whether any positional data field has been modified, or each second of editor time
-            if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 0.01f ||
+            bool forceUpdateCashedData = frameCount++ % 60 == 0;
+            if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 20.0f ||
                 (lastLocalLinkPosThisRB - (Vector2)RBInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
                 (lastLocalLinkPosOtherRB - (Vector2)RBInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
-                frameCount++ % 60 == 0)
+                forceUpdateCashedData)
             {
                 UpdateCashedData();
             }
@@ -72,30 +98,10 @@ public class SceneRigidBody : Polygon
                 RBInput.localLinkPosOtherRB = Vector2.zero;
                 RBInput.localLinkPosThisRB = Vector2.zero;
                 lastLinkType = RBInput.linkType;
+                CenterPolygonPosition();
             }
 
-            if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-
-            if (snapPointToGrid)
-            {
-                Vector2[] points = polygonCollider.points;
-                Transform colliderTransform = polygonCollider.transform;
-
-                // Snap points to grid in world space
-                for (int i = 0; i < points.Length; i++)
-                {
-                    Vector2 worldPoint = colliderTransform.TransformPoint(points[i]);
-
-                    worldPoint = new Vector2(
-                        Mathf.Round(worldPoint.x / gridSpacing) * gridSpacing,
-                        Mathf.Round(worldPoint.y / gridSpacing) * gridSpacing
-                    );
-
-                    points[i] = colliderTransform.InverseTransformPoint(worldPoint);
-                }
-
-                polygonCollider.points = points;
-            }
+            SnapColliderPointsToGrid();
         }
     }
     #endif
@@ -115,14 +121,44 @@ public class SceneRigidBody : Polygon
             Vector2 localLinkPosThis = (Vector2)RBInput.localLinkPosThisRB;
             
             Vector2 newPos = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
-            if (newPos.x < float.MaxValue && newPos.y < float.MaxValue) transform.position = newPos;
-            cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
+            bool doUpdatePosition = newPos.x < float.MaxValue && newPos.y < float.MaxValue && (lastPosition - newPos).sqrMagnitude > 20.0f;
+            if (doUpdatePosition)
+            {
+                transform.position = newPos;
+                cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
+            }
         }
 
         // Record the current positional data
-        lastPosition = transform.position;
+        if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 20.0f) lastPosition = transform.position;
         lastLocalLinkPosThisRB = (Vector2)RBInput.localLinkPosThisRB;
         lastLocalLinkPosOtherRB = (Vector2)RBInput.localLinkPosOtherRB;
+    }
+
+    private void SnapColliderPointsToGrid()
+    {
+        if (snapPointToGrid)
+        {
+            Vector2[] points = polygonCollider.points;
+            Transform colliderTransform = polygonCollider.transform;
+
+            // Snap points to grid in world space
+            for (int i = 0; i < points.Length; i++)
+            {
+                Vector2 worldPoint = colliderTransform.TransformPoint(points[i]);
+
+                worldPoint = new Vector2(
+                    Mathf.Round(worldPoint.x / gridSpacing) * gridSpacing,
+                    Mathf.Round(worldPoint.y / gridSpacing) * gridSpacing
+                );
+
+                points[i] = colliderTransform.InverseTransformPoint(worldPoint);
+            }
+
+            polygonCollider.points = points;
+
+            if (!RBInput.overrideCentroid) CenterPolygonPosition();
+        }
     }
 
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
@@ -204,5 +240,35 @@ public class SceneRigidBody : Polygon
         foreach (Vector2 vector in vectors) maxRadiusSqr = Mathf.Max(maxRadiusSqr, vector.sqrMagnitude);
 
         return (inertia, maxRadiusSqr);
+    }
+
+    public void CenterPolygonPosition()
+    {
+        // Get the collider's points
+        Vector2[] points = polygonCollider.points;
+
+        // Calculate the centroid of the collider in local space
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2 point in points)
+        {
+            centroid += point;
+        }
+        centroid /= points.Length;
+
+        // Move the transform's position by the centroid offset
+        Vector3 worldCentroidOffset = transform.TransformVector(centroid);
+        transform.position += worldCentroidOffset;
+
+        // Adjust points so that centroid is at local (0,0)
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] -= centroid;
+        }
+
+        // Apply the adjusted points back to the collider
+        polygonCollider.points = points;
+
+        // Update cashedCentroid
+        cashedCentroid = ComputeCentroid(defaultGridSpacing);
     }
 }

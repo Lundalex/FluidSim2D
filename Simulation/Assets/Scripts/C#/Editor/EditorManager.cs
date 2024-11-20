@@ -9,6 +9,8 @@ public class EditorManager : Editor
     private const float springAmplitude = 7.0f;
     private const int numSpringPoints = 15;
     private const float springForceFactor = 1 / 50000.0f;
+    private const float hoveredPointLineLength = 1000f;
+    private const float hoveredPointAxisLineThickness = 0.4f;
 
     void OnEnable() => EditorApplication.update += OnEditorUpdate;
 
@@ -229,7 +231,7 @@ public class EditorManager : Editor
         for (int i = 0; i < worldPoints.Length; i++)
         {
             float distance = Vector2.Distance(mousePosition, worldPoints[i]);
-            if (distance < 1 && distance < closestDistance)
+            if (distance < 2 && distance < closestDistance)
             {
                 closestIndex = i;
                 closestDistance = distance;
@@ -241,20 +243,20 @@ public class EditorManager : Editor
         {
             Vector3 selectedPoint = worldPoints[closestIndex];
 
-            float lineLength = 1000f;
-            float axisLineThickness = 0.25f;
+            Color hoveredPointDarkModeAxisColor = new(0.9f, 0.9f, 0.9f);
+
+            ProgramLifeCycleManager lifeCycleManager = GameObject.FindGameObjectWithTag("LifeCycleManager").GetComponent<ProgramLifeCycleManager>();
+            Handles.color = lifeCycleManager.darkMode ? hoveredPointDarkModeAxisColor : Color.black;
 
             // Draw horizontal line
-            Vector3 leftPoint = new(-lineLength, selectedPoint.y, 0);
-            Vector3 rightPoint = new(lineLength, selectedPoint.y, 0);
-            Handles.color = Color.black;
-            DrawThickLine(leftPoint, rightPoint, axisLineThickness);
+            Vector3 leftPoint = new(-hoveredPointLineLength, selectedPoint.y, 0);
+            Vector3 rightPoint = new(hoveredPointLineLength, selectedPoint.y, 0);
+            DrawThickLine(leftPoint, rightPoint, hoveredPointAxisLineThickness);
 
             // Draw vertical line
-            Vector3 topPoint = new(selectedPoint.x, lineLength, 0);
-            Vector3 bottomPoint = new(selectedPoint.x, -lineLength, 0);
-            Handles.color = Color.black;
-            DrawThickLine(topPoint, bottomPoint, axisLineThickness);
+            Vector3 topPoint = new(selectedPoint.x, hoveredPointLineLength, 0);
+            Vector3 bottomPoint = new(selectedPoint.x, -hoveredPointLineLength, 0);
+            DrawThickLine(topPoint, bottomPoint, hoveredPointAxisLineThickness);
         }
     }
 

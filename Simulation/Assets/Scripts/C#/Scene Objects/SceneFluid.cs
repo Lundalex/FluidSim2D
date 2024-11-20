@@ -10,6 +10,7 @@ using PM = ProgramManager;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
 {
+    public bool DoCenterPosition = false;
     public EditorRenderMethod editorRenderMethod;
     public int MaxGizmosIterations = 20000;
     [Range(0.1f, 10.0f)] public float editorGridSpacing = 0.5f;
@@ -26,12 +27,17 @@ public class SceneFluid : Polygon
     private PTypeInput pTypeInput;
     private Main main;
 
+    // Editor
+    private int framesSinceLastPositionChange = 0;
+    private Vector2 lastFramePosition = Vector2.zero;
+
 #region Editor
     private void OnEnable()
     {
     #if UNITY_EDITOR
         EditorApplication.update += EditorUpdate;
     #endif
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
     }
 
     private void OnDisable()
@@ -46,8 +52,22 @@ public class SceneFluid : Polygon
     {
         if (!Application.isPlaying)
         {
-            if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+            // Avoid continuing if the position field is currently being modified
+            if (lastFramePosition.x != transform.position.x || lastFramePosition.y != transform.position.y)
+            {
+                lastFramePosition = transform.position;
+                framesSinceLastPositionChange = 0;
+            }
+            else framesSinceLastPositionChange++;
+            if (framesSinceLastPositionChange < 10) return;
 
+            // Check whether to center the position
+            if (DoCenterPosition)
+            {
+                CenterPolygonPosition();
+                DoCenterPosition = false;
+            }
+            
             if (snapPointToGrid)
             {
                 Vector2[] points = polygonCollider.points;
@@ -145,5 +165,32 @@ public class SceneFluid : Polygon
             temperatureExchangeBuffer = 0.0f,
             lastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll // flattened equivelant to PType = 1
         };
+    }
+
+    public void CenterPolygonPosition()
+    {
+        // Get the collider's points
+        Vector2[] points = polygonCollider.points;
+
+        // Calculate the centroid of the collider in local space
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2 point in points)
+        {
+            centroid += point;
+        }
+        centroid /= points.Length;
+
+        // Move the transform's position by the centroid offset
+        Vector3 worldCentroidOffset = transform.TransformVector(centroid);
+        transform.position += worldCentroidOffset;
+
+        // Adjust points so that centroid is at local (0,0)
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] -= centroid;
+        }
+
+        // Apply the adjusted points back to the collider
+        polygonCollider.points = points;
     }
 }

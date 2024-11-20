@@ -4,7 +4,7 @@ using PM = ProgramManager;
 public class ProgramLifeCycleManager : MonoBehaviour
 {
     [Header("Editor Settings")]
-    [SerializeField] private bool darkMode;
+    public bool darkMode;
 
     [Header("Serialized Fields")]
     [SerializeField] private Main main;
