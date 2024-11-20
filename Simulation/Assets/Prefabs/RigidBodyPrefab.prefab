@@ -45,20 +45,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60f0f9d213ee0c84c9b15bf4d21012c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  snapPointToGrid: 1
+  gridSpacing: 5
   LineColor: {r: 0, g: 0, b: 0, a: 1}
   BodyColor: {r: 0, g: 1, b: 0.060328007, a: 1}
   DoDrawBody: 1
   EditorLineAnimationSpeed: 10
   defaultGridSpacing: 0.5
-  LinkedSensors:
-  - {fileID: 0}
+  LinkedSensors: []
   RBInput:
     includeInSimulation: 1
     overrideCentroid: 0
-    isCollider: 0
-    canMove: 0
+    isCollider: 1
+    canMove: 1
     canRotate: 1
-    mass: 2000
+    mass: 1000
     gravity: 5
     elasticity: 0.3
     heatingStrength: 0
@@ -67,7 +68,7 @@ MonoBehaviour:
     springRestLength: 0
     damping: 0
     localLinkPosThisRB:
-      x: 0.1
+      x: 0
       y: 0
     localLinkPosOtherRB:
       x: 0
@@ -80,8 +81,8 @@ MonoBehaviour:
     renderPriority: 1
     matIndex: 1
     springMatIndex: 0
-  approximatedSpringLength: 0
-  approximatedSpringForce: 0
+  approximatedSpringLength: No Active Spring Link
+  approximatedSpringForce: No Active Spring Link
 --- !u!60 &6132482722789610898
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -128,8 +129,8 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.54416573, y: 2.5947335}
-      - {x: 1.1760406, y: 0.24019265}
-      - {x: 3.6840858, y: 0.30595565}
-      - {x: 3.075878, y: 2.668867}
+    - - {x: -1, y: 1}
+      - {x: -1, y: -0.16666667}
+      - {x: 4, y: -0.16666667}
+      - {x: 4, y: 1}
   m_UseDelaunayMesh: 0

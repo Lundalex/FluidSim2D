@@ -22,6 +22,12 @@ MonoBehaviour:
     - Locale-sv
     - Preload
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8d6a894e61693b743802eff0c5e2f1e9
+    m_Address: StartInfoTable_sv
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-sv
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b0740738d4853fb4680968e87fa03c72
     m_Address: UserFieldTitles_sv
     m_ReadOnly: 1

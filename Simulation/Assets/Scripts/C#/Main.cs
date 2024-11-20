@@ -291,7 +291,11 @@ public class Main : MonoBehaviour
             debugger.CheckShaderConstants(this, debugShader);
         }
 
+        // Initialize the compute shader pipeline
         GPUSortChunkLookUp();
+        GPUSortSpringLookUp();
+        PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
+        UpdateScript();
 
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies. Platform: " + Application.platform);
     }

@@ -743,7 +743,7 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     // Positional correction to prevent sinking
     float penetrationDepth = -dot(collisionPoint - (rb.pos + r), normal);
 
-    float epsilonCorrection = 0.3; // Small additional correction to prevent slow "sinking" through the borders
+    float epsilonCorrection = 0.1; // Small additional correction to prevent slow "sinking" through the borders
     float2 correction = (max(penetrationDepth, -epsilonCorrection) + epsilonCorrection) * normal;
     rb.pos += correction;
 }

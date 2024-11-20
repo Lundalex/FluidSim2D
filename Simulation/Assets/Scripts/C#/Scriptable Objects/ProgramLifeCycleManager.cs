@@ -3,9 +3,26 @@ using PM = ProgramManager;
 
 public class ProgramLifeCycleManager : MonoBehaviour
 {
+    [Header("Editor Settings")]
+    [SerializeField] private bool darkMode;
+
+    [Header("Serialized Fields")]
     [SerializeField] private Main main;
+    [SerializeField] private GameObject darkBackground;
+    [SerializeField] private GameObject startConfirmationWindow;
+
+    private void OnValidate()
+    {
+        #if UNITY_EDITOR
+            darkBackground.SetActive(darkMode);
+        #endif
+    }
     
-    private void Awake() => PM.Instance.ResetDatas();
+    private void Awake()
+    {
+        PM.Instance.ResetDatas();
+        darkBackground.SetActive(true);
+    }
 
     private void Start()
     {
@@ -22,13 +39,20 @@ public class ProgramLifeCycleManager : MonoBehaviour
 
         PM.Instance.main = main;
         PM.Instance.Start();
+
+        PM.Instance.Update();
     }
 
     private void Update() => PM.Instance.Update();
 
     public void OnStartConfirmation()
     {
+        darkBackground.transform.SetParent(startConfirmationWindow.transform);
+        darkBackground.transform.SetSiblingIndex(0);
+
         PM.Instance.startConfirmed = true;
-        PM.Instance.programPaused = false;
+
+        PM.Instance.startConfirmationStopWatch = new();
+        PM.Instance.startConfirmationStopWatch.Start();
     }
 }

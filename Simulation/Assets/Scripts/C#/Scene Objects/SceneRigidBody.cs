@@ -79,14 +79,19 @@ public class SceneRigidBody : Polygon
             if (snapPointToGrid)
             {
                 Vector2[] points = polygonCollider.points;
+                Transform colliderTransform = polygonCollider.transform;
 
-                // Snap points to grid
+                // Snap points to grid in world space
                 for (int i = 0; i < points.Length; i++)
                 {
-                    points[i] = new Vector2(
-                        Mathf.Round(points[i].x / gridSpacing) * gridSpacing,
-                        Mathf.Round(points[i].y / gridSpacing) * gridSpacing
+                    Vector2 worldPoint = colliderTransform.TransformPoint(points[i]);
+
+                    worldPoint = new Vector2(
+                        Mathf.Round(worldPoint.x / gridSpacing) * gridSpacing,
+                        Mathf.Round(worldPoint.y / gridSpacing) * gridSpacing
                     );
+
+                    points[i] = colliderTransform.InverseTransformPoint(worldPoint);
                 }
 
                 polygonCollider.points = points;

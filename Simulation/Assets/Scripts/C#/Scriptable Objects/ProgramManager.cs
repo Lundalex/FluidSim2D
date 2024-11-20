@@ -24,11 +24,10 @@ public class ProgramManager : ScriptableObject
     // Globally accessed variables
     [NonSerialized] public bool programStarted = false;
     [NonSerialized] public bool doOnSettingsChanged = false;
-    [NonSerialized] public float globalBrightnessFactor = 1;
+    [NonSerialized] public float globalBrightnessFactor = -1;
     [NonSerialized] public float timeScale = 1;
     [NonSerialized] public bool isAnySensorSettingsViewActive = false;
     [NonSerialized] public bool programPaused = true;
-    [NonSerialized] public bool startConfirmed = false;
     [NonSerialized] public bool frameStep = false;
     [NonSerialized] public float totalTimeElapsed = 0;
     [NonSerialized] public int frameCount = 0;
@@ -40,6 +39,12 @@ public class ProgramManager : ScriptableObject
     private const float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
     public event Action OnNewLanguageSelected;
+
+    // Start confirmation timing
+    [NonSerialized] public bool startConfirmed = false;
+    [NonSerialized] public bool startConfirmationDelayActive = true;
+    [NonSerialized] public Stopwatch startConfirmationStopWatch;
+    private float msStartConfimationDelay = 650.0f;
 
     // Private - Camera
     private Camera uiCam;
@@ -84,8 +89,9 @@ public class ProgramManager : ScriptableObject
 
     public void Update()
     {
-        if (!startConfirmed) programPaused = true;
+        CheckStartConfirmation();
         bool doResetScene = CheckKeyInputs();
+        frameCount++;
 
         if (doResetScene)
         {
@@ -131,6 +137,23 @@ public class ProgramManager : ScriptableObject
             totalTimeElapsed += clampedDeltaTime;
         }
         else main.RunRenderShader();
+    }
+
+    private void CheckStartConfirmation()
+    {
+        if (!startConfirmed) programPaused = true;
+        else
+        {
+            if (startConfirmationStopWatch.ElapsedMilliseconds > msStartConfimationDelay)
+            {
+                if (startConfirmationDelayActive)
+                {
+                    startConfirmationDelayActive = false;
+                    programPaused = false;
+                }
+            }
+            else programPaused = true;
+        }
     }
 
     private bool CheckKeyInputs()
@@ -197,10 +220,11 @@ public class ProgramManager : ScriptableObject
         isAnySensorSettingsViewActive = false;
         programPaused = false;
         startConfirmed = false;
+        startConfirmationDelayActive = true;
         
         totalTimeElapsed = 0;
         frameCount = 0;
-        globalBrightnessFactor = 1;
+        globalBrightnessFactor = -1;
 
         performanceMisses = 0;
 
@@ -279,8 +303,11 @@ public class ProgramManager : ScriptableObject
 
     private void LerpGlobalBrightness(float deltaTime)
     {
-        float target = 1f - main.SettingsViewDarkTintPercent * (isAnySensorSettingsViewActive ? 1f : 0f);
-        globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, deltaTime * main.GlobalSettingsViewChangeSpeed);
+        bool applyDarkening = isAnySensorSettingsViewActive;
+        float target = 1f - main.SettingsViewDarkTintPercent * (applyDarkening ? 1f : 0f);
+        
+        if (globalBrightnessFactor == -1) globalBrightnessFactor = target;
+        else globalBrightnessFactor = Mathf.Lerp(globalBrightnessFactor, target, deltaTime * main.GlobalSettingsViewChangeSpeed);
     }
 
     private void LerpTimeScale(float deltaTime)
