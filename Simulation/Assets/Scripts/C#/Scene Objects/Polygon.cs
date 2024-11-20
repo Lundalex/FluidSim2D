@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
-using UnityEditor;
 
 [ExecuteAlways]
 public class Polygon : MonoBehaviour
@@ -13,45 +12,7 @@ public class Polygon : MonoBehaviour
     public Color BodyColor = Color.white;
     [NonSerialized] public List<Edge> Edges = new();
     [NonSerialized] public List<Vector2> MeshPoints = new();
-    PolygonCollider2D polygonCollider;
-
-#region Editor
-    private void OnEnable()
-    {
-    #if UNITY_EDITOR
-        EditorApplication.update += EditorUpdate;
-    #endif
-    }
-
-    private void OnDisable()
-    {
-    #if UNITY_EDITOR
-        EditorApplication.update -= EditorUpdate;
-    #endif
-    }
-
-    #if UNITY_EDITOR
-    private void EditorUpdate()
-    {
-        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-
-        if (snapPointToGrid)
-        {
-            Vector2[] points = polygonCollider.points;
-
-            for (int i = 0; i < points.Length; i++)
-            {
-                points[i] = new Vector2(
-                    Mathf.Round(points[i].x / gridSpacing) * gridSpacing,
-                    Mathf.Round(points[i].y / gridSpacing) * gridSpacing
-                );
-            }
-
-            polygonCollider.points = points;
-        }
-    }
-    #endif
-#endregion
+    [NonSerialized] public PolygonCollider2D polygonCollider;
 
     public void SetPolygonData(Vector2? offsetInput = null)
     {

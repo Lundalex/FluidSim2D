@@ -27,7 +27,8 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public float globalBrightnessFactor = 1;
     [NonSerialized] public float timeScale = 1;
     [NonSerialized] public bool isAnySensorSettingsViewActive = false;
-    [NonSerialized] public bool programPaused = false;
+    [NonSerialized] public bool programPaused = true;
+    [NonSerialized] public bool startConfirmed = false;
     [NonSerialized] public bool frameStep = false;
     [NonSerialized] public float totalTimeElapsed = 0;
     [NonSerialized] public int frameCount = 0;
@@ -37,7 +38,6 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public int2 ResolutionInt2;
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
-    private const int SceneLoadPauseFrameLength = 10;
     [NonSerialized] public Vector2 ScreenToViewFactor;
     public event Action OnNewLanguageSelected;
 
@@ -84,6 +84,7 @@ public class ProgramManager : ScriptableObject
 
     public void Update()
     {
+        if (!startConfirmed) programPaused = true;
         bool doResetScene = CheckKeyInputs();
 
         if (doResetScene)
@@ -112,15 +113,11 @@ public class ProgramManager : ScriptableObject
         }
 
         bool simulateThisFrame = false;
-        bool pauseOnSceneLoadActive = frameCount++ <= SceneLoadPauseFrameLength;
-        if (!pauseOnSceneLoadActive)
+        if (!programPaused || frameStep) simulateThisFrame = true;
+        if (programPaused && frameStep)
         {
-            if (!programPaused || frameStep) simulateThisFrame = true;
-            if (programPaused && frameStep)
-            {
-                StringUtils.LogIfInEditor("Stepped forward 1 frame");
-                frameStep = false;
-            }
+            StringUtils.LogIfInEditor("Stepped forward 1 frame");
+            frameStep = false;
         }
 
         if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
@@ -199,6 +196,7 @@ public class ProgramManager : ScriptableObject
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
+        startConfirmed = false;
         
         totalTimeElapsed = 0;
         frameCount = 0;

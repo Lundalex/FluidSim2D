@@ -26,6 +26,48 @@ public class SceneFluid : Polygon
     private PTypeInput pTypeInput;
     private Main main;
 
+#region Editor
+    private void OnEnable()
+    {
+    #if UNITY_EDITOR
+        EditorApplication.update += EditorUpdate;
+    #endif
+    }
+
+    private void OnDisable()
+    {
+    #if UNITY_EDITOR
+        EditorApplication.update -= EditorUpdate;
+    #endif
+    }
+
+    #if UNITY_EDITOR
+    private void EditorUpdate()
+    {
+        if (!Application.isPlaying)
+        {
+            if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+
+            if (snapPointToGrid)
+            {
+                Vector2[] points = polygonCollider.points;
+
+                // Snap points to grid
+                for (int i = 0; i < points.Length; i++)
+                {
+                    points[i] = new Vector2(
+                        Mathf.Round(points[i].x / gridSpacing) * gridSpacing,
+                        Mathf.Round(points[i].y / gridSpacing) * gridSpacing
+                    );
+                }
+
+                polygonCollider.points = points;
+            }
+        }
+    }
+    #endif
+#endregion
+
     private void OnValidate() => PM.Instance.doOnSettingsChanged = true;
     
     public PData[] GenerateParticles(Vector2 pointOffset, float gridSpacing = 0)
@@ -56,7 +98,8 @@ public class SceneFluid : Polygon
         if (editorView) gridSpacing = editorGridSpacing;
         else if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
 
-        List<Vector2> generatedPoints = new();
+        SceneRigidBody[] allRigidBodies = SceneManager.GetAllSceneRigidBodies();
+        SceneFluid[] allFluids = SceneManager.GetAllSceneFluids();
 
         // Find the bounding box of the polygon
         Vector2 min = Func.MinVector2(Edges.Select(edge => Func.MinVector2(edge.start, edge.end)).ToArray());
@@ -64,13 +107,14 @@ public class SceneFluid : Polygon
 
         // Generate grid points within the bounding box
         int iterationCount = 0;
+        List<Vector2> generatedPoints = new();
         for (float x = min.x; x <= max.x; x += gridSpacing)
         {
             for (float y = min.y; y <= max.y; y += gridSpacing)
             {
                 Vector2 point = new(x, y);
 
-                if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point) && sceneManager.IsSpaceEmpty(point, this))
+                if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point) && sceneManager.IsSpaceEmpty(point, this, allRigidBodies, allFluids))
                 {
                     if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints;
 

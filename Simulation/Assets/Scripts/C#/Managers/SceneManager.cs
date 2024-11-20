@@ -64,11 +64,8 @@ public class SceneManager : MonoBehaviour
         return isInsideBounds;
     }
 
-    public bool IsSpaceEmpty(Vector2 point, SceneFluid thisFluid)
+    public bool IsSpaceEmpty(Vector2 point, SceneFluid thisFluid, SceneRigidBody[] allRigidBodies, SceneFluid[] allFluids)
     {
-        SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
-        SceneFluid[] allFluids = GetAllSceneFluids();
-
         // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
@@ -179,6 +176,13 @@ public class SceneManager : MonoBehaviour
 
         SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
 
+        // Remove duplicate points
+        foreach (SceneRigidBody rigidBody in allRigidBodies)
+        {
+            if (rigidBody.polygonCollider == null) rigidBody.polygonCollider = rigidBody.GetComponent<PolygonCollider2D>();
+            rigidBody.polygonCollider.points = ArrayUtils.RemoveAdjacentDuplicates(rigidBody.polygonCollider.points);
+        }
+
         Vector2 offset = GetBoundsOffset();
 
         // Get the rigidBody data for each rigidBody
@@ -262,7 +266,7 @@ public class SceneManager : MonoBehaviour
         return vectors;
     }
 
-    private SceneRigidBody[] GetAllSceneRigidBodies()
+    public static SceneRigidBody[] GetAllSceneRigidBodies()
     {
         GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
         SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
@@ -271,7 +275,7 @@ public class SceneManager : MonoBehaviour
         return allRigidBodies;
     }
 
-    private SceneFluid[] GetAllSceneFluids()
+    public static SceneFluid[] GetAllSceneFluids()
     {
         GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
         SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];

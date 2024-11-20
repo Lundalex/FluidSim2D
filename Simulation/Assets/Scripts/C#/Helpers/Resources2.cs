@@ -228,4 +228,47 @@ namespace Resources2
         public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
         public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     }
+
+    public class ArrayUtils
+    {
+        public static T[] RemoveElementAtIndex<T>(ref T[] array, int index)
+        {
+            if (index < 0 || index >= array.Length)
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of bounds.");
+
+            // Create a new array with one less element
+            T[] newArray = new T[array.Length - 1];
+            int newIndex = 0;
+
+            // Copy elements except the one to remove
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (i != index)
+                {
+                    newArray[newIndex] = array[i];
+                    newIndex++;
+                }
+            }
+
+            return newArray;
+        }
+
+        public static Vector2[] RemoveAdjacentDuplicates(Vector2[] array)
+        {
+            if (array == null || array.Length == 0) return array;
+
+            for (int i = 0; i < array.Length - 1; i++)
+            {
+                Vector2 a = array[i];
+                Vector2 b = array[i + 1];
+                if (a.x == b.x && a.y == b.y)
+                {
+                    RemoveElementAtIndex(ref array, i + 1);
+                    i--;
+                }
+            }
+
+            return array;
+        }
+    }
 }

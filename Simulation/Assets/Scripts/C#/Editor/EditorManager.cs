@@ -199,6 +199,63 @@ public class EditorManager : Editor
             rigidBody.approximatedSpringLength = "No Active Spring Link";
             rigidBody.approximatedSpringForce = "No Active Spring Link";
         }
+
+        // Draw horizontal and vertical lines from any potentially hovered point
+        DrawLinesFromHoveredPoint(rigidBody);
+    }
+
+    static void DrawLinesFromHoveredPoint(Polygon rigidBody)
+    {
+        if (rigidBody.polygonCollider == null || rigidBody.polygonCollider.points.Length == 0) return;
+
+        // Get the points
+        Vector2[] colliderPoints = rigidBody.polygonCollider.points;
+
+        // Transform the local collider points to world space
+        Vector3[] worldPoints = new Vector3[colliderPoints.Length];
+        for (int i = 0; i < colliderPoints.Length; i++)
+        {
+            worldPoints[i] = rigidBody.transform.TransformPoint(colliderPoints[i]);
+        }
+
+        // Get mouse position in world space
+        Event currentEvent = Event.current;
+        Vector2 mousePosition = HandleUtility.GUIPointToWorldRay(currentEvent.mousePosition).origin;
+
+        // Find the closest point to the mouse position within the proximity threshold
+        int closestIndex = -1;
+        float closestDistance = float.MaxValue;
+
+        for (int i = 0; i < worldPoints.Length; i++)
+        {
+            float distance = Vector2.Distance(mousePosition, worldPoints[i]);
+            if (distance < 1 && distance < closestDistance)
+            {
+                closestIndex = i;
+                closestDistance = distance;
+            }
+        }
+
+        // If a point is close enough to the mouse cursor, draw lines from it
+        if (closestIndex != -1)
+        {
+            Vector3 selectedPoint = worldPoints[closestIndex];
+
+            float lineLength = 1000f;
+            float axisLineThickness = 0.25f;
+
+            // Draw horizontal line
+            Vector3 leftPoint = new(-lineLength, selectedPoint.y, 0);
+            Vector3 rightPoint = new(lineLength, selectedPoint.y, 0);
+            Handles.color = Color.black;
+            DrawThickLine(leftPoint, rightPoint, axisLineThickness);
+
+            // Draw vertical line
+            Vector3 topPoint = new(selectedPoint.x, lineLength, 0);
+            Vector3 bottomPoint = new(selectedPoint.x, -lineLength, 0);
+            Handles.color = Color.black;
+            DrawThickLine(topPoint, bottomPoint, axisLineThickness);
+        }
     }
 
     public static void DrawDashedLine(Color lineColor, Vector3 from, Vector3 to, float dashLength, float lineThickness, float animationSpeed, bool drawArrowHead = false, float arrowHeadSize = 5.0f) // float arrowHeadSize
@@ -313,6 +370,9 @@ public class EditorManager : Editor
             // Draw the quad
             Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
         }
+
+        // Draw horizontal and vertical lines from any potentially hovered point
+        DrawLinesFromHoveredPoint(fluid);
     }
 
     // Draw rigid body objects

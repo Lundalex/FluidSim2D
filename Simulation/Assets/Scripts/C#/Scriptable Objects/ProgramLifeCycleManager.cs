@@ -25,4 +25,10 @@ public class ProgramLifeCycleManager : MonoBehaviour
     }
 
     private void Update() => PM.Instance.Update();
+
+    public void OnStartConfirmation()
+    {
+        PM.Instance.startConfirmed = true;
+        PM.Instance.programPaused = false;
+    }
 }

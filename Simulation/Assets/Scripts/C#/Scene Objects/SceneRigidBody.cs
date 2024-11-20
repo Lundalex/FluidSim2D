@@ -73,6 +73,24 @@ public class SceneRigidBody : Polygon
                 RBInput.localLinkPosThisRB = Vector2.zero;
                 lastLinkType = RBInput.linkType;
             }
+
+            if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+
+            if (snapPointToGrid)
+            {
+                Vector2[] points = polygonCollider.points;
+
+                // Snap points to grid
+                for (int i = 0; i < points.Length; i++)
+                {
+                    points[i] = new Vector2(
+                        Mathf.Round(points[i].x / gridSpacing) * gridSpacing,
+                        Mathf.Round(points[i].y / gridSpacing) * gridSpacing
+                    );
+                }
+
+                polygonCollider.points = points;
+            }
         }
     }
     #endif
