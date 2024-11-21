@@ -23,8 +23,8 @@ public class EditorManager : Editor
         SceneRigidBody otherRigidBody = rigidBody.RBInput.linkedRigidBody;
 
         // Get the world position of the link points
-        Vector2 startPoint = rigidBody.ComputeCentroid(gridDensity) + (Vector2)rigidBody.RBInput.localLinkPosThisRB;
-        Vector2 endPoint = otherRigidBody.ComputeCentroid(gridDensity) + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+        Vector2 startPoint = rigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosThisRB;
+        Vector2 endPoint = otherRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
 
         return (startPoint, endPoint);
     }
