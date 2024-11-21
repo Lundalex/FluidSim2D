@@ -405,6 +405,7 @@ public class Main : MonoBehaviour
         pSimShader.SetBool("LMousePressed", MousePressed.x);
         pSimShader.SetBool("RMousePressed", MousePressed.y);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
+        rbSimShader.SetFloat("TimeElapsed", PM.Instance.totalTimeElapsed);
         rbSimShader.SetVector("MousePos", mouseSimPos);
         rbSimShader.SetBool("RMousePressed", MousePressed.x);
         rbSimShader.SetBool("LMousePressed", MousePressed.y);

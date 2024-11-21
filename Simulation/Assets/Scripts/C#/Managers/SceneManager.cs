@@ -168,9 +168,9 @@ public class SceneManager : MonoBehaviour
         return allPDatas;
     }
 
-    public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridDensityInput = null)
+    public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridSpacingInput = null)
     {
-        float rbCalcGridDensity = rbCalcGridDensityInput ?? 0.2f;
+        float rbCalcGridDensity = rbCalcGridSpacingInput ?? 0.2f;
 
         if (!referencesHaveBeenSet) SetReferences();
 
@@ -204,15 +204,15 @@ public class SceneManager : MonoBehaviour
             // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.RBInput;
             int springLinkedRBIndex = rbInput.linkedRigidBody == null ? -1 : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
-            if (rigidBody.RBInput.linkType == LinkType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            if (rigidBody.RBInput.constraintType == ConstraintType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
             else if (i == springLinkedRBIndex)
             {
                 Debug.LogWarning("Attempted to link rigid body via spring to itself. Link will be removed");
-                rbInput.linkType = LinkType.None;
+                rbInput.constraintType = ConstraintType.None;
             }
 
             if (springLinkedRBIndex != -1 && rbInput.localLinkPosThisRB.x != 0 && rbInput.localLinkPosThisRB.y != 0 &&
-                rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.linkType == LinkType.Rigid)
+                rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.constraintType == ConstraintType.Rigid)
                 Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
             
             // Initialize the rigid body data
@@ -286,6 +286,7 @@ public class SceneManager : MonoBehaviour
 
     private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos)
     {
+        bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
         return new RBData
         {
             pos = pos,
@@ -294,7 +295,7 @@ public class SceneManager : MonoBehaviour
             nextVel = 0,
             rotVel_AsInt = rbInput.canRotate ? Func.FloatAsInt(rbInput.angularVelocity, main.FloatIntPrecisionRB) : 0,
             totRot = 0,
-            mass = rbInput.canMove ? rbInput.mass : 0,
+            mass = canMove ? rbInput.mass : ((rbInput.constraintType == ConstraintType.LinearMotor) ? (rbInput.doRoundTrip ? -2 : -1) : 0),
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
             elasticity = rbInput.isCollider ? rbInput.elasticity : -1,
@@ -302,12 +303,14 @@ public class SceneManager : MonoBehaviour
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = (rbInput.linkType == LinkType.Spring || rbInput.linkType == LinkType.Rigid) ? linkedRBIndex : -1,
-            springStiffness = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springStiffness,
-            springRestLength = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.springRestLength,
-            damping = rbInput.linkType == LinkType.Rigid ? 0 : rbInput.damping,
-            localLinkPosThisRB = rbInput.localLinkPosThisRB,
-            localLinkPosOtherRB = rbInput.localLinkPosOtherRB,
+            linkedRBIndex = (rbInput.constraintType == ConstraintType.Spring || rbInput.constraintType == ConstraintType.Rigid) ? linkedRBIndex : -1,
+            springStiffness = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springStiffness,
+            springRestLength = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springRestLength,
+            damping = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.damping,
+            localLinkPosThisRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.startPos : rbInput.localLinkPosThisRB,
+            localLinkPosOtherRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.endPos : rbInput.localLinkPosOtherRB,
+            // Linear motor
+            lerpSpeed = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.lerpSpeed : 0,
             // Heating
             heatingStrength = rbInput.heatingStrength,
             // Recorded spring force

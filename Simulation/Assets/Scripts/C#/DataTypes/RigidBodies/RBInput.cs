@@ -21,13 +21,19 @@ public struct RBInput
     public float heatingStrength;
 
     [Header("Inter-RB Links")]
-    public LinkType linkType;
+    public ConstraintType constraintType;
     public float springStiffness;
     public float springRestLength;
     public float damping;
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
     public SceneRigidBody linkedRigidBody;
+
+    [Header("Linear Motor")]
+    public float lerpSpeed;
+    public bool doRoundTrip;
+    public float2 startPos;
+    public float2 endPos;
 
     [Header("Starting Velocities")]
     public float angularVelocity;

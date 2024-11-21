@@ -151,10 +151,10 @@ public class EditorManager : Editor
         DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
 
         // Draw spring
-        if (rigidBody.RBInput.linkType == LinkType.Spring && rigidBody.RBInput.linkedRigidBody != null)
+        if (rigidBody.RBInput.constraintType == ConstraintType.Spring && rigidBody.RBInput.linkedRigidBody != null)
         {   
-            float gridDensity = 3.0f; // A higher value results in a lower performance cost, but also slightly decreases centroid approximation accuracy
-            (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridDensity);
+            float gridSpacing = 1.5f; // A higher value results in a lower performance cost, but also slightly decreases centroid approximation accuracy
+            (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridSpacing);
 
             float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
             float approxForce = rigidBody.RBInput.springStiffness * Mathf.Abs(rigidBody.RBInput.springRestLength - approxLength);
@@ -169,14 +169,26 @@ public class EditorManager : Editor
             // Draw spring
             DrawZigZagSpring(startPoint, endPoint, lerpColor, springsceneObjectLineThickness, springAmplitude, numSpringPoints);
 
-            float radius = 2.5f;
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(startPoint, radius);
-            Gizmos.DrawSphere(endPoint, radius);
+            DrawSmallDot(startPoint);
+            DrawSmallDot(endPoint);
+        }
+        else if (rigidBody.RBInput.constraintType == ConstraintType.LinearMotor)
+        {
+            Vector2 startPoint = rigidBody.RBInput.startPos;
+            Vector2 endPoint = rigidBody.RBInput.endPos;
+
+            Color orangeColor = new(1.0f, 0.15f, 0.0f);
+            DrawDashedLine(orangeColor, endPoint, startPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
+
+            DrawLargeDot(startPoint);
+            DrawLargeDot(endPoint);
+
+            rigidBody.approximatedSpringLength = "No Active Spring Link";
+            rigidBody.approximatedSpringForce = "No Active Spring Link";
         }
         else
         {
-            if (rigidBody.RBInput.linkType == LinkType.Rigid)
+            if (rigidBody.RBInput.constraintType == ConstraintType.Rigid)
             {
                 // Calculate line points
                 Vector2 thisRBCentroid = rigidBody.cashedCentroid;
@@ -189,13 +201,9 @@ public class EditorManager : Editor
                 DrawDashedLine(orangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
                 
                 // Draw start and end points
-                Gizmos.color = Color.red;
-                if (thisRBCentroid != Vector2.positiveInfinity) Gizmos.DrawSphere(thisRBCentroid, 2.5f);
-                if (otherRBCentroid != Vector2.positiveInfinity) Gizmos.DrawSphere(otherRBCentroid, 2.5f);
-                Gizmos.color = new(1.0f, 1.0f, 0.0f);
-                if (LinkPos != Vector2.positiveInfinity) Gizmos.DrawSphere(LinkPos, 4.5f);
-                Gizmos.color = new(1.0f, 0.05f, 0.0f);
-                if (LinkPos != Vector2.positiveInfinity) Gizmos.DrawSphere(LinkPos, 3.5f);
+                DrawSmallDot(thisRBCentroid);
+                DrawSmallDot(otherRBCentroid);
+                DrawLargeDot(LinkPos);
             }
 
             rigidBody.approximatedSpringLength = "No Active Spring Link";
@@ -257,6 +265,26 @@ public class EditorManager : Editor
             Vector3 topPoint = new(selectedPoint.x, hoveredPointLineLength, 0);
             Vector3 bottomPoint = new(selectedPoint.x, -hoveredPointLineLength, 0);
             DrawThickLine(topPoint, bottomPoint, hoveredPointAxisLineThickness);
+        }
+    }
+
+    public static void DrawSmallDot(Vector2 pos)
+    {
+        if (pos != Vector2.positiveInfinity)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(pos, 2.5f);
+        }
+    }
+
+    public static void DrawLargeDot(Vector2 pos)
+    {
+        if (pos != Vector2.positiveInfinity)
+        {
+            Gizmos.color = new(1.0f, 1.0f, 0.0f);
+            Gizmos.DrawSphere(pos, 4.5f);
+            Gizmos.color = new(1.0f, 0.05f, 0.0f);
+            Gizmos.DrawSphere(pos, 3.5f);
         }
     }
 

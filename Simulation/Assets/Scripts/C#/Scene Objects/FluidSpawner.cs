@@ -26,6 +26,8 @@ public class FluidSpawner : Polygon
 
     private void OnValidate() => generatedPoints = null;
 
+    public override void OnEditorUpdate() { } // Not used
+
     public PData[] GenerateParticles()
     {
         if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();

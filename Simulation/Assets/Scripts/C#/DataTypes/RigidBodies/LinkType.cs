@@ -1,6 +1,7 @@
-public enum LinkType
+public enum ConstraintType
 {
     Spring,
     Rigid,
+    LinearMotor,
     None
 };

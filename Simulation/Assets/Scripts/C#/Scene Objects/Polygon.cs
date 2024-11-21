@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using UnityEditor;
 
 [ExecuteAlways]
-public class Polygon : MonoBehaviour
+public abstract class Polygon : MonoBehaviour
 {
     [Header("Editor Settings")]
     public bool snapPointToGrid = true;
@@ -14,6 +15,29 @@ public class Polygon : MonoBehaviour
     [NonSerialized] public List<Vector2> MeshPoints = new();
     [NonSerialized] public PolygonCollider2D polygonCollider;
 
+#region Editor
+    private void OnEnable()
+    {
+    #if UNITY_EDITOR
+        EditorApplication.update += EditorUpdate;
+    #endif
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+    }
+
+    private void OnDisable()
+    {
+    #if UNITY_EDITOR
+        EditorApplication.update -= EditorUpdate;
+    #endif
+    }
+
+    #if UNITY_EDITOR
+    private void EditorUpdate() => OnEditorUpdate();
+    #endif
+#endregion
+
+    public abstract void OnEditorUpdate();
+    
     public void SetPolygonData(Vector2? offsetInput = null)
     {
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();

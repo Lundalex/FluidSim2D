@@ -29,7 +29,7 @@ public class SceneRigidBody : Polygon
     [NonSerialized] public Vector2 lastPosition = Vector2.positiveInfinity;
     [NonSerialized] public Vector2 cashedCentroid = Vector2.positiveInfinity;
     [NonSerialized] public Vector2 cashedRelativeLinkPos;
-    [NonSerialized] public LinkType lastLinkType;
+    [NonSerialized] public ConstraintType lastLinkType;
     [NonSerialized] public Vector2 lastLocalLinkPosThisRB;
     [NonSerialized] public Vector2 lastLocalLinkPosOtherRB;
     [NonSerialized] public bool lastLinkTypeSet = false;
@@ -40,24 +40,8 @@ public class SceneRigidBody : Polygon
     private Vector2 lastFramePosition = Vector2.zero;
 
 #region Editor
-    private void OnEnable()
-    {
     #if UNITY_EDITOR
-        EditorApplication.update += EditorUpdate;
-    #endif
-
-        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-    }
-
-    private void OnDisable()
-    {
-    #if UNITY_EDITOR
-        EditorApplication.update -= EditorUpdate;
-    #endif
-    }
-
-    #if UNITY_EDITOR
-    private void EditorUpdate()
+    public override void OnEditorUpdate()
     {
         if (!Application.isPlaying)
         {
@@ -87,17 +71,20 @@ public class SceneRigidBody : Polygon
                 UpdateCashedData();
             }
 
-            // Reset certain data is the linkType has been modified
+            // Reset certain data is the constraintType has been modified
             if (!lastLinkTypeSet)
             {
-                lastLinkType = RBInput.linkType;
+                lastLinkType = RBInput.constraintType;
                 lastLinkTypeSet = true;
             }
-            if (lastLinkType != RBInput.linkType)
+            if (lastLinkType != RBInput.constraintType)
             {
-                RBInput.localLinkPosOtherRB = Vector2.zero;
-                RBInput.localLinkPosThisRB = Vector2.zero;
-                lastLinkType = RBInput.linkType;
+                if (RBInput.constraintType != ConstraintType.LinearMotor)
+                {
+                    RBInput.localLinkPosOtherRB = Vector2.zero;
+                    RBInput.localLinkPosThisRB = Vector2.zero;
+                }
+                lastLinkType = RBInput.constraintType;
                 CenterPolygonPosition();
             }
 
@@ -112,7 +99,7 @@ public class SceneRigidBody : Polygon
         // Recalculate calculation
         cashedCentroid = ComputeCentroid(defaultGridSpacing);
 
-        if (RBInput.linkType == LinkType.Rigid)
+        if (RBInput.constraintType == ConstraintType.Rigid)
         {
             Vector2 thisCentroid = cashedCentroid;
             Vector2 otherCentroid = RBInput.linkedRigidBody.cashedCentroid;
@@ -128,6 +115,7 @@ public class SceneRigidBody : Polygon
                 cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
             }
         }
+        else if (RBInput.constraintType == ConstraintType.LinearMotor) transform.position = (Vector2)RBInput.startPos;
 
         // Record the current positional data
         if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 20.0f) lastPosition = transform.position;

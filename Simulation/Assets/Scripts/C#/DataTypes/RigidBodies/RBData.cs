@@ -24,6 +24,9 @@ public struct RBData
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
 
+    // Linear motor (link Type)
+    public float lerpSpeed;
+
     // Heating
     public float heatingStrength;
     

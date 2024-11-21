@@ -102,6 +102,9 @@ struct RigidBody
     float2 localLinkPosThisRB;
     float2 localLinkPosOtherRB;
 
+    // Linear motor (link Type)
+    float lerpSpeed;
+
     // Heating
     float heatingStrength;
 

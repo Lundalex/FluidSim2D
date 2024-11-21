@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using Unity.Mathematics;
 using PM = ProgramManager;
+using Unity.VisualScripting;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
@@ -32,23 +33,8 @@ public class SceneFluid : Polygon
     private Vector2 lastFramePosition = Vector2.zero;
 
 #region Editor
-    private void OnEnable()
-    {
     #if UNITY_EDITOR
-        EditorApplication.update += EditorUpdate;
-    #endif
-        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-    }
-
-    private void OnDisable()
-    {
-    #if UNITY_EDITOR
-        EditorApplication.update -= EditorUpdate;
-    #endif
-    }
-
-    #if UNITY_EDITOR
-    private void EditorUpdate()
+    public override void OnEditorUpdate()
     {
         if (!Application.isPlaying)
         {
