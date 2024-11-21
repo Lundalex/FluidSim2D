@@ -627,7 +627,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         #endif
 
         int renderPriority = rb.renderPriority;
-        if (renderPriority > highestRenderPriority && dstSqr < rb.maxRadiusSqr)
+        if (renderPriority > highestRenderPriority && dstSqr < abs(rb.maxRadiusSqr))
         {
             if (IsPointInsideRB(pixelPos, rb))
             {

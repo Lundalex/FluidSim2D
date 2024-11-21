@@ -18,7 +18,7 @@ public class EditorManager : Editor
 
     void OnEditorUpdate() {}
 
-    static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody, float gridDensity)
+    static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody)
     {
         SceneRigidBody otherRigidBody = rigidBody.RBInput.linkedRigidBody;
 
@@ -153,8 +153,7 @@ public class EditorManager : Editor
         // Draw spring
         if (rigidBody.RBInput.constraintType == ConstraintType.Spring && rigidBody.RBInput.linkedRigidBody != null)
         {   
-            float gridSpacing = 1.5f; // A higher value results in a lower performance cost, but also slightly decreases centroid approximation accuracy
-            (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody, gridSpacing);
+            (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody);
 
             float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
             float approxForce = rigidBody.RBInput.springStiffness * Mathf.Abs(rigidBody.RBInput.springRestLength - approxLength);

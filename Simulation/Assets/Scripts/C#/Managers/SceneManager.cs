@@ -299,7 +299,7 @@ public class SceneManager : MonoBehaviour
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
             elasticity = rbInput.isCollider ? rbInput.elasticity : -1,
-            maxRadiusSqr = maxRadiusSqr,
+            maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links

@@ -19,7 +19,6 @@ const uint NumVectors;
 const uint NumParticles;
 const uint ChunksNumAll;
 const uint PTypesNum;
-const uint StepsPerFrame;
 
 // Rigid Body Collision solver settings
 const float RB_RBCollisionCorrectionFactor;
@@ -36,7 +35,7 @@ const float RB_InteractionAttractionPower;
 
 // Per-timestep-set constants
 const float DeltaTime;
-const float TimeElapsed;
+const float SimTimeElapsed;
 const float2 MousePos;
 const bool RMousePressed;
 const bool LMousePressed;
@@ -270,7 +269,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         
         // Early exit if thr two rigid bodies are to far away from each other
         float dst = length(rbB.pos - rbA.pos);
-        float radiusSum = sqrt(rbA.maxRadiusSqr) + sqrt(rbB.maxRadiusSqr);
+        float radiusSum = sqrt(abs(rbA.maxRadiusSqr)) + sqrt(abs(rbB.maxRadiusSqr));
         if (dst > radiusSum) continue;
         
         // Initialize collision data
@@ -437,7 +436,7 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
         if (isNotCollider) continue;
 
         // Check P_RB collision
-        if (dot2(rb.pos - pData.pos) <= rb.maxRadiusSqr)
+        if (dot2(rb.pos - pData.pos) <= abs(rb.maxRadiusSqr))
         {
             bool isInside = IsPointInsideRB(pData.pos, rb);
 
@@ -792,7 +791,7 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         if (isCollider)
         {
             // Make sure rigid body is inside simulation bounds
-            if (IsNearBoundary(rb.pos, rb.maxRadiusSqr))
+            if (IsNearBoundary(rb.pos, abs(rb.maxRadiusSqr)))
             {
                 float2 boundsMin = float2(1.#INF, 1.#INF);
                 float2 boundsMax = float2(-1.#INF, -1.#INF);
@@ -843,7 +842,9 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         rb.pos += Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * DeltaTime;
 
         // Apply forces
-        float2 totForce = float2(0, rb.gravity) + InteractionForce(rb);
+        float2 totForce = float2(0, rb.gravity);
+        bool isInteractable = rb.maxRadiusSqr > 0;
+        if (isInteractable) totForce += InteractionForce(rb);
         rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, INT_FLOAT_PRECISION_RB);
     }
     else if (rb.mass == -1 || rb.mass == -2) // linkType == linearMotor
@@ -853,7 +854,7 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         float2 startPos = rb.localLinkPosThisRB;
         float2 endPos = rb.localLinkPosOtherRB;
         
-        float t0 = (rb.lerpSpeed * TimeElapsed) % 1.0;
+        float t0 = (rb.lerpSpeed * SimTimeElapsed) % 1.0;
         float t = t0;
         
         if (doRoundTrip)
@@ -864,7 +865,7 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         float2 lerpPos = lerp(startPos, endPos, t);
         rb.pos = lerpPos;
 
-        float2 vel = (endPos - startPos) * rb.lerpSpeed * (doRoundTrip ? ((t0 < 0.5) ? 2.0 : -2.0) : 1) / StepsPerFrame;
+        float2 vel = (endPos - startPos) * rb.lerpSpeed * (doRoundTrip ? ((t0 < 0.5) ? 2.0 : -2.0) : 1);
         
         rb.vel_AsInt2 = Float2AsInt2(vel, INT_FLOAT_PRECISION_RB);
     }

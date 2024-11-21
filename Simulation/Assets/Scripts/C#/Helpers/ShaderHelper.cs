@@ -257,8 +257,6 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("NumParticles", m.ParticlesNum);
         rbSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         rbSimShader.SetInt("PTypesNum", m.PTypesNum);
-        rbSimShader.SetInt("StepsPerFrame", m.TimeStepsPerFrame * m.SubTimeStepsPerFrame);
-
 
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
         rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);

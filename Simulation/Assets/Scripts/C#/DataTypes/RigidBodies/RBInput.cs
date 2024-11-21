@@ -8,6 +8,7 @@ public struct RBInput
     [Header("Object Type")]
     public bool includeInSimulation;
     public bool overrideCentroid;
+    public bool isInteractable;
     public bool isCollider;
     public bool canMove;
     public bool canRotate;

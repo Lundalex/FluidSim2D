@@ -241,6 +241,7 @@ public class Main : MonoBehaviour
 
     // Other
     private float DeltaTime;
+    private float SimTimeElapsed;
     private int StepCount = 0;
     private int timeSetRand;
     private bool2 MousePressed = false; // (left, right)
@@ -253,7 +254,8 @@ public class Main : MonoBehaviour
 
         PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
         ParticlesNum = PDatas.Count;
-
+        
+        SimTimeElapsed = 0;
         BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
 
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
@@ -330,6 +332,7 @@ public class Main : MonoBehaviour
                 }
 
                 StepCount++;
+                SimTimeElapsed += DeltaTime;
             }
         }
     }
@@ -405,7 +408,7 @@ public class Main : MonoBehaviour
         pSimShader.SetBool("LMousePressed", MousePressed.x);
         pSimShader.SetBool("RMousePressed", MousePressed.y);
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
-        rbSimShader.SetFloat("TimeElapsed", PM.Instance.totalTimeElapsed);
+        rbSimShader.SetFloat("SimTimeElapsed", SimTimeElapsed);
         rbSimShader.SetVector("MousePos", mouseSimPos);
         rbSimShader.SetBool("RMousePressed", MousePressed.x);
         rbSimShader.SetBool("LMousePressed", MousePressed.y);

@@ -6,7 +6,6 @@ using System.Linq;
 using UnityEditor;
 using Unity.Mathematics;
 using PM = ProgramManager;
-using Unity.VisualScripting;
 
 [RequireComponent(typeof(PolygonCollider2D))]
 public class SceneFluid : Polygon
@@ -115,6 +114,11 @@ public class SceneFluid : Polygon
         // Find the bounding box of the polygon
         Vector2 min = Func.MinVector2(Edges.Select(edge => Func.MinVector2(edge.start, edge.end)).ToArray());
         Vector2 max = Func.MaxVector2(Edges.Select(edge => Func.MaxVector2(edge.start, edge.end)).ToArray());
+
+        min.x -= min.x % editorGridSpacing;
+        min.y -= min.y % editorGridSpacing;
+        max.x += max.x % editorGridSpacing;
+        max.y += max.y % editorGridSpacing;
 
         // Generate grid points within the bounding box
         int iterationCount = 0;
