@@ -52,7 +52,7 @@ public class SensorUI : MonoBehaviour
     private bool fluidSensorTypeDropdownUsed = false;
 
     // Private - Pointer Hover
-    private float pointerHoverTimer = 0.3f;
+    private Timer pointerHoverTimer;
     private const float PointerHoverCooldown = 0.25f;
 
     // Private - Scale
@@ -60,6 +60,8 @@ public class SensorUI : MonoBehaviour
     private readonly Vector3 ScaleFactor = new(0.65f, 1.0f, 1.0f);
     private const float SettingsViewActiveFixedScale = 2.0f;
     private const float GraphViewActiveFixedScale = 1.5f;
+
+    public void Initialize() => pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
 
     public void OnPositionChanged()
     {
@@ -142,8 +144,7 @@ public class SensorUI : MonoBehaviour
 
     public void SetPosition(Vector2 pos)
     {
-        pointerHoverTimer += Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
-        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer > PointerHoverCooldown) || PM.Instance.isAnySensorSettingsViewActive)
+        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer.Check(false)) || PM.Instance.isAnySensorSettingsViewActive)
         {
             pos = rectTransform.localPosition;
             isPointerHovering = true;
@@ -151,7 +152,7 @@ public class SensorUI : MonoBehaviour
         else if (isPointerHovering)
         {
             isPointerHovering = false;
-            pointerHoverTimer = 0.0f;
+            pointerHoverTimer.Reset();
         }
         sensor.graphController.isPointerHovering = isPointerHovering;
 

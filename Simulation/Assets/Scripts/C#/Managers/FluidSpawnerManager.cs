@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using PM = ProgramManager;
 using Resources2;
 
 public class FluidSpawnerManager : MonoBehaviour
@@ -10,30 +9,22 @@ public class FluidSpawnerManager : MonoBehaviour
 
     // Private
     private Main main;
-    private List<float> timers = new();
+    private List<Timer> timers = new();
 
-    public void StartScript()
-    {
-        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
-    }
+    public void StartScript(Main main) => this.main = main;
 
     public void UpdateScript()
     {
         for (int i = 0; i < enabledFluidSpawners.Length; i++)
         {
-            if (i >= timers.Count) timers.Add(0);
-
-            float timer = timers[i];
             FluidSpawner fluidSpawner = enabledFluidSpawners[i];
 
-            timer += Func.SecondsToMs(PM.Instance.clampedDeltaTime);
-            if (timer > fluidSpawner.msSpawnInterval)
+            if (i >= timers.Count) timers.Add(new(Func.MsToSeconds(fluidSpawner.msSpawnInterval), true, true));
+
+            if (timers[i].Check())
             {
-                timer = 0;
                 main.SubmitParticlesToSimulation(fluidSpawner.GenerateParticles());
             }
-
-            timers[i] = timer;
         }
     }
 }

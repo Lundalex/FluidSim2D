@@ -225,14 +225,11 @@ public class Main : MonoBehaviour
     [NonSerialized] public Texture2D GasVelocityGradientTexture;
     [NonSerialized] public GameObject causticsGen;
 
-    // Particle data
+    // New particles data
     private List<PData> NewPDatas = new();
 
     // Materials
     private Mat[] Mats;
-
-    // Constants
-    readonly Vector2 Vector2Half = new(0.5f, 0.5f);
 
     // Other
     private float DeltaTime;
@@ -285,13 +282,12 @@ public class Main : MonoBehaviour
         SetShaderKeywords();
         InitCausticsGen();
 
-        if (Application.isEditor)
-        {
-            ComputeShaderDebugger debugger = new();
-            debugger.CheckShaderConstants(this, debugShader);
-        }
+        // Only use the shader debugger if running in the program in the Unity editor
+        #if UNITY_EDITOR
+            ComputeShaderDebugger.CheckShaderConstants(this, debugShader, pTypeInput);
+        #endif
 
-        // Initialize the compute shader pipeline
+        // Initialize the shader pipeline
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
         PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
@@ -433,7 +429,7 @@ public class Main : MonoBehaviour
         Vector3 mousePosVector3 = Camera.main.ScreenToViewportPoint(Input.mousePosition);
         Vector2 mousePos = new(mousePosVector3.x, mousePosVector3.y);
 
-        Vector2 normalisedMousePos = (mousePos - Vector2Half) / PM.Instance.ScreenToViewFactor + Vector2Half;
+        Vector2 normalisedMousePos = (mousePos - Const.Vector2Half) / PM.Instance.ScreenToViewFactor + Const.Vector2Half;
         Vector2 simSpacePos = normalisedMousePos * new Vector2(BoundaryDims.x, BoundaryDims.y);
 
         return simSpacePos;

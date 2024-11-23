@@ -16,7 +16,6 @@ public class DashedRectangle : MonoBehaviour
 
     // Private variables
     private Vector3 scale = Vector3.one;
-    private readonly Vector2 CenterOffset = new(0.026f, -0.076f);
 
     public void SetPosition(Vector2 pos)
     {
@@ -86,7 +85,7 @@ public class DashedRectangle : MonoBehaviour
                 float angle = Mathf.Lerp(startAngle, endAngle, (float)j / segments);
                 float rad = Mathf.Deg2Rad * angle;
                 Vector2 point = center + new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * radius;
-                positions.Add(point + CenterOffset);
+                positions.Add(point);
             }
         }
 

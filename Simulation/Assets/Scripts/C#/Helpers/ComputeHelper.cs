@@ -9,8 +9,7 @@ using System;
 public static class ComputeHelper
 {
 
-// --- KERNEL DISPATCH ---
-
+#region Kernel Dispatch
     static public void DispatchKernel (ComputeShader cs, string kernelName, int threadsNum, int threadSize)
     {
         if (threadsNum <= 0) return;
@@ -44,9 +43,9 @@ public static class ComputeHelper
         if (threadGroupsNums.x <= 0 || threadGroupsNums.y <= 0 || threadGroupsNums.z <= 0) return;
         cs.Dispatch(cs.FindKernel(kernelName), threadGroupsNums.x, threadGroupsNums.y, threadGroupsNums.z);
     }
+#endregion
 
-// --- CREATE BUFFERS ---
-
+#region Create Buffers
     // Create append buffer without ref
 	public static ComputeBuffer CreateAppendBuffer<T>(int capacity) // T is the buffer struct
 	{
@@ -100,9 +99,9 @@ public static class ComputeHelper
         if (countBuffer != null) Release(countBuffer);
         countBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
     }
+#endregion
 
-// --- GET APPEND BUFFER COUNT ---
-
+#region Get Append Buffer Count
     // Get append buffer count with count buffer
 	public static int GetAppendBufferCount(ComputeBuffer buffer, ComputeBuffer countBuffer)
 	{
@@ -191,9 +190,9 @@ public static class ComputeHelper
             }
         });
     }
+#endregion
 
-// --- RELEASE BUFFERS / TEXTURES ---
-
+#region Release Buffers / Textures
     // Release single buffer
 	public static void Release(ComputeBuffer buffer)
 	{
@@ -215,8 +214,9 @@ public static class ComputeHelper
 			texture.Release(); // RenderTexture class passed by reference automatically
 		}
 	}
+#endregion
 
-// --- CLASS ---
-
-    public static int GetStride<T>() => System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
+#region Private
+    private static int GetStride<T>() => System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
+#endregion
 }

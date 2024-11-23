@@ -29,8 +29,7 @@ public class GraphController : MonoBehaviour
     private List<Vector2> pointList;
     private List<Vector2> storedPoints;
     private bool isFirstPointDrawn;
-    private float pointSubmissionTimer;
-    private Stopwatch stopwatch;
+    private Timer pointSubmissionTimer;
 
     public void InitGraph(GraphChart graphChartInput)
     {
@@ -45,8 +44,8 @@ public class GraphController : MonoBehaviour
             graphChart.DataSource.AddCategory("SensorDatas", lineMaterial, lineThickness, new MaterialTiling(), fillMaterial, false, pointMaterial, pointSize, false);
         }
 
-        stopwatch = new();
-        stopwatch.Start();
+        float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
+        pointSubmissionTimer = new(pointSubmissionFrequency, false, false);
 
         ResetGraph();
     }
@@ -63,26 +62,20 @@ public class GraphController : MonoBehaviour
         pointList = new();
         storedPoints = new();
         isFirstPointDrawn = false;
-        pointSubmissionTimer = 0;
+        pointSubmissionTimer.Reset();
     }
 
     public void AddPointsToGraph(params Vector2[] points)
     {
         if (points == null || points.Length == 0) return;
-
-        // Handle timers
-        pointSubmissionTimer += (float)stopwatch.Elapsed.TotalSeconds;
-        stopwatch.Restart();
         
         // Add points to storedPoints
-        float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
         foreach (Vector2 point in points)
         {
             if (float.IsNaN(point.x) || float.IsNaN(point.y)) continue;
 
-            if (pointSubmissionTimer < pointSubmissionFrequency) break;
+            if (!pointSubmissionTimer.Check()) break;
 
-            pointSubmissionTimer -= pointSubmissionFrequency;
             storedPoints.Add(point);
         }
     }

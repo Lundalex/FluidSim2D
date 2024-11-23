@@ -92,7 +92,7 @@ public class SceneRigidBody : Polygon
 
             // Check whether any positional data field has been modified, or each second of editor time
             bool forceUpdateCashedData = frameCount++ % 10 == 0;
-            if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 0.1f ||
+            if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 10.0f ||
                 (lastLocalLinkPosThisRB - (Vector2)RBInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
                 (lastLocalLinkPosOtherRB - (Vector2)RBInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
                 forceUpdateCashedData)
@@ -138,7 +138,7 @@ public class SceneRigidBody : Polygon
             Vector2 localLinkPosThis = (Vector2)RBInput.localLinkPosThisRB;
             
             Vector2 newPos = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
-            bool doUpdatePosition = newPos.x < float.MaxValue && newPos.y < float.MaxValue && (lastPosition - newPos).sqrMagnitude > 0.1f;
+            bool doUpdatePosition = newPos.x < float.MaxValue && newPos.y < float.MaxValue && (lastPosition - newPos).sqrMagnitude > 10.0f;
             if (doUpdatePosition)
             {
                 transform.localPosition = newPos;
@@ -149,7 +149,7 @@ public class SceneRigidBody : Polygon
             transform.localPosition = (Vector2)RBInput.startPos + cashedLinearMotorOffset;
 
         // Record the current positional data
-        if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 0.1f)
+        if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 10.0f)
             lastPosition = transform.localPosition;
         lastLocalLinkPosThisRB = (Vector2)RBInput.localLinkPosThisRB;
         lastLocalLinkPosOtherRB = (Vector2)RBInput.localLinkPosOtherRB;

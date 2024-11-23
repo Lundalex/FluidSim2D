@@ -1,5 +1,4 @@
-using System;
-using Resources2;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,94 +13,16 @@ public class EditorManager : Editor
     private const float hoveredPointLineLength = 1000f;
     private const float hoveredPointAxisLineThickness = 0.4f;
 
+    private static readonly Color SpringBaseColor = Color.green;
+    private static readonly Color SpringStressedColor = Color.red;
+    private static readonly Color OrangeColor = new(1.0f, 0.15f, 0.0f);
+    private static readonly Color HoveredPointDarkModeAxisColor = new(0.9f, 0.9f, 0.9f);
+
     void OnEnable() => EditorApplication.update += OnEditorUpdate;
 
     void OnDisable() => EditorApplication.update -= OnEditorUpdate;
-
+    
     void OnEditorUpdate() {}
-
-    static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody)
-    {
-        SceneRigidBody otherRigidBody = rigidBody.RBInput.linkedRigidBody;
-
-        // Get the world position of the link points
-        Vector2 startPoint = rigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosThisRB;
-        Vector2 endPoint = otherRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
-
-        return (startPoint, endPoint);
-    }
-
-    static void DrawMeshWireframe(Vector2[] meshVertices, Color color, float sceneObjectLineThickness)
-    {
-        int vertexCount = meshVertices.Length;
-
-        Handles.color = color;
-        for (int i = 0; i < vertexCount; i++)
-        {
-            Vector2 start = meshVertices[i];
-            Vector2 end = meshVertices[(i + 1) % vertexCount];
-
-            Vector2 edgeDir = (end - start).normalized;
-            Vector2 perpDir = 0.5f * sceneObjectLineThickness * new Vector2(-edgeDir.y, edgeDir.x);
-
-            Vector2 v1 = start + perpDir;
-            Vector2 v2 = start - perpDir;
-            Vector2 v3 = end + perpDir;
-            Vector2 v4 = end - perpDir;
-
-            Vector3[] quadVertices = new Vector3[] { v1, v3, v4, v2 };
-
-            // Draw the quad for the edge
-            Handles.DrawSolidRectangleWithOutline(quadVertices, color, color);
-        }
-    }
-
-    public static void DrawZigZagSpring(Vector2 startPoint, Vector2 endPoint, Color color, float sceneObjectLineThickness, float amplitude, int pointCount)
-    {
-        // Calculate the direction and distance between the points
-        Vector2 direction = (endPoint - startPoint).normalized;
-
-        // Calculate the perpendicular direction
-        Vector2 perpendicular = new Vector2(-direction.y, direction.x);
-
-        // Previous point along the zigzag
-        Vector2 prevPoint = startPoint;
-        Handles.color = color;
-        for (int i = 1; i < pointCount; i++)
-        {
-            // Position along the line
-            float t = (float)i / (pointCount - 1);
-            Vector2 pointOnLine = Vector2.Lerp(startPoint, endPoint, t);
-
-            // Determine the offset direction
-            float offsetMultiplier = (i % 2 == 0) ? -1.0f : 1.0f;
-
-            // No offset for the end point
-            if (i == pointCount - 1) offsetMultiplier = 0.0f;
-
-            // Offset perpendicular to the line
-            Vector2 offsetVector = perpendicular * amplitude * offsetMultiplier;
-
-            // Current point along the zigzag
-            Vector2 currentPoint = pointOnLine + offsetVector;
-
-            // Calculate the quad (rectangle) between prevPoint and currentPoint
-            Vector2 segmentDirection = (currentPoint - prevPoint).normalized;
-            Vector2 segmentPerp = new Vector2(-segmentDirection.y, segmentDirection.x) * (sceneObjectLineThickness * 0.5f);
-
-            Vector3[] quadVertices = new Vector3[4];
-            quadVertices[0] = prevPoint + segmentPerp;
-            quadVertices[1] = prevPoint - segmentPerp;
-            quadVertices[2] = currentPoint - segmentPerp;
-            quadVertices[3] = currentPoint + segmentPerp;
-
-            // Draw the quad
-            Handles.DrawSolidRectangleWithOutline(quadVertices, color, color);
-
-            // Update the previous point
-            prevPoint = currentPoint;
-        }
-    }
 
     // Draw rigid body objects
     [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
@@ -116,48 +37,20 @@ public class EditorManager : Editor
         Transform transform = rigidBody.transform;
         Vector2 parentOffset = transform.position - transform.localPosition;
 
-        // Draw the filled body using triangulation
+        // Draw the filled body
         if (rigidBody.DoDrawBody)
         {
-            if (rigidBody.MeshPoints.Count < 3)
-            {
-                // Cannot create a polygon with less than 3 points
-                return;
-            }
-
-            // Triangulate the polygon
-            Vector2[] polygonPoints = rigidBody.MeshPoints.ToArray();
-
-            Triangulator triangulator = new(polygonPoints);
-            int[] indices = triangulator.Triangulate();
-
-            // Convert Vector2 to Vector3 (z = 0)
-            Vector3[] vertices = new Vector3[polygonPoints.Length];
-            for (int i = 0; i < polygonPoints.Length; i++)
-            {
-                vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
-            }
-
-            // Draw triangles
-            Handles.color = rigidBody.BodyColor;
-            for (int i = 0; i < indices.Length; i += 3)
-            {
-                Vector3[] triangleVertices = new Vector3[3];
-                triangleVertices[0] = vertices[indices[i]];
-                triangleVertices[1] = vertices[indices[i + 1]];
-                triangleVertices[2] = vertices[indices[i + 2]];
-
-                // Draw the triangle
-                Handles.DrawAAConvexPolygon(triangleVertices);
-            }
+            DrawFilledPolygon(rigidBody.MeshPoints, rigidBody.BodyColor);
         }
 
         // Draw wiremesh
-        Vector2[] meshVertices = rigidBody.MeshPoints.ToArray();
-        DrawMeshWireframe(meshVertices, rigidBody.LineColor, sceneObjectLineThickness);
+        DrawMeshWireframe(rigidBody.MeshPoints.ToArray(), rigidBody.LineColor, sceneObjectLineThickness);
 
-        // Draw spring
-        if (rigidBody.RBInput.constraintType == ConstraintType.Spring && rigidBody.RBInput.linkedRigidBody != null)
+        bool isSpringConstraint = rigidBody.RBInput.constraintType == ConstraintType.Spring && rigidBody.RBInput.linkedRigidBody != null;
+        bool isLinearMotor = rigidBody.RBInput.constraintType == ConstraintType.LinearMotor;
+        bool isRigidConstraint = rigidBody.RBInput.constraintType == ConstraintType.Rigid && rigidBody.RBInput.linkedRigidBody != null;
+
+        if (isSpringConstraint)
         {   
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody);
 
@@ -167,56 +60,48 @@ public class EditorManager : Editor
             rigidBody.approximatedSpringLength = approxLength.ToString();
             rigidBody.approximatedSpringForce = approxForce.ToString();
 
-            Color springBaseColor = Color.green;
-            Color springStressedColor = Color.red;
-            Color lerpColor = Color.Lerp(springBaseColor, springStressedColor, approxForce * springForceFactor);
+            Color lerpColor = Color.Lerp(SpringBaseColor, SpringStressedColor, approxForce * springForceFactor);
 
             // Draw spring
             DrawZigZagSpring(startPoint, endPoint, lerpColor, springsceneObjectLineThickness, springAmplitude, numSpringPoints);
 
-            DrawSmallDot(startPoint);
-            DrawSmallDot(endPoint);
+            DrawDot(startPoint, 2.5f, Color.red);
+            DrawDot(endPoint, 2.5f, Color.red);
         }
-        else if (rigidBody.RBInput.constraintType == ConstraintType.LinearMotor)
+        else if (isLinearMotor)
         {
             Vector2 startPoint = (Vector2)rigidBody.RBInput.startPos + parentOffset;
             Vector2 endPoint = (Vector2)rigidBody.RBInput.endPos + parentOffset;
 
-            Color orangeColor = new(1.0f, 0.15f, 0.0f);
-            DrawDashedLine(orangeColor, endPoint, startPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
+            DrawDashedLine(OrangeColor, endPoint, startPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
 
-            DrawLargeDot(startPoint);
-            DrawLargeDot(endPoint);
+            DrawDot(startPoint, 4.5f, new Color(1.0f, 1.0f, 0.0f));
+            DrawDot(startPoint, 3.5f, new Color(1.0f, 0.05f, 0.0f));
+            DrawDot(endPoint, 4.5f, new Color(1.0f, 1.0f, 0.0f));
+            DrawDot(endPoint, 3.5f, new Color(1.0f, 0.05f, 0.0f));
 
             rigidBody.approximatedSpringLength = "No Active Spring Link";
             rigidBody.approximatedSpringForce = "No Active Spring Link";
         }
+        else if (isRigidConstraint)
+        {
+            // Calculate line points
+            Vector2 thisRBCentroid = rigidBody.cashedCentroid;
+            Vector2 LinkPos = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+            Vector2 otherRBCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
+
+            // Draw dashed line
+            DrawDashedLine(OrangeColor, LinkPos, thisRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
+            DrawDashedLine(OrangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
+            
+            // Draw start and end points
+            DrawDot(thisRBCentroid, 2.5f, Color.red);
+            DrawDot(otherRBCentroid, 2.5f, Color.red);
+            DrawDot(LinkPos, 4.5f, new Color(1.0f, 1.0f, 0.0f));
+            DrawDot(LinkPos, 3.5f, new Color(1.0f, 0.05f, 0.0f));
+        }
         else
         {
-            if (rigidBody.RBInput.constraintType == ConstraintType.Rigid)
-            {
-                if (rigidBody.RBInput.linkedRigidBody == null)
-                {
-                    Debug.LogWarning("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
-                    return;
-                }
-
-                // Calculate line points
-                Vector2 thisRBCentroid = rigidBody.cashedCentroid;
-                Vector2 LinkPos = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
-                Vector2 otherRBCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
-
-                // Draw dashed line
-                Color orangeColor = new(1.0f, 0.15f, 0.0f);
-                DrawDashedLine(orangeColor, LinkPos, thisRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
-                DrawDashedLine(orangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
-                
-                // Draw start and end points
-                DrawSmallDot(thisRBCentroid);
-                DrawSmallDot(otherRBCentroid);
-                DrawLargeDot(LinkPos);
-            }
-
             rigidBody.approximatedSpringLength = "No Active Spring Link";
             rigidBody.approximatedSpringForce = "No Active Spring Link";
         }
@@ -225,7 +110,135 @@ public class EditorManager : Editor
         DrawLinesFromHoveredPoint(rigidBody);
     }
 
-    static void DrawLinesFromHoveredPoint(Polygon rigidBody)
+    // Draw fluid objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidObjects(SceneFluid fluid, GizmoType gizmoType)
+    {
+        if (fluid == null) return;
+
+        fluid.SetPolygonData();
+
+        if (fluid.editorRenderMethod == EditorRenderMethod.Particles)
+        {
+            fluid.Points = fluid.GeneratePoints(-1).ToArray();
+
+            int iterationCount = 0;
+            Gizmos.color = fluid.BodyColor;
+            foreach (Vector2 point in fluid.Points)
+            {
+                if (iterationCount++ > fluid.MaxGizmosIterations) return;
+                Gizmos.DrawSphere(point, fluid.editorPointRadius);
+            }
+        }
+        else if (fluid.editorRenderMethod == EditorRenderMethod.Triangulation)
+        {
+            DrawFilledPolygon(fluid.MeshPoints, fluid.BodyColor);
+        }
+        
+        // Draw edges
+        foreach (Edge edge in fluid.Edges)
+        {
+            Vector3[] quadVertices = GetQuadVertices(edge.start, edge.end, sceneObjectLineThickness);
+
+            // Draw the quad
+            Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
+        }
+
+        // Draw horizontal and vertical lines from any potentially hovered point
+        DrawLinesFromHoveredPoint(fluid);
+    }
+
+    // Draw fluid spawner objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidSpawnerObjects(FluidSpawner fluidSpawner, GizmoType gizmoType)
+    {
+        if (fluidSpawner == null) return;
+
+        // Update points
+        fluidSpawner.SetPolygonData();
+
+        // Draw the filled body
+        if (fluidSpawner.DoDrawBody)
+        {
+            DrawFilledPolygon(fluidSpawner.MeshPoints, fluidSpawner.BodyColor);
+        }
+
+        // Draw wiremesh
+        DrawMeshWireframe(fluidSpawner.MeshPoints.ToArray(), fluidSpawner.LineColor, sceneObjectLineThickness);
+    }
+
+    // Draw fluid sensor objects
+    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
+    static void DrawFluidSensorObjects(FluidSensor fluidSensor, GizmoType gizmoType)
+    {
+        if (fluidSensor == null) return;
+
+        Vector2 min = fluidSensor.measurementZone.min;
+        Vector2 max = min + new Vector2(fluidSensor.measurementZone.width, fluidSensor.measurementZone.height);
+
+        if (min == max) return;
+
+        Vector2 v1 = min;
+        Vector2 v2 = new Vector2(min.x, max.y);
+        Vector2 v3 = new Vector2(max.x, min.y);
+        Vector2 v4 = max;
+
+        Vector2[] quadVertices_Vector2 = new Vector2[] { v1, v3, v4, v2 };
+        Vector3[] quadVertices_Vector3 = new Vector3[] { v1, v3, v4, v2 };
+
+        DrawMeshWireframe(quadVertices_Vector2, fluidSensor.lineColor, sceneObjectSensorLineThickness);
+        Handles.color = fluidSensor.areaColor;
+        Handles.DrawSolidRectangleWithOutline(quadVertices_Vector3, fluidSensor.areaColor, fluidSensor.areaColor);
+    }
+
+    private static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody)
+    {
+        SceneRigidBody otherRigidBody = rigidBody.RBInput.linkedRigidBody;
+
+        // Get the world position of the link points
+        Vector2 startPoint = rigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosThisRB;
+        Vector2 endPoint = otherRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+
+        return (startPoint, endPoint);
+    }
+
+    private static void DrawZigZagSpring(Vector2 startPoint, Vector2 endPoint, Color color, float sceneObjectLineThickness, float amplitude, int pointCount)
+    {
+        // Calculate the direction and distance between the points
+        Vector2 direction = (endPoint - startPoint).normalized;
+
+        // Calculate the perpendicular direction
+        Vector2 perpendicular = new(-direction.y, direction.x);
+
+        // Previous point along the zigzag
+        Vector2 lastPoint = startPoint;
+        Handles.color = color;
+        for (int i = 1; i < pointCount; i++)
+        {
+            // Position along the line
+            float t = (float)i / (pointCount - 1);
+            Vector2 pointOnLine = Vector2.Lerp(startPoint, endPoint, t);
+
+            // Determine the offset direction
+            float offsetMultiplier = (i % 2 == 0) ? -1.0f : 1.0f;
+            if (i == pointCount - 1) offsetMultiplier = 0.0f;
+
+            // Calculate the current point
+            Vector2 offsetVector = perpendicular * amplitude * offsetMultiplier;
+            Vector2 currentPoint = pointOnLine + offsetVector;
+
+            // Get the line quad vertices
+            Vector3[] quadVertices = GetQuadVertices(lastPoint, currentPoint, sceneObjectLineThickness);
+
+            // Draw the quad
+            Handles.DrawSolidRectangleWithOutline(quadVertices, color, color);
+
+            // Update the previous point
+            lastPoint = currentPoint;
+        }
+    }
+
+    private static void DrawLinesFromHoveredPoint(Polygon rigidBody)
     {
         if (rigidBody.polygonCollider == null || rigidBody.polygonCollider.points.Length == 0) return;
 
@@ -241,6 +254,7 @@ public class EditorManager : Editor
 
         // Get mouse position in world space
         Event currentEvent = Event.current;
+        if (currentEvent == null) return;
         Vector2 mousePosition = HandleUtility.GUIPointToWorldRay(currentEvent.mousePosition).origin;
 
         // Find the closest point to the mouse position within the proximity threshold
@@ -262,44 +276,31 @@ public class EditorManager : Editor
         {
             Vector3 selectedPoint = worldPoints[closestIndex];
 
-            Color hoveredPointDarkModeAxisColor = new(0.9f, 0.9f, 0.9f);
-
             ProgramLifeCycleManager lifeCycleManager = GameObject.FindGameObjectWithTag("LifeCycleManager").GetComponent<ProgramLifeCycleManager>();
-            Handles.color = lifeCycleManager.darkMode ? hoveredPointDarkModeAxisColor : Color.black;
+            Handles.color = lifeCycleManager.darkMode ? HoveredPointDarkModeAxisColor : Color.black;
 
             // Draw horizontal line
-            Vector3 leftPoint = new(-hoveredPointLineLength, selectedPoint.y, 0);
-            Vector3 rightPoint = new(hoveredPointLineLength, selectedPoint.y, 0);
+            Vector3 leftPoint = new Vector3(-hoveredPointLineLength, selectedPoint.y, 0);
+            Vector3 rightPoint = new Vector3(hoveredPointLineLength, selectedPoint.y, 0);
             DrawThickLine(leftPoint, rightPoint, hoveredPointAxisLineThickness);
 
             // Draw vertical line
-            Vector3 topPoint = new(selectedPoint.x, hoveredPointLineLength, 0);
-            Vector3 bottomPoint = new(selectedPoint.x, -hoveredPointLineLength, 0);
+            Vector3 topPoint = new Vector3(selectedPoint.x, hoveredPointLineLength, 0);
+            Vector3 bottomPoint = new Vector3(selectedPoint.x, -hoveredPointLineLength, 0);
             DrawThickLine(topPoint, bottomPoint, hoveredPointAxisLineThickness);
         }
     }
 
-    public static void DrawSmallDot(Vector2 pos)
+    private static void DrawDot(Vector2 position, float size, Color color)
     {
-        if (pos != Vector2.positiveInfinity)
+        if (position != Vector2.positiveInfinity)
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(pos, 2.5f);
+            Gizmos.color = color;
+            Gizmos.DrawSphere(position, size);
         }
     }
 
-    public static void DrawLargeDot(Vector2 pos)
-    {
-        if (pos != Vector2.positiveInfinity)
-        {
-            Gizmos.color = new(1.0f, 1.0f, 0.0f);
-            Gizmos.DrawSphere(pos, 4.5f);
-            Gizmos.color = new(1.0f, 0.05f, 0.0f);
-            Gizmos.DrawSphere(pos, 3.5f);
-        }
-    }
-
-    public static void DrawDashedLine(Color lineColor, Vector3 from, Vector3 to, float dashLength, float lineThickness, float animationSpeed, bool drawArrowHead = false, float arrowHeadSize = 5.0f) // float arrowHeadSize
+    private static void DrawDashedLine(Color lineColor, Vector3 from, Vector3 to, float dashLength, float lineThickness, float animationSpeed, bool drawArrowHead = false, float arrowHeadSize = 5.0f)
     {
         Vector3 direction = (to - from).normalized;
         float distance = Vector3.Distance(from, to);
@@ -341,151 +342,74 @@ public class EditorManager : Editor
 
     private static void DrawThickLine(Vector3 start, Vector3 end, float thickness)
     {
-        Vector3 offset = thickness * 0.5f * Vector3.Cross((end - start).normalized, Vector3.forward);
-        Vector3[] quad = { start - offset, start + offset, end + offset, end - offset };
+        Vector3[] quad = GetQuadVertices(start, end, thickness);
         Handles.DrawAAConvexPolygon(quad);
     }
 
-    // Draw fluid objects
-    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
-    static void DrawFluidObjects(SceneFluid fluid, GizmoType gizmoType)
+    private static Vector3[] GetQuadVertices(Vector2 start, Vector2 end, float thickness)
     {
-        if (fluid == null) return;
+        Vector2 direction = (end - start).normalized;
+        Vector2 perpendicular = new Vector2(-direction.y, direction.x) * (thickness * 0.5f);
 
-        fluid.SetPolygonData();
+        Vector3[] quadVertices = new Vector3[4];
+        quadVertices[0] = start + perpendicular;
+        quadVertices[1] = start - perpendicular;
+        quadVertices[2] = end - perpendicular;
+        quadVertices[3] = end + perpendicular;
 
-        if (fluid.editorRenderMethod == EditorRenderMethod.Particles)
-        {
-            fluid.Points = fluid.GeneratePoints(-1).ToArray();
-
-            int iterationCount = 0;
-            Gizmos.color = fluid.BodyColor;
-            foreach (Vector2 point in fluid.Points)
-            {
-                if (iterationCount++ > fluid.MaxGizmosIterations) return;
-                Gizmos.DrawSphere(point, fluid.editorPointRadius);
-            }
-        }
-        else if (fluid.editorRenderMethod == EditorRenderMethod.Triangulation)
-        {
-            // Cannot create a polygon with less than 3 points
-            if (fluid.MeshPoints.Count < 3) return;
-
-            // Triangulate the polygon
-            Vector2[] polygonPoints = fluid.MeshPoints.ToArray();
-            Triangulator triangulator = new Triangulator(polygonPoints);
-            int[] indices = triangulator.Triangulate();
-
-            // Convert Vector2 to Vector3 (z = 0)
-            Vector3[] vertices = new Vector3[polygonPoints.Length];
-            for (int i = 0; i < polygonPoints.Length; i++) vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
-
-            // Draw triangles
-            Handles.color = fluid.BodyColor;
-            for (int i = 0; i < indices.Length; i += 3)
-            {
-                Vector3[] triangleVertices = new Vector3[3];
-                triangleVertices[0] = vertices[indices[i]];
-                triangleVertices[1] = vertices[indices[i + 1]];
-                triangleVertices[2] = vertices[indices[i + 2]];
-
-                // Draw the triangle
-                Handles.DrawAAConvexPolygon(triangleVertices);
-            }
-        }
-        
-        // Draw edges
-        foreach (Edge edge in fluid.Edges)
-        {
-            Vector2 edgeDir = (edge.end - edge.start).normalized;
-            Vector2 perpDir = 0.5f * sceneObjectLineThickness * new Vector2(-edgeDir.y, edgeDir.x);
-
-            // Compute the four vertices of the quad
-            Vector2 v1 = edge.start + perpDir;
-            Vector2 v2 = edge.start - perpDir;
-            Vector2 v3 = edge.end + perpDir;
-            Vector2 v4 = edge.end - perpDir;
-
-            Vector3[] quadVertices = new Vector3[] { v1, v3, v4, v2 };
-
-            // Draw the quad
-            Handles.DrawSolidRectangleWithOutline(quadVertices, fluid.LineColor, fluid.LineColor);
-        }
-
-        // Draw horizontal and vertical lines from any potentially hovered point
-        DrawLinesFromHoveredPoint(fluid);
+        return quadVertices;
     }
 
-    // Draw rigid body objects
-    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
-    static void DrawFluidSpawnerObjects(FluidSpawner fluidSpawner, GizmoType gizmoType)
+    private static void DrawMeshWireframe(Vector2[] meshVertices, Color color, float sceneObjectLineThickness)
     {
-        if (fluidSpawner == null) return;
+        int vertexCount = meshVertices.Length;
 
-        // Update points
-        fluidSpawner.SetPolygonData();
-
-        // --- Draw the filled body using triangulation ---
-        if (fluidSpawner.DoDrawBody)
+        Handles.color = color;
+        for (int i = 0; i < vertexCount; i++)
         {
-            if (fluidSpawner.MeshPoints.Count < 3)
-            {
-                // Cannot create a polygon with less than 3 points
-                return;
-            }
+            Vector2 start = meshVertices[i];
+            Vector2 end = meshVertices[(i + 1) % vertexCount];
 
-            // Triangulate the polygon
-            Vector2[] polygonPoints = fluidSpawner.MeshPoints.ToArray();
-            Triangulator triangulator = new Triangulator(polygonPoints);
-            int[] indices = triangulator.Triangulate();
+            Vector3[] quadVertices = GetQuadVertices(start, end, sceneObjectLineThickness);
 
-            // Convert Vector2 to Vector3 (z = 0)
-            Vector3[] vertices = new Vector3[polygonPoints.Length];
-            for (int i = 0; i < polygonPoints.Length; i++)
-            {
-                vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
-            }
-
-            // Draw triangles
-            Handles.color = fluidSpawner.BodyColor;
-            for (int i = 0; i < indices.Length; i += 3)
-            {
-                Vector3[] triangleVertices = new Vector3[3];
-                triangleVertices[0] = vertices[indices[i]];
-                triangleVertices[1] = vertices[indices[i + 1]];
-                triangleVertices[2] = vertices[indices[i + 2]];
-
-                // Draw the triangle
-                Handles.DrawAAConvexPolygon(triangleVertices);
-            }
+            // Draw the quad for the edge
+            Handles.DrawSolidRectangleWithOutline(quadVertices, color, color);
         }
-
-        // Draw wiremesh
-        Vector2[] meshVertices = fluidSpawner.MeshPoints.ToArray();
-        DrawMeshWireframe(meshVertices, fluidSpawner.LineColor, sceneObjectLineThickness);
     }
 
-    // Draw fluid sensor objects
-    [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
-    static void DrawFluidSensorObjects(FluidSensor fluidSensor, GizmoType gizmoType)
+    private static void DrawFilledPolygon(List<Vector2> meshPoints, Color fillColor)
     {
-        if (fluidSensor == null) return;
+        // Can't draw a polygon out of less than three points
+        if (meshPoints == null || meshPoints.Count < 3)
+        {
+            Debug.LogWarning("Cannot draw filled polygon with less than 3 points.");
+            return;
+        }
 
-        Vector2 min = fluidSensor.measurementZone.min;
-        Vector2 max = min + new Vector2(fluidSensor.measurementZone.width, fluidSensor.measurementZone.height);
+        // Get mesh points
+        Vector2[] polygonPoints = meshPoints.ToArray();
 
-        if (min == max) return;
+        // Triangulate
+        Triangulator triangulator = new Triangulator(polygonPoints);
+        int[] indices = triangulator.Triangulate();
 
-        Vector2 v1 = min;
-        Vector2 v2 = new(min.x, max.y);
-        Vector2 v3 = new(max.x, min.y);
-        Vector2 v4 = max;
+        // Get the vertices
+        Vector3[] vertices = new Vector3[polygonPoints.Length];
+        for (int i = 0; i < polygonPoints.Length; i++)
+        {
+            vertices[i] = new Vector3(polygonPoints[i].x, polygonPoints[i].y, 0);
+        }
 
-        Vector2[] quadVertices_Vector2 = new Vector2[] { v1, v3, v4, v2 };
-        Vector3[] quadVertices_Vector3 = new Vector3[] { v1, v3, v4, v2 };
+        // Draw the triangulated mesh
+        Handles.color = fillColor;
+        for (int i = 0; i < indices.Length; i += 3)
+        {
+            Vector3[] triangleVertices = new Vector3[3];
+            triangleVertices[0] = vertices[indices[i]];
+            triangleVertices[1] = vertices[indices[i + 1]];
+            triangleVertices[2] = vertices[indices[i + 2]];
 
-        DrawMeshWireframe(quadVertices_Vector2, fluidSensor.lineColor, sceneObjectSensorLineThickness);
-        Handles.color = fluidSensor.areaColor;
-        Handles.DrawSolidRectangleWithOutline(quadVertices_Vector3, fluidSensor.areaColor, fluidSensor.areaColor);
+            Handles.DrawAAConvexPolygon(triangleVertices);
+        }
     }
 }

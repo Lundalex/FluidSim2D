@@ -11,7 +11,6 @@ public class PTypeInput : MonoBehaviour
     public PType[] GetParticleTypes()
     {
         PType[] particleTypes = new PType[particleTypeStates.Length * 3];
-
         for (int i = 0; i < particleTypeStates.Length; i++)
         {
             int baseIndex = 3 * i;

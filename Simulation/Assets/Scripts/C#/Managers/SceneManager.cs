@@ -170,7 +170,7 @@ public class SceneManager : MonoBehaviour
 
     public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridSpacingInput = null)
     {
-        float rbCalcGridDensity = rbCalcGridSpacingInput ?? 0.2f;
+        float rbCalcGridSpacing = rbCalcGridSpacingInput ?? 0.2f;
 
         if (!referencesHaveBeenSet) SetReferences();
 
@@ -203,7 +203,7 @@ public class SceneManager : MonoBehaviour
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + boundsOffset;
             Vector2[] vectors = GetTransformedPoints(rigidBody, boundsOffset, transformedRBPos);
 
-            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridDensity);
+            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridSpacing);
 
             // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.RBInput;

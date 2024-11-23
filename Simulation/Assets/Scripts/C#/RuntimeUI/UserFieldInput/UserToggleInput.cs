@@ -29,15 +29,20 @@ public class UserToggleInput : UserUIElement
     {
         if (toggleManager.isOn != lastValue)
         {
-            if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
-            else
-            {
-                if (innerFieldName == "No Inner Field") fieldModifier.ModifyField(toggleManager.isOn);
-                else fieldModifier.ModifyClassField(innerFieldName, toggleManager.isOn);
-            }
+            ModifyField();
 
             PM.Instance.doOnSettingsChanged = true;
             lastValue = toggleManager.isOn;
+        }
+    }
+
+    private void ModifyField()
+    {
+        if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
+        else
+        {
+            if (innerFieldName == "No Inner Field") fieldModifier.ModifyField(toggleManager.isOn);
+            else fieldModifier.ModifyClassField(innerFieldName, toggleManager.isOn);
         }
     }
 }

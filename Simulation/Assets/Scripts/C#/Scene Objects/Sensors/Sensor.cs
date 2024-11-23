@@ -9,7 +9,7 @@ public abstract class Sensor : MonoBehaviour
     [Header("Display")]
     [SerializeField] private DataView defaultDataView;
     [Range(1, 2)] public int numDecimals;
-    [Range(0.1f, 5.0f)] public float newLowerPrefixTimer = 0.5f;
+    [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
     public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
     public Vector2 targetPosition;
@@ -37,7 +37,7 @@ public abstract class Sensor : MonoBehaviour
     // Unit
     [NonSerialized] public string lastUnit = "";
     [NonSerialized] public int lastPrefixIndex = -1;
-    [NonSerialized] public float newPrefixTimer = 0;
+    [NonSerialized] public Timer newPrefixTimer;
 
     // Private
     private Vector2 boundaryDims = Vector2.zero;
@@ -48,6 +48,8 @@ public abstract class Sensor : MonoBehaviour
         InitSensor();
         graphController.InitGraph(graphChart);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
+        
+        newPrefixTimer = new Timer(newLowerPrefixThreshold, true, true);
 
         PM.Instance.AddSensor(sensorUI, this);
     }
@@ -86,6 +88,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.scaleSlider.value = sensorScale;
         sensorUI.sliderScale = sensorScale;
         sensorUI.SetDataWindow(defaultDataView == DataView.Numeric ? "NumericDisplay" : "GraphDisplay");
+        sensorUI.Initialize();
         SetSensorTitle();
         sensorUIObject.name = "UI - " + this.name;
     }
@@ -125,10 +128,8 @@ public abstract class Sensor : MonoBehaviour
 
         if (prefixIndex < lastPrefixIndex)
         {
-            newPrefixTimer += PM.Instance.clampedDeltaTime;
-            if (newPrefixTimer > newLowerPrefixTimer)
+            if (newPrefixTimer.Check())
             {
-                newPrefixTimer = 0;
                 lastPrefixIndex = prefixIndex;
                 return (minusPrefix + prefixes[prefixIndex], value);
             }
@@ -136,7 +137,7 @@ public abstract class Sensor : MonoBehaviour
         }
         else
         {
-            newPrefixTimer = 0;
+            newPrefixTimer.Reset();
             lastPrefixIndex = prefixIndex;
             return (minusPrefix + prefixes[prefixIndex], value);
         }

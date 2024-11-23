@@ -7,6 +7,16 @@ using System.Globalization;
 
 namespace Resources2
 {
+#region Constants
+    public static class Const
+    {
+        public static readonly Vector2 Vector2Half = new(0.5f, 0.5f);
+        public static readonly float PI = 3.14159265f;
+        public static readonly float LARGE_FLOAT = 1e6f;
+    }
+#endregion
+
+#region General Utilities
     public static class Utils
     {
         public static bool2 GetMousePressed()
@@ -63,11 +73,11 @@ namespace Resources2
             }
             return new float2(x, y);
         }
-
-        public static string RemoveCharsFromEnd(string input, int charsToRemove) => input[..^charsToRemove];
     }
+#endregion
 
-    public class Func // Math resources
+#region Math Functions
+    public class Func
     {
         public static void Log2(ref int a, bool doCeil = false)
         {
@@ -222,7 +232,9 @@ namespace Resources2
             return new Vector2(x, y);
         }
     }
+#endregion
 
+#region Spring Utilities
     public static class StringUtils
     {
         public static void LogIfInEditor(string message)
@@ -230,10 +242,20 @@ namespace Resources2
             if (Application.isEditor) Debug.Log(message);
         }
 
+        public static string FloatToString(float value, int numDecimals)
+        {
+            float factor = Mathf.Pow(10, numDecimals);
+            return (Mathf.Round(value * factor) / factor).ToString();
+        }
+
+        public static string RemoveCharsFromEnd(string input, int charsToRemove) => input[..^charsToRemove];
+
         public static string FloatToStr(float value, int numDecimals) => value.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
         public static string FloatToStr(float2 value, int numDecimals) => "X: " + value.x.ToString($"F{numDecimals}", CultureInfo.InvariantCulture) + "Y: " + value.y.ToString($"F{numDecimals}", CultureInfo.InvariantCulture);
     }
+#endregion
 
+#region Array Utilities
     public class ArrayUtils
     {
         public static T[] RemoveElementAtIndex<T>(ref T[] array, int index)
@@ -276,4 +298,5 @@ namespace Resources2
             return array;
         }
     }
+#endregion
 }

@@ -11,7 +11,7 @@ public class RigidBodySensor : Sensor
     [NonSerialized] public bool firstDataRecieved = false;
     private Vector2 currentTargetPosition;
 
-    public override void InitSensor() => sensorUI.SetPosition(SimSpaceToCanvasSpace(new(-10000.0f, 0.0f)));
+    public override void InitSensor() => sensorUI.SetPosition(SimSpaceToCanvasSpace(new(-Const.LARGE_FLOAT, 0.0f)));
 
     public override void UpdatePosition()
     {

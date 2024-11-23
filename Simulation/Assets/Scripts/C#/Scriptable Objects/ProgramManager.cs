@@ -38,13 +38,14 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
     private const float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
+    public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
 
     // Start confirmation timing
     [NonSerialized] public bool startConfirmed = false;
     [NonSerialized] public bool startConfirmationDelayActive = true;
     [NonSerialized] public Stopwatch startConfirmationStopWatch;
-    private float msStartConfimationDelay = 650.0f;
+    private readonly float msStartConfimationDelay = 650.0f;
 
     // Private - Camera
     private Camera uiCam;
@@ -83,7 +84,7 @@ public class ProgramManager : ScriptableObject
         SetStaticUIPositions();
 
         main.StartScript();
-        fluidSpawnerManager.StartScript();
+        fluidSpawnerManager.StartScript(main);
         sensorManager.StartScript(main);
     }
 
@@ -129,15 +130,22 @@ public class ProgramManager : ScriptableObject
         if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
         {
             fluidSpawnerManager.UpdateScript();
-
             main.UpdateScript();
 
             foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
 
             totalTimeElapsed += clampedDeltaTime;
+            // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle
+            TriggerProgramUpdate(true);
         }
-        else main.RunRenderShader();
+        else
+        {
+            main.RunRenderShader();
+            TriggerProgramUpdate(false);
+        }
     }
+
+    private void TriggerProgramUpdate(bool doUpdateClampedTime) => OnProgramUpdate?.Invoke(doUpdateClampedTime);
 
     private void CheckStartConfirmation()
     {

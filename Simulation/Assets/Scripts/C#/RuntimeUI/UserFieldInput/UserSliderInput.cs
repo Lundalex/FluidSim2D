@@ -20,32 +20,39 @@ public class UserSliderInput : UserUIElement
 
     // Private
     private float lastValue;
-    private float updateTimer;
+    private Timer updateTimer;
 
     public override void InitDisplay()
     {
         slider.value = startingValue;
         slider.minValue = minValue;
         slider.maxValue = maxValue;
-        sliderInputField.text = (Mathf.Round(startingValue * 10.0f) / 10.0f).ToString();
+        sliderInputField.text = StringUtils.FloatToString(startingValue, 1);
         containerTrimImage.color = primaryColor;
+        updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency));
     }
 
     private void Update()
     {
-        updateTimer += PM.Instance.clampedDeltaTime;
-        if (slider.value != lastValue && updateTimer > Func.MsToSeconds(msMaxUpdateFrequency))
+        if (slider.value != lastValue)
         {
-            if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
-            else
+            if (updateTimer.Check())
             {
-                if (innerFieldName == "No Inner Field") fieldModifier.ModifyField(slider.value);
-                else fieldModifier.ModifyClassField(innerFieldName, slider.value);
-            }
+                ModifyField();
 
-            PM.Instance.doOnSettingsChanged = true;
-            lastValue = slider.value;
-            updateTimer = 0;
+                PM.Instance.doOnSettingsChanged = true;
+                lastValue = slider.value;
+            }
+        }
+    }
+
+    private void ModifyField()
+    {
+        if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
+        else
+        {
+            if (innerFieldName == "No Inner Field") fieldModifier.ModifyField(slider.value);
+            else fieldModifier.ModifyClassField(innerFieldName, slider.value);
         }
     }
 }

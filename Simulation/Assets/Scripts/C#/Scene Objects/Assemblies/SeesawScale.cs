@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SeesawScale : EditorLifeCycle
 {
-    [Header("Settings")]
+    [Header("Lever Arm Settings")]
     [Range(0.1f, 0.9f), SerializeField] private float leverArmJointLerpFactor = 0.5f;
 
     [Header("References")]

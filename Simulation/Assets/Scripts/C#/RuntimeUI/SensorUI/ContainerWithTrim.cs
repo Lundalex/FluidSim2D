@@ -7,14 +7,16 @@ public class ContainerWithTrim : MonoBehaviour
     [SerializeField] private RectTransform trimContainer;
     [SerializeField] private RectTransform innerContainer;
 
+    private Vector2 containerSpacing = new(15, 15);
+
     void Update()
     {
         if (!Application.isPlaying)
         {
             if (otherContainer != null && trimContainer != null && innerContainer != null)
             {
-                trimContainer.sizeDelta = otherContainer.sizeDelta - new Vector2(15, 15);
-                innerContainer.sizeDelta = otherContainer.sizeDelta - new Vector2(30, 30);
+                trimContainer.sizeDelta = otherContainer.sizeDelta - containerSpacing;
+                innerContainer.sizeDelta = otherContainer.sizeDelta - 2 * containerSpacing;
             }
         }
     }
@@ -23,8 +25,8 @@ public class ContainerWithTrim : MonoBehaviour
     {
         if (otherContainer != null && trimContainer != null && innerContainer != null)
         {
-            trimContainer.sizeDelta = otherContainer.sizeDelta - new Vector2(15, 15);
-            innerContainer.sizeDelta = otherContainer.sizeDelta - new Vector2(30, 30);
+            trimContainer.sizeDelta = otherContainer.sizeDelta - containerSpacing;
+            innerContainer.sizeDelta = otherContainer.sizeDelta - 2 * containerSpacing;
         }
     }
 }

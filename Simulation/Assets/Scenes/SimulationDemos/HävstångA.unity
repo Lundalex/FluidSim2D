@@ -528,6 +528,10 @@ PrefabInstance:
       propertyPath: measurementZone.height
       value: 129
       objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
+      propertyPath: newLowerPrefixThreshold
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b18c2f1f21499407cb55003b6bc74582, type: 3}
       propertyPath: m_LocalPosition.x
       value: 141.02443
@@ -1282,7 +1286,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9532b5a5089ba4de0adbe8076186d30d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  darkMode: 0
+  darkMode: 1
   main: {fileID: 486541}
   darkBackground: {fileID: 1740834273}
   startConfirmationWindow: {fileID: 4081380684560399344}
@@ -1924,7 +1928,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 306296136805677144, guid: 70e83e942ca725246aab7871f12b244b, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 513592983997136594, guid: 70e83e942ca725246aab7871f12b244b, type: 3}
       propertyPath: m_Pivot.x
