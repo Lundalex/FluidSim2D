@@ -261,7 +261,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rigidConstraintFlagB) || ((int)rbBIndex == rbA.linkedRBIndex && rigidConstraintFlagA) || !AllowLinkedRBCollisions;
         
         // Exit early if both rigid bodies are flagged as stationary, or rigidConstraint == true
-        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotColliderB) return;
+        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotColliderB) continue;
 
         // Record initial positions
         float2 posRecA = rbA.pos;
@@ -564,8 +564,6 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     bool rigidConstraint = stiffness == 0.0;
     if (rigidConstraint)
     {
-        // **Rigid Constraint Handling**
-
         // Compute the positional error
         float2 constraintError = worldLinkPosB - worldLinkPosA;
 
@@ -629,6 +627,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         if (invMassB > 0) deltaVelB -= impulse * invMassB;
 
         // Apply impulses to angular velocities
+        if (invInertiaA > 0) deltaRotVelA += cross2D(linkPosA, impulse) * invInertiaA;
         if (invInertiaB > 0) deltaRotVelB -= cross2D(linkPosB, impulse) * invInertiaB;
     }
     else
@@ -698,7 +697,6 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         AccumulateSpringForce(i, recordedSpringForce_Int);
     }
 }
-
 
 void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, float2 normal)
 {
@@ -847,25 +845,32 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         if (isInteractable) totForce += InteractionForce(rb);
         rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, INT_FLOAT_PRECISION_RB);
     }
-    else if (rb.mass == -1 || rb.mass == -2) // linkType == linearMotor
+    else if (rb.mass < 0) // linkType == linearMotor
     {
         bool doRoundTrip = rb.mass == -2;
 
-        float2 startPos = rb.localLinkPosThisRB;
-        float2 endPos = rb.localLinkPosOtherRB;
+        float2 startAnchor = rb.localLinkPosThisRB;
+        float2 endAnchor = rb.localLinkPosOtherRB;
         
-        float t0 = (rb.lerpSpeed * SimTimeElapsed) % 1.0;
-        float t = t0;
+        float t0 = rb.lerpSpeed * SimTimeElapsed + rb.lerpTimeOffset;
         
+        float t;
+        float dt_dt0; // Derivative of t with respect to t0
         if (doRoundTrip)
         {
-            t = (t0 < 0.5) ? (2.0 * t0) : (2.0 - 2.0 * t0);
+            t = (sin((t0 + 0.75) * PI * 2.0) + 1.0) * 0.5;
+            dt_dt0 = PI * cos(2.0 * PI * (t0 + 0.75));
+        }
+        else
+        {
+            t = fmod(t0, 1.0);
+            dt_dt0 = 1.0;
         }
 
-        float2 lerpPos = lerp(startPos, endPos, t);
+        float2 lerpPos = lerp(startAnchor, endAnchor, t);
         rb.pos = lerpPos;
 
-        float2 vel = (endPos - startPos) * rb.lerpSpeed * (doRoundTrip ? ((t0 < 0.5) ? 2.0 : -2.0) : 1);
+        float2 vel = (endAnchor - startAnchor) * rb.lerpSpeed * dt_dt0;
         
         rb.vel_AsInt2 = Float2AsInt2(vel, INT_FLOAT_PRECISION_RB);
     }

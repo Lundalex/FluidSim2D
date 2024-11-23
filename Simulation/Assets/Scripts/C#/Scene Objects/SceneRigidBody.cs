@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Resources2;
 using UnityEngine;
+using Unity.Mathematics;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -29,6 +31,7 @@ public class SceneRigidBody : Polygon
     [NonSerialized] public Vector2 lastPosition = Vector2.positiveInfinity;
     [NonSerialized] public Vector2 cashedCentroid = Vector2.positiveInfinity;
     [NonSerialized] public Vector2 cashedRelativeLinkPos;
+    [NonSerialized] public Vector2 cashedLinearMotorOffset;
     [NonSerialized] public ConstraintType lastLinkType;
     [NonSerialized] public Vector2 lastLocalLinkPosThisRB;
     [NonSerialized] public Vector2 lastLocalLinkPosOtherRB;
@@ -38,21 +41,47 @@ public class SceneRigidBody : Polygon
     private int frameCount = 0;
     private int framesSinceLastPositionChange = 0;
     private Vector2 lastFramePosition = Vector2.zero;
+    private float lastFrameLerpTimeOffet = 0;
+    private bool lastOverrideCentroid = false;
+    private bool lastOverrideCentroidSet = false;
 
 #region Editor
     #if UNITY_EDITOR
     public override void OnEditorUpdate()
     {
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+
         if (!Application.isPlaying)
         {
-            // Avoid continuing if the position field is currently being modified
-            if (lastFramePosition.x != transform.position.x || lastFramePosition.y != transform.position.y)
+            // Check whether to update the linear motor offset
+            float newLerpTimeOffset = RBInput.lerpTimeOffset;
+            if (newLerpTimeOffset != lastFrameLerpTimeOffet)
             {
-                lastFramePosition = transform.position;
+                lastFrameLerpTimeOffet = newLerpTimeOffset;
+                cashedLinearMotorOffset = GetLinearMotorOffset();
+                transform.localPosition = (Vector2)RBInput.startPos + cashedLinearMotorOffset;
+            }
+
+            if (!lastOverrideCentroidSet)
+            {
+                lastOverrideCentroid = RBInput.overrideCentroid;
+                lastOverrideCentroidSet = true;
+            }
+
+            if (RBInput.overrideCentroid != lastOverrideCentroid)
+            {
+                lastOverrideCentroid = RBInput.overrideCentroid;
+                RBInput.overrideCentroidPosition = (float2)(Vector2)transform.position;
+            }
+
+            // Avoid continuing if the position field is currently being modified
+            if (lastFramePosition.x != transform.localPosition.x || lastFramePosition.y != transform.localPosition.y)
+            {
+                lastFramePosition = transform.localPosition;
                 framesSinceLastPositionChange = 0;
             }
             else framesSinceLastPositionChange++;
-            if (framesSinceLastPositionChange < 10) return;
+            if (framesSinceLastPositionChange < 20) return;
 
             // Check whether to center the position
             if (DoCenterPosition)
@@ -62,8 +91,8 @@ public class SceneRigidBody : Polygon
             }
 
             // Check whether any positional data field has been modified, or each second of editor time
-            bool forceUpdateCashedData = frameCount++ % 60 == 0;
-            if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 20.0f ||
+            bool forceUpdateCashedData = frameCount++ % 10 == 0;
+            if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 0.1f ||
                 (lastLocalLinkPosThisRB - (Vector2)RBInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
                 (lastLocalLinkPosOtherRB - (Vector2)RBInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
                 forceUpdateCashedData)
@@ -79,11 +108,6 @@ public class SceneRigidBody : Polygon
             }
             if (lastLinkType != RBInput.constraintType)
             {
-                if (RBInput.constraintType != ConstraintType.LinearMotor)
-                {
-                    RBInput.localLinkPosOtherRB = Vector2.zero;
-                    RBInput.localLinkPosThisRB = Vector2.zero;
-                }
                 lastLinkType = RBInput.constraintType;
                 CenterPolygonPosition();
             }
@@ -101,6 +125,12 @@ public class SceneRigidBody : Polygon
 
         if (RBInput.constraintType == ConstraintType.Rigid)
         {
+            if (RBInput.linkedRigidBody == null)
+            {
+                Debug.LogWarning("Linked rigid body not set. SceneRigidBody: " + this.name);
+                return;
+            }
+
             Vector2 thisCentroid = cashedCentroid;
             Vector2 otherCentroid = RBInput.linkedRigidBody.cashedCentroid;
             Vector2 thisCentroidRelative = thisCentroid - lastPosition;
@@ -108,17 +138,19 @@ public class SceneRigidBody : Polygon
             Vector2 localLinkPosThis = (Vector2)RBInput.localLinkPosThisRB;
             
             Vector2 newPos = otherCentroid - thisCentroidRelative + localLinkPosOther - localLinkPosThis;
-            bool doUpdatePosition = newPos.x < float.MaxValue && newPos.y < float.MaxValue && (lastPosition - newPos).sqrMagnitude > 20.0f;
+            bool doUpdatePosition = newPos.x < float.MaxValue && newPos.y < float.MaxValue && (lastPosition - newPos).sqrMagnitude > 0.1f;
             if (doUpdatePosition)
             {
-                transform.position = newPos;
+                transform.localPosition = newPos;
                 cashedRelativeLinkPos = thisCentroid + localLinkPosThis;
             }
         }
-        else if (RBInput.constraintType == ConstraintType.LinearMotor) transform.position = (Vector2)RBInput.startPos;
+        else if (RBInput.constraintType == ConstraintType.LinearMotor)
+            transform.localPosition = (Vector2)RBInput.startPos + cashedLinearMotorOffset;
 
         // Record the current positional data
-        if ((lastPosition - (Vector2)transform.position).sqrMagnitude > 20.0f) lastPosition = transform.position;
+        if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 0.1f)
+            lastPosition = transform.localPosition;
         lastLocalLinkPosThisRB = (Vector2)RBInput.localLinkPosThisRB;
         lastLocalLinkPosOtherRB = (Vector2)RBInput.localLinkPosOtherRB;
     }
@@ -180,7 +212,7 @@ public class SceneRigidBody : Polygon
 
     public Vector2 ComputeCentroid(float gridSpacing)
     {
-        if (RBInput.overrideCentroid) return transform.position;
+        if (RBInput.overrideCentroid) return (Vector2)RBInput.overrideCentroidPosition + (Vector2)transform.position - (Vector2)transform.localPosition;
 
         Vector2[] points = GeneratePoints(gridSpacing, Vector2.zero);
         int numPoints = points.Length;
@@ -189,7 +221,7 @@ public class SceneRigidBody : Polygon
         Vector2 centroid = Vector2.zero;
         foreach (Vector2 point in points) centroid += point;
         centroid /= numPoints;
-
+        
         return centroid;
     }
 
@@ -203,7 +235,7 @@ public class SceneRigidBody : Polygon
 
         // Centroid
         Vector2 centroid = Vector2.zero;
-        if (RBInput.overrideCentroid) centroid = transform.position;
+        if (RBInput.overrideCentroid) centroid = (Vector2)RBInput.overrideCentroidPosition + (Vector2)transform.position - (Vector2)transform.localPosition;
         else
         {
             foreach (Vector2 point in points) centroid += point;
@@ -245,7 +277,7 @@ public class SceneRigidBody : Polygon
 
         // Move the transform's position by the centroid offset
         Vector3 worldCentroidOffset = transform.TransformVector(centroid);
-        transform.position += worldCentroidOffset;
+        transform.localPosition += worldCentroidOffset;
 
         // Adjust points so that centroid is at local (0,0)
         for (int i = 0; i < points.Length; i++)
@@ -258,5 +290,23 @@ public class SceneRigidBody : Polygon
 
         // Update cashedCentroid
         cashedCentroid = ComputeCentroid(defaultGridSpacing);
+    }
+
+    public Vector2 GetLinearMotorOffset()
+    {
+        if (RBInput.constraintType == ConstraintType.LinearMotor)
+        {
+            float t;
+            if (RBInput.doRoundTrip)
+            {
+                t = (float)((Mathf.Sin((RBInput.lerpTimeOffset + 0.75f) * (float)Math.PI * 2.0f) + 1.0f) * 0.5f);
+            }
+            else
+            {
+                t = RBInput.lerpTimeOffset % 1.0f;
+            }
+            return Func.LerpVector2(RBInput.startPos, RBInput.endPos, t) - (Vector2)RBInput.startPos;
+        }
+        return Vector2.zero;
     }
 }

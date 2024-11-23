@@ -8,7 +8,7 @@ public abstract class Sensor : MonoBehaviour
 {
     [Header("Display")]
     [SerializeField] private DataView defaultDataView;
-    [Range(0, 2)] public int numDecimals;
+    [Range(1, 2)] public int numDecimals;
     [Range(0.1f, 5.0f)] public float newLowerPrefixTimer = 0.5f;
     public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
@@ -21,7 +21,7 @@ public abstract class Sensor : MonoBehaviour
     [SerializeField] private GameObject dashedRectanglePrefab;
     [SerializeField] private GameObject graphChartPrefab;
     [NonSerialized] public GraphController graphController;
-    public Canvas mainCanvas;
+    private Canvas mainCanvas;
 
     // Private references
     [NonSerialized] public Transform sensorUIContainer;
@@ -73,6 +73,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUIOutline.SetActive(false);
         sensorUI.dashedRectangleObject = sensorUIOutline;
         sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
+        mainCanvas = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;
         sensorUI.swayElementC.mainCanvas = mainCanvas;

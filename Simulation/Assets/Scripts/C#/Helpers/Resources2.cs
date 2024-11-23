@@ -157,6 +157,11 @@ namespace Resources2
             return min;
         }
 
+        public static Vector2 LerpVector2(Vector2 a, Vector2 b, float t)
+        {
+            return new(Mathf.Lerp(a.x, b.x, t), Mathf.Lerp(a.y, b.y, t));
+        }
+
         public static int FloatAsInt(float a, float precision)
         {
             return (int)(a * precision);

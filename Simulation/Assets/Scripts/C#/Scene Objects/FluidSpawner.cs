@@ -26,7 +26,9 @@ public class FluidSpawner : Polygon
 
     private void OnValidate() => generatedPoints = null;
 
-    public override void OnEditorUpdate() { } // Not used
+    #if UNITY_EDITOR
+        public override void OnEditorUpdate() { } // Not used
+    #endif
 
     public PData[] GenerateParticles()
     {

@@ -1,9 +1,10 @@
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
 using PM = ProgramManager;
+using Debug = UnityEngine.Debug;
 
 public class FluidSensor : Sensor
 {
@@ -12,44 +13,46 @@ public class FluidSensor : Sensor
     public Color areaColor;
     public Rect measurementZone;
     [SerializeField] private float patternModulo;
-    [Range(1, 20), SerializeField] private int SampleDensity;
-    private List<int> measurementChunkKeys;
+    [Range(1, 20), SerializeField] private int SampleSpacing;
+
+    private int minX, maxX, minY, maxY;
     private float sampleDensityCorrection;
+    private int2 chunksNum;
+    private float maxInfluenceRadius;
 
     int GetChunkKey(int x, int y) => x + y * main.ChunksNum.x;
 
-    private void InitMeasurementChunkKeys()
-    {
-        if (main == null) return;
-        int2 chunksNum = main.ChunksNum;
-        float maxInfluenceRadius = main.MaxInfluenceRadius;
-
-        int minX = Mathf.Max(Mathf.FloorToInt(measurementZone.min.x / maxInfluenceRadius), 0);
-        int minY = Mathf.Max(Mathf.FloorToInt(measurementZone.min.y / maxInfluenceRadius), 0);
-        int maxX = Mathf.Min(Mathf.CeilToInt(measurementZone.max.x / maxInfluenceRadius), chunksNum.x);
-        int maxY = Mathf.Min(Mathf.CeilToInt(measurementZone.max.y / maxInfluenceRadius), chunksNum.y);
-        
-        measurementChunkKeys = new();
-        for (int x = minX; x <= maxX; x += SampleDensity)
-        {
-            for (int y = minY; y <= maxY; y += SampleDensity)
-            {
-                if (0 <= x && x < chunksNum.x && 0 <= y && y < chunksNum.y) measurementChunkKeys.Add(GetChunkKey(x, y));
-            }
-        }
-        sampleDensityCorrection = (maxX - minX) * (maxY - minY) / (float)measurementChunkKeys.Count;
-    }
-
     private void OnValidate()
     {
-        if (PM.Instance.programStarted) InitMeasurementChunkKeys();
+        if (PM.Instance.programStarted) InitializeMeasurementParameters();
     }
 
     public override void InitSensor()
     {
         UpdatePosition();
-        InitMeasurementChunkKeys();
-    } 
+        InitializeMeasurementParameters();
+    }
+
+    private void InitializeMeasurementParameters()
+    {
+        if (main == null) return;
+        chunksNum = main.ChunksNum;
+        maxInfluenceRadius = main.MaxInfluenceRadius;
+
+        minX = Mathf.Max(Mathf.FloorToInt(measurementZone.min.x / maxInfluenceRadius), 0);
+        minY = Mathf.Max(Mathf.FloorToInt(measurementZone.min.y / maxInfluenceRadius), 0);
+        maxX = Mathf.Min(Mathf.CeilToInt(measurementZone.max.x / maxInfluenceRadius), chunksNum.x - 1);
+        maxY = Mathf.Min(Mathf.CeilToInt(measurementZone.max.y / maxInfluenceRadius), chunksNum.y - 1);
+
+        int numX = ((maxX - minX) / SampleSpacing) + 1;
+        int numY = ((maxY - minY) / SampleSpacing) + 1;
+        int numberOfIterations = numX * numY;
+
+        if (numberOfIterations > 0)
+            sampleDensityCorrection = (maxX - minX) * (maxY - minY) / (float)numberOfIterations;
+        else
+            sampleDensityCorrection = 1.0f;
+    }
 
     public SensorArea GetSensorAreaData()
     {
@@ -77,17 +80,31 @@ public class FluidSensor : Sensor
     {
         if (sensorUI != null)
         {
-            if (measurementZone.height == 0.0f && measurementZone.width == 0.0f) Debug.Log("Measurement zone has no width or height. It will not be updated. FluidSensor: " + this.name);
+            if (measurementZone.height == 0.0f && measurementZone.width == 0.0f)
+                Debug.Log("Measurement zone has no width or height. It will not be updated. FluidSensor: " + this.name);
             else
             {
+                // Collect all data constributions
+                int numContributions = 0;
                 RecordedFluidData_Translated sumFluidDatas = new();
-                foreach (int chunkKey in measurementChunkKeys)
+                for (int x = minX; x <= maxX; x += SampleSpacing)
                 {
-                    // The velAbs calculation is a conservative estimate. The estimation accuracy becomes higher the fewer particles with differing velocities there are in each chunk
-                    RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
-                    if (fluidData.numContributions > 0) AddRecordedFluidData(ref sumFluidDatas, fluidData);
+                    for (int y = minY; y <= maxY; y += SampleSpacing)
+                    {
+                        if (0 <= x && x < chunksNum.x && 0 <= y && y < chunksNum.y)
+                        {
+                            int chunkKey = GetChunkKey(x, y);
+                            RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
+                            if (fluidData.numContributions > 0)
+                            {
+                                AddRecordedFluidData(ref sumFluidDatas, fluidData);
+                                numContributions += fluidData.numContributions;
+                            }
+                        }
+                    }
                 }
-                
+
+                sumFluidDatas.numContributions = numContributions;
                 UpdateSensorContents(sumFluidDatas);
             }
         }
@@ -101,15 +118,13 @@ public class FluidSensor : Sensor
         a.totVelComponents += b.totVelComponents;
         a.totVelAbs += b.totVelAbs;
         a.totMass += b.totMass;
-
-        a.numContributions += b.numContributions;
     }
 
     private void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas)
     {
         float kineticEnergy = sumFluidDatas.totMass * Mathf.Pow(sumFluidDatas.totVelAbs, 2) / 2.0f;
         float thermalEnergy = sumFluidDatas.totThermalEnergy;
-        
+
         float avgTemperature = sumFluidDatas.totTemp / sumFluidDatas.numContributions;
 
         float value = 0;
@@ -194,7 +209,7 @@ public class FluidSensor : Sensor
                 break;
 
             case FluidSensorType.TotalMass:
-                unit += "g"; // all particle / rb masses are measured in the base unit of "grams"
+                unit += "kg";
                 break;
 
             case FluidSensorType.AveragePressure:
@@ -219,11 +234,25 @@ public class FluidSensor : Sensor
                 break;
         }
 
-        // If the new unit differs from the previous unit, update the sensor unit
+        ApplyUnitExceptions(ref unit);
+
         if (unit != lastUnit)
         {
             sensorUI.SetUnit(unit);
             lastUnit = unit;
+        }
+    }
+
+    private void ApplyUnitExceptions(ref string unit)
+    {
+        switch (unit)
+        {
+            case "mkg":
+                unit = "g";
+                break;
+            
+            default:
+                break;
         }
     }
 

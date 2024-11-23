@@ -56,7 +56,7 @@ public class FieldModifier : MonoBehaviour
     {
         if (fieldReference.targetScript == null || string.IsNullOrEmpty(fieldReference.fieldName))
         {
-            Debug.LogWarning("FieldReference is not set");
+            Debug.LogWarning("FieldReference is not set. No field will be modified. FieldModifier: " + this.name);
             return;
         }
 

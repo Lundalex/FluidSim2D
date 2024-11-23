@@ -16,7 +16,7 @@ public struct RBData
     public int startIndex;
     public int endIndex;
 
-    // Inter-RB spring links
+    // Inter-RB spring constraint
     public int linkedRBIndex; // -1 -> No link
     public float springStiffness; // 0 -> Fully rigid constraint
     public float springRestLength;
@@ -26,6 +26,7 @@ public struct RBData
 
     // Linear motor (link Type)
     public float lerpSpeed;
+    public float lerpTimeOffset;
 
     // Heating
     public float heatingStrength;

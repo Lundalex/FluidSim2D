@@ -94,7 +94,7 @@ struct RigidBody
     int startIndex;
     int endIndex;
 
-    // Inter-RB spring links
+    // Inter-RB spring constraint
     int linkedRBIndex; // -1 -> No link
     float springStiffness; // 0 -> Fully rigid constraint
     float springRestLength;
@@ -104,6 +104,7 @@ struct RigidBody
 
     // Linear motor (link Type)
     float lerpSpeed;
+    float lerpTimeOffset;
 
     // Heating
     float heatingStrength;

@@ -604,18 +604,38 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         float dstSqr = dot2(pixelPos - rb.pos);
 
         #if DRAW_RB_CENTROIDS
+
+            // Check proximity to centroid
             bool doRenderPoint = false;
             if (dstSqr < CENTROID_RADIUS_SQR)
             {
                 doRenderPoint = true;
             }
-            else if (rb.springStiffness == 0) // Rigid link
+            
+            // Check proximity to other important positions
+            if (!doRenderPoint)
             {
-                float2 linkPos = rb.pos + rotate2D(rb.localLinkPosThisRB, rb.totRot);
-                float dstSqr = dot2(pixelPos - linkPos);
-                if (dstSqr < CENTROID_RADIUS_SQR)
+                bool isLinearMotor = rb.mass < 0;
+                if (isLinearMotor)
                 {
-                    doRenderPoint = true;
+                    float2 startAnchor = rb.localLinkPosThisRB;
+                    float2 endAnchor = rb.localLinkPosOtherRB;
+
+                    float dstToStartAnchorSqr = dot2(startAnchor - pixelPos);
+                    float dstToEndAnchorSqr = dot2(endAnchor - pixelPos);
+                    if (dstToStartAnchorSqr < CENTROID_RADIUS_SQR || dstToEndAnchorSqr < CENTROID_RADIUS_SQR)
+                    {
+                        doRenderPoint = true;
+                    }
+                }
+                else if (rb.springStiffness == 0) // Rigid
+                {
+                    float2 linkPos = rb.pos + rotate2D(rb.localLinkPosThisRB, rb.totRot);
+                    float dstSqr = dot2(pixelPos - linkPos);
+                    if (dstSqr < CENTROID_RADIUS_SQR)
+                    {
+                        doRenderPoint = true;
+                    }
                 }
             }
 

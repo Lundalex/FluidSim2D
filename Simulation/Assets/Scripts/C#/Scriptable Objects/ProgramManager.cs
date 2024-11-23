@@ -19,7 +19,7 @@ public class ProgramManager : ScriptableObject
 
     // UI elements
     [NonSerialized] public List<SensorData> sensorDatas = new();
-    [NonSerialized] public List<UserInput> userInputs = new();
+    [NonSerialized] public List<UserUIElement> userUIElements = new();
 
     // Globally accessed variables
     [NonSerialized] public bool programStarted = false;
@@ -229,7 +229,7 @@ public class ProgramManager : ScriptableObject
         performanceMisses = 0;
 
         sensorDatas = new();
-        userInputs = new();
+        userUIElements = new();
     }
 
     public void AddSensor(SensorUI sensorUI, Sensor sensor)
@@ -241,7 +241,7 @@ public class ProgramManager : ScriptableObject
         sensorUI.OnSettingsViewStatusChanged += (isActive) => SetSensorSettingsViewStatus(sensorIndex, isActive);
     }
 
-    public void AddUserInput(UserInput userInput) => userInputs.Add(userInput);
+    public void AddUserInput(UserUIElement userUIElement) => userUIElements.Add(userUIElement);
 
     public void SetSensorSettingsViewStatus(int sensorIndex, bool isSettingsViewActive)
     {
@@ -266,9 +266,9 @@ public class ProgramManager : ScriptableObject
         {
             if (sensorData.sensorUI.isPointerHovering) return true;
         }
-        foreach (UserInput userInput in userInputs)
+        foreach (UserUIElement userUIElement in userUIElements)
         {
-            if (userInput.pointerHoverArea.CheckIfHovering()) return true;
+            if (userUIElement.pointerHoverArea.CheckIfHovering()) return true;
         }
         return false;
     }
@@ -365,9 +365,9 @@ public class ProgramManager : ScriptableObject
         
         // Apply the offset
         languageSelectDropdown.localPosition = (Vector2)languageSelectDropdown.localPosition - offset;
-        foreach (UserInput userInput in userInputs)
+        foreach (UserUIElement userUIElement in userUIElements)
         {
-            RectTransform rectTransform = userInput.GetComponent<RectTransform>();
+            RectTransform rectTransform = userUIElement.GetComponent<RectTransform>();
             rectTransform.localPosition = (Vector2)rectTransform.localPosition - offset;
         }
     }

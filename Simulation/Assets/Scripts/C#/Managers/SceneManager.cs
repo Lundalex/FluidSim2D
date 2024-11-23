@@ -69,7 +69,7 @@ public class SceneManager : MonoBehaviour
         // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
-            if (rigidBody.IsPointInsidePolygon(point)) return false;
+            if (rigidBody.IsPointInsidePolygon(point) && rigidBody.RBInput.isCollider) return false;
         }
 
         // Sort fluids with respect to the sibling indices
@@ -143,9 +143,9 @@ public class SceneManager : MonoBehaviour
         };
     }
 
-    public List<PData> GenerateParticles(int maxParticlesNum, float gridSpacing = 0)
+    public PData[] GenerateParticles(int maxParticlesNum, float gridSpacing = 0)
     {
-        if (maxParticlesNum == 0) return new List<PData>();
+        if (maxParticlesNum == 0) return new PData[0];
 
         // Get all fluid instances
         SceneFluid[] allFluids = GetAllSceneFluids();
@@ -161,11 +161,11 @@ public class SceneManager : MonoBehaviour
             foreach (var pData in pDatas)
             {
                 allPDatas.Add(pData);
-                if (--maxParticlesNum <= 0) return allPDatas;
+                if (--maxParticlesNum <= 0) return allPDatas.ToArray();
             }
         }
 
-        return allPDatas;
+        return allPDatas.ToArray();
     }
 
     public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridSpacingInput = null)
@@ -183,7 +183,7 @@ public class SceneManager : MonoBehaviour
             rigidBody.polygonCollider.points = ArrayUtils.RemoveAdjacentDuplicates(rigidBody.polygonCollider.points);
         }
 
-        Vector2 offset = GetBoundsOffset();
+        Vector2 boundsOffset = GetBoundsOffset();
 
         // Get the rigidBody data for each rigidBody
         List<RBData> allRBData = new();
@@ -195,11 +195,15 @@ public class SceneManager : MonoBehaviour
 
             if (!rigidBody.RBInput.includeInSimulation) continue;
 
-            // Transform points to local space
-            Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + offset;
-            Vector2[] vectors = GetTransformedPoints(rigidBody, offset, transformedRBPos);
+            // Calculate the parent offset
+            Transform transform = rigidBody.transform;
+            Vector2 parentOffset = transform.position - transform.localPosition;
 
-            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, offset, rbCalcGridDensity);
+            // Transform points to local space
+            Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + boundsOffset;
+            Vector2[] vectors = GetTransformedPoints(rigidBody, boundsOffset, transformedRBPos);
+
+            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridDensity);
 
             // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.RBInput;
@@ -216,7 +220,7 @@ public class SceneManager : MonoBehaviour
                 Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
             
             // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos));
+            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
             
             // Initialize the rigid body vector datas
             foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
@@ -284,7 +288,7 @@ public class SceneManager : MonoBehaviour
         return allFluids;
     }
 
-    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos)
+    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, float2 pos, float2 parentOffset)
     {
         bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
         return new RBData
@@ -307,10 +311,11 @@ public class SceneManager : MonoBehaviour
             springStiffness = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springStiffness,
             springRestLength = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springRestLength,
             damping = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.damping,
-            localLinkPosThisRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.startPos : rbInput.localLinkPosThisRB,
-            localLinkPosOtherRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.endPos : rbInput.localLinkPosOtherRB,
+            localLinkPosThisRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.startPos + parentOffset : rbInput.localLinkPosThisRB,
+            localLinkPosOtherRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.endPos + parentOffset : rbInput.localLinkPosOtherRB,
             // Linear motor
             lerpSpeed = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.lerpSpeed : 0,
+            lerpTimeOffset = rbInput.lerpTimeOffset,
             // Heating
             heatingStrength = rbInput.heatingStrength,
             // Recorded spring force

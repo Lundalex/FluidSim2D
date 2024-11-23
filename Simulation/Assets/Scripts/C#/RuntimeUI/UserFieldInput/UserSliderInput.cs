@@ -1,21 +1,22 @@
 using Resources2;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using PM = ProgramManager;
 
-public class UserSliderInput : UserInput
+public class UserSliderInput : UserUIElement
 {
     [Header("Settings")]
     [Range(0.0f, 1000.0f), SerializeField] private float msMaxUpdateFrequency = 100.0f;
     [SerializeField] private float startingValue;
     [SerializeField] private float minValue;
     [SerializeField] private float maxValue;
+    public string innerFieldName = "No Inner Field";
 
     [Header("References")]
     [SerializeField] private Slider slider;
     [SerializeField] private TMP_InputField sliderInputField;
+    [SerializeField] private FieldModifier fieldModifier;
 
     // Private
     private float lastValue;

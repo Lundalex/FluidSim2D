@@ -65,7 +65,7 @@ public class ShaderHelper : MonoBehaviour
             renderShader.SetBuffer(1, "SensorAreas", m.SensorAreaBuffer);
         }
 
-        if (m.RBDatas.Length != 0)
+        if (m.NumRigidBodies != 0)
         {
             renderShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
             renderShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
@@ -199,8 +199,8 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
         renderShader.SetInt("PTypesNum", m.PTypesNum);
-        renderShader.SetInt("NumRigidBodies", m.RBDatas.Length);
-        renderShader.SetInt("NumFluidSensors", m.SensorAreas.Length);
+        renderShader.SetInt("NumRigidBodies", m.NumRigidBodies);
+        renderShader.SetInt("NumFluidSensors", m.NumFluidSensors);
 
         renderShader.SetVector("GlobalBrightness", new Vector3(m.GlobalBrightness.x, m.GlobalBrightness.y, m.GlobalBrightness.z));
         renderShader.SetFloat("Contrast", m.Contrast);
@@ -252,8 +252,8 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         rbSimShader.SetFloat("RigidBodyPadding", Mathf.Max(m.RigidBodyPadding, 0.1f));
 
-        rbSimShader.SetInt("NumRigidBodies", m.RBDatas.Length);
-        rbSimShader.SetInt("NumVectors", m.RBVectors.Length);
+        rbSimShader.SetInt("NumRigidBodies", m.NumRigidBodies);
+        rbSimShader.SetInt("NumVectors", m.NumRigidBodyVectors);
         rbSimShader.SetInt("NumParticles", m.ParticlesNum);
         rbSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         rbSimShader.SetInt("PTypesNum", m.PTypesNum);

@@ -1,3 +1,5 @@
+using System;
+using Resources2;
 using UnityEditor;
 using UnityEngine;
 
@@ -110,7 +112,11 @@ public class EditorManager : Editor
         // Update points
         rigidBody.SetPolygonData();
 
-        // --- Draw the filled body using triangulation ---
+        // Calculate the parent offset
+        Transform transform = rigidBody.transform;
+        Vector2 parentOffset = transform.position - transform.localPosition;
+
+        // Draw the filled body using triangulation
         if (rigidBody.DoDrawBody)
         {
             if (rigidBody.MeshPoints.Count < 3)
@@ -122,7 +128,7 @@ public class EditorManager : Editor
             // Triangulate the polygon
             Vector2[] polygonPoints = rigidBody.MeshPoints.ToArray();
 
-            Triangulator triangulator = new Triangulator(polygonPoints);
+            Triangulator triangulator = new(polygonPoints);
             int[] indices = triangulator.Triangulate();
 
             // Convert Vector2 to Vector3 (z = 0)
@@ -173,8 +179,8 @@ public class EditorManager : Editor
         }
         else if (rigidBody.RBInput.constraintType == ConstraintType.LinearMotor)
         {
-            Vector2 startPoint = rigidBody.RBInput.startPos;
-            Vector2 endPoint = rigidBody.RBInput.endPos;
+            Vector2 startPoint = (Vector2)rigidBody.RBInput.startPos + parentOffset;
+            Vector2 endPoint = (Vector2)rigidBody.RBInput.endPos + parentOffset;
 
             Color orangeColor = new(1.0f, 0.15f, 0.0f);
             DrawDashedLine(orangeColor, endPoint, startPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
@@ -189,6 +195,12 @@ public class EditorManager : Editor
         {
             if (rigidBody.RBInput.constraintType == ConstraintType.Rigid)
             {
+                if (rigidBody.RBInput.linkedRigidBody == null)
+                {
+                    Debug.LogWarning("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+                    return;
+                }
+
                 // Calculate line points
                 Vector2 thisRBCentroid = rigidBody.cashedCentroid;
                 Vector2 LinkPos = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;

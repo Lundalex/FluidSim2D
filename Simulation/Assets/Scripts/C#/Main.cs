@@ -214,6 +214,9 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ParticlesNum_NextPow2;
     [NonSerialized] public int ParticlesNum_NextLog2;
     [NonSerialized] public int PTypesNum;
+    [NonSerialized] public int NumRigidBodies;
+    [NonSerialized] public int NumRigidBodyVectors;
+    [NonSerialized] public int NumFluidSensors;
 
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
@@ -223,15 +226,7 @@ public class Main : MonoBehaviour
     [NonSerialized] public GameObject causticsGen;
 
     // Particle data
-    private List<PData> PDatas = new();
     private List<PData> NewPDatas = new();
-
-    // Rigid Bodies
-    public RBVector[] RBVectors;
-    public RBData[] RBDatas;
-
-    // Fluid Sensors
-    public SensorArea[] SensorAreas;
 
     // Materials
     private Mat[] Mats;
@@ -252,8 +247,8 @@ public class Main : MonoBehaviour
     {
         SceneSetup();
 
-        PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
-        ParticlesNum = PDatas.Count;
+        PData[] PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
+        ParticlesNum = PDatas.Length;
         
         SimTimeElapsed = 0;
         BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
@@ -261,7 +256,10 @@ public class Main : MonoBehaviour
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
-        (RBDatas, RBVectors, SensorAreas) = sceneManager.CreateRigidBodies();
+        (RBData[] RBDatas, RBVector[] RBVectors, SensorArea[] SensorAreas) = sceneManager.CreateRigidBodies();
+        NumRigidBodies = RBDatas.Length;
+        NumRigidBodyVectors = RBVectors.Length;
+        NumFluidSensors = SensorAreas.Length;
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
         TextureHelper.TextureFromGradient(ref LiquidVelocityGradientTexture, LiquidVelocityGradientResolution, LiquidVelocityGradient);
         TextureHelper.TextureFromGradient(ref GasVelocityGradientTexture, GasVelocityGradientResolution, GasVelocityGradient);
@@ -269,7 +267,7 @@ public class Main : MonoBehaviour
         SetConstants();
         InitTimeSetRand();
 
-        InitializeBuffers();
+        InitializeBuffers(PDatas, RBDatas, RBVectors, SensorAreas);
         renderTexture = TextureHelper.CreateTexture(PM.Instance.ResolutionInt2, 3);
 
         shaderHelper.SetPSimShaderBuffers(pSimShader);
@@ -299,7 +297,7 @@ public class Main : MonoBehaviour
         PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
         UpdateScript();
 
-        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + RBDatas.Length + " rigid bodies. Platform: " + Application.platform);
+        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + NumRigidBodies + " rigid bodies. Platform: " + Application.platform);
     }
 
     public void UpdateScript()
@@ -527,7 +525,7 @@ public class Main : MonoBehaviour
         PTypesNum = pTypeInput.particleTypeStates.Length * 3;
     }
 
-    private void InitializeBuffers()
+    private void InitializeBuffers(PData[] PDatas, RBData[] RBDatas, RBVector[] RBVectors, SensorArea[] SensorAreas)
     {
         ComputeHelper.CreateStructuredBuffer<PData>(ref PDataBuffer, MaxParticlesNum);
         ComputeHelper.CreateStructuredBuffer<PType>(ref PTypeBuffer, pTypeInput.GetParticleTypes());
@@ -543,13 +541,13 @@ public class Main : MonoBehaviour
 
         ComputeHelper.CreateStructuredBuffer<RBData>(ref RBDataBuffer, RBDatas);
         ComputeHelper.CreateStructuredBuffer<RBVector>(ref RBVectorBuffer, RBVectors);
-        ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, RBDatas.Length);
+        ComputeHelper.CreateStructuredBuffer<RBAdjustment>(ref RBAdjustmentBuffer, NumRigidBodies);
 
         ComputeHelper.CreateStructuredBuffer<SensorArea>(ref SensorAreaBuffer, SensorAreas);
 
         ComputeHelper.CreateStructuredBuffer<Mat>(ref MaterialBuffer, Mats);
 
-        PDataBuffer.SetData(PDatas.ToArray(), 0, 0, ParticlesNum);
+        PDataBuffer.SetData(PDatas, 0, 0, ParticlesNum);
     }
 
     private void GPUSortChunkLookUp()
@@ -628,12 +626,12 @@ public class Main : MonoBehaviour
 
     private void RunRbSimShader()
     {
-        if (RBVectors.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "UpdateRBVertices", RBVectors.Length, rbSimShaderThreadSize1);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_RB", RBDatas.Length, rbSimShaderThreadSize2);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRBSprings", RBDatas.Length, rbSimShaderThreadSize2);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "AdjustRBDatas", RBDatas.Length, rbSimShaderThreadSize2);
-        if (ParticlesNum > 0) ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
-        if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(rbSimShader, "UpdateRigidBodies", RBDatas.Length, rbSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(rbSimShader, "UpdateRBVertices", NumRigidBodyVectors, rbSimShaderThreadSize1);
+        ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_RB", NumRigidBodies, rbSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(rbSimShader, "SimulateRBSprings", NumRigidBodies, rbSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(rbSimShader, "AdjustRBDatas", NumRigidBodies, rbSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
+        ComputeHelper.DispatchKernel(rbSimShader, "UpdateRigidBodies", NumRigidBodies, rbSimShaderThreadSize2);
     }
 
     private void DispatchRenderStep(RenderStep step, int2 threadsNum)
@@ -647,10 +645,10 @@ public class Main : MonoBehaviour
                 if (ParticlesNum > 0) ComputeHelper.DispatchKernel(renderShader, "RenderFluids", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.RigidBodies:
-                if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
+                if (NumRigidBodies > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodies", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.RigidBodySprings:
-                if (RBDatas.Length > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
+                if (NumRigidBodies > 0) ComputeHelper.DispatchKernel(renderShader, "RenderRigidBodySprings", threadsNum, renderShaderThreadSize);
                 break;
             case RenderStep.UI:
                 ComputeHelper.DispatchKernel(renderShader, "RenderUI", threadsNum, renderShaderThreadSize);

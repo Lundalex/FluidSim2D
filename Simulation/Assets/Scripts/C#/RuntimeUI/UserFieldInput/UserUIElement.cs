@@ -5,16 +5,14 @@ using UnityEngine.UI;
 using PM = ProgramManager;
 
 [ExecuteAlways]
-public abstract class UserInput : MonoBehaviour
+public abstract class UserUIElement : MonoBehaviour
 {
     
     public PointerHoverArea pointerHoverArea;
     public Image containerTrimImage;
-    public FieldModifier fieldModifier;
     [SerializeField] private TMP_Text title;
 
     [SerializeField] private string titleText;
-    public string innerFieldName = "No Inner Field";
     public Color primaryColor;
 
     private void OnEnable()

@@ -18,7 +18,7 @@ public class ComputeShaderDebugger
 
         // --- Set variables ---
 
-        debugShader.SetInt("CS_MAX_RIGIDBODIES_NUM", m.RBDatas.Length);
+        debugShader.SetInt("CS_MAX_RIGIDBODIES_NUM", m.NumRigidBodies);
 
         debugShader.SetInt("CS_TN_PS", m.pSimShaderThreadSize1);
         debugShader.SetInt("CS_TN_PS2", m.pSimShaderThreadSize2);

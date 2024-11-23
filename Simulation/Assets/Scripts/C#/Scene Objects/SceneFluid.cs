@@ -35,6 +35,8 @@ public class SceneFluid : Polygon
     #if UNITY_EDITOR
     public override void OnEditorUpdate()
     {
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+        
         if (!Application.isPlaying)
         {
             // Avoid continuing if the position field is currently being modified

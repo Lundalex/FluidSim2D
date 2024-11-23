@@ -21,22 +21,26 @@ public struct RBInput
     [Header("Particle Interaction")]
     public float heatingStrength;
 
-    [Header("Inter-RB Links")]
+    [Header("Inter-RB Constraint")]
     public ConstraintType constraintType;
-    public float springStiffness;
-    public float springRestLength;
-    public float damping;
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
     public SceneRigidBody linkedRigidBody;
 
-    [Header("Linear Motor")]
+    [Header("Spring Properties")]
+    public float springStiffness;
+    public float springRestLength;
+    public float damping;
+
+    [Header("Linear Motor Constraint")]
     public float lerpSpeed;
+    [Range(0.0f, 1.0f)] public float lerpTimeOffset;
     public bool doRoundTrip;
     public float2 startPos;
     public float2 endPos;
 
-    [Header("Starting Velocities")]
+    [Header("Starting Properties")]
+    public float2 overrideCentroidPosition;
     public float angularVelocity;
     public float2 velocity;
 
