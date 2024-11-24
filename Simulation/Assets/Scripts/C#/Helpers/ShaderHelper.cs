@@ -213,7 +213,6 @@ public class ShaderHelper : MonoBehaviour
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         sortShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
         sortShader.SetInt("ChunksNumAll", m.ChunksNumAll);
-        sortShader.SetInt("ChunkNumNextPow2", m.ChunksNumAllNextPow2);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
     }

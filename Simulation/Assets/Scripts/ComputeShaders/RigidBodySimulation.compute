@@ -344,6 +344,15 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     }
 }
 
+bool IsDataValid(RBAdjustment data)
+{
+    if (length(Int2ToFloat2(data.deltaPos_Int2, INT_FLOAT_PRECISION_RB)) > 100) return false;
+    if (length(Int2ToFloat2(data.deltaVel_Int2, INT_FLOAT_PRECISION_RB)) > 100) return false;
+    if (abs(IntToFloat(data.deltaRotVel_Int, INT_FLOAT_PRECISION_RB)) > 100) return false;
+
+    return true;
+}
+
 [numthreads(TN_RBS2,1,1)]
 void AdjustRBDatas(uint3 id : SV_DispatchThreadID)
 {
@@ -352,6 +361,8 @@ void AdjustRBDatas(uint3 id : SV_DispatchThreadID)
 
     RBAdjustment rbAdjustment = RBAdjustments[rbIndex];
     RBAdjustments[rbIndex] = InitRBAdjustment();
+    
+    if (!IsDataValid(rbAdjustment)) return;
 
     RigidBodies[rbIndex].pos += Int2ToFloat2(rbAdjustment.deltaPos_Int2, INT_FLOAT_PRECISION_RB);
     RigidBodies[rbIndex].vel_AsInt2 += rbAdjustment.deltaVel_Int2;
@@ -632,7 +643,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     }
     else
     {
-        // **Spring Constraint Handling**
+        // --- Spring Constraint Handling ---
 
         // Compute the vector between the link points
         float2 r = worldLinkPosA - worldLinkPosB;

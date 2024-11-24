@@ -69,7 +69,7 @@ public class SceneManager : MonoBehaviour
         // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
-            if (rigidBody.IsPointInsidePolygon(point) && rigidBody.RBInput.isCollider) return false;
+            if (rigidBody.IsPointInsidePolygon(point) && rigidBody.rbInput.isCollider) return false;
         }
 
         // Sort fluids with respect to the sibling indices
@@ -193,7 +193,7 @@ public class SceneManager : MonoBehaviour
         {
             SceneRigidBody rigidBody = allRigidBodies[i];
 
-            if (!rigidBody.RBInput.includeInSimulation) continue;
+            if (!rigidBody.rbInput.includeInSimulation) continue;
 
             // Calculate the parent offset
             Transform transform = rigidBody.transform;
@@ -206,9 +206,9 @@ public class SceneManager : MonoBehaviour
             (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridSpacing);
 
             // Get the index of the rigid body linked via a spring
-            RBInput rbInput = rigidBody.RBInput;
+            RBInput rbInput = rigidBody.rbInput;
             int springLinkedRBIndex = rbInput.linkedRigidBody == null ? -1 : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
-            if (rigidBody.RBInput.constraintType == ConstraintType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            if (rigidBody.rbInput.constraintType == ConstraintType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
             else if (i == springLinkedRBIndex)
             {
                 Debug.LogWarning("Attempted to link rigid body via spring to itself. Link will be removed");
@@ -220,13 +220,13 @@ public class SceneManager : MonoBehaviour
                 Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
             
             // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.RBInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
+            allRBData.Add(InitRBData(rigidBody.rbInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
             
             // Initialize the rigid body vector datas
             foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
 
             // Add sensor to sensors, while making sure there are no dupicate assignments
-            foreach (var sensor in rigidBody.LinkedSensors)
+            foreach (var sensor in rigidBody.linkedSensors)
             {
                 if (sensors.Contains(sensor)) Debug.LogWarning("Duplicate sensor rigid body assignments. Sensor name: " + sensor.name);
                 else
@@ -288,7 +288,7 @@ public class SceneManager : MonoBehaviour
         return allFluids;
     }
 
-    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, float2 pos, float2 parentOffset)
+    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos, Vector2 parentOffset)
     {
         bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
         return new RBData

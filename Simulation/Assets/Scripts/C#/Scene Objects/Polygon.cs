@@ -64,4 +64,31 @@ public abstract class Polygon : EditorLifeCycle
         // Point is inside the polygon if intersection count is odd
         return (intersectionCount % 2) == 1;
     }
+
+    public void CenterPolygonPosition()
+    {
+        // Get the collider's points
+        Vector2[] points = polygonCollider.points;
+
+        // Calculate the centroid of the collider in local space
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2 point in points)
+        {
+            centroid += point;
+        }
+        centroid /= points.Length;
+
+        // Move the transform's position by the centroid offset
+        Vector3 worldCentroidOffset = transform.TransformVector(centroid);
+        transform.position += worldCentroidOffset;
+
+        // Adjust points so that centroid is at local (0,0)
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] -= centroid;
+        }
+
+        // Apply the adjusted points back to the collider
+        polygonCollider.points = points;
+    }
 }

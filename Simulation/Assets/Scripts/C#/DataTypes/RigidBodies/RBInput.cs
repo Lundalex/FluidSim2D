@@ -23,8 +23,8 @@ public struct RBInput
 
     [Header("Inter-RB Constraint")]
     public ConstraintType constraintType;
-    public float2 localLinkPosThisRB;
-    public float2 localLinkPosOtherRB;
+    public Vector2 localLinkPosThisRB;
+    public Vector2 localLinkPosOtherRB;
     public SceneRigidBody linkedRigidBody;
 
     [Header("Spring Properties")]
@@ -36,13 +36,13 @@ public struct RBInput
     public float lerpSpeed;
     [Range(0.0f, 1.0f)] public float lerpTimeOffset;
     public bool doRoundTrip;
-    public float2 startPos;
-    public float2 endPos;
+    public Vector2 startPos;
+    public Vector2 endPos;
 
     [Header("Starting Properties")]
-    public float2 overrideCentroidPosition;
+    public Vector2 overrideCentroidPosition;
     public float angularVelocity;
-    public float2 velocity;
+    public Vector2 velocity;
 
     [Header("Display")]
     public int renderPriority;

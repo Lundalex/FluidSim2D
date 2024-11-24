@@ -22,30 +22,28 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public List<UserUIElement> userUIElements = new();
 
     // Globally accessed variables
-    [NonSerialized] public bool programStarted = false;
-    [NonSerialized] public bool doOnSettingsChanged = false;
-    [NonSerialized] public float globalBrightnessFactor = -1;
+    [NonSerialized] public bool programStarted;
+    [NonSerialized] public bool doOnSettingsChanged;
+    [NonSerialized] public float globalBrightnessFactor;
     [NonSerialized] public float timeScale = 1;
-    [NonSerialized] public bool isAnySensorSettingsViewActive = false;
-    [NonSerialized] public bool programPaused = true;
-    [NonSerialized] public bool frameStep = false;
-    [NonSerialized] public float totalTimeElapsed = 0;
-    [NonSerialized] public int frameCount = 0;
-    [NonSerialized] public float clampedDeltaTime = 0;
-    [NonSerialized] public float timeSetRandTimer = 0;
+    [NonSerialized] public bool isAnySensorSettingsViewActive;
+    [NonSerialized] public bool programPaused;
+    [NonSerialized] public bool frameStep;
+    [NonSerialized] public float totalTimeElapsed;
+    [NonSerialized] public int frameCount;
+    [NonSerialized] public float clampedDeltaTime;
+    [NonSerialized] public float timeSetRandTimer;
     [NonSerialized] public Vector2 Resolution;
     [NonSerialized] public int2 ResolutionInt2;
-    [NonSerialized] public readonly float MaxDeltaTime = 1 / 30.0f;
-    private const float MinTimeScaleForRunningProgram = 0.01f;
+    [NonSerialized] public static readonly float MaxDeltaTime = 1 / 30.0f;
+    private static readonly float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
 
     // Start confirmation timing
-    [NonSerialized] public bool startConfirmed = false;
-    [NonSerialized] public bool startConfirmationDelayActive = true;
-    [NonSerialized] public Stopwatch startConfirmationStopWatch;
-    private readonly float msStartConfimationDelay = 650.0f;
+    [NonSerialized] public StartConfirmationStatus startConfirmationStatus;
+    [NonSerialized] public static readonly float msStartConfimationDelay = 650.0f;
 
     // Private - Camera
     private Camera uiCam;
@@ -54,12 +52,15 @@ public class ProgramManager : ScriptableObject
     private bool viewTransformInitiated;
 
     // Private - Animated Texture Scrolling
-    private const float ScrollSpeed = 0.5f;
+    private static readonly float ScrollSpeed = 0.5f;
     private float offset;
 
     // Performance test
-    private const int PerformanceTestFrameLength = 1000;
-    private int performanceMisses = 0;
+    private static readonly int PerformanceTestFrameLength = 1000;
+    private bool performanceTestCompleted;
+    private int performanceMisses;
+
+
 
     // Singleton
     private static ProgramManager _instance;
@@ -75,14 +76,19 @@ public class ProgramManager : ScriptableObject
         }
     }
 
-    public void Start()
+    public void Initialize()
     {
+        ResetData();
         SetReferences();
-
         SetResolutionData();
         ScreenToViewFactor = GetScreenToViewFactor();
         SetStaticUIPositions();
+    }
 
+    public void Start()
+    {
+        Initialize();
+        
         main.StartScript();
         fluidSpawnerManager.StartScript(main);
         sensorManager.StartScript(main);
@@ -149,18 +155,19 @@ public class ProgramManager : ScriptableObject
 
     private void CheckStartConfirmation()
     {
-        if (!startConfirmed) programPaused = true;
-        else
+        if (startConfirmationStatus == StartConfirmationStatus.NotStarted)
         {
-            if (startConfirmationStopWatch.ElapsedMilliseconds > msStartConfimationDelay)
-            {
-                if (startConfirmationDelayActive)
-                {
-                    startConfirmationDelayActive = false;
-                    programPaused = false;
-                }
-            }
-            else programPaused = true;
+            programPaused = true;
+            return;
+        }
+        else if (startConfirmationStatus == StartConfirmationStatus.Waiting)
+        {
+            programPaused = true;
+        }
+        else if (startConfirmationStatus == StartConfirmationStatus.Complete)
+        {
+            programPaused = false;
+            startConfirmationStatus = StartConfirmationStatus.None;
         }
     }
 
@@ -168,22 +175,31 @@ public class ProgramManager : ScriptableObject
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-            Debug.Log("'P' key pressed. Scene resetting...");
+            Debug.Log("'R' key pressed. Scene resetting...");
             return true;
         }
         if (Input.GetKeyDown(KeyCode.P))
         {
             programPaused = !programPaused;
-            if (programPaused) Debug.Log("Program paused");
+            Debug.Log(programPaused ? "Program paused" : "Program resumed");
         }
-        if (Input.GetKeyDown(KeyCode.F)) frameStep = !frameStep;
-        if (Input.GetKeyDown(KeyCode.Escape)) CloseAllSensorUISettingsPanels();
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            frameStep = !frameStep;
+            Debug.Log("Stepping forward one frame");
+        }
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseAllSensorUISettingsPanels();
+        }
 
         return false;
     }
 
     private void CheckPerformance()
     {
+        if (performanceTestCompleted) return;
+
         if (frameCount < PerformanceTestFrameLength)
         {
             if (clampedDeltaTime == MaxDeltaTime) performanceMisses++;
@@ -194,6 +210,8 @@ public class ProgramManager : ScriptableObject
                 string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
 
                 Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + ". Total test duration: " + PerformanceTestFrameLength + " frames.");
+            
+                performanceTestCompleted = true;
             }
         }
     }
@@ -221,19 +239,19 @@ public class ProgramManager : ScriptableObject
         languageSelectDropdown = GameObject.FindGameObjectWithTag("LanguageSelect").GetComponent<Transform>();
     }
 
-    public void ResetDatas()
+    public void ResetData()
     {
         programStarted = true;
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
-        startConfirmed = false;
-        startConfirmationDelayActive = true;
+        startConfirmationStatus = StartConfirmationStatus.NotStarted;
         
         totalTimeElapsed = 0;
         frameCount = 0;
         globalBrightnessFactor = -1;
 
+        performanceTestCompleted = false;
         performanceMisses = 0;
 
         sensorDatas = new();

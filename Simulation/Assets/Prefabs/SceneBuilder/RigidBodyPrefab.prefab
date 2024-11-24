@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 9057636485085405133}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 225, y: 127.5, z: 0}
+  m_LocalPosition: {x: 225, y: 130, z: 0}
   m_LocalScale: {x: 10, y: 30, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -49,12 +49,12 @@ MonoBehaviour:
   gridSpacing: 5
   LineColor: {r: 0, g: 0, b: 0, a: 1}
   BodyColor: {r: 0, g: 1, b: 0.060328007, a: 1}
-  DoCenterPosition: 0
-  DoDrawBody: 1
-  EditorLineAnimationSpeed: 10
-  defaultGridSpacing: 0.5
-  LinkedSensors: []
-  RBInput:
+  doCenterPosition: 0
+  doDrawBody: 1
+  editorLineAnimationSpeed: 10
+  defaultGridSpacing: 1.1
+  linkedSensors: []
+  rbInput:
     includeInSimulation: 1
     overrideCentroid: 0
     isInteractable: 0
@@ -62,33 +62,24 @@ MonoBehaviour:
     canMove: 1
     canRotate: 1
     mass: 1000
-    gravity: 5
-    elasticity: 0.3
+    gravity: 9.82
+    elasticity: 0.1
     heatingStrength: 0
     constraintType: 3
+    localLinkPosThisRB: {x: 0, y: 0}
+    localLinkPosOtherRB: {x: 0, y: 0}
+    linkedRigidBody: {fileID: 0}
     springStiffness: 0
     springRestLength: 0
     damping: 0
-    localLinkPosThisRB:
-      x: 0
-      y: 0
-    localLinkPosOtherRB:
-      x: 0
-      y: 0
-    linkedRigidBody: {fileID: 0}
     lerpSpeed: 0
     lerpTimeOffset: 0
     doRoundTrip: 0
-    startPos:
-      x: 0
-      y: 0
-    endPos:
-      x: 0
-      y: 0
+    startPos: {x: 0, y: 0}
+    endPos: {x: 0, y: 0}
+    overrideCentroidPosition: {x: 0, y: 0}
     angularVelocity: 0
-    velocity:
-      x: 0
-      y: 0
+    velocity: {x: 0, y: 0}
     renderPriority: 1
     matIndex: 1
     springMatIndex: 0
@@ -140,8 +131,8 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: -2.5, y: 0.5833334}
-      - {x: -2.5, y: -0.5833334}
-      - {x: 2.5, y: -0.5833334}
-      - {x: 2.5, y: 0.5833334}
+    - - {x: 1, y: 0.33333334}
+      - {x: -1, y: 0.33333334}
+      - {x: -1, y: -0.33333334}
+      - {x: 1, y: -0.33333334}
   m_UseDelaunayMesh: 0

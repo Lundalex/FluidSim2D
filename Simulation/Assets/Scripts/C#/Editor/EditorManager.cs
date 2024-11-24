@@ -38,7 +38,7 @@ public class EditorManager : Editor
         Vector2 parentOffset = transform.position - transform.localPosition;
 
         // Draw the filled body
-        if (rigidBody.DoDrawBody)
+        if (rigidBody.doDrawBody)
         {
             DrawFilledPolygon(rigidBody.MeshPoints, rigidBody.BodyColor);
         }
@@ -46,16 +46,16 @@ public class EditorManager : Editor
         // Draw wiremesh
         DrawMeshWireframe(rigidBody.MeshPoints.ToArray(), rigidBody.LineColor, sceneObjectLineThickness);
 
-        bool isSpringConstraint = rigidBody.RBInput.constraintType == ConstraintType.Spring && rigidBody.RBInput.linkedRigidBody != null;
-        bool isLinearMotor = rigidBody.RBInput.constraintType == ConstraintType.LinearMotor;
-        bool isRigidConstraint = rigidBody.RBInput.constraintType == ConstraintType.Rigid && rigidBody.RBInput.linkedRigidBody != null;
+        bool isSpringConstraint = rigidBody.rbInput.constraintType == ConstraintType.Spring && rigidBody.rbInput.linkedRigidBody != null;
+        bool isLinearMotor = rigidBody.rbInput.constraintType == ConstraintType.LinearMotor;
+        bool isRigidConstraint = rigidBody.rbInput.constraintType == ConstraintType.Rigid && rigidBody.rbInput.linkedRigidBody != null;
 
         if (isSpringConstraint)
         {   
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody);
 
             float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
-            float approxForce = rigidBody.RBInput.springStiffness * Mathf.Abs(rigidBody.RBInput.springRestLength - approxLength);
+            float approxForce = rigidBody.rbInput.springStiffness * Mathf.Abs(rigidBody.rbInput.springRestLength - approxLength);
             
             rigidBody.approximatedSpringLength = approxLength.ToString();
             rigidBody.approximatedSpringForce = approxForce.ToString();
@@ -70,10 +70,10 @@ public class EditorManager : Editor
         }
         else if (isLinearMotor)
         {
-            Vector2 startPoint = (Vector2)rigidBody.RBInput.startPos + parentOffset;
-            Vector2 endPoint = (Vector2)rigidBody.RBInput.endPos + parentOffset;
+            Vector2 startPoint = rigidBody.rbInput.startPos + parentOffset;
+            Vector2 endPoint = rigidBody.rbInput.endPos + parentOffset;
 
-            DrawDashedLine(OrangeColor, endPoint, startPoint, 10, 3, rigidBody.EditorLineAnimationSpeed);
+            DrawDashedLine(OrangeColor, endPoint, startPoint, 10, 3, rigidBody.editorLineAnimationSpeed);
 
             DrawDot(startPoint, 4.5f, new Color(1.0f, 1.0f, 0.0f));
             DrawDot(startPoint, 3.5f, new Color(1.0f, 0.05f, 0.0f));
@@ -86,13 +86,13 @@ public class EditorManager : Editor
         else if (isRigidConstraint)
         {
             // Calculate line points
-            Vector2 thisRBCentroid = rigidBody.cashedCentroid;
-            Vector2 LinkPos = rigidBody.RBInput.linkedRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
-            Vector2 otherRBCentroid = rigidBody.RBInput.linkedRigidBody.cashedCentroid;
+            Vector2 thisRBCentroid = rigidBody.cachedCentroid;
+            Vector2 LinkPos = rigidBody.rbInput.linkedRigidBody.cachedCentroid + rigidBody.rbInput.localLinkPosOtherRB;
+            Vector2 otherRBCentroid = rigidBody.rbInput.linkedRigidBody.cachedCentroid;
 
             // Draw dashed line
-            DrawDashedLine(OrangeColor, LinkPos, thisRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
-            DrawDashedLine(OrangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.EditorLineAnimationSpeed);
+            DrawDashedLine(OrangeColor, LinkPos, thisRBCentroid, 10, 3, rigidBody.editorLineAnimationSpeed);
+            DrawDashedLine(OrangeColor, LinkPos, otherRBCentroid, 10, 3, rigidBody.editorLineAnimationSpeed);
             
             // Draw start and end points
             DrawDot(thisRBCentroid, 2.5f, Color.red);
@@ -193,11 +193,11 @@ public class EditorManager : Editor
 
     private static (Vector2 start, Vector2 end) GetSpringEndPoints(SceneRigidBody rigidBody)
     {
-        SceneRigidBody otherRigidBody = rigidBody.RBInput.linkedRigidBody;
+        SceneRigidBody otherRigidBody = rigidBody.rbInput.linkedRigidBody;
 
         // Get the world position of the link points
-        Vector2 startPoint = rigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosThisRB;
-        Vector2 endPoint = otherRigidBody.cashedCentroid + (Vector2)rigidBody.RBInput.localLinkPosOtherRB;
+        Vector2 startPoint = rigidBody.cachedCentroid + rigidBody.rbInput.localLinkPosThisRB;
+        Vector2 endPoint = otherRigidBody.cachedCentroid + rigidBody.rbInput.localLinkPosOtherRB;
 
         return (startPoint, endPoint);
     }

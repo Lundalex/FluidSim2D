@@ -209,7 +209,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public float MarchScale;
     [NonSerialized] public int2 ChunksNum;
     [NonSerialized] public int ChunksNumAll;
-    [NonSerialized] public int ChunksNumAllNextPow2;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;
     [NonSerialized] public int ParticlesNum_NextPow2;
     [NonSerialized] public int ParticlesNum_NextLog2;
@@ -283,14 +282,16 @@ public class Main : MonoBehaviour
         InitCausticsGen();
 
         // Only use the shader debugger if running in the program in the Unity editor
+        // This is because WebGPU doesn't support using the GetData(buffer) function without async
         #if UNITY_EDITOR
             ComputeShaderDebugger.CheckShaderConstants(this, debugShader, pTypeInput);
         #endif
 
         // Initialize the shader pipeline
+        UpdateShaderTimeStep();
         GPUSortChunkLookUp();
         GPUSortSpringLookUp();
-        PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.Instance.MaxDeltaTime);
+        PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.MaxDeltaTime);
         UpdateScript();
 
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + NumRigidBodies + " rigid bodies. Platform: " + Application.platform);

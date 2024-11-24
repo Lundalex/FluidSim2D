@@ -1,3 +1,5 @@
+using System.Collections;
+using Resources2;
 using UnityEngine;
 using PM = ProgramManager;
 
@@ -20,12 +22,21 @@ public class ProgramLifeCycleManager : MonoBehaviour
     
     private void Awake()
     {
-        PM.Instance.ResetDatas();
+        PM.Instance.ResetData();
+
         startConfirmationWindow.SetActive(true);
         darkBackground.SetActive(true);
     }
 
     private void Start()
+    {
+        SetTargetFrameRate();
+
+        PM.Instance.main = main;
+        PM.Instance.Start();
+    }
+
+    private void SetTargetFrameRate()
     {
         if (main.TargetFrameRate > 0)
         {
@@ -37,11 +48,6 @@ public class ProgramLifeCycleManager : MonoBehaviour
             QualitySettings.vSyncCount = 1;
             Application.targetFrameRate = 0;
         }
-
-        PM.Instance.main = main;
-        PM.Instance.Start();
-
-        PM.Instance.Update();
     }
 
     private void Update() => PM.Instance.Update();
@@ -51,9 +57,13 @@ public class ProgramLifeCycleManager : MonoBehaviour
         darkBackground.transform.SetParent(startConfirmationWindow.transform);
         darkBackground.transform.SetSiblingIndex(0);
 
-        PM.Instance.startConfirmed = true;
+        StartCoroutine(StartConfirmationDelayCoroutine());
+    }
 
-        PM.Instance.startConfirmationStopWatch = new();
-        PM.Instance.startConfirmationStopWatch.Start();
+    private IEnumerator StartConfirmationDelayCoroutine()
+    {
+        PM.Instance.startConfirmationStatus = StartConfirmationStatus.Waiting;
+        yield return new WaitForSeconds(Func.MsToSeconds(PM.msStartConfimationDelay));
+        PM.Instance.startConfirmationStatus = StartConfirmationStatus.Complete;
     }
 }

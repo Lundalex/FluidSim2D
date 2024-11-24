@@ -11,13 +11,14 @@ public class SeesawScale : EditorLifeCycle
     [SerializeField] private SceneRigidBody leftBucket;
     [SerializeField] private SceneRigidBody rightBucket;
     [SerializeField] private SceneRigidBody plank;
+    [SerializeField] private Transform rotationJoint;
     
     #if UNITY_EDITOR
         private void OnValidate() => OnEditorUpdate();
 
         public override void OnEditorUpdate()
         {
-            if (leftBucket == null || rightBucket == null || plank == null)
+            if (leftBucket == null || rightBucket == null || plank == null || rotationJoint == null)
             {
                 Debug.LogWarning("All references are not set. SeesawScale: " + this.name);
                 return;
@@ -32,9 +33,10 @@ public class SeesawScale : EditorLifeCycle
             Vector2 leftBucketPos = new Vector2(-100, 0) + bucketOffset;
             Vector2 rightBucketPos = new Vector2(100, 0) + bucketOffset;
 
-            plank.RBInput.overrideCentroidPosition = lerpPos;
-            leftBucket.RBInput.localLinkPosOtherRB = leftBucketPos;
-            rightBucket.RBInput.localLinkPosOtherRB = rightBucketPos;
+            plank.rbInput.overrideCentroidPosition = lerpPos;
+            rotationJoint.localPosition = lerpPos;
+            leftBucket.rbInput.localLinkPosOtherRB = leftBucketPos;
+            rightBucket.rbInput.localLinkPosOtherRB = rightBucketPos;
         }
     #endif
 }
