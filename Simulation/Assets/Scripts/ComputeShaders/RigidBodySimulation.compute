@@ -83,6 +83,8 @@ void AccumulateSpringForce(int index, int springForce_Int)
 
 bool IsPointInsideRB(float2 pos, RigidBody rb)
 {
+    pos -= rb.pos;
+
     uint intersections = 0;
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
@@ -95,7 +97,7 @@ bool IsPointInsideRB(float2 pos, RigidBody rb)
         float2 newVec = RBVectors[vecIndex].pos;
 
         // Check if the edge from lastVec to newVec intersects the horizontal ray to the right of pos
-        if (IsPointToTheLeftOfLine(pos, lastVec + rb.pos, newVec + rb.pos)) intersections++;
+        if (IsPointToTheLeftOfLine(pos, lastVec, newVec)) intersections++;
 
         lastVec = newVec;
     }
@@ -139,9 +141,15 @@ RBHitInfo RayRBDstHitInfo(float2 pos, RigidBody rb)
     return rbHitInfo;
 }
 
-// Main Collision Resolution Function
-void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo rbHitInfo, bool AInsideB_BInsideA,
-                           out float2 deltaVelA, out float deltaRotVelA, out float2 deltaVelB, out float deltaRotVelB)
+void ResolveCollisionRB_RB(
+    inout RigidBody rbA,
+    inout RigidBody rbB,
+    RBHitInfo rbHitInfo,
+    bool AInsideB_BInsideA,
+    out float2 deltaVelA,
+    out float deltaRotVelA,
+    out float2 deltaVelB,
+    out float deltaRotVelB)
 {
     // Initialize output parameters
     deltaVelA = 0;
@@ -157,40 +165,40 @@ void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo r
     // Collision point on the rigid body
     float2 collisionPoint = rbHitInfo.hitPoint;
 
-    // Penetration vector: from rbA to rbB or vice versa based on AInsideB_BInsideA
-    float2 penetration = AInsideB_BInsideA ? (collisionPoint - rbHitInfo.pointPos) : (rbHitInfo.pointPos - collisionPoint);
+    // Penetration vector
+    float2 penetration = AInsideB_BInsideA
+        ? (collisionPoint - rbHitInfo.pointPos)
+        : (rbHitInfo.pointPos - collisionPoint);
 
-    // Compute collision normal based on penetration vector
+    // Compute collision normal
     float penetrationDepth = length(penetration);
     if (penetrationDepth <= 0.0) return; // No penetration to resolve
 
     float2 normal = normalize(penetration);
 
     // Compute inverse masses
-    float invMassA = (rbA.mass > 0) ? 1.0 / rbA.mass : 0;
-    float invMassB = (rbB.mass > 0) ? 1.0 / rbB.mass : 0;
+    float invMassA = canMoveA ? 1.0 / rbA.mass : 0;
+    float invMassB = canMoveB ? 1.0 / rbB.mass : 0;
     float totalInvMass = invMassA + invMassB;
 
-    // Avoid division by zero, which occurs when both rigid bodies are flagged as stationary
     if (totalInvMass == 0) return;
 
-    // Compute the amount of penetration to correct
+    // Positional correction to resolve penetration
     float penetrationToCorrect = max(penetrationDepth - RB_RBCollisionSlop, 0.0);
     float2 correction = (penetrationToCorrect / totalInvMass) * RB_RBCollisionCorrectionFactor * normal;
 
-    // Apply positional correction
-    if (AInsideB_BInsideA && canMoveA) rbA.pos -= correction * invMassA; // Push rbA out
-    if (!AInsideB_BInsideA && canMoveB) rbB.pos += correction * invMassB; // Push rbB out
+    if (AInsideB_BInsideA && canMoveA) rbA.pos -= correction * invMassA;
+    if (!AInsideB_BInsideA && canMoveB) rbB.pos += correction * invMassB;
 
-    // Recompute relative positions after positional correction
+    // Recompute relative positions
     float2 rA = collisionPoint - rbA.pos;
     float2 rB = rbHitInfo.pointPos - rbB.pos;
 
-    // Compute velocities at the point of collision, including rotational velocities
-    float2 rbARotVelAtCollisionPoint = crossZ(IntToFloat(rbA.rotVel_AsInt, INT_FLOAT_PRECISION_RB), rA);
-    float2 rbBRotVelAtCollisionPoint = crossZ(IntToFloat(rbB.rotVel_AsInt, INT_FLOAT_PRECISION_RB), rB);
-    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt2, INT_FLOAT_PRECISION_RB) + rbARotVelAtCollisionPoint;
-    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt2, INT_FLOAT_PRECISION_RB) + rbBRotVelAtCollisionPoint;
+    // Compute velocities at the collision point
+    float2 rbAVel = Int2ToFloat2(rbA.vel_AsInt2, INT_FLOAT_PRECISION_RB)
+        + crossZ(IntToFloat(rbA.rotVel_AsInt, INT_FLOAT_PRECISION_RB), rA);
+    float2 rbBVel = Int2ToFloat2(rbB.vel_AsInt2, INT_FLOAT_PRECISION_RB)
+        + crossZ(IntToFloat(rbB.rotVel_AsInt, INT_FLOAT_PRECISION_RB), rB);
 
     // Relative velocity
     float2 relVel = rbBVel - rbAVel;
@@ -198,43 +206,62 @@ void ResolveCollisionRB_RB(inout RigidBody rbA, inout RigidBody rbB, RBHitInfo r
     // Relative velocity along the normal
     float relVelAlongNormal = dot(relVel, normal);
 
-    // Proceed only if the bodies are moving towards each other
-    if (relVelAlongNormal >= 0.0) return;
+    if (relVelAlongNormal >= 0.0) return; // Objects are separating
 
-    // Coefficient of restitution (elasticity)
+    // Coefficient of restitution
     float e = min(rbA.elasticity, rbB.elasticity);
 
     // Compute inverse inertias
-    float invInertiaA = (rbA.inertia > 0) ? 1.0 / rbA.inertia : 0;
-    float invInertiaB = (rbB.inertia > 0) ? 1.0 / rbB.inertia : 0;
+    float invInertiaA = canRotateA ? 1.0 / rbA.inertia : 0;
+    float invInertiaB = canRotateB ? 1.0 / rbB.inertia : 0;
 
-    // Compute impulse scalar
+    // Compute normal impulse scalar
     float rACrossN = cross2D(rA, normal);
     float rBCrossN = cross2D(rB, normal);
-
     float denom = totalInvMass + (rACrossN * rACrossN) * invInertiaA + (rBCrossN * rBCrossN) * invInertiaB;
-
-    // Avoid division by zero
     if (denom == 0) return;
 
-    float j = -(1 + e) * relVelAlongNormal / denom;
+    float jn = -(1 + e) * relVelAlongNormal / denom;
 
-    // Compute impulse vector
-    float2 impulse = j * normal;
+    // Compute normal impulse vector
+    float2 impulseNormal = jn * normal;
 
-    // Compute delta velocities
-    if (canMoveA) deltaVelA += -impulse * invMassA;
-    if (canMoveB) deltaVelB += impulse * invMassB;
+    // Apply normal impulse
+    if (canMoveA) deltaVelA += -impulseNormal * invMassA;
+    if (canMoveB) deltaVelB += impulseNormal * invMassB;
 
-    if (!canRotateA && !canRotateB) return;
+    if (canRotateA) deltaRotVelA += cross2D(rA, -impulseNormal) * invInertiaA;
+    if (canRotateB) deltaRotVelB += cross2D(rB, impulseNormal) * invInertiaB;
 
-    // Compute delta angular velocities
-    float torqueA = cross2D(rA, -impulse);
-    float torqueB = cross2D(rB, impulse);
+    // --- Friction Calculation ---
+    // Compute tangent vector
+    float2 tangent = relVel - relVelAlongNormal * normal;
+    float tangentSpeed = length(tangent);
 
-    if (canRotateA) deltaRotVelA += torqueA * invInertiaA;
-    if (canRotateB) deltaRotVelB += torqueB * invInertiaB;
+    if (tangentSpeed > EPSILON)
+    {
+        float2 tangentDir = tangent / tangentSpeed;
+
+        // Compute friction impulse scalar
+        float jt = -dot(relVel, tangentDir) / denom;
+
+        // Coulomb's Law
+        float mu = min(rbA.friction, rbB.friction);
+        float maxFriction = mu * jn;
+        jt = clamp(jt, -maxFriction, maxFriction);
+
+        // Compute friction impulse vector
+        float2 impulseFriction = jt * tangentDir;
+
+        // Apply friction impulse
+        if (canMoveA) deltaVelA += -impulseFriction * invMassA;
+        if (canMoveB) deltaVelB += impulseFriction * invMassB;
+
+        if (canRotateA) deltaRotVelA += cross2D(rA, -impulseFriction) * invInertiaA;
+        if (canRotateB) deltaRotVelB += cross2D(rB, impulseFriction) * invInertiaB;
+    }
 }
+
 
 [numthreads(TN_RBS2,1,1)]
 void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
@@ -654,10 +681,9 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
 
         float2 direction = r / currentLength;
 
-        // Compute displacement from rest length
         float displacement = currentLength - springRestLength;
 
-        // Compute spring force (Hooke's Law)
+        // Compute spring force (Hooke's law)
         float springForceMagnitude = -stiffness * displacement;
 
         // Compute velocities at the link points, including rotational velocities
@@ -738,17 +764,48 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     // Avoid division by zero
     if (denom == 0) return;
 
-    float j = -(1 + rb.elasticity) * relVelAlongNormal / denom;
+    // Normal impulse scalar
+    float jn = -(1 + rb.elasticity) * relVelAlongNormal / denom;
 
-    // Compute impulse vector
-    float2 impulse = j * normal;
+    // Compute normal impulse vector
+    float2 impulseNormal = jn * normal;
 
     // Update linear velocity
-    rb.vel_AsInt2 += Float2AsInt2(impulse * invMass, INT_FLOAT_PRECISION_RB);
+    rb.vel_AsInt2 += Float2AsInt2(impulseNormal * invMass, INT_FLOAT_PRECISION_RB);
 
     // Update angular velocity
-    float deltaRotVel = cross2D(r, impulse) * invInertia;
+    float deltaRotVel = cross2D(r, impulseNormal) * invInertia;
     rb.rotVel_AsInt += FloatAsInt(deltaRotVel, INT_FLOAT_PRECISION_RB);
+
+    // --- Friction Calculation ---
+
+    // Compute the tangent vector
+    float2 tangent = relVel - relVelAlongNormal * normal;
+    float tangentSpeed = length(tangent);
+
+    if (tangentSpeed > EPSILON)
+    {
+        float2 tangentDir = tangent / tangentSpeed;
+
+        // Compute friction impulse scalar
+        float jt = -dot(relVel, tangentDir) / denom;
+
+        // Coulomb's Law
+        float mu = rb.friction; // Use rb.friction or define a boundary friction coefficient
+
+        float maxFriction = mu * abs(jn);
+        jt = clamp(jt, -maxFriction, maxFriction);
+
+        // Compute friction impulse vector
+        float2 impulseFriction = jt * tangentDir;
+
+        // Apply friction impulse to linear velocity
+        rb.vel_AsInt2 += Float2AsInt2(impulseFriction * invMass, INT_FLOAT_PRECISION_RB);
+
+        // Apply friction impulse to angular velocity
+        float deltaRotVelFriction = cross2D(r, impulseFriction) * invInertia;
+        rb.rotVel_AsInt += FloatAsInt(deltaRotVelFriction, INT_FLOAT_PRECISION_RB);
+    }
 
     // Positional correction to prevent sinking
     float penetrationDepth = -dot(collisionPoint - (rb.pos + r), normal);

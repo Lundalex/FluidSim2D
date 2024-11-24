@@ -12,6 +12,7 @@ public struct RBData
     public float inertia;
     public float gravity;
     public float elasticity;
+    public float friction;
     public float maxRadiusSqr;
     public int startIndex;
     public int endIndex;

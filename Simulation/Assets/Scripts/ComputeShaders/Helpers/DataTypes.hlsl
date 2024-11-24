@@ -90,6 +90,7 @@ struct RigidBody
     float inertia;
     float gravity;
     float elasticity;
+    float friction;
     float maxRadiusSqr;
     int startIndex;
     int endIndex;

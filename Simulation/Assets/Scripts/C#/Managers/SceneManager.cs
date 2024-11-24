@@ -202,6 +202,7 @@ public class SceneManager : MonoBehaviour
             // Transform points to local space
             Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + boundsOffset;
             Vector2[] vectors = GetTransformedPoints(rigidBody, boundsOffset, transformedRBPos);
+            if (rigidBody.addInBetweenPoints) AddInBetweenPoints(ref vectors, rigidBody.doRecursiveSubdivisison, rigidBody.minDstForSubDivision);
 
             (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridSpacing);
 
@@ -261,6 +262,65 @@ public class SceneManager : MonoBehaviour
         return (allRBData.ToArray(), allRBVectors.ToArray(), sensorAreas.ToArray());
     }
 
+    public static void AddInBetweenPointsRecursively(ref Vector2[] vectors, float minDst)
+    {
+        bool needsSubdivision = false;
+        List<Vector2> newVectors = new();
+
+        int count = vectors.Length;
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 current = vectors[i];
+            Vector2 next = vectors[(i + 1) % count];
+
+            newVectors.Add(current);
+
+            float distance = Vector2.Distance(current, next);
+
+            if (distance > minDst)
+            {
+                // Compute the in-between point
+                Vector2 inBetween = (current + next) / 2;
+
+                newVectors.Add(inBetween);
+                needsSubdivision = true;
+            }
+        }
+
+        vectors = newVectors.ToArray();
+
+        // Recursively call the function if any subdivisions were made
+        if (needsSubdivision) AddInBetweenPointsRecursively(ref vectors, minDst);
+    }
+
+    public static void AddInBetweenPoints(ref Vector2[] vectors, bool doRecursiveSubdivisison, float minDst)
+    {
+        if (doRecursiveSubdivisison)
+        {
+            minDst = Mathf.Max(minDst, 0.5f);
+            AddInBetweenPointsRecursively(ref vectors, minDst);
+        }
+        else
+        {
+            int count = vectors.Length;
+            List<Vector2> newVectors = new();
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 current = vectors[i];
+                Vector2 next = vectors[(i + 1) % count];
+
+                newVectors.Add(current);
+
+                Vector2 inBetween = (current + next) / 2;
+
+                newVectors.Add(inBetween);
+            }
+
+            vectors = newVectors.ToArray();
+        }
+    }
+
     private Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
     {
         Vector2[] vectors = rigidBody.GetComponent<PolygonCollider2D>().points;
@@ -303,6 +363,7 @@ public class SceneManager : MonoBehaviour
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
             elasticity = rbInput.isCollider ? rbInput.elasticity : -1,
+            friction = rbInput.isCollider ? rbInput.friction : -1,
             maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,

@@ -17,6 +17,7 @@ public struct RBInput
     public float mass;
     public float gravity;
     public float elasticity;
+    public float friction;
 
     [Header("Particle Interaction")]
     public float heatingStrength;

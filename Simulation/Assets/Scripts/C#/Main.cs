@@ -294,7 +294,7 @@ public class Main : MonoBehaviour
         PM.Instance.clampedDeltaTime = Mathf.Min(Time.deltaTime, PM.MaxDeltaTime);
         UpdateScript();
 
-        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, and " + NumRigidBodies + " rigid bodies. Platform: " + Application.platform);
+        StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, " + NumRigidBodies + " rigid bodies, and " + NumRigidBodyVectors + " vertices. Platform: " + Application.platform);
     }
 
     public void UpdateScript()

@@ -18,6 +18,9 @@ public class SceneRigidBody : Polygon
     
     [Header("Simulation Object Settings")]
     [Range(0.1f, 10.0f)] public float defaultGridSpacing = 0.5f;
+    public bool addInBetweenPoints = true;
+    public bool doRecursiveSubdivisison = false;
+    [Range(0.5f, 10.0f)] public float minDstForSubDivision = 0;
     public Sensor[] linkedSensors;
     public RBInput rbInput;
 

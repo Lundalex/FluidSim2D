@@ -1,5 +1,5 @@
 static const float PI = 3.14159;
-static const float EPSILON = 0.0001;
+static const float EPSILON = 0.00000001;
 static const float LARGE_FLOAT = 1000000000.0;
 static const float SmoothViscosityLaplacianFactor = 45 / PI;
 
@@ -226,8 +226,11 @@ bool CheckLinesIntersect(float2 A, float2 B, float2 C, float2 D)
 
 bool IsPointToTheLeftOfLine(float2 P, float2 A, float2 B)
 {
-    return ((A.y > P.y) != (B.y > P.y)) &&
-            (P.x < (B.x - A.x) * (P.y - A.y) / (B.y - A.y + EPSILON) + A.x);
+    // Check if point P is to the left of the line
+    bool isToLeft = ((A.y > P.y) != (B.y > P.y)) &&
+                    (P.x < (B.x - A.x) * (P.y - A.y) / (B.y - A.y + EPSILON) + A.x);
+
+    return isToLeft;
 }
 
 float2 LineIntersectionPoint(float2 r0, float2 r1, float2 a, float2 b)
