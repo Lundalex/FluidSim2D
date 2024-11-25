@@ -39,7 +39,7 @@ public abstract class ItemLabelsBase : ChartSettingItemBase,ISerializationCallba
     /// </summary>
     [SerializeField]
     [Tooltip(@" determine the formatting of the label data. when the values are available , you can use the predefined macros : '\n' for newline , '<?category>' for the current category and '<?group>' for the current group")]
-    private TextFormatting textFormat = new TextFormatting();
+    public TextFormatting textFormat = new TextFormatting();
 
     /// <summary>
     /// determine the formatting of the label data. when the values are available , you can use the predefined macros : "\n" for newline , '<?category>' for the current category and '<?group>' for the current group

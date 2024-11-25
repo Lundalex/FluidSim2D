@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
@@ -42,8 +41,10 @@ public class ProgramManager : ScriptableObject
     public event Action OnNewLanguageSelected;
 
     // Start confirmation timing
-    [NonSerialized] public StartConfirmationStatus startConfirmationStatus;
     [NonSerialized] public static readonly float msStartConfimationDelay = 650.0f;
+    [NonSerialized] public static readonly float msControlsTipDelay = 2000.0f;
+    public static StartConfirmationStatus startConfirmationStatus;
+    public static bool hasShownStartConfirmation = false;
 
     // Private - Camera
     private Camera uiCam;
@@ -59,8 +60,6 @@ public class ProgramManager : ScriptableObject
     private static readonly int PerformanceTestFrameLength = 1000;
     private bool performanceTestCompleted;
     private int performanceMisses;
-
-
 
     // Singleton
     private static ProgramManager _instance;
@@ -173,7 +172,8 @@ public class ProgramManager : ScriptableObject
 
     private bool CheckKeyInputs()
     {
-        if (Input.GetKeyDown(KeyCode.R))
+        bool allowRestart = startConfirmationStatus == StartConfirmationStatus.NotStarted || startConfirmationStatus == StartConfirmationStatus.None;
+        if (Input.GetKeyDown(KeyCode.R) && allowRestart)
         {
             Debug.Log("'R' key pressed. Scene resetting...");
             return true;

@@ -131,7 +131,11 @@ public class SensorUI : MonoBehaviour
         decimalText.text = decimalPart.ToString();
     }
 
-    public void SetUnit(string unit) => unitText.text = unit;
+    public void SetUnit(string baseUnit, string unit)
+    {
+        sensor.graphController.SetSuffix(baseUnit);
+        unitText.text = unit;
+    }
 
     public void SetTitle(string title) => titleText.text = title;
 
@@ -217,7 +221,7 @@ public class SensorUI : MonoBehaviour
     [ContextMenu("Set Unit (Default)")]
     private void SetUnitDefault()
     {
-        SetUnit("Unit");
+        SetUnit("Unit", "Unit");
     }
 
     [ContextMenu("Set Title (Default)")]

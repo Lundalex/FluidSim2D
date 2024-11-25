@@ -30,6 +30,7 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public Vector2 canvasResolution;
     [NonSerialized] private GraphChart graphChart;
+    [NonSerialized] private ItemLabels itemLabels;
 
     // Display
     [NonSerialized] public SensorUI sensorUI;
@@ -46,7 +47,7 @@ public abstract class Sensor : MonoBehaviour
     {
         InitSensorUI();
         InitSensor();
-        graphController.InitGraph(graphChart);
+        graphController.InitGraph(graphChart, itemLabels);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
         
         newPrefixTimer = new Timer(newLowerPrefixThreshold, true, true);
@@ -72,6 +73,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUI = sensorUIObject.GetComponent<SensorUI>();
         GameObject sensorUIGraphChartObject = Instantiate(graphChartPrefab, sensorUI.graphChartContainer);
         graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
+        itemLabels = sensorUIGraphChartObject.GetComponent<ItemLabels>();
         sensorUIOutline.SetActive(false);
         sensorUI.dashedRectangleObject = sensorUIOutline;
         sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();

@@ -23,6 +23,7 @@ public class GraphController : MonoBehaviour
 
     // References
     [NonSerialized] private GraphChart graphChart;
+    [NonSerialized] private ItemLabels itemLabels;
 
     // Private
     private List<Vector2> pointList;
@@ -30,12 +31,13 @@ public class GraphController : MonoBehaviour
     private bool isFirstPointDrawn;
     private Timer pointSubmissionTimer;
 
-    public void InitGraph(GraphChart graphChartInput)
+    public void InitGraph(GraphChart graphChartInput, ItemLabels itemLabels)
     {
         this.graphChart = graphChartInput;
+        this.itemLabels = itemLabels;
         if (overrideGraphDataCategory && isBezierCurve)
         {
-            UnityEngine.Debug.LogWarning("The bezier curve setting cannot be combined with graph data category override. The graph data category will not be overridden");
+            Debug.LogWarning("The bezier curve setting cannot be combined with graph data category override. The graph data category will not be overridden");
             overrideGraphDataCategory = false;
         }
         if (overrideGraphDataCategory)
@@ -62,6 +64,14 @@ public class GraphController : MonoBehaviour
         storedPoints = new();
         isFirstPointDrawn = false;
         pointSubmissionTimer.Reset();
+    }
+
+    public void SetSuffix(string suffix)
+    {
+        itemLabels.textFormat = new()
+        {
+            suffix = " " + suffix
+        };
     }
 
     public void AddPointsToGraph(params Vector2[] points)

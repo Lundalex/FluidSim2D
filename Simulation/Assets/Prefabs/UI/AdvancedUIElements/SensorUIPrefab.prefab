@@ -3417,7 +3417,7 @@ MonoBehaviour:
   itemPaddingLeft: 8
   itemPaddingRight: 25
   itemSpacing: 8
-  selectedItemIndex: 3
+  selectedItemIndex: 0
   animationType: 0
   panelDirection: 0
   panelSize: 200
@@ -3467,7 +3467,7 @@ MonoBehaviour:
   saveSelected: 0
   saveKey: My Dropdown
   items:
-  - itemName: Spring Force
+  - itemName: Massa
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -3485,7 +3485,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Velocity
+  - itemName: Hastighet
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -3503,7 +3503,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Rotational Velocity
+  - itemName: Hastighet_X
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -3521,7 +3521,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Sensor
+  - itemName: Hastighet_Y
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -3535,6 +3535,78 @@ MonoBehaviour:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 3
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - itemName: Vinkelhastighet
+    itemIcon: {fileID: 0}
+    itemIndex: 0
+    OnItemSelection:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 6338154651552807825}
+          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
+          m_MethodName: OnNewRigidBodySensorType
+          m_Mode: 3
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 4
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - itemName: Position_X
+    itemIcon: {fileID: 0}
+    itemIndex: 0
+    OnItemSelection:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 6338154651552807825}
+          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
+          m_MethodName: OnNewRigidBodySensorType
+          m_Mode: 3
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 5
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - itemName: Position_Y
+    itemIcon: {fileID: 0}
+    itemIndex: 0
+    OnItemSelection:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 6338154651552807825}
+          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
+          m_MethodName: OnNewRigidBodySensorType
+          m_Mode: 3
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 6
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - itemName: "Fj\xE4derkraft"
+    itemIcon: {fileID: 0}
+    itemIndex: 0
+    OnItemSelection:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 6338154651552807825}
+          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
+          m_MethodName: OnNewRigidBodySensorType
+          m_Mode: 3
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 7
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0

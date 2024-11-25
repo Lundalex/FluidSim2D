@@ -134,7 +134,6 @@ public class FluidSensor : Sensor
             {
                 case FluidSensorType.Energy_Total_Kinetic:
                     value = kineticEnergy;
-                    sensorUI.SetUnit("e.u");
                     break;
 
                 case FluidSensorType.Energy_Total_Thermal:
@@ -196,7 +195,7 @@ public class FluidSensor : Sensor
 
     public override void SetSensorUnit(string prefix = "")
     {
-        string unit = prefix;
+        string baseUnit = prefix;
         switch (fluidSensorType)
         {
             case FluidSensorType.Energy_Total_Kinetic:
@@ -205,28 +204,28 @@ public class FluidSensor : Sensor
             case FluidSensorType.Energy_Average_Kinetic:
             case FluidSensorType.Energy_Average_Thermal:
             case FluidSensorType.Energy_Average_Both:
-                unit += "J";
+                baseUnit = "J";
                 break;
 
             case FluidSensorType.TotalMass:
-                unit += "kg";
+                baseUnit = "kg";
                 break;
 
             case FluidSensorType.AveragePressure:
-                unit += "Pa";
+                baseUnit = "Pa";
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
-                unit += "°C";
+                baseUnit = "°C";
                 break;
 
             case FluidSensorType.AverageTemperatureKelvin:
-                unit += "°K";
+                baseUnit = "°K";
                 break;
 
             case FluidSensorType.Velocity_Absolute_Destructive:
             case FluidSensorType.Velocity_Absolute_Summative:
-                unit += "m/s";
+                baseUnit = "m/s";
                 break;
 
             default:
@@ -234,11 +233,13 @@ public class FluidSensor : Sensor
                 break;
         }
 
+        string unit = prefix + baseUnit;
+
         ApplyUnitExceptions(ref unit);
 
         if (unit != lastUnit)
         {
-            sensorUI.SetUnit(unit);
+            sensorUI.SetUnit(baseUnit, unit);
             lastUnit = unit;
         }
     }

@@ -4,11 +4,15 @@ using UnityEngine;
 
 public class RigidBodySensor : Sensor
 {
+    [Header("Sensor Settings")]
     [SerializeField] private RigidBodySensorType rigidBodySensorType;
+    [SerializeField] private Vector2 rigidBodyPositionOffset;
     [SerializeField] private bool doInterpolation;
     [Range(1.0f, 20.0f), SerializeField] private float moveSpeed;
     [NonSerialized] public int linkedRBIndex = -1;
     [NonSerialized] public bool firstDataRecieved = false;
+
+    // Private
     private Vector2 currentTargetPosition;
 
     public override void InitSensor() => sensorUI.SetPosition(SimSpaceToCanvasSpace(new(-Const.LARGE_FLOAT, 0.0f)));
@@ -48,20 +52,42 @@ public class RigidBodySensor : Sensor
     {
         RBData rbData = rBDatas[linkedRBIndex];
 
+        Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
+        Vector2 pos = (Vector2)rbData.pos + rigidBodyPositionOffset;
+
         float value = 0;
         switch (rigidBodySensorType)
         {
-            case RigidBodySensorType.SpringForce:
-                value = rbData.recordedSpringForce;
+            case RigidBodySensorType.Mass:
+                value = rbData.mass;
                 break;
 
             case RigidBodySensorType.Velocity:
-                Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
                 value = vel.magnitude;
+                break;
+
+            case RigidBodySensorType.Velocity_X:
+                value = vel.x;
+                break;
+
+            case RigidBodySensorType.Velocity_Y:
+                value = vel.y;
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
                 value = Func.IntToFloat(rbData.rotVel_AsInt, main.FloatIntPrecisionRB);
+                break;
+
+            case RigidBodySensorType.Position_X:
+                value = pos.x;
+                break;
+
+            case RigidBodySensorType.Position_Y:
+                value = pos.y;
+                break;
+
+            case RigidBodySensorType.SpringForce:
+                value = rbData.recordedSpringForce;
                 break;
 
             default:
@@ -78,19 +104,30 @@ public class RigidBodySensor : Sensor
 
     public override void SetSensorUnit(string prefix = "")
     {
-        string unit = prefix;
+        string baseUnit = "";
         switch (rigidBodySensorType)
         {
-            case RigidBodySensorType.SpringForce:
-                unit += "N";
+            case RigidBodySensorType.Mass:
+                baseUnit = "g";
                 break;
 
             case RigidBodySensorType.Velocity:
-                unit += "m/s";
+            case RigidBodySensorType.Velocity_X:
+            case RigidBodySensorType.Velocity_Y:
+                baseUnit = "l.e/s";
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
-                unit += "r/s";
+                baseUnit = "r/s";
+                break;
+
+            case RigidBodySensorType.Position_X:
+            case RigidBodySensorType.Position_Y:
+                baseUnit = "l.e";
+                break;
+
+            case RigidBodySensorType.SpringForce:
+                baseUnit = "N";
                 break;
 
             default:
@@ -98,10 +135,12 @@ public class RigidBodySensor : Sensor
                 break;
         }
 
-        // If the new unit differs from the previous unit, update the sensor unit
-        if (unit != lastUnit)
+        string unit = prefix + baseUnit;
+
+        // If the new baseUnit differs from the previous baseUnit, update the sensor baseUnit
+        if (baseUnit != lastUnit)
         {
-            sensorUI.SetUnit(unit);
+            sensorUI.SetUnit(baseUnit, unit);
             lastUnit = unit;
         }
     }
@@ -110,16 +149,36 @@ public class RigidBodySensor : Sensor
     {
         switch (rigidBodySensorType)
         {
-            case RigidBodySensorType.SpringForce:
-                sensorUI.SetTitle("Drag Force");
+            case RigidBodySensorType.Mass:
+                sensorUI.SetTitle("Massa");
                 break;
 
             case RigidBodySensorType.Velocity:
-                sensorUI.SetTitle("Velocity");
+                sensorUI.SetTitle("Hastighet");
+                break;
+
+            case RigidBodySensorType.Velocity_X:
+                sensorUI.SetTitle("Hastighet X");
+                break;
+
+            case RigidBodySensorType.Velocity_Y:
+                sensorUI.SetTitle("Hastighet Y");
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
-                sensorUI.SetTitle("Rotation");
+                sensorUI.SetTitle("Vinkelhastighet");
+                break;
+
+            case RigidBodySensorType.Position_X:
+                sensorUI.SetTitle("Position X");
+                break;
+
+            case RigidBodySensorType.Position_Y:
+                sensorUI.SetTitle("Position Y");
+                break;
+
+            case RigidBodySensorType.SpringForce:
+                sensorUI.SetTitle("Dragkraft");
                 break;
 
             default:
@@ -133,7 +192,7 @@ public class RigidBodySensor : Sensor
         int itemIndex = 0;
         switch (rigidBodySensorType)
         {
-            case RigidBodySensorType.SpringForce:
+            case RigidBodySensorType.Mass:
                 itemIndex = 0;
                 break;
 
@@ -141,8 +200,28 @@ public class RigidBodySensor : Sensor
                 itemIndex = 1;
                 break;
 
-            case RigidBodySensorType.RotationalVelocity:
+            case RigidBodySensorType.Velocity_X:
                 itemIndex = 2;
+                break;
+
+            case RigidBodySensorType.Velocity_Y:
+                itemIndex = 3;
+                break;
+
+            case RigidBodySensorType.RotationalVelocity:
+                itemIndex = 4;
+                break;
+
+            case RigidBodySensorType.Position_X:
+                itemIndex = 5;
+                break;
+
+            case RigidBodySensorType.Position_Y:
+                itemIndex = 6;
+                break;
+
+            case RigidBodySensorType.SpringForce:
+                itemIndex = 7;
                 break;
 
             default:

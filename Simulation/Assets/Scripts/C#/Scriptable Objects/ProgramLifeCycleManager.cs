@@ -1,4 +1,5 @@
 using System.Collections;
+using Michsky.MUIP;
 using Resources2;
 using UnityEngine;
 using PM = ProgramManager;
@@ -12,6 +13,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
     [SerializeField] private Main main;
     [SerializeField] private GameObject darkBackground;
     [SerializeField] private GameObject startConfirmationWindow;
+    [SerializeField] private NotificationManager controlsTip;
 
     private void OnValidate()
     {
@@ -24,8 +26,19 @@ public class ProgramLifeCycleManager : MonoBehaviour
     {
         PM.Instance.ResetData();
 
-        startConfirmationWindow.SetActive(true);
-        darkBackground.SetActive(true);
+        // Show start confirmation (only when starting the program)
+        if (!PM.hasShownStartConfirmation)
+        {
+            PM.hasShownStartConfirmation = true;
+            startConfirmationWindow.SetActive(true);
+            darkBackground.SetActive(true);
+        }
+        else
+        {
+            startConfirmationWindow.SetActive(false);
+            darkBackground.SetActive(false);
+            PM.startConfirmationStatus = StartConfirmationStatus.None;
+        }
     }
 
     private void Start()
@@ -62,8 +75,13 @@ public class ProgramLifeCycleManager : MonoBehaviour
 
     private IEnumerator StartConfirmationDelayCoroutine()
     {
-        PM.Instance.startConfirmationStatus = StartConfirmationStatus.Waiting;
+        // Process start confirmation
+        PM.startConfirmationStatus = StartConfirmationStatus.Waiting;
         yield return new WaitForSeconds(Func.MsToSeconds(PM.msStartConfimationDelay));
-        PM.Instance.startConfirmationStatus = StartConfirmationStatus.Complete;
+        PM.startConfirmationStatus = StartConfirmationStatus.Complete;
+
+        // Show controls tip
+        yield return new WaitForSeconds(Func.MsToSeconds(PM.msControlsTipDelay));
+        controlsTip.OpenNotification();
     }
 }
