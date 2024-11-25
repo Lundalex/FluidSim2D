@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 [RequireComponent(typeof(LineRenderer))]
 public class DashedRectangle : MonoBehaviour
@@ -10,6 +11,9 @@ public class DashedRectangle : MonoBehaviour
     [SerializeField] private float height = 3f;
     [SerializeField] private float cornerRadius = 0.5f;
     [SerializeField] private int cornerSegments = 10;
+    
+    // Non-serialized fields
+    [NonSerialized] public SensorUI sensorUI;
 
     // Private references
     private LineRenderer lineRenderer;
@@ -19,7 +23,8 @@ public class DashedRectangle : MonoBehaviour
 
     public void SetPosition(Vector2 pos)
     {
-        Vector2 newPosition = SimSpaceToWorldSpace(pos);
+        // Vector2 newPosition = SimSpaceToWorldSpace(sensorUI.ClampToScreenBounds(pos));
+        Vector2 newPosition = SimSpaceToWorldSpace(ProgramManager.Instance.main.GetMousePosInSimSpace());
         if (newPosition != rectTransform.anchoredPosition)
         {
             rectTransform.anchoredPosition = newPosition;

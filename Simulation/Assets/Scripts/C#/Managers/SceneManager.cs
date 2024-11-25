@@ -334,11 +334,16 @@ public class SceneManager : MonoBehaviour
 
     public static SceneRigidBody[] GetAllSceneRigidBodies()
     {
-        GameObject[] rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody");
-        SceneRigidBody[] allRigidBodies = new SceneRigidBody[rigidBodyObjects.Length];
-        for (int i = 0; i < rigidBodyObjects.Length; i++) allRigidBodies[i] = rigidBodyObjects[i].GetComponent<SceneRigidBody>();
+        List<GameObject> rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody").ToList();
 
-        return allRigidBodies;
+        List<SceneRigidBody> validRigidBodies = new();
+        foreach (GameObject rigidBodyObject in rigidBodyObjects)
+        {
+            SceneRigidBody rigidBody = rigidBodyObject.GetComponent<SceneRigidBody>();
+            if (rigidBody.rbInput.includeInSimulation) validRigidBodies.Add(rigidBody);
+        }
+
+        return validRigidBodies.ToArray();
     }
 
     public static SceneFluid[] GetAllSceneFluids()

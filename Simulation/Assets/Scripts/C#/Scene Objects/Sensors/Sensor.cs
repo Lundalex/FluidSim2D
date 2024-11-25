@@ -9,6 +9,7 @@ public abstract class Sensor : MonoBehaviour
     [Header("Display")]
     [SerializeField] private DataView defaultDataView;
     [Range(1, 2)] public int numDecimals;
+    [Range(0, 3)] public int minPrefixIndex;
     [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
     public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
@@ -77,6 +78,7 @@ public abstract class Sensor : MonoBehaviour
         sensorUIOutline.SetActive(false);
         sensorUI.dashedRectangleObject = sensorUIOutline;
         sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
+        sensorUI.dashedRectangle.sensorUI = sensorUI;
         mainCanvas = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;
@@ -102,7 +104,7 @@ public abstract class Sensor : MonoBehaviour
     public abstract void SetSensorTitle();
     public abstract void SetSensorUnit(string unit = "");
 
-    public (string prefix, float newValue) GetMagnitudePrefix(float value)
+    public (string prefix, float newValue) GetMagnitudePrefix(float value, int minPrefixIndex)
     {
         string[] prefixes = { "n", "μ", "m", "", "k", "M", "G", "T" };
         int prefixIndex = 3; // "" (no prefix) is the default
@@ -122,7 +124,7 @@ public abstract class Sensor : MonoBehaviour
             prefixIndex++;
         }
 
-        while (value > 0 && value < 1f && prefixIndex > 0)
+        while (value > minPrefixIndex && value < 1f && prefixIndex > 0)
         {
             value *= 1000f;
             prefixIndex--;

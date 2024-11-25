@@ -3485,7 +3485,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Hastighet
+  - itemName: Fart
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:

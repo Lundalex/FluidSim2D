@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
@@ -186,7 +185,7 @@ public class FluidSensor : Sensor
             }
         }
 
-        (string prefix, float displayValue) = GetMagnitudePrefix(value);
+        (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
         SetSensorUnit(prefix);
 
         sensorUI.SetMeasurement(displayValue, numDecimals);

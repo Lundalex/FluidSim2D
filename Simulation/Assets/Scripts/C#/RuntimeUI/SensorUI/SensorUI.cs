@@ -122,7 +122,7 @@ public class SensorUI : MonoBehaviour
 
     public void SetMeasurement(float val, int numDecimals)
     {
-        numDecimals = Mathf.Min(numDecimals, 2);
+        numDecimals = Mathf.Clamp(numDecimals, 1, 2);
 
         int integerPart = Mathf.Clamp((int)val, -99, 999); // Clamp to max 3 characters
         int decimalPart = Mathf.Clamp(Mathf.RoundToInt(Mathf.Abs(val - integerPart) * Mathf.Pow(10, numDecimals)), 0, (int)Mathf.Pow(10, numDecimals)-1);
@@ -163,7 +163,7 @@ public class SensorUI : MonoBehaviour
         rectTransform.localPosition = ClampToScreenBounds(pos);
     }
 
-    private Vector2 ClampToScreenBounds(Vector2 pos)
+    public Vector2 ClampToScreenBounds(Vector2 pos)
     {
         // Apply ScreenToView transform
         pos /= PM.Instance.ScreenToViewFactor;
@@ -210,26 +210,6 @@ public class SensorUI : MonoBehaviour
         return pos;
     }
 
-
-    [ContextMenu("Set Measurement (Default)")]
-    public void SetMeasurementDefault()
-    {
-        decimalText.text = "21";
-        integerText.text = "543";
-    }
-
-    [ContextMenu("Set Unit (Default)")]
-    private void SetUnitDefault()
-    {
-        SetUnit("Unit", "Unit");
-    }
-
-    [ContextMenu("Set Title (Default)")]
-    private void SetTitleDefault()
-    {
-        SetTitle("Title");
-    }
-
     public void SetSettingsViewAsEnabled()
     {
         OnSettingsViewStatusChanged?.Invoke(true);
@@ -269,5 +249,12 @@ public class SensorUI : MonoBehaviour
             fluidSensorTypeDropdownUsed = true;
         }
         else Debug.LogWarning("Mismatch between sensor type and active custom dropdown: " + this.name);
+    }
+
+    [ContextMenu("Set Measurement (Default)")]
+    public void SetMeasurementDefault()
+    {
+        decimalText.text = "21";
+        integerText.text = "543";
     }
 }

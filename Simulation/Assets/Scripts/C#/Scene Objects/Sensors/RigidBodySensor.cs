@@ -55,6 +55,8 @@ public class RigidBodySensor : Sensor
         Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
         Vector2 pos = (Vector2)rbData.pos + rigidBodyPositionOffset;
 
+        const float minAbsVelocity = 2.0f;
+
         float value = 0;
         switch (rigidBodySensorType)
         {
@@ -64,14 +66,17 @@ public class RigidBodySensor : Sensor
 
             case RigidBodySensorType.Velocity:
                 value = vel.magnitude;
+                if (value < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.Velocity_X:
                 value = vel.x;
+                if (Mathf.Abs(value) < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.Velocity_Y:
                 value = vel.y;
+                if (Mathf.Abs(value) < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
@@ -95,7 +100,7 @@ public class RigidBodySensor : Sensor
                 break;
         }
 
-        (string prefix, float displayValue) = GetMagnitudePrefix(value);
+        (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
         SetSensorUnit(prefix);
 
         sensorUI.SetMeasurement(displayValue, numDecimals);
@@ -138,7 +143,7 @@ public class RigidBodySensor : Sensor
         string unit = prefix + baseUnit;
 
         // If the new baseUnit differs from the previous baseUnit, update the sensor baseUnit
-        if (baseUnit != lastUnit)
+        if (unit != lastUnit)
         {
             sensorUI.SetUnit(baseUnit, unit);
             lastUnit = unit;
@@ -154,7 +159,7 @@ public class RigidBodySensor : Sensor
                 break;
 
             case RigidBodySensorType.Velocity:
-                sensorUI.SetTitle("Hastighet");
+                sensorUI.SetTitle("Fart");
                 break;
 
             case RigidBodySensorType.Velocity_X:
