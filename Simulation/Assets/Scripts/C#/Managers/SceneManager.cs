@@ -69,7 +69,9 @@ public class SceneManager : MonoBehaviour
         // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
-            if (rigidBody.IsPointInsidePolygon(point) && rigidBody.rbInput.isCollider) return false;
+            ColliderType colliderType = rigidBody.rbInput.colliderType;
+            bool isFluidCollider = colliderType == ColliderType.Fluid || colliderType == ColliderType.All;
+            if (rigidBody.IsPointInsidePolygon(point) && isFluidCollider) return false;
         }
 
         // Sort fluids with respect to the sibling indices
@@ -351,6 +353,11 @@ public class SceneManager : MonoBehaviour
     private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos, Vector2 parentOffset)
     {
         bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
+        bool isRBCollider = rbInput.colliderType == ColliderType.RigidBody || rbInput.colliderType == ColliderType.All;
+        bool isFluidCollider = rbInput.colliderType == ColliderType.Fluid || rbInput.colliderType == ColliderType.All;
+        bool isLinearMotor = rbInput.constraintType == ConstraintType.LinearMotor;
+        bool isRigidConstraint = rbInput.constraintType == ConstraintType.Rigid;
+        bool isSpringConstraint = rbInput.constraintType == ConstraintType.Spring;
         return new RBData
         {
             pos = pos,
@@ -359,23 +366,24 @@ public class SceneManager : MonoBehaviour
             nextVel = 0,
             rotVel_AsInt = rbInput.canRotate ? Func.FloatAsInt(rbInput.angularVelocity, main.FloatIntPrecisionRB) : 0,
             totRot = 0,
-            mass = canMove ? rbInput.mass : ((rbInput.constraintType == ConstraintType.LinearMotor) ? (rbInput.doRoundTrip ? -2 : -1) : 0),
+            mass = canMove ? rbInput.mass : (isLinearMotor ? (rbInput.doRoundTrip ? -2 : -1) : 0),
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
-            elasticity = rbInput.isCollider ? rbInput.elasticity : -1,
-            friction = rbInput.isCollider ? rbInput.friction : -1,
+            rbElasticity = isRBCollider ? Mathf.Max(rbInput.rbElasticity, 0.05f) : -1,
+            fluidElasticity = isFluidCollider ? Mathf.Max(rbInput.fluidElasticity, 0.05f) : -1,
+            friction = isRBCollider ? rbInput.friction : -1,
             maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
             // Inter-RB spring links
-            linkedRBIndex = (rbInput.constraintType == ConstraintType.Spring || rbInput.constraintType == ConstraintType.Rigid) ? linkedRBIndex : -1,
-            springStiffness = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springStiffness,
-            springRestLength = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.springRestLength,
-            damping = rbInput.constraintType == ConstraintType.Rigid ? 0 : rbInput.damping,
-            localLinkPosThisRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.startPos + parentOffset : rbInput.localLinkPosThisRB,
-            localLinkPosOtherRB = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.endPos + parentOffset : rbInput.localLinkPosOtherRB,
+            linkedRBIndex = (isSpringConstraint || isRigidConstraint) ? linkedRBIndex : -1,
+            springStiffness = isRigidConstraint ? 0 : rbInput.springStiffness,
+            springRestLength = isRigidConstraint ? 0 : rbInput.springRestLength,
+            damping = isRigidConstraint ? 0 : rbInput.damping,
+            localLinkPosThisRB = isLinearMotor ? rbInput.startPos + parentOffset : rbInput.localLinkPosThisRB,
+            localLinkPosOtherRB = isLinearMotor ? rbInput.endPos + parentOffset : rbInput.localLinkPosOtherRB,
             // Linear motor
-            lerpSpeed = (rbInput.constraintType == ConstraintType.LinearMotor) ? rbInput.lerpSpeed : 0,
+            lerpSpeed = isLinearMotor ? rbInput.lerpSpeed : 0,
             lerpTimeOffset = rbInput.lerpTimeOffset,
             // Heating
             heatingStrength = rbInput.heatingStrength,

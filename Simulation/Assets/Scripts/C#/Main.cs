@@ -262,6 +262,7 @@ public class Main : MonoBehaviour
 
         SetConstants();
         InitTimeSetRand();
+        SetLightingSettings();
 
         InitializeBuffers(PDatas, RBDatas, RBVectors, SensorAreas);
         renderTexture = TextureHelper.CreateTexture(PM.Instance.ResolutionInt2, 3);
@@ -277,7 +278,6 @@ public class Main : MonoBehaviour
         shaderHelper.UpdateRenderShaderVariables(renderShader);
         shaderHelper.UpdateSortShaderVariables(sortShader);
 
-        SetLightingSettings();
         SetShaderKeywords();
         InitCausticsGen();
 

@@ -209,7 +209,7 @@ void ResolveCollisionRB_RB(
     if (relVelAlongNormal >= 0.0) return; // Objects are separating
 
     // Coefficient of restitution
-    float e = min(rbA.elasticity, rbB.elasticity);
+    float e = min(rbA.rbElasticity, rbB.rbElasticity);
 
     // Compute inverse inertias
     float invInertiaA = canRotateA ? 1.0 / rbA.inertia : 0;
@@ -270,8 +270,8 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     uint rbAIndex = id.x;
     RigidBody baseRB = RigidBodies[rbAIndex];
 
-    bool isNotCollider = baseRB.elasticity == -1;
-    if (isNotCollider) return;
+    bool isNotRBCollider = baseRB.rbElasticity == -1;
+    if (isNotRBCollider) return;
 
     [unroll(MAX_RIGIDBODIES_NUM)]
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < MAX_RIGIDBODIES_NUM; rbBIndex++)
@@ -284,11 +284,11 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         // Don't allow collision checks for rigid bodies linked by a rigid constraint, or if the isCollider flag of rbB is not set
         bool rigidConstraintFlagA = rbA.springStiffness == 0;
         bool rigidConstraintFlagB = rbB.springStiffness == 0;
-        bool isNotColliderB = rbB.elasticity == -1;
+        bool isNotRBColliderB = rbB.rbElasticity == -1;
         bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rigidConstraintFlagB) || ((int)rbBIndex == rbA.linkedRBIndex && rigidConstraintFlagA) || !AllowLinkedRBCollisions;
         
         // Exit early if both rigid bodies are flagged as stationary, or rigidConstraint == true
-        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotColliderB) continue;
+        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotRBColliderB) continue;
 
         // Record initial positions
         float2 posRecA = rbA.pos;
@@ -421,7 +421,7 @@ void ResolveCollisionRB_P(inout PData pData, float pMass, RigidBody rb, out floa
     if (relVelAlongNormal >= 0.0) return;
 
     // Reflect the relative velocity across the collision normal with elasticity
-    float2 mirrorRelVel = relVel - (1.0 + rb.elasticity) * relVelAlongNormal * collisionNormal;
+    float2 mirrorRelVel = relVel - (1.0 + rb.fluidElasticity) * relVelAlongNormal * collisionNormal;
     float2 newPVel = mirrorRelVel + rbVel;
     float2 oldPVel = pData.vel;
     pData.vel = newPVel;
@@ -470,8 +470,8 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
     {
         RigidBody rb = RigidBodies[rbIndex];
 
-        bool isNotCollider = rb.elasticity == -1;
-        if (isNotCollider) continue;
+        bool isNotFluidCollider = rb.fluidElasticity == -1;
+        if (isNotFluidCollider) continue;
 
         // Check P_RB collision
         if (dot2(rb.pos - pData.pos) <= abs(rb.maxRadiusSqr))
@@ -765,7 +765,7 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     if (denom == 0) return;
 
     // Normal impulse scalar
-    float jn = -(1 + rb.elasticity) * relVelAlongNormal / denom;
+    float jn = -(1 + rb.rbElasticity) * relVelAlongNormal / denom;
 
     // Compute normal impulse vector
     float2 impulseNormal = jn * normal;
@@ -853,8 +853,8 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     bool canMove = rb.mass > 0;
     if (canMove)
     {
-        bool isCollider = rb.elasticity != -1;
-        if (isCollider)
+        bool isRBCollider = rb.rbElasticity != -1;
+        if (isRBCollider)
         {
             // Make sure rigid body is inside simulation bounds
             if (IsNearBoundary(rb.pos, abs(rb.maxRadiusSqr)))

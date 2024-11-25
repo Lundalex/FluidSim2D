@@ -113,7 +113,7 @@ float2 GetTexDims(Texture2D<unorm float4> tex)
 
 float3 SampleTexture(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
 {
-    uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
+    uint2 texelCoord = texLoc + (uint2)((uv % 1) * float2(texDims.x, texDims.y));
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
     return sampleCol;
@@ -406,7 +406,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             int chunkKey = GetChunkKey(curChunk);
             int startIndex = StartIndices[chunkKey];
 
-            int index = startIndex; 
+            int index = startIndex;
             while (index < ParticlesNum && chunkKey == SpatialLookup[index].y)
             {
                 int pIndex = SpatialLookup[index].x;

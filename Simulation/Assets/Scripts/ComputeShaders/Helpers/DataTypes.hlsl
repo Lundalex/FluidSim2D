@@ -89,7 +89,8 @@ struct RigidBody
     float mass; // 0 -> Stationary
     float inertia;
     float gravity;
-    float elasticity;
+    float rbElasticity;
+    float fluidElasticity;
     float friction;
     float maxRadiusSqr;
     int startIndex;

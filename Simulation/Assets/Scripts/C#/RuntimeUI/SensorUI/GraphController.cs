@@ -2,7 +2,6 @@ using UnityEngine;
 using ChartAndGraph;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Resources2;
 using PM = ProgramManager;
 

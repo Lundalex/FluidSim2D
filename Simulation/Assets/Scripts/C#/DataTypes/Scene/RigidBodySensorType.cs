@@ -1,6 +1,11 @@
 public enum RigidBodySensorType
 {
-    SpringForce,
+    Mass,
     Velocity,
-    RotationalVelocity
+    Velocity_X,
+    Velocity_Y,
+    RotationalVelocity,
+    Position_X,
+    Position_Y,
+    SpringForce
 }

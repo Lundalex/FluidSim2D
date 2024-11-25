@@ -9,14 +9,15 @@ public struct RBInput
     public bool includeInSimulation;
     public bool overrideCentroid;
     public bool isInteractable;
-    public bool isCollider;
+    public ColliderType colliderType;
     public bool canMove;
     public bool canRotate;
 
     [Header("Runtime Properties")]
     public float mass;
     public float gravity;
-    public float elasticity;
+    public float rbElasticity;
+    public float fluidElasticity;
     public float friction;
 
     [Header("Particle Interaction")]

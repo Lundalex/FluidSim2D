@@ -11,7 +11,8 @@ public struct RBData
     public float mass; // 0 -> Stationary
     public float inertia;
     public float gravity;
-    public float elasticity;
+    public float rbElasticity;
+    public float fluidElasticity;
     public float friction;
     public float maxRadiusSqr;
     public int startIndex;
