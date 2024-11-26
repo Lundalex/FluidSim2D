@@ -9,7 +9,7 @@
 #include "./Helpers/Constants.hlsl"
 #include "./Helpers/MathResources.hlsl"
 
-// Boundrary settings
+// Boundary settings
 const uint2 BoundaryDims;
 const float RigidBodyPadding;
 
@@ -29,7 +29,7 @@ const bool AllowLinkedRBCollisions;
 const float MaxRBRotVel;
 const float MaxRBVel;
 
-// Interation settings
+// Interaction settings
 const float RB_MaxInteractionRadius;
 const float RB_InteractionAttractionPower;
 
@@ -184,7 +184,7 @@ void ResolveCollisionRB_RB(
     if (totalInvMass == 0) return;
 
     // Positional correction to resolve penetration
-    float penetrationToCorrect = max(penetrationDepth - RB_RBCollisionSlop, 0.0);
+    float penetrationToCorrect = max(penetrationDepth - RB_RBCollisionSlop, 0.0) + 0.05;
     float2 correction = (penetrationToCorrect / totalInvMass) * RB_RBCollisionCorrectionFactor * normal;
 
     if (AInsideB_BInsideA && canMoveA) rbA.pos -= correction * invMassA;
@@ -262,7 +262,6 @@ void ResolveCollisionRB_RB(
     }
 }
 
-
 [numthreads(TN_RBS2,1,1)]
 void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
 {
@@ -274,10 +273,8 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     if (isNotRBCollider) return;
 
     [unroll(MAX_RIGIDBODIES_NUM)]
-    for (uint rbBIndex = rbAIndex + 1; rbBIndex < MAX_RIGIDBODIES_NUM; rbBIndex++)
+    for (uint rbBIndex = rbAIndex + 1; rbBIndex < NumRigidBodies; rbBIndex++)
     {
-        if (rbBIndex >= NumRigidBodies) return;
-
         RigidBody rbA = baseRB;
         RigidBody rbB = RigidBodies[rbBIndex];
         
@@ -294,7 +291,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         float2 posRecA = rbA.pos;
         float2 posRecB = rbB.pos;
         
-        // Early exit if thr two rigid bodies are to far away from each other
+        // Early exit if the two rigid bodies are too far away from each other
         float dst = length(rbB.pos - rbA.pos);
         float radiusSum = sqrt(abs(rbA.maxRadiusSqr)) + sqrt(abs(rbB.maxRadiusSqr));
         if (dst > radiusSum) continue;
@@ -306,7 +303,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         float2 deltaVelA = 0; float2 deltaVelB = 0;
         float deltaRotVelA = 0; float deltaRotVelB = 0;
 
-        // Check if any points of rbA is inside rbB
+        // Check if any points of rbA are inside rbB
         uint startIndexA = rbA.startIndex;
         uint endIndexA = rbA.endIndex;
         for (uint vecIndex = startIndexA; vecIndex < endIndexA; vecIndex++)
@@ -324,10 +321,10 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
             ResolveCollisionRB_RB(rbA, rbB, rbHitInfo, AInsideB_BInsideA, deltaVelA, deltaRotVelA, deltaVelB, deltaRotVelB);
         }
 
-        // Check if any points of rbB is inside rbA
+        // Check if any points of rbB are inside rbA
         uint startIndexB = rbB.startIndex;
         uint endIndexB = rbB.endIndex;
-        for (vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
+        for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
         {
             float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
 
@@ -649,7 +646,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         // Compute effective mass along the constraint direction
         float rACrossN = cross2D(linkPosA, direction);
         float rBCrossN = cross2D(linkPosB, direction);
-        float denom = totalInvMass + (rACrossN * rACrossN) * invInertiaA + (rBCrossN * rBCrossN) * invInertiaB;
+        float denom = invMassA + invMassB + (rACrossN * rACrossN) * invInertiaA + (rBCrossN * rBCrossN) * invInertiaB;
 
         // Avoid division by zero
         if (denom == 0) return;
@@ -725,7 +722,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     AccumulateDeltaRotVel(i, deltaRotVelA_Int);
     AccumulateDeltaRotVel(rbA.linkedRBIndex, deltaRotVelB_Int);
 
-    if (springForce.x != 0 || springForce.y != 0)
+    if (length(springForce) != 0)
     {
         // Record the springForce exerted on the rigid bodies
         float absSpringForce = length(springForce) * 0.001;
@@ -733,6 +730,27 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
 
         AccumulateSpringForce(i, recordedSpringForce_Int);
     }
+}
+
+int SafeAsInt(int asInt, float max)
+{
+    if (asInt == 0) return 0;
+
+    float asFloat = IntToFloat(asInt, INT_FLOAT_PRECISION_RB);
+    asFloat = sign(asFloat) * min(abs(asFloat), max);
+    int newAsInt = FloatAsInt(asFloat, INT_FLOAT_PRECISION_RB);
+
+    return newAsInt;
+}
+int2 SafeAsInt2(int2 asInt2, float max)
+{
+    if (asInt2.x == 0 && asInt2.y == 0) return 0;
+    
+    float2 asFloat2 = Int2ToFloat2(asInt2, INT_FLOAT_PRECISION_RB);
+    asFloat2 = normalize(asFloat2) * min(length(asFloat2), max);
+    int2 newAsInt2 = Float2AsInt2(asFloat2, INT_FLOAT_PRECISION_RB);
+
+    return newAsInt2;
 }
 
 void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, float2 normal)
@@ -813,27 +831,6 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     float epsilonCorrection = 0.1; // Small additional correction to prevent slow "sinking" through the borders
     float2 correction = (max(penetrationDepth, -epsilonCorrection) + epsilonCorrection) * normal;
     rb.pos += correction;
-}
-
-int SafeAsInt(int asInt, float max)
-{
-    if (asInt == 0) return 0;
-
-    float asFloat = IntToFloat(asInt, INT_FLOAT_PRECISION_RB);
-    asFloat = sign(asFloat) * min(abs(asFloat), max);
-    int newAsInt = FloatAsInt(asFloat, INT_FLOAT_PRECISION_RB);
-
-    return newAsInt;
-}
-int2 SafeAsInt2(int2 asInt2, float max)
-{
-    if (asInt2.x == 0 && asInt2.y == 0) return 0;
-    
-    float2 asFloat2 = Int2ToFloat2(asInt2, INT_FLOAT_PRECISION_RB);
-    asFloat2 = normalize(asFloat2) * min(length(asFloat2), max);
-    int2 newAsInt2 = Float2AsInt2(asFloat2, INT_FLOAT_PRECISION_RB);
-
-    return newAsInt2;
 }
 
 [numthreads(TN_RBS2,1,1)]

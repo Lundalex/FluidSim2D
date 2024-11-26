@@ -21,14 +21,11 @@ public class DashedRectangle : MonoBehaviour
     // Private variables
     private Vector3 scale = Vector3.one;
 
-    public void SetPosition(Vector2 pos)
+    public void SetPosition(Vector2 newPosition)
     {
-        // Vector2 newPosition = SimSpaceToWorldSpace(sensorUI.ClampToScreenBounds(pos));
-        Vector2 newPosition = SimSpaceToWorldSpace(ProgramManager.Instance.main.GetMousePosInSimSpace());
         if (newPosition != rectTransform.anchoredPosition)
         {
             rectTransform.anchoredPosition = newPosition;
-            Initialize();
         }
     }
 
@@ -95,17 +92,5 @@ public class DashedRectangle : MonoBehaviour
         }
 
         return positions;
-    }
-
-    private Vector2 SimSpaceToWorldSpace(Vector2 simCoords)
-    {
-        (Vector2 viewMin, Vector2 viewDims) = ProgramManager.Instance.GetUIBoundaries();
-
-        Vector2 boundaryDims = ProgramManager.Instance.main != null
-            ? new Vector2(ProgramManager.Instance.main.BoundaryDims.x, ProgramManager.Instance.main.BoundaryDims.y)
-            : new Vector2(float.MaxValue, float.MaxValue);
-
-        Vector2 normalizedCoords = simCoords / boundaryDims;
-        return normalizedCoords * viewDims + viewMin;
     }
 }

@@ -234,6 +234,23 @@ namespace Resources2
     }
 #endregion
 
+#region Transform Utilities
+    public static class TransformUtils
+    {
+        public static Vector2 SimSpaceToWorldSpace(Vector2 simCoords)
+        {
+            (Vector2 viewMin, Vector2 viewDims) = ProgramManager.Instance.GetUIBoundaries();
+
+            Vector2 boundaryDims = ProgramManager.Instance.main != null
+                ? new Vector2(ProgramManager.Instance.main.BoundaryDims.x, ProgramManager.Instance.main.BoundaryDims.y)
+                : new Vector2(float.MaxValue, float.MaxValue);
+
+            Vector2 normalizedCoords = simCoords / boundaryDims;
+            return normalizedCoords * viewDims + viewMin;
+        }
+    }
+#endregion
+
 #region Spring Utilities
     public static class StringUtils
     {

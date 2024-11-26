@@ -320,11 +320,7 @@ public class Main : MonoBehaviour
 
                 RunRbSimShader();
 
-                if (ParticlesNum > 0)
-                {
-                    int ThreadNums = Utils.GetThreadGroupsNums(ParticlesNum, pSimShaderThreadSize1);
-                    pSimShader.Dispatch(5, ThreadNums, 1, 1);
-                }
+                ComputeHelper.DispatchKernel(pSimShader, "UpdatePositions", ParticlesNum, pSimShaderThreadSize1);
 
                 StepCount++;
                 SimTimeElapsed += DeltaTime;

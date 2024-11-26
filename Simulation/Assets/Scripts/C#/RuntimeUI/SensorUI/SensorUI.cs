@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Michsky.MUIP;
 using System;
 using PM = ProgramManager;
+using Resources2;
 
 public class SensorUI : MonoBehaviour
 {
@@ -68,6 +69,12 @@ public class SensorUI : MonoBehaviour
         if (dashedRectangle == null) return;
         Vector2 pos = GetPositionFromInputFields();
         dashedRectangle.SetPosition(pos);
+    }
+
+    private void Update()
+    {
+        dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(PM.Instance.main.GetMousePosInSimSpace()));
+        // dashedRectangle.SetPosition(sensor.targetPosition);
     }
 
     public Vector3 GetTotalScale(bool settingsViewActive = false)
