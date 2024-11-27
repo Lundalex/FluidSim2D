@@ -255,7 +255,7 @@ MonoBehaviour:
   RigidBodyPadding: 3
   AllowLinkedRBCollisions: 1
   RB_RBCollisionCorrectionFactor: 1
-  RB_RBCollisionSlop: 0.0181
+  RB_RBFixedCollisionCorrection: 0.05
   TimeStepsPerFrame: 4
   SubTimeStepsPerFrame: 2
   TimeStepType: 1
@@ -278,7 +278,7 @@ MonoBehaviour:
   RenderOrder: 0000000001000000020000000300000004000000
   Resolution:
     x: 1920
-    y: 1080
+    y: 1280
   UIPadding: {x: 20, y: -30}
   LightingSettings: 0
   GlobalBrightness:

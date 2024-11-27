@@ -37,6 +37,8 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public static readonly float MaxDeltaTime = 1 / 30.0f;
     private static readonly float MinTimeScaleForRunningProgram = 0.01f;
     [NonSerialized] public Vector2 ScreenToViewFactor;
+    [NonSerialized] public Vector2 ViewScale;
+    [NonSerialized] public Vector2 ViewOffset;
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
 
@@ -81,6 +83,7 @@ public class ProgramManager : ScriptableObject
         SetReferences();
         SetResolutionData();
         ScreenToViewFactor = GetScreenToViewFactor();
+        (ViewScale, ViewOffset) = GetViewTransform();
         SetStaticUIPositions();
     }
 
@@ -377,9 +380,35 @@ public class ProgramManager : ScriptableObject
         return new Vector2(scaleX, scaleY);
     }
 
+    private (Vector2 ViewScale, Vector2 ViewOffset) GetViewTransform()
+    {
+        Vector2 boundaryDims = Utils.Int2ToVector2(main.BoundaryDims);
+        float boundsAspect = boundaryDims.x / boundaryDims.y;
+        float resolutionAspect = Resolution.x / Resolution.y;
+
+        Vector2 scale = boundaryDims / Resolution;
+        Vector2 offset = Vector2.zero;
+        if (resolutionAspect > boundsAspect)
+        {
+            // Wider resolution: scale based on height
+            scale.x = boundaryDims.y / Resolution.y;
+            float scaledWidth = Resolution.x * scale.x;
+            offset.x = (boundaryDims.x - scaledWidth) / 2.0f;
+        }
+        else
+        {
+            // Taller resolution: scale based on width
+            scale.y = boundaryDims.x / Resolution.x;
+            float scaledHeight = Resolution.y * scale.y;
+            offset.y = (boundaryDims.y - scaledHeight) / 2.0f;
+        }
+
+        return (scale, offset);
+    }
+
     private void SetResolutionData()
     {
-        Resolution = new(main.Resolution.x, main.Resolution.y);
+        Resolution = Utils.Int2ToVector2(main.Resolution);
         ResolutionInt2 = main.Resolution;
     }
 

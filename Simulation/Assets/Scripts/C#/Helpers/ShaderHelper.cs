@@ -1,3 +1,4 @@
+using Resources2;
 using UnityEngine;
 using PM = ProgramManager;
 
@@ -142,9 +143,9 @@ public class ShaderHelper : MonoBehaviour
     {
         pSimShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
         pSimShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
-        pSimShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        pSimShader.SetVector("ChunksNum", Utils.Int2ToVector2(m.ChunksNum));
         pSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
-        pSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
+        pSimShader.SetVector("BoundaryDims", Utils.Int2ToVector2(m.BoundaryDims));
         pSimShader.SetInt("ParticlesNum", m.ParticlesNum);
         pSimShader.SetInt("PTypesNum", m.PTypesNum);
         pSimShader.SetInt("ParticleSpringsCombinedHalfLength", m.ParticleSpringsCombinedHalfLength);
@@ -177,32 +178,38 @@ public class ShaderHelper : MonoBehaviour
         renderShader.SetFloat("GasNoiseDensityDarkeningFactor", m.GasNoiseDensityDarkeningFactor);
         renderShader.SetFloat("GasNoiseDensityOpacityFactor", m.GasNoiseDensityOpacityFactor);
 
+        renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
+        renderShader.SetVector("BackgroundBrightness", Utils.Float3ToVector3(m.BackgroundBrightness));
+        renderShader.SetBool("MirrorRepeatBackgroundUV", m.MirrorRepeatBackgroundUV);
+
         renderShader.SetFloat("RBEdgeWidth", m.RBEdgeWidth);
         renderShader.SetFloat("FluidSensorEdgeWidth", m.FluidSensorEdgeWidth);
         renderShader.SetFloat("SensorAreaAnimationSpeed", m.SensorAreaAnimationSpeed);
-        renderShader.SetFloat("BackgroundUpScaleFactor", m.BackgroundUpScaleFactor);
-        renderShader.SetVector("BackgroundBrightness", new Vector3(m.BackgroundBrightness.x, m.BackgroundBrightness.y, m.BackgroundBrightness.z));
 
         renderShader.SetInt("SpringRenderNumPeriods", m.SpringRenderNumPeriods);
         renderShader.SetFloat("SpringRenderWidth", m.SpringRenderWidth);
         renderShader.SetFloat("SpringRenderHalfMatWidth", m.SpringRenderMatWidth / 2.0f);
         renderShader.SetFloat("SpringRenderRodLength", Mathf.Max(m.SpringRenderRodLength, 0.01f));
         renderShader.SetFloat("TaperThresoldNormalised", m.TaperThresoldNormalised);
-        renderShader.SetVector("SpringTextureUVFactor", new Vector2(m.SpringTextureUVFactor.x, m.SpringTextureUVFactor.y));
+        renderShader.SetVector("SpringTextureUVFactor", Utils.Float2ToVector2(m.SpringTextureUVFactor));
 
         renderShader.SetVector("Resolution", PM.Instance.Resolution);
-        renderShader.SetVector("BoundsDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
+        renderShader.SetVector("BoundaryDims", Utils.Int2ToVector2(m.BoundaryDims));
+        renderShader.SetVector("ScreenToViewFactor", PM.Instance.ScreenToViewFactor);
+        renderShader.SetVector("ViewScale", PM.Instance.ViewScale);
+        renderShader.SetVector("ViewOffset", PM.Instance.ViewOffset);
+
         renderShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
         renderShader.SetFloat("InvMaxInfluenceRadius", m.InvMaxInfluenceRadius);
         renderShader.SetInt("MaxInfluenceRadiusSqr", m.MaxInfluenceRadiusSqr);
-        renderShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        renderShader.SetVector("ChunksNum", Utils.Int2ToVector2(m.ChunksNum));
         renderShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         renderShader.SetInt("ParticlesNum", m.ParticlesNum);
         renderShader.SetInt("PTypesNum", m.PTypesNum);
         renderShader.SetInt("NumRigidBodies", m.NumRigidBodies);
         renderShader.SetInt("NumFluidSensors", m.NumFluidSensors);
 
-        renderShader.SetVector("GlobalBrightness", new Vector3(m.GlobalBrightness.x, m.GlobalBrightness.y, m.GlobalBrightness.z));
+        renderShader.SetVector("GlobalBrightness", Utils.Float3ToVector3(m.GlobalBrightness));
         renderShader.SetFloat("Contrast", m.Contrast);
         renderShader.SetFloat("Saturation", m.Saturation);
         renderShader.SetFloat("Gamma", m.Gamma);
@@ -211,7 +218,7 @@ public class ShaderHelper : MonoBehaviour
     public void UpdateSortShaderVariables(ComputeShader sortShader)
     {
         sortShader.SetInt("MaxInfluenceRadius", m.MaxInfluenceRadius);
-        sortShader.SetVector("ChunksNum", new Vector2(m.ChunksNum.x, m.ChunksNum.y));
+        sortShader.SetVector("ChunksNum", Utils.Int2ToVector2(m.ChunksNum));
         sortShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         sortShader.SetInt("ParticlesNum", m.ParticlesNum);
         sortShader.SetInt("ParticlesNum_NextPow2", m.ParticlesNum_NextPow2);
@@ -248,7 +255,7 @@ public class ShaderHelper : MonoBehaviour
 
     public void UpdateRBSimShaderVariables(ComputeShader rbSimShader)
     {
-        rbSimShader.SetVector("BoundaryDims", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
+        rbSimShader.SetVector("BoundaryDims", Utils.Int2ToVector2(m.BoundaryDims));
         rbSimShader.SetFloat("RigidBodyPadding", Mathf.Max(m.RigidBodyPadding, 0.1f));
 
         rbSimShader.SetInt("NumRigidBodies", m.NumRigidBodies);
@@ -258,7 +265,7 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("PTypesNum", m.PTypesNum);
 
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
-        rbSimShader.SetFloat("RB_RBCollisionSlop", m.RB_RBCollisionSlop);
+        rbSimShader.SetFloat("RB_RBFixedCollisionCorrection", m.RB_RBFixedCollisionCorrection);
         rbSimShader.SetBool("AllowLinkedRBCollisions", m.AllowLinkedRBCollisions);
 
         rbSimShader.SetFloat("MaxRBRotVel", m.MaxRBRotVel);
@@ -266,5 +273,7 @@ public class ShaderHelper : MonoBehaviour
 
         rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
         rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);
+        rbSimShader.SetFloat("RB_InteractionRepulsionPower", m.RB_InteractionRepulsionPower);
+        rbSimShader.SetFloat("RB_InteractionDampening", m.RB_InteractionDampening);
     }
 }

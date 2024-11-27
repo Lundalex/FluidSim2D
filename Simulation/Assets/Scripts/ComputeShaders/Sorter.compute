@@ -24,7 +24,7 @@ const int ChunksNumAllNextPow2;
 const int ParticlesNum;
 const int ParticlesNum_NextPow2;
 
-// Per-iteration-set constants
+// Per-iteration-set variables
 const bool BrownPinkSort; // True -> BrownSort, False -> PinkSort
 const int SpatialLookupLog2Length;
 const int BlockLen;

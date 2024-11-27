@@ -22,7 +22,7 @@ const uint PTypesNum;
 
 // Rigid Body Collision solver settings
 const float RB_RBCollisionCorrectionFactor;
-const float RB_RBCollisionSlop;
+const float RB_RBFixedCollisionCorrection;
 const bool AllowLinkedRBCollisions;
 
 // Safety
@@ -32,13 +32,15 @@ const float MaxRBVel;
 // Interaction settings
 const float RB_MaxInteractionRadius;
 const float RB_InteractionAttractionPower;
+const float RB_InteractionRepulsionPower;
+const float RB_InteractionDampening;
 
-// Per-timestep-set constants
+// Per-timestep-set variables
 const float DeltaTime;
 const float SimTimeElapsed;
 const float2 MousePos;
-const bool RMousePressed;
 const bool LMousePressed;
+const bool RMousePressed;
 
 // Particles - Buffers
 StructuredBuffer<int2> SpatialLookup; // [ParticlesNum](particleIndex, ChunkKey)
@@ -184,11 +186,10 @@ void ResolveCollisionRB_RB(
     if (totalInvMass == 0) return;
 
     // Positional correction to resolve penetration
-    float penetrationToCorrect = max(penetrationDepth - RB_RBCollisionSlop, 0.0) + 0.05;
-    float2 correction = (penetrationToCorrect / totalInvMass) * RB_RBCollisionCorrectionFactor * normal;
+    float2 correction = ((penetrationDepth / totalInvMass) * RB_RBCollisionCorrectionFactor) * normal;
 
-    if (AInsideB_BInsideA && canMoveA) rbA.pos -= correction * invMassA;
-    if (!AInsideB_BInsideA && canMoveB) rbB.pos += correction * invMassB;
+    if (canMoveA) rbA.pos -= correction * invMassA + RB_RBFixedCollisionCorrection * normal;
+    if (canMoveB) rbB.pos += correction * invMassB + RB_RBFixedCollisionCorrection * normal;
 
     // Recompute relative positions
     float2 rA = collisionPoint - rbA.pos;
@@ -324,7 +325,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         // Check if any points of rbB are inside rbA
         uint startIndexB = rbB.startIndex;
         uint endIndexB = rbB.endIndex;
-        for (uint vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
+        for (vecIndex = startIndexB; vecIndex < endIndexB; vecIndex++)
         {
             float2 vertexB = RBVectors[vecIndex].pos + rbB.pos;
 
@@ -538,9 +539,9 @@ void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax, i
 float2 InteractionForce(RigidBody rb)
 {
     if (!LMousePressed && !RMousePressed) return 0;
-    int dir = 0;
-    if (LMousePressed) dir = -1;
-    else if (RMousePressed) dir = 1;
+    float factor = 0;
+    if (LMousePressed) factor = RB_InteractionAttractionPower;
+    else if (RMousePressed) factor = -RB_InteractionRepulsionPower;
 
     float2 dst = rb.pos - MousePos;
 
@@ -548,10 +549,10 @@ float2 InteractionForce(RigidBody rb)
 
     if (absDst > RB_MaxInteractionRadius) return 0;
 
-    float absInteractionGradient = InteractionInfluence_optimised(absDst, RB_MaxInteractionRadius);
+    float absInteractionGradient = RB_MaxInteractionRadius - absDst;
 
-    float2 interactionGradient = normalize(dst) * absInteractionGradient;
-    float2 interactionForce = interactionGradient * RB_InteractionAttractionPower * dir;
+    float2 interactionGradient = normalize(dst) * absInteractionGradient + RB_InteractionDampening * Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB);
+    float2 interactionForce = interactionGradient * factor - (LMousePressed ? float2(0, rb.gravity) : 0);
 
     return interactionForce;
 }
@@ -829,7 +830,7 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     float penetrationDepth = -dot(collisionPoint - (rb.pos + r), normal);
 
     float epsilonCorrection = 0.1; // Small additional correction to prevent slow "sinking" through the borders
-    float2 correction = (max(penetrationDepth, -epsilonCorrection) + epsilonCorrection) * normal;
+    float2 correction = (max(penetrationDepth, -epsilonCorrection) + epsilonCorrection + RB_RBFixedCollisionCorrection) * normal;
     rb.pos += correction;
 }
 

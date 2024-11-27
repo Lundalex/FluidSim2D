@@ -40,7 +40,7 @@ const float InteractionAttractionPower;
 const float InteractionFountainPower;
 const float InteractionTemperaturePower;
 
-// Per-timestep-set constants
+// Per-timestep-set variables
 const float DeltaTime;
 const bool TransferSpringData;
 const int StepCount;

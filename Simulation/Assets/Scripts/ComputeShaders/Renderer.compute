@@ -33,12 +33,15 @@ const float GasNoiseStrength;
 const float GasNoiseDensityDarkeningFactor;
 const float GasNoiseDensityOpacityFactor;
 
+// Background
+const float BackgroundUpScaleFactor;
+const float3 BackgroundBrightness;
+const bool MirrorRepeatBackgroundUV;
+
 // Other
 const float RBEdgeWidth;
 const float FluidSensorEdgeWidth;
 const float SensorAreaAnimationSpeed;
-const float BackgroundUpScaleFactor;
-const float3 BackgroundBrightness;
 
 // Rigid body springs
 const int SpringRenderNumPeriods;
@@ -49,7 +52,10 @@ const float TaperThresoldNormalised;
 const float2 SpringTextureUVFactor;
 
 const uint2 Resolution;
-const uint2 BoundsDims;
+const uint2 BoundaryDims;
+const float2 ScreenToViewFactor;
+const float2 ViewScale;
+const float2 ViewOffset;
 const float InvMaxInfluenceRadius;
 const int MaxInfluenceRadius;
 const int MaxInfluenceRadiusSqr;
@@ -68,7 +74,7 @@ const float Contrast;
 const float Saturation;
 const float Gamma;
 
-// Per-timestep-set constants
+// Per-timestep-set variables
 const float RealTimeElapsed;
 const int LastTimeSetRand;
 const int NextTimeSetRand;
@@ -195,7 +201,7 @@ bool IsOutsideResolutionDims(uint2 threadID)
 
 bool IsOutsideSimBounds(float2 pixelPos)
 {
-    return 0 > pixelPos.x || pixelPos.x > (float)BoundsDims.x || 0 > pixelPos.y || pixelPos.y > (float)BoundsDims.y;
+    return 0 > pixelPos.x || pixelPos.x > (float)BoundaryDims.x || 0 > pixelPos.y || pixelPos.y > (float)BoundaryDims.y;
 }
 
 bool IsPointInsideRB(float2 pos, RigidBody rb)
@@ -305,10 +311,24 @@ float2 MirrorRepeatUV(float2 uv)
 [numthreads(TN_R,TN_R,1)]
 void RenderBackground(uint3 id : SV_DispatchThreadID)
 {
-    if (IsOutsideResolutionDims(id.xy))return;
+    if (IsOutsideResolutionDims(id.xy)) return;
+    
+    // Scale texture dimensions
+    float2 texDims = GetTexDims(Background);
+    float scaleX = (float)Resolution.x / texDims.x;
+    float scaleY = (float)Resolution.y / texDims.y;
+    float scale = max(scaleX, scaleY);
+    float2 scaledTexDims = texDims * scale;
 
-    float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * id.xy / (float2)Resolution);
-    float3 sampleCol = SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness;
+    // Calculate the offset to the center
+    float2 offset = (scaledTexDims - (float2)Resolution) * 0.5;
+    
+    // Calculate the uv
+    float2 uv = ((float2)id.xy + offset) * BackgroundUpScaleFactor / scaledTexDims;
+    uv = MirrorRepeatBackgroundUV ? MirrorRepeatUV(uv) : uv % 1;
+
+    // Sample the background texture
+    float3 sampleCol = SampleTexture(uv, 0, texDims, Background) * BackgroundBrightness;
     SetResultColor(id.xy, sampleCol);
 }
 
@@ -321,35 +341,7 @@ float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
 
 float2 GetPixelPos(uint2 pixelID)
 {
-    // Calculate aspect ratios
-    float boundsAspect = (float)BoundsDims.x / (float)BoundsDims.y;
-    float resolutionAspect = (float)Resolution.x / (float)Resolution.y;
-
-    float scale;
-    float2 offset = 0;
-
-    if (resolutionAspect > boundsAspect)
-    {
-        // Wider resolution: scale based on height
-        scale = (float)BoundsDims.y / (float)Resolution.y;
-        float scaledWidth = Resolution.x * scale;
-        offset.x = (BoundsDims.x - scaledWidth) / 2.0f;
-        
-        float2 pos = ((float2)pixelID + 0.5f) * scale + float2(offset.x, 0.0f);
-        
-        return pos;
-    }
-    else
-    {
-        // Taller resolution: scale based on width
-        scale = (float)BoundsDims.x / (float)Resolution.x;
-        float scaledHeight = Resolution.y * scale;
-        offset.y = (BoundsDims.y - scaledHeight) / 2.0f;
-        
-        float2 pos = ((float2)pixelID + 0.5f) * scale + float2(0.0f, offset.y);
-        
-        return pos;
-    }
+    return ((float2)pixelID + 0.5) * ViewScale + ViewOffset;
 }
 
 float DstToBorder(float2 pos, float2 min2, float2 max2)
@@ -677,7 +669,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         else
         {
             float2 localPixelPos = rotate2D(pixelPos - transformData.xy, -transformData.z);
-            float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / (float2)BoundsDims);
+            float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / (float2)BoundaryDims);
 
             float3 color = GetMaterialColor(mat, localUV, Atlas);
 
@@ -864,7 +856,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     {
         Mat mat = Materials[matIndex];
 
-        float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundsDims);
+        float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundaryDims);
         uv *= SpringTextureUVFactor;
 
         float3 result = GetMaterialColor(mat, uv, Atlas) + mat.baseCol;

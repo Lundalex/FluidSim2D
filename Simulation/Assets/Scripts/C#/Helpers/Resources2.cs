@@ -73,6 +73,26 @@ namespace Resources2
             }
             return new float2(x, y);
         }
+
+        public static Vector2 Int2ToVector2(int2 a)
+        {
+            return new(a.x, a.y);
+        }
+
+        public static Vector2 Float2ToVector2(float2 a)
+        {
+            return new(a.x, a.y);
+        }
+
+        public static Vector3 Int3ToVector3(int3 a)
+        {
+            return new(a.x, a.y, a.z);
+        }
+
+        public static Vector3 Float3ToVector3(float3 a)
+        {
+            return new(a.x, a.y, a.z);
+        }
     }
 #endregion
 

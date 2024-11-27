@@ -53,7 +53,7 @@ public class Main : MonoBehaviour
 #region Rigid Body Simulation
     public bool AllowLinkedRBCollisions = false;
     public float RB_RBCollisionCorrectionFactor = 0.8f;
-    public float RB_RBCollisionSlop = 0.01f;
+    public float RB_RBFixedCollisionCorrection = 0.05f;
 #endregion
 
 #region Simulation Time
@@ -75,6 +75,8 @@ public class Main : MonoBehaviour
     // Rigid Bodies
     public float RB_MaxInteractionRadius = 40.0f;
     public float RB_InteractionAttractionPower = 3.5f;
+    public float RB_InteractionRepulsionPower = 3.5f;
+    public float RB_InteractionDampening = 0.1f;
 #endregion
 
 #region Render Pipeline
@@ -150,10 +152,11 @@ public class Main : MonoBehaviour
     public float SensorAreaAnimationSpeed = 2.0f;
 
     // Background
+    public float GlobalSettingsViewChangeSpeed;
     public Texture2D backgroundTexture;
     public float3 BackgroundBrightness;
     public float BackgroundUpScaleFactor;
-    public float GlobalSettingsViewChangeSpeed;
+    public bool MirrorRepeatBackgroundUV;
 #endregion
 
 #region References
@@ -241,21 +244,26 @@ public class Main : MonoBehaviour
 
     public void StartScript()
     {
-        SceneSetup();
+        CameraSetup();
 
+        SimTimeElapsed = 0;
+
+        // Particles
         PData[] PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
         ParticlesNum = PDatas.Length;
-        
-        SimTimeElapsed = 0;
-        BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
 
+        // Boundary
+        BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
 
+        // Rigid bodies & sensor areas
         (RBData[] RBDatas, RBVector[] RBVectors, SensorArea[] SensorAreas) = sceneManager.CreateRigidBodies();
         NumRigidBodies = RBDatas.Length;
         NumRigidBodyVectors = RBVectors.Length;
         NumFluidSensors = SensorAreas.Length;
+
+        // Materials
         (AtlasTexture, Mats) = sceneManager.ConstructTextureAtlas(materialInput.materialInputs);
         TextureHelper.TextureFromGradient(ref LiquidVelocityGradientTexture, LiquidVelocityGradientResolution, LiquidVelocityGradient);
         TextureHelper.TextureFromGradient(ref GasVelocityGradientTexture, GasVelocityGradientResolution, GasVelocityGradient);
@@ -264,15 +272,18 @@ public class Main : MonoBehaviour
         InitTimeSetRand();
         SetLightingSettings();
 
+        // Initialize buffers
         InitializeBuffers(PDatas, RBDatas, RBVectors, SensorAreas);
         renderTexture = TextureHelper.CreateTexture(PM.Instance.ResolutionInt2, 3);
 
+        // Shader buffers
         shaderHelper.SetPSimShaderBuffers(pSimShader);
         shaderHelper.SetRBSimShaderBuffers(rbSimShader);
         shaderHelper.SetRenderShaderBuffers(renderShader);
         shaderHelper.SetRenderShaderTextures(renderShader);
         shaderHelper.SetSortShaderBuffers(sortShader);
 
+        // Shader variables
         shaderHelper.UpdatePSimShaderVariables(pSimShader);
         shaderHelper.UpdateRBSimShaderVariables(rbSimShader);
         shaderHelper.UpdateRenderShaderVariables(renderShader);
@@ -384,8 +395,10 @@ public class Main : MonoBehaviour
 
     public void UpdateShaderTimeStep()
     {
+        // Mouse position
         Vector2 mouseSimPos = GetMousePosInSimSpace();
 
+        // Mouse button input handling
         bool2 currentMouseInputs = Utils.GetMousePressed();
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
         if (!skipUpdatingMouseInputs)
@@ -394,15 +407,18 @@ public class Main : MonoBehaviour
             MousePressed = disallowMouseInputs ? false : currentMouseInputs;
         }
 
+        // Per-timestep-set variables - pSimShader
         pSimShader.SetFloat("DeltaTime", DeltaTime);
         pSimShader.SetVector("MousePos", mouseSimPos);
         pSimShader.SetBool("LMousePressed", MousePressed.x);
         pSimShader.SetBool("RMousePressed", MousePressed.y);
+
+        // Per-timestep-set variables - rbSimShader
         rbSimShader.SetFloat("DeltaTime", DeltaTime);
         rbSimShader.SetFloat("SimTimeElapsed", SimTimeElapsed);
         rbSimShader.SetVector("MousePos", mouseSimPos);
-        rbSimShader.SetBool("RMousePressed", MousePressed.x);
-        rbSimShader.SetBool("LMousePressed", MousePressed.y);
+        rbSimShader.SetBool("LMousePressed", MousePressed.x);
+        rbSimShader.SetBool("RMousePressed", MousePressed.y);
         renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
 
         // Multi-compilation - pSimShader
@@ -450,7 +466,7 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("USE_METABALLS");
     }
 
-    private void SceneSetup()
+    private void CameraSetup()
     {
         Camera.main.transform.position = new Vector3(BoundaryDims.x / 2, BoundaryDims.y / 2, -1);
         Camera.main.orthographicSize = Mathf.Max(BoundaryDims.x * 0.75f, BoundaryDims.y * 1.5f);
