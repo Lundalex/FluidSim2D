@@ -1,5 +1,5 @@
 public enum PositionType
 {
-    Fixed,
-    Relative
+    Relative,
+    Fixed
 }

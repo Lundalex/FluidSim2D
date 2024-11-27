@@ -15,7 +15,11 @@ public class RigidBodySensor : Sensor
     // Private
     private Vector2 currentTargetPosition;
 
-    public override void InitSensor() => sensorUI.SetPosition(SimSpaceToCanvasSpace(new(-Const.LARGE_FLOAT, 0.0f)));
+    public override void InitSensor(Vector2 sensorUIPos)
+    {
+        sensorUI.rectTransform.localPosition = SimSpaceToCanvasSpace(positionType == PositionType.Relative ? sensorUIPos + targetPosition : targetPosition);
+        firstDataRecieved = false;
+    }
 
     public override void UpdatePosition()
     {
@@ -23,7 +27,7 @@ public class RigidBodySensor : Sensor
         {
             Vector2 canvasTargetPosition = SimSpaceToCanvasSpace(currentTargetPosition);
             
-            // Interpolate the current position
+            // Interpolate between the current position and the target position
             sensorUI.SetPosition((doInterpolation && positionType == PositionType.Relative) ? Vector2.Lerp(sensorUI.rectTransform.localPosition, canvasTargetPosition, Time.deltaTime * moveSpeed) : canvasTargetPosition);
         }
     }
@@ -37,11 +41,15 @@ public class RigidBodySensor : Sensor
             {
                 RBData[] retrievedRBDatas = sensorManager.retrievedRBDatas;
                 RBData rbData = retrievedRBDatas[linkedRBIndex];
-                currentTargetPosition = positionType == PositionType.Relative ? (Vector2)rbData.pos + targetPosition : targetPosition;
 
                 // Init sensor UI position
-                if (!firstDataRecieved) sensorUI.SetPosition(SimSpaceToCanvasSpace(targetPosition));
-                firstDataRecieved = true;
+                if (!firstDataRecieved)
+                {
+                    currentTargetPosition = (Vector2)rbData.pos + targetPosition;
+                    sensorUI.SetPosition(SimSpaceToCanvasSpace(currentTargetPosition));
+                    firstDataRecieved = true;
+                }
+                else currentTargetPosition = positionType == PositionType.Relative ? (Vector2)rbData.pos + targetPosition : targetPosition;
 
                 UpdateSensorContents(retrievedRBDatas, linkedRBIndex);
             }

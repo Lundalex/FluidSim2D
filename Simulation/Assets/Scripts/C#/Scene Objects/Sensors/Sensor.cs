@@ -3,6 +3,7 @@ using System;
 using Unity.Mathematics;
 using ChartAndGraph;
 using PM = ProgramManager;
+using Michsky.MUIP;
 
 public abstract class Sensor : MonoBehaviour
 {
@@ -44,10 +45,10 @@ public abstract class Sensor : MonoBehaviour
     // Private
     private Vector2 boundaryDims = Vector2.zero;
 
-    public void Initialize()
+    public void Initialize(Vector2 sensorUIPos)
     {
         InitSensorUI();
-        InitSensor();
+        InitSensor(sensorUIPos);
         graphController.InitGraph(graphChart, itemLabels);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
         
@@ -87,17 +88,20 @@ public abstract class Sensor : MonoBehaviour
         bool isRigidBodySensor = this is RigidBodySensor;
         sensorUI.rigidBodySensorTypeSelectObject.SetActive(isRigidBodySensor);
         sensorUI.fluidSensorTypeSelectObject.SetActive(!isRigidBodySensor);
+        sensorUI.positionTypeSelector.SetActive(isRigidBodySensor);
+        sensorUI.positionInputFields.SetActive(!isRigidBodySensor);
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.scaleSlider.value = sensorScale;
         sensorUI.sliderScale = sensorScale;
         sensorUI.SetDataWindow(defaultDataView == DataView.Numeric ? "NumericDisplay" : "GraphDisplay");
+        sensorUI.positionTypeSelector.GetComponent<HorizontalSelector>().defaultIndex = positionType == PositionType.Relative ? 0 : 1;
         sensorUI.Initialize();
         SetSensorTitle();
         sensorUIObject.name = "UI - " + this.name;
     }
 
-    public abstract void InitSensor();
+    public abstract void InitSensor(Vector2 pos);
     public abstract void UpdatePosition();
     public abstract void UpdateSensor();
     public abstract void UpdateSensorTypeDropdown();

@@ -239,7 +239,7 @@ public class SceneManager : MonoBehaviour
                         rigidBodySensor.linkedRBIndex = i;
                         sensors.Add(sensor);
                         sensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
-                        sensor.Initialize();
+                        sensor.Initialize(transformedRBPos);
                     }
                 }
             }
@@ -253,7 +253,7 @@ public class SceneManager : MonoBehaviour
             {
                 sensors.Add(fluidSensor);
                 fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
-                fluidSensor.Initialize();
+                fluidSensor.Initialize(Vector2.zero);
                 sensorAreas.Add(fluidSensor.GetSensorAreaData());
             }
         }

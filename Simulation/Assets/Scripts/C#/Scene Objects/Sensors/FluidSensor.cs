@@ -26,7 +26,7 @@ public class FluidSensor : Sensor
         if (PM.Instance.programStarted) InitializeMeasurementParameters();
     }
 
-    public override void InitSensor()
+    public override void InitSensor(Vector2 _)
     {
         UpdatePosition();
         InitializeMeasurementParameters();
