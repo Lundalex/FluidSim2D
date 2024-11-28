@@ -12,11 +12,13 @@ public abstract class Sensor : MonoBehaviour
     [Range(1, 2)] public int numDecimals;
     [Range(0, 3)] public int minPrefixIndex;
     [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
+    public float valueOffset;
     public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
-    public Vector2 targetPosition;
+    public Vector2 localTargetPos;
     public PositionType positionType;
     public bool useFixedScaleForDashedRectangle;
+    [NonSerialized] public Vector2 lastJointPos;
 
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;

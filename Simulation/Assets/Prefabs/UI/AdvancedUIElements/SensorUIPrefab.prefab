@@ -4513,7 +4513,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Hastighet_X
+  - itemName: Hastighet X
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -4531,7 +4531,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Hastighet_Y
+  - itemName: Hastighet Y
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -4567,7 +4567,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Position_X
+  - itemName: Position X
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -4585,7 +4585,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Position_Y
+  - itemName: Position Y
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -10954,8 +10954,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 69.005005, y: -27}
-  m_SizeDelta: {x: 98.01, y: 54}
+  m_AnchoredPosition: {x: 89.075, y: -27}
+  m_SizeDelta: {x: 138.15, y: 54}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2492224908219942914
 CanvasRenderer:
@@ -10985,7 +10985,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Vanlig vy
+  m_text: Default view
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
   m_sharedMaterial: {fileID: 21539420542967178, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
@@ -13562,7 +13562,7 @@ MonoBehaviour:
   itemPaddingLeft: 8
   itemPaddingRight: 25
   itemSpacing: 8
-  selectedItemIndex: 12
+  selectedItemIndex: 0
   animationType: 0
   panelDirection: 0
   panelSize: 200
@@ -13612,7 +13612,7 @@ MonoBehaviour:
   saveSelected: 0
   saveKey: My Dropdown
   items:
-  - itemName: Energy_Total_Kinetic
+  - itemName: Tot. Kinetisk Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13630,7 +13630,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Energy_Total_Thermal
+  - itemName: Tot. Termisk Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13648,7 +13648,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Energy_Total_Both
+  - itemName: Tot. Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13666,7 +13666,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Energy_Average_Kinetic
+  - itemName: Avg. Kinetisk Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13684,7 +13684,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Energy_Average_Thermal
+  - itemName: Avg. Termisk Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13702,7 +13702,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Energy_Average_Both
+  - itemName: Tot. Energi
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13720,7 +13720,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: TotalMass
+  - itemName: Tot. Massa
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13738,7 +13738,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: AveragePressure
+  - itemName: Avg. Tryck
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13756,7 +13756,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: AverageTemperatureCelcius
+  - itemName: "Temperatur (\xB0C)"
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13774,7 +13774,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: AverageTemperatureKelvin
+  - itemName: "Temperatur (\xB0K)"
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13792,7 +13792,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Velocity_Absolute_Destructive
+  - itemName: Avg. Summativ Hastighet
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13810,7 +13810,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Velocity_Absolute_Summative
+  - itemName: Avg. Destruktiv Hastighet
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13824,24 +13824,6 @@ MonoBehaviour:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 11
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-  - itemName: Sensor
-    itemIcon: {fileID: 0}
-    itemIndex: 0
-    OnItemSelection:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 6338154651552807825}
-          m_TargetAssemblyTypeName: SensorUI, Assembly-CSharp
-          m_MethodName: OnNewFluidSensorType
-          m_Mode: 3
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 12
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0

@@ -68,8 +68,8 @@ public class SensorUI : MonoBehaviour
 
     private void Update()
     {
-        dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(PM.Instance.main.GetMousePosInSimSpace()));
-        // dashedRectangle.SetPosition(sensor.targetPosition);
+        // dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(PM.Instance.main.GetMousePosInSimSpace()));
+        // dashedRectangle.SetPosition(sensor.localTargetPos);
     }
 
 #region User-triggered functions
@@ -108,11 +108,14 @@ public class SensorUI : MonoBehaviour
 
     public void OnApplyTransformSettings()
     {
-        Vector2 pos = GetPositionFromInputFields();
+        if (sensor is FluidSensor)
+        {
+            Vector2 pos = GetPositionFromInputFields();
 
-        sliderScale = userScale;
-        rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
-        sensor.targetPosition = pos;
+            sliderScale = userScale;
+            rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
+            sensor.localTargetPos = pos;
+        }
 
         sensor.graphController.ResetGraph();
 
@@ -128,12 +131,25 @@ public class SensorUI : MonoBehaviour
 
     public void SetPositionType(int newPositionTypeInt)
     {
+        if (sensor is FluidSensor)
+        {
+            Debug.LogWarning("Trying to change the sensor UI position type of a fluid sensor. This is not allowed. FluidSensor: " + sensor.name);
+            return;
+        }
+
         PositionType newPositionType = (PositionType)newPositionTypeInt;
         if (newPositionType == sensor.positionType) return;
 
         sensor.positionType = newPositionType;
 
-        // if (newPositionType)
+        if (newPositionType == PositionType.Fixed)
+        {
+            sensor.localTargetPos += sensor.lastJointPos;
+        }
+        else // newPositionType == PositionType.Relative
+        {
+            sensor.localTargetPos -= sensor.lastJointPos;
+        }
     }
 #endregion
 

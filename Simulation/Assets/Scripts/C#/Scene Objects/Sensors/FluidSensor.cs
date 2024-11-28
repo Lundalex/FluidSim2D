@@ -69,10 +69,11 @@ public class FluidSensor : Sensor
     {
         if (positionType == PositionType.Relative)
         {
-            Vector2 relativeTargetPosition = measurementZone.center + targetPosition;
-            sensorUI.SetPosition(SimSpaceToCanvasSpace(relativeTargetPosition));
+            lastJointPos = measurementZone.center;
+            Vector2 relativelocalTargetPos = lastJointPos + localTargetPos;
+            sensorUI.SetPosition(SimSpaceToCanvasSpace(relativelocalTargetPos));
         }
-        else sensorUI.SetPosition(SimSpaceToCanvasSpace(targetPosition));
+        else sensorUI.SetPosition(SimSpaceToCanvasSpace(localTargetPos));
     }
 
     public override void UpdateSensor()
@@ -185,6 +186,8 @@ public class FluidSensor : Sensor
             }
         }
 
+        value += valueOffset;
+
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
         SetSensorUnit(prefix);
 
@@ -261,30 +264,36 @@ public class FluidSensor : Sensor
         switch (fluidSensorType)
         {
             case FluidSensorType.Energy_Total_Kinetic:
-            case FluidSensorType.Energy_Total_Thermal:
-            case FluidSensorType.Energy_Total_Both:
             case FluidSensorType.Energy_Average_Kinetic:
+                sensorUI.SetTitle("K. Energi");
+                break;
+
+            case FluidSensorType.Energy_Total_Thermal:
             case FluidSensorType.Energy_Average_Thermal:
+                sensorUI.SetTitle("T. Energi");
+                break;
+
+            case FluidSensorType.Energy_Total_Both:
             case FluidSensorType.Energy_Average_Both:
-                sensorUI.SetTitle("Energy");
+                sensorUI.SetTitle("Energi");
                 break;
 
             case FluidSensorType.TotalMass:
-                sensorUI.SetTitle("Mass");
+                sensorUI.SetTitle("Massa");
                 break;
 
             case FluidSensorType.AveragePressure:
-                sensorUI.SetTitle("Pressure");
+                sensorUI.SetTitle("Tryck");
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
             case FluidSensorType.AverageTemperatureKelvin:
-                sensorUI.SetTitle("Temperature");
+                sensorUI.SetTitle("Temperatur");
                 break;
 
             case FluidSensorType.Velocity_Absolute_Destructive:
             case FluidSensorType.Velocity_Absolute_Summative:
-                sensorUI.SetTitle("Velocity");
+                sensorUI.SetTitle("Hastighet");
                 break;
 
             default:

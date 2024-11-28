@@ -17,7 +17,7 @@ public class RigidBodySensor : Sensor
 
     public override void InitSensor(Vector2 sensorUIPos)
     {
-        sensorUI.rectTransform.localPosition = SimSpaceToCanvasSpace(positionType == PositionType.Relative ? sensorUIPos + targetPosition : targetPosition);
+        sensorUI.rectTransform.localPosition = SimSpaceToCanvasSpace(positionType == PositionType.Relative ? sensorUIPos + localTargetPos : localTargetPos);
         firstDataRecieved = false;
     }
 
@@ -41,15 +41,16 @@ public class RigidBodySensor : Sensor
             {
                 RBData[] retrievedRBDatas = sensorManager.retrievedRBDatas;
                 RBData rbData = retrievedRBDatas[linkedRBIndex];
+                lastJointPos = (Vector2)rbData.pos;
 
                 // Init sensor UI position
                 if (!firstDataRecieved)
                 {
-                    currentTargetPosition = (Vector2)rbData.pos + targetPosition;
+                    currentTargetPosition = localTargetPos + lastJointPos;
                     sensorUI.SetPosition(SimSpaceToCanvasSpace(currentTargetPosition));
                     firstDataRecieved = true;
                 }
-                else currentTargetPosition = positionType == PositionType.Relative ? (Vector2)rbData.pos + targetPosition : targetPosition;
+                else currentTargetPosition = positionType == PositionType.Relative ? lastJointPos + localTargetPos : localTargetPos;
 
                 UpdateSensorContents(retrievedRBDatas, linkedRBIndex);
             }
@@ -107,6 +108,8 @@ public class RigidBodySensor : Sensor
                 Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
                 break;
         }
+        
+        value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
         SetSensorUnit(prefix);
