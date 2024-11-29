@@ -648,8 +648,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Tips: Anv\xE4nd musen f\xF6r att interagera.\nTryck knappen nedan f\xF6r
-    att starta!"
+  m_text: "Tips: Anv\xE4nd musen f\xF6r att interagera.\nTryck p\xE5 knappen nedan
+    f\xF6r att starta!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
   m_sharedMaterial: {fileID: 21539420542967178, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
@@ -2837,9 +2837,8 @@ MonoBehaviour:
   cancelButton: {fileID: 0}
   mwAnimator: {fileID: 2689691354882141936}
   icon: {fileID: 21300000, guid: b1f294bdc7c0c4a4c8ccf957d26052e5, type: 3}
-  titleText: (Scene Name)
-  descriptionText: "Tips: Anv\xE4nd musen f\xF6r att interagera\nTryck nedan f\xF6r
-    att starta!"
+  titleText: (Set the title in the title text object field directly)
+  descriptionText: (Set the description in the description text object field directly)
   onOpen:
     m_PersistentCalls:
       m_Calls: []

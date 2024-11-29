@@ -37,6 +37,7 @@
         <uie:PropertyField binding-path="FluidPadding" tooltip="Boundary padding unable for particles to enter." />
         <uie:PropertyField binding-path="RigidBodyPadding" tooltip="The boundary padding which rigid bodies cannot enter." label="Rigid Body Padding" />
         <ui:Slider label="Boundary Elasticity" value="0.2" high-value="1" binding-path="BoundaryElasticity" fill="true" page-size="0" show-input-field="true" tooltip="The boundary elasticity used for rigidbody-boundary collisions." />
+        <ui:Slider label="Boundary Friction" value="0" high-value="1" binding-path="BoundaryFriction" fill="true" page-size="0" show-input-field="true" tooltip="The boundary friction used for rigidbody-boundary interactions." />
     </ui:Foldout>
     <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies." />

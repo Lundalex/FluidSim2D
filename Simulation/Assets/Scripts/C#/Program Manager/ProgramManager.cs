@@ -41,6 +41,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public Vector2 ViewOffset;
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
+    public event Action OnPreStart;
 
     // Start confirmation timing
     [NonSerialized] public static readonly float msStartConfimationDelay = 650.0f;
@@ -80,7 +81,6 @@ public class ProgramManager : ScriptableObject
 
     public void Initialize()
     {
-        ResetData();
         SetReferences();
         SetResolutionData();
         ScreenToViewFactor = GetScreenToViewFactor();
@@ -90,6 +90,8 @@ public class ProgramManager : ScriptableObject
 
     public void Start()
     {
+        OnPreStart?.Invoke();
+
         Initialize();
         
         main.StartScript();
@@ -105,7 +107,7 @@ public class ProgramManager : ScriptableObject
 
         if (doResetScene)
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+            ResetScene();
             return;
         }
 
@@ -152,6 +154,12 @@ public class ProgramManager : ScriptableObject
             main.RunRenderShader();
             TriggerProgramUpdate(false);
         }
+    }
+
+    public void ResetScene()
+    {
+        startConfirmationStatus = StartConfirmationStatus.None;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
     }
 
     private void TriggerProgramUpdate(bool doUpdateClampedTime) => OnProgramUpdate?.Invoke(doUpdateClampedTime);
@@ -241,7 +249,7 @@ public class ProgramManager : ScriptableObject
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         fluidSpawnerManager = GameObject.FindGameObjectWithTag("FluidSpawnerManager").GetComponent<FluidSpawnerManager>();
-        languageSelectDropdown = GameObject.FindGameObjectWithTag("LanguageSelect").GetComponent<Transform>();
+        languageSelectDropdown = GameObject.FindGameObjectWithTag("LanguageSelect")?.GetComponent<Transform>();
     }
 
     public void ResetData()
@@ -250,7 +258,15 @@ public class ProgramManager : ScriptableObject
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
-        startConfirmationStatus = StartConfirmationStatus.NotStarted;
+
+        if (!hasShownStartConfirmation)
+        {
+            startConfirmationStatus = StartConfirmationStatus.NotStarted;
+        }
+        else
+        {
+            startConfirmationStatus = StartConfirmationStatus.None;
+        }
         
         totalTimeElapsed = 0;
         frameCount = 0;
@@ -440,8 +456,11 @@ public class ProgramManager : ScriptableObject
         Vector2 halfResolution = Resolution / 2.0f;
         Vector2 offset = halfResolution - halfResolution * ScreenToViewFactor;
         
-        // Apply the offset
-        languageSelectDropdown.localPosition = (Vector2)languageSelectDropdown.localPosition - offset;
+        // Apply the offset to all static UI elements
+        if (languageSelectDropdown != null)
+        {
+            languageSelectDropdown.localPosition = (Vector2)languageSelectDropdown.localPosition - offset;
+        }
         foreach (UserUIElement userUIElement in userUIElements)
         {
             RectTransform rectTransform = userUIElement.GetComponent<RectTransform>();

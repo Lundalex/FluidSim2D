@@ -49,6 +49,7 @@ public class Main : MonoBehaviour
     public float FluidPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
     public float BoundaryElasticity = 0.2f;
+    public float BoundaryFriction = 0.0f;
 #endregion
 
 #region Rigid Body Simulation

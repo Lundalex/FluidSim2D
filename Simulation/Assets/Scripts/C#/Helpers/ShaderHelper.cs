@@ -258,6 +258,7 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetVector("BoundaryDims", Utils.Int2ToVector2(m.BoundaryDims));
         rbSimShader.SetFloat("RigidBodyPadding", Mathf.Max(m.RigidBodyPadding, 0.1f));
         rbSimShader.SetFloat("BoundaryElasticity", m.BoundaryElasticity);
+        rbSimShader.SetFloat("BoundaryFriction", m.BoundaryFriction);
 
         rbSimShader.SetInt("NumRigidBodies", m.NumRigidBodies);
         rbSimShader.SetInt("NumVectors", m.NumRigidBodyVectors);

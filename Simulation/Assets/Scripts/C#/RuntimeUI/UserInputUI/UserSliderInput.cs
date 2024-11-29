@@ -8,7 +8,7 @@ public class UserSliderInput : UserUIElement
 {
     [Header("Settings")]
     [Range(0.0f, 1000.0f), SerializeField] private float msMaxUpdateFrequency = 100.0f;
-    [SerializeField] private float startingValue;
+    public float startingValue;
     [SerializeField] private float minValue;
     [SerializeField] private float maxValue;
     public string innerFieldName = "No Inner Field";

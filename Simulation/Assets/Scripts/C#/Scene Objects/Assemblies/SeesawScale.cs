@@ -2,41 +2,71 @@ using System;
 using Resources2;
 using UnityEngine;
 
-public class SeesawScale : EditorLifeCycle
+public class SeesawScale : Assembly
 {
     [Header("Lever Arm Settings")]
-    [Range(0.1f, 0.9f), SerializeField] private float leverArmJointLerpFactor = 0.5f;
+    [Range(0.1f, 0.9f)] public float leverArmJointLerpFactor = 0.5f;
 
     [Header("References")]
     [SerializeField] private SceneRigidBody leftBucket;
     [SerializeField] private SceneRigidBody rightBucket;
     [SerializeField] private SceneRigidBody plank;
     [SerializeField] private Transform rotationJoint;
-    
+    [SerializeField] private UserSliderInput userSliderInput;
+
+    // Private static
+    private static float storedLeverArmJointLerpFactor = float.PositiveInfinity;
+
+    private void OnEnable()
+    {
+        ProgramManager.Instance.OnPreStart += AssemblyUpdate;
+        RetrieveData();
+    }
+
+    private void OnDestroy()
+    {
+        StoreData();
+        ProgramManager.Instance.OnPreStart -= AssemblyUpdate;
+    }
+
+    private void StoreData()
+    {
+        storedLeverArmJointLerpFactor = leverArmJointLerpFactor;
+    }
+
+    private void RetrieveData()
+    {
+        if (storedLeverArmJointLerpFactor != float.PositiveInfinity) leverArmJointLerpFactor = storedLeverArmJointLerpFactor;
+    }
+
     #if UNITY_EDITOR
-        private void OnValidate() => OnEditorUpdate();
+        private void OnValidate() => AssemblyUpdate();
 
-        public override void OnEditorUpdate()
-        {
-            if (leftBucket == null || rightBucket == null || plank == null || rotationJoint == null)
-            {
-                Debug.LogWarning("All references are not set. SeesawScale: " + this.name);
-                return;
-            }
-
-            Vector2 leftPlank = new(-75, 0);
-            Vector2 rightPlank = new(75, 0);
-
-            Vector2 lerpPos = Func.LerpVector2(leftPlank, rightPlank, leverArmJointLerpFactor);
-            Vector2 bucketOffset = -lerpPos;
-
-            Vector2 leftBucketPos = new Vector2(-100, 0) + bucketOffset;
-            Vector2 rightBucketPos = new Vector2(100, 0) + bucketOffset;
-
-            plank.rbInput.overrideCentroidPosition = lerpPos;
-            rotationJoint.localPosition = lerpPos;
-            leftBucket.rbInput.localLinkPosOtherRB = leftBucketPos;
-            rightBucket.rbInput.localLinkPosOtherRB = rightBucketPos;
-        }
+        public override void OnEditorUpdate() => AssemblyUpdate();
     #endif
+
+    public override void AssemblyUpdate()
+    {
+        if (leftBucket == null || rightBucket == null || plank == null || rotationJoint == null)
+        {
+            Debug.LogWarning("All references are not set. SeesawScale: " + this.name);
+            return;
+        }
+        
+        if (userSliderInput != null) userSliderInput.startingValue = leverArmJointLerpFactor;
+
+        Vector2 leftPlank = new(-75, 0);
+        Vector2 rightPlank = new(75, 0);
+
+        Vector2 lerpPos = Func.LerpVector2(leftPlank, rightPlank, leverArmJointLerpFactor);
+        Vector2 bucketOffset = -lerpPos;
+
+        Vector2 leftBucketPos = new Vector2(-100, 0) + bucketOffset;
+        Vector2 rightBucketPos = new Vector2(100, 0) + bucketOffset;
+
+        plank.rbInput.overrideCentroidPosition = lerpPos;
+        rotationJoint.localPosition = lerpPos;
+        leftBucket.rbInput.localLinkPosOtherRB = leftBucketPos;
+        rightBucket.rbInput.localLinkPosOtherRB = rightBucketPos;
+    }
 }

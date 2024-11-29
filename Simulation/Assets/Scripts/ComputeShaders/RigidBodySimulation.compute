@@ -13,6 +13,7 @@
 const uint2 BoundaryDims;
 const float RigidBodyPadding;
 const float BoundaryElasticity;
+const float BoundaryFriction;
 
 // Num variables
 const uint NumRigidBodies;
@@ -811,7 +812,7 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
         float jt = -dot(relVel, tangentDir) / denom;
 
         // Coulomb's Law
-        float mu = rb.friction; // Use rb.friction or define a boundary friction coefficient
+        float mu = min(rb.friction, BoundaryFriction); // Use rb.friction or define a boundary friction coefficient
 
         float maxFriction = mu * abs(jn);
         jt = clamp(jt, -maxFriction, maxFriction);

@@ -28,6 +28,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-sv
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8fd543d8fd716dd40b6b962706dc7b47
+    m_Address: SceneSpecificTable_sv
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-sv
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b0740738d4853fb4680968e87fa03c72
     m_Address: UserFieldTitles_sv
     m_ReadOnly: 1

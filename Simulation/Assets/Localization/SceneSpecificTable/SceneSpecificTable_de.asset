@@ -10,25 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
-  m_Name: StartInfoTable_sv
+  m_Name: SceneSpecificTable_de
   m_EditorClassIdentifier: 
   m_LocaleId:
-    m_Code: sv
-  m_SharedData: {fileID: 11400000, guid: 9e499d07552fd3f4dad707532b913b11, type: 2}
+    m_Code: de
+  m_SharedData: {fileID: 11400000, guid: 152a07000ce080148aaec9be8fb6817c, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 57467736064
-    m_Localized: "Tips: Anv\xE4nd musen f\xF6r att interagera.\nTryck p\xE5 knappen
-      nedan f\xF6r att starta!"
+  - m_Id: 269963759616
+    m_Localized: Elastischer Impuls
     m_Metadata:
       m_Items: []
-  - m_Id: 53189545984
-    m_Localized: Titel
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1933781241856
-    m_Localized: Starta
+  - m_Id: 382224306176
+    m_Localized: die Hebelwirkung
     m_Metadata:
       m_Items: []
   references:

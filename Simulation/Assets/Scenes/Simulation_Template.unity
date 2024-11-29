@@ -253,9 +253,11 @@ MonoBehaviour:
     y: 180
   FluidPadding: 5
   RigidBodyPadding: 3
+  BoundaryElasticity: 0.2
+  BoundaryFriction: 0
   AllowLinkedRBCollisions: 1
   RB_RBCollisionCorrectionFactor: 1
-  RB_RBCollisionSlop: 0.0181
+  RB_RBFixedCollisionCorrection: 0.05
   TimeStepsPerFrame: 4
   SubTimeStepsPerFrame: 2
   TimeStepType: 1
@@ -268,7 +270,10 @@ MonoBehaviour:
   InteractionTemperaturePower: 0
   RB_MaxInteractionRadius: 60
   RB_InteractionAttractionPower: 0
+  RB_InteractionRepulsionPower: 3.5
+  RB_InteractionDampening: 0.1
   FluidRenderMethod: 0
+  SampleMethod: 0
   DoDrawFluidOutlines: 1
   DoDisplayFluidVelocities: 1
   DoUseCaustics: 1
@@ -376,13 +381,14 @@ MonoBehaviour:
   RBEdgeWidth: 0.3
   FluidSensorEdgeWidth: 1
   SensorAreaAnimationSpeed: 10
+  GlobalSettingsViewChangeSpeed: 10
   backgroundTexture: {fileID: 2800000, guid: d8da7e6f5ef22447b9f626a5a4c7ef2e, type: 3}
   BackgroundBrightness:
     x: 0.8
     y: 0.8
     z: 0.8
   BackgroundUpScaleFactor: 1
-  GlobalSettingsViewChangeSpeed: 10
+  MirrorRepeatBackgroundUV: 0
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
   causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
   materialInput: {fileID: 1275482955}
@@ -1953,6 +1959,10 @@ PrefabInstance:
     - target: {fileID: 513592983997136594, guid: 70e83e942ca725246aab7871f12b244b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6036814758803677392, guid: 70e83e942ca725246aab7871f12b244b, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 37
       objectReference: {fileID: 0}
     - target: {fileID: 6105552585948339242, guid: 70e83e942ca725246aab7871f12b244b, type: 3}
       propertyPath: m_Name

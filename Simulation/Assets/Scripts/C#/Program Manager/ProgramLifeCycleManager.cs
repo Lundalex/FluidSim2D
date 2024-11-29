@@ -37,7 +37,6 @@ public class ProgramLifeCycleManager : MonoBehaviour
         {
             startConfirmationWindow.SetActive(false);
             darkBackground.SetActive(false);
-            PM.startConfirmationStatus = StartConfirmationStatus.None;
         }
     }
 
@@ -64,6 +63,8 @@ public class ProgramLifeCycleManager : MonoBehaviour
     }
 
     private void Update() => PM.Instance.Update();
+
+    public void ResetScene() => PM.Instance.ResetScene();
 
     public void OnStartConfirmation()
     {

@@ -129,7 +129,7 @@ public abstract class Sensor : MonoBehaviour
             prefixIndex++;
         }
 
-        while (value > minPrefixIndex && value < 1f && prefixIndex > 0)
+        while (value < 1f && prefixIndex > minPrefixIndex)
         {
             value *= 1000f;
             prefixIndex--;

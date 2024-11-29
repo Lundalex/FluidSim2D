@@ -27,6 +27,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-de
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c498b75bef2a67b4aae48ff8498d628d
+    m_Address: SceneSpecificTable_de
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-de
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: db5bba86842419e44adb8a4bcd53b499
     m_Address: TranslationTable_de
     m_ReadOnly: 1

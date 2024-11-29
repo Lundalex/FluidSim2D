@@ -6,11 +6,13 @@ public class RigidBodySensor : Sensor
 {
     [Header("Sensor Settings")]
     [SerializeField] private RigidBodySensorType rigidBodySensorType;
-    [SerializeField] private Vector2 rigidBodyPositionOffset;
     [SerializeField] private bool doInterpolation;
     [Range(1.0f, 20.0f), SerializeField] private float moveSpeed;
     [NonSerialized] public int linkedRBIndex = -1;
     [NonSerialized] public bool firstDataRecieved = false;
+
+    [Header("RB Sensor Display")]
+    [SerializeField] private float minAbsVelocity = 1.0f;
 
     // Private
     private Vector2 currentTargetPosition;
@@ -62,9 +64,7 @@ public class RigidBodySensor : Sensor
         RBData rbData = rBDatas[linkedRBIndex];
 
         Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
-        Vector2 pos = (Vector2)rbData.pos + rigidBodyPositionOffset;
-
-        const float minAbsVelocity = 2.0f;
+        Vector2 pos = (Vector2)rbData.pos;
 
         float value = 0;
         switch (rigidBodySensorType)

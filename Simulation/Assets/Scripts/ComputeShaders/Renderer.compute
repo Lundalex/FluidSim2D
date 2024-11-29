@@ -536,6 +536,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             {
                 sensorAreaTint += sensorArea.colorTint;
             }
+            else sensorAreaTint += sensorArea.colorTint / 2;
         }
     }
 
