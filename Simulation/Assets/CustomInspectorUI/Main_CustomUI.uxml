@@ -35,7 +35,8 @@
     <ui:Foldout text="Scene Boundary" name="SceneBoundary" value="true" style="-unity-font-style: bold; border-bottom-width: 2px; border-top-width: 2px; border-right-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-bottom: 4px; padding-right: 4px; padding-left: 4px;">
         <uie:PropertyField binding-path="BoundaryDims" tooltip="The dimensions of the simulation boundary." name="BoundaryDims" label="BoundaryDims" style="left: -3px;" />
         <uie:PropertyField binding-path="FluidPadding" tooltip="Boundary padding unable for particles to enter." />
-        <uie:PropertyField binding-path="RigidBodyPadding" tooltip="Boundary padding unable for rigid bodies to enter." />
+        <uie:PropertyField binding-path="RigidBodyPadding" tooltip="The boundary padding which rigid bodies cannot enter." label="Rigid Body Padding" />
+        <ui:Slider label="Boundary Elasticity" value="0.2" high-value="1" binding-path="BoundaryElasticity" fill="true" page-size="0" show-input-field="true" tooltip="The boundary elasticity used for rigidbody-boundary collisions." />
     </ui:Foldout>
     <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies." />
@@ -66,6 +67,7 @@
     </ui:Foldout>
     <ui:Foldout text="Render Pipeline" name="RenderPipeline" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing of the fluids." />
+        <ui:EnumField label="Sample Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="SampleMethod" tooltip="Which method to use for texture sampling. &apos;Bilinear&apos; is more computationally expensive than &apos;Point&apos; but also has higher sample quality." />
         <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at the &quot;RenderFluids&quot; render step)." />
         <ui:Toggle label="Fluid Velocities" value="true" binding-path="DoDisplayFluidVelocities" tooltip="Whether to display fluid velocities by tinting the red color channel with the average velocity of the neighbouring particles." />
         <ui:Toggle label="Use Caustics" binding-path="DoUseCaustics" tooltip="Whether to use the caustics generator for fluid rendering. This may affect performance (depending on the caustics generator settings)." name="Toggle" />

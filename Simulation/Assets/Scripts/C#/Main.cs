@@ -48,6 +48,7 @@ public class Main : MonoBehaviour
     public int2 BoundaryDims = new(300, 200);
     public float FluidPadding = 4.0f;
     public float RigidBodyPadding = 2.0f;
+    public float BoundaryElasticity = 0.2f;
 #endregion
 
 #region Rigid Body Simulation
@@ -81,6 +82,7 @@ public class Main : MonoBehaviour
 
 #region Render Pipeline
     public FluidRenderMethod FluidRenderMethod;
+    public SampleMethod SampleMethod;
     public bool DoDrawFluidOutlines;
     public bool DoDisplayFluidVelocities;
     [SerializeField] public bool DoUseCaustics;
@@ -238,7 +240,7 @@ public class Main : MonoBehaviour
     private float SimTimeElapsed;
     private int StepCount = 0;
     private int timeSetRand;
-    private bool2 MousePressed = false; // (left, right)
+    [NonSerialized] public static bool2 MousePressed = false; // (left, right)
 
     public void SubmitParticlesToSimulation(PData[] particlesToAdd) => NewPDatas.AddRange(particlesToAdd);
 
@@ -464,6 +466,8 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("DRAW_RB_OUTLINE");
         if (FluidRenderMethod == FluidRenderMethod.Metaballs) renderShader.EnableKeyword("USE_METABALLS");
         else renderShader.DisableKeyword("USE_METABALLS");
+        if (SampleMethod == SampleMethod.Bilinear) renderShader.EnableKeyword("USE_BILINEAR_SAMPLER");
+        else renderShader.DisableKeyword("USE_BILINEAR_SAMPLER");
     }
 
     private void CameraSetup()

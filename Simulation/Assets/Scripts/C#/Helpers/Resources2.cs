@@ -4,6 +4,7 @@ using System;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 using System.Globalization;
+using PM = ProgramManager;
 
 namespace Resources2
 {
@@ -16,7 +17,7 @@ namespace Resources2
     }
 #endregion
 
-#region General Utilities
+#region General
     public static class Utils
     {
         public static bool2 GetMousePressed()
@@ -254,24 +255,71 @@ namespace Resources2
     }
 #endregion
 
-#region Transform Utilities
+#region Transformations
     public static class TransformUtils
     {
         public static Vector2 SimSpaceToWorldSpace(Vector2 simCoords)
         {
-            (Vector2 viewMin, Vector2 viewDims) = ProgramManager.Instance.GetUIBoundaries();
+            (Vector2 viewMin, Vector2 viewDims) = PM.Instance.GetUIBoundaries();
 
-            Vector2 boundaryDims = ProgramManager.Instance.main != null
-                ? new Vector2(ProgramManager.Instance.main.BoundaryDims.x, ProgramManager.Instance.main.BoundaryDims.y)
+            Vector2 boundaryDims = PM.Instance.main != null
+                ? new Vector2(PM.Instance.main.BoundaryDims.x, PM.Instance.main.BoundaryDims.y)
                 : new Vector2(float.MaxValue, float.MaxValue);
 
             Vector2 normalizedCoords = simCoords / boundaryDims;
             return normalizedCoords * viewDims + viewMin;
         }
+
+    public static Vector2 ClampToScreenBounds(Vector2 uiPos, RectTransform outerContainerRectTransform, Vector2 scale, Vector3 scaleFactor)
+    {
+        // Apply ScreenToView transform
+        uiPos /= PM.Instance.ScreenToViewFactor;
+
+        Vector2 rectTransformSize = new(outerContainerRectTransform.rect.width, outerContainerRectTransform.rect.height);
+        Vector2 containerSize = scale * scaleFactor * rectTransformSize * 1.4f / PM.Instance.ScreenToViewFactor;
+        Vector2 containerMin = uiPos - 0.5f * containerSize;
+        Vector2 containerMax = uiPos + 0.5f * containerSize;
+
+        Vector2 halfResolution = 0.5f * PM.Instance.Resolution;
+        Vector2 screenMin = -halfResolution + PM.Instance.main.UIPadding;
+        Vector2 screenMax = halfResolution - PM.Instance.main.UIPadding;
+        Vector2 minDiff = containerMin - screenMin;
+        Vector2 maxDiff = containerMax - screenMax;
+
+        Vector2 offset = Vector2.zero;
+
+        // Adjust X axis
+        if (minDiff.x < 0)
+        {
+            offset.x = -minDiff.x;
+        }
+        else if (maxDiff.x > 0)
+        {
+            offset.x = -maxDiff.x;
+        }
+
+        // Adjust Y axis
+        if (minDiff.y < 0)
+        {
+            offset.y = -minDiff.y;
+        }
+        else if (maxDiff.y > 0)
+        {
+            offset.y = -maxDiff.y;
+        }
+        
+        // Apply offset
+        uiPos += offset;
+
+        // Revert ScreenToView transform
+        uiPos *= PM.Instance.ScreenToViewFactor;
+
+        return uiPos;
+    }
     }
 #endregion
 
-#region Spring Utilities
+#region Strings
     public static class StringUtils
     {
         public static void LogIfInEditor(string message)
@@ -292,7 +340,7 @@ namespace Resources2
     }
 #endregion
 
-#region Array Utilities
+#region Arrays
     public class ArrayUtils
     {
         public static T[] RemoveElementAtIndex<T>(ref T[] array, int index)

@@ -19,7 +19,25 @@ public class DashedRectangle : MonoBehaviour
     private LineRenderer lineRenderer;
 
     // Private variables
+    private bool activeStatus = false;
     private Vector3 scale = Vector3.one;
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (ProgramManager.Instance.programStarted) Initialize();
+    }
+#endif
+
+    public void Initialize()
+    {
+        if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
+        
+        // Generate positions
+        List<Vector3> positions = GenerateRoundedRectanglePositions(width * scale.x, height * scale.y, cornerRadius, cornerSegments);
+        lineRenderer.positionCount = positions.Count;
+        lineRenderer.SetPositions(positions.ToArray());
+    }
 
     public void SetPosition(Vector2 newPosition)
     {
@@ -38,14 +56,13 @@ public class DashedRectangle : MonoBehaviour
         }
     }
 
-    public void Initialize()
+    public void SetActive(bool newActiveStatus)
     {
-        if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
-        
-        // Generate positions
-        List<Vector3> positions = GenerateRoundedRectanglePositions(width * scale.x, height * scale.y, cornerRadius, cornerSegments);
-        lineRenderer.positionCount = positions.Count;
-        lineRenderer.SetPositions(positions.ToArray());
+        if (activeStatus != newActiveStatus)
+        {
+            activeStatus = newActiveStatus;
+            gameObject.SetActive(activeStatus);
+        }
     }
 
     private void Awake()
@@ -53,11 +70,6 @@ public class DashedRectangle : MonoBehaviour
         lineRenderer = GetComponent<LineRenderer>();
 
         Initialize();
-    }
-
-    private void OnValidate()
-    {
-        if (ProgramManager.Instance.programStarted) Initialize();
     }
 
     private List<Vector3> GenerateRoundedRectanglePositions(float width, float height, float radius, int segments)

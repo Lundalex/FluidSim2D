@@ -5,6 +5,7 @@ using Michsky.MUIP;
 using System;
 using PM = ProgramManager;
 using Resources2;
+using System.Collections;
 
 public class SensorUI : MonoBehaviour
 {
@@ -47,6 +48,7 @@ public class SensorUI : MonoBehaviour
     [NonSerialized] public float sliderScale;
     [NonSerialized] public float userScale;
     [NonSerialized] public bool isPointerHovering = false;
+    [NonSerialized] public bool isBeingMoved = false;
 
     // Private - Dropdown Select
     private RigidBodySensorType selectedRigidBodySensorType;
@@ -54,22 +56,67 @@ public class SensorUI : MonoBehaviour
     private FluidSensorType selectedFluidSensorType;
     private bool fluidSensorTypeDropdownUsed = false;
 
-    // Private - Pointer Hover
+    // Private - Pointer Hover & Dragging
     private Timer pointerHoverTimer;
     private const float PointerHoverCooldown = 0.25f;
+    private Timer pointerMoveTimer;
+    private const float PointerMoveDelay = 0.25f;
 
     // Private - Scale
     private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
     private readonly Vector3 ScaleFactor = new(0.65f, 1.0f, 1.0f);
     private const float SettingsViewActiveFixedScale = 2.0f;
     private const float GraphViewActiveFixedScale = 1.5f;
+    private const float MouseDraggingFixedScale = 1.2f;
 
-    public void Initialize() => pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
+    public void Initialize()
+    {
+        pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
+        pointerMoveTimer = new Timer(PointerMoveDelay, true, true, 0);
+    }
 
     private void Update()
     {
-        // dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(PM.Instance.main.GetMousePosInSimSpace()));
-        // dashedRectangle.SetPosition(sensor.localTargetPos);
+        if (PM.Instance.isAnySensorSettingsViewActive) return;
+
+        bool isTryingToMove = pointerHoverArea.CheckIfHovering() && Input.GetMouseButton(0) && !Main.MousePressed.x && !PM.Instance.CheckAnySensorBeingMoved(this);
+        if (isTryingToMove)
+        {
+            if (!pointerMoveTimer.Check(false)) return;
+            isBeingMoved = true;
+
+            // Get mouse position
+            Vector2 mouseSimPos = PM.Instance.main.GetMousePosInSimSpace();
+            Vector2 newPosition = sensor.SimSpaceToCanvasSpace(mouseSimPos);
+
+            // Set sensor UI position
+            rectTransform.localPosition = ClampToScreenBounds(newPosition);
+
+            // Set sensor position
+            if (sensor.positionType == PositionType.Relative)
+            {
+                sensor.localTargetPos = mouseSimPos - sensor.lastJointPos;
+            }
+            else
+            {
+                sensor.localTargetPos = mouseSimPos;
+            }
+
+            // Activate dashed rectangle object
+            dashedRectangle.SetActive(true);
+
+            // Set dashed rectangle position
+            dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(mouseSimPos));
+            dashedRectangle.SetScale(GetTotalScale() / SettingsViewActiveFixedScale);
+        }
+        else
+        {
+            isBeingMoved = false;
+            pointerMoveTimer.Reset();
+
+            // Activate dashed rectangle object
+            dashedRectangle.SetActive(false);
+        }
     }
 
 #region User-triggered functions
@@ -80,7 +127,7 @@ public class SensorUI : MonoBehaviour
             selectedRigidBodySensorType = (RigidBodySensorType)rigidBodySensorTypeInt;
             rigidBodySensorTypeDropdownUsed = true;
         }
-        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown: " + this.name);
+        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown. SensorUI: " + this.name);
     }
 
     public void OnNewFluidSensorType(int fluidSensorTypeInt)
@@ -90,35 +137,42 @@ public class SensorUI : MonoBehaviour
             selectedFluidSensorType = (FluidSensorType)fluidSensorTypeInt;
             fluidSensorTypeDropdownUsed = true;
         }
-        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown: " + this.name);
+        else Debug.LogWarning("Mismatch between sensor type and active custom dropdown. SensorUI: " + this.name);
     }
 
     public void OnPositionChanged()
     {
+        // Check that the sensor is not a rigid body sensor since that sensor type shouldn't have the option to alter the sensor type
+        if (sensor is RigidBodySensor)
+        {
+            Debug.LogWarning("Trying to change the sensor UI position type of a rigid body sensor. This is not allowed. RigidBodySensor: " + sensor.name);
+            return;
+        }
         if (dashedRectangle == null) return;
-        Vector2 pos = GetPositionFromInputFields();
-        dashedRectangle.SetPosition(pos);
+
+        // Set the new position
+        dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(ClampToScreenBounds(GetPositionFromInputFields())));
     }
 
-    public void OnScaleChanged()
-    {
-        userScale = scaleSlider.value;
-        if (dashedRectangle != null) dashedRectangle.SetScale(GetTotalDashedRectangleScale());
-    }
+    public void OnScaleChanged() => userScale = scaleSlider.value;
 
     public void OnApplyTransformSettings()
     {
+        // Set the sliderScale (a factor of the overall sensor UI scale)
+        sliderScale = userScale;
+
+        // Set position from field inputs (only for fluid sensors)
         if (sensor is FluidSensor)
         {
-            Vector2 pos = GetPositionFromInputFields();
-
-            sliderScale = userScale;
-            rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(pos));
-            sensor.localTargetPos = pos;
+            Vector2 simPos = GetPositionFromInputFields();
+            rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(simPos));
+            sensor.localTargetPos = simPos - sensor.lastJointPos;
         }
 
+        // Reset the sensor graph
         sensor.graphController.ResetGraph();
 
+        // Configure the sensor UI for the newly selected sensor type (if the type has been changed by the user)
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
             rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
@@ -131,17 +185,21 @@ public class SensorUI : MonoBehaviour
 
     public void SetPositionType(int newPositionTypeInt)
     {
+        // Check that the sensor is not a fluid sensor since that sensor type shouldn't have the option to alter the sensor type
         if (sensor is FluidSensor)
         {
             Debug.LogWarning("Trying to change the sensor UI position type of a fluid sensor. This is not allowed. FluidSensor: " + sensor.name);
             return;
         }
 
+        // Get the new position type
         PositionType newPositionType = (PositionType)newPositionTypeInt;
         if (newPositionType == sensor.positionType) return;
 
+        // Set the new position type
         sensor.positionType = newPositionType;
 
+        // Update the localTargetPos to avoid the sensor UI "teleporting" on screen when the position type is changed
         if (newPositionType == PositionType.Fixed)
         {
             sensor.localTargetPos += sensor.lastJointPos;
@@ -180,11 +238,11 @@ public class SensorUI : MonoBehaviour
         containerTrimImage.color = color;
     }
 
-    public void SetPosition(Vector2 pos)
+    public void SetPosition(Vector2 uiPos)
     {
         if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer.Check(false)) || PM.Instance.isAnySensorSettingsViewActive)
         {
-            pos = rectTransform.localPosition;
+            uiPos = rectTransform.localPosition;
             isPointerHovering = true;
         }
         else if (isPointerHovering)
@@ -194,28 +252,64 @@ public class SensorUI : MonoBehaviour
         }
         sensor.graphController.isPointerHovering = isPointerHovering;
 
-        rectTransform.localPosition = ClampToScreenBounds(pos);
+        rectTransform.localPosition = ClampToScreenBounds(uiPos);
     }
 
     public void SetSettingsViewAsEnabled()
     {
+        // Invoke the settingsViewStatus program manager event
         OnSettingsViewStatusChanged?.Invoke(true);
 
-        dashedRectangleObject.SetActive(true);
+        // Make sure the dashed rectangle outline is hidden / showing depending on the sensor type
+        dashedRectangle.SetActive(sensor is FluidSensor);
 
-        Vector2 simPos = sensor.CanvasSpaceToSimSpace(rectTransform.localPosition);
-        positionXInput.text = ((int)simPos.x).ToString();
-        positionYInput.text = ((int)simPos.y).ToString();
- 
-        dashedRectangle.SetPosition(simPos);
-        dashedRectangle.SetScale(GetTotalDashedRectangleScale());
+        if (sensor is FluidSensor)
+        {
+            StartCoroutine(SetDashedRectangleTransformCoroutine());
+        }
+    }
+
+    private IEnumerator SetDashedRectangleTransformCoroutine()
+    {
+        Timer timer = new(0.2f);
+        Vector2 lastSimPos = Vector2.zero;
+        while (!timer.Check())
+        {
+            // Get the sensor UI position
+            Vector2 simPos = sensor.CanvasSpaceToSimSpace(rectTransform.localPosition);
+            Vector2 worldSpacePos = TransformUtils.SimSpaceToWorldSpace(ClampToScreenBounds(simPos));
+
+            // Compare the current simPos with the last simPos
+            if (simPos != lastSimPos)
+            {
+                timer.Reset();
+                lastSimPos = simPos;
+            }
+            else
+            {
+                yield return new WaitForSeconds(1 / 30.0f);
+                continue;
+            }
+
+            // Set the input field contents
+            positionXInput.text = ((int)simPos.x).ToString();
+            positionYInput.text = ((int)simPos.y).ToString();
+
+            // Set the dashed rectangle transform
+            dashedRectangle.SetPosition(worldSpacePos);
+            dashedRectangle.SetScale(GetDashedRectangleSettingsViewScale());
+
+            yield return new WaitForSeconds(1 / 30.0f);
+        }
     }
 
     public void SetSettingsViewAsDisabled()
     {
+        // Invoke the settingsViewStatus program manager event
         OnSettingsViewStatusChanged?.Invoke(false);
 
-        dashedRectangleObject.SetActive(false);
+        // Make sure the dashed rectangle outline is hidden
+        dashedRectangle.SetActive(false);
     }
 
     public void SetDataWindow(string windowName) => dataViewWindowManager.OpenPanel(windowName);
@@ -224,15 +318,19 @@ public class SensorUI : MonoBehaviour
 #region Other
     private bool CheckIfGraphViewIsActive() => dataViewWindowManager.currentWindowIndex == 0 && settingsViewWindowManager.currentWindowIndex == 0;
 
-    public Vector3 GetTotalDashedRectangleScale()
+    private Vector3 GetDashedRectangleSettingsViewScale()
     {
-        return sensor.useFixedScaleForDashedRectangle ? BaseScale : userScale * BaseScale;
+        return GetTotalScale(true) * 0.95f / SettingsViewActiveFixedScale;
     }
 
     public Vector3 GetTotalScale(bool settingsViewActive = false)
     {
-        float graphViewScaleFactor = CheckIfGraphViewIsActive() ? GraphViewActiveFixedScale : 1;
-        return (settingsViewActive ? SettingsViewActiveFixedScale : sliderScale) * graphViewScaleFactor * BaseScale;
+        float settingsViewFactor = settingsViewActive ? SettingsViewActiveFixedScale : sliderScale;
+        float graphViewFactor = CheckIfGraphViewIsActive() ? GraphViewActiveFixedScale : 1;
+        float mouseDraggingFactor = isBeingMoved ? MouseDraggingFixedScale * (1 + Mathf.Sin(PM.Instance.totalTimeElapsed * 7.0f) * 0.03f) : 1;
+
+        Vector3 totalScale = settingsViewFactor * graphViewFactor * mouseDraggingFactor * BaseScale;
+        return totalScale;
     }
 
     private Vector2 GetPositionFromInputFields()
@@ -243,51 +341,6 @@ public class SensorUI : MonoBehaviour
         return new(positionX, positionY);
     }
 
-    public Vector2 ClampToScreenBounds(Vector2 pos)
-    {
-        // Apply ScreenToView transform
-        pos /= PM.Instance.ScreenToViewFactor;
-
-        Vector2 rectTransformSize = new(outerContainerRectTransform.rect.width, outerContainerRectTransform.rect.height);
-        Vector2 containerSize = (Vector2)transform.localScale * ScaleFactor * rectTransformSize * 1.4f / PM.Instance.ScreenToViewFactor;
-        Vector2 containerMin = pos - 0.5f * containerSize;
-        Vector2 containerMax = pos + 0.5f * containerSize;
-
-        Vector2 halfResolution = 0.5f * PM.Instance.Resolution;
-        Vector2 screenMin = -halfResolution + PM.Instance.main.UIPadding;
-        Vector2 screenMax = halfResolution - PM.Instance.main.UIPadding;
-        Vector2 minDiff = containerMin - screenMin;
-        Vector2 maxDiff = containerMax - screenMax;
-
-        Vector2 offset = Vector2.zero;
-
-        // Adjust X axis
-        if (minDiff.x < 0)
-        {
-            offset.x = -minDiff.x;
-        }
-        else if (maxDiff.x > 0)
-        {
-            offset.x = -maxDiff.x;
-        }
-
-        // Adjust Y axis
-        if (minDiff.y < 0)
-        {
-            offset.y = -minDiff.y;
-        }
-        else if (maxDiff.y > 0)
-        {
-            offset.y = -maxDiff.y;
-        }
-        
-        // Apply offset
-        pos += offset;
-
-        // Revert ScreenToView transform
-        pos *= PM.Instance.ScreenToViewFactor;
-
-        return pos;
-    }
+    private Vector2 ClampToScreenBounds(Vector2 uiPos) => TransformUtils.ClampToScreenBounds(uiPos, outerContainerRectTransform, transform.localScale, ScaleFactor);
 #endregion
 }

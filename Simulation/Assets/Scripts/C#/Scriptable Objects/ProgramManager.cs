@@ -55,7 +55,8 @@ public class ProgramManager : ScriptableObject
     private bool viewTransformInitiated;
 
     // Private - Animated Texture Scrolling
-    private static readonly float ScrollSpeed = 0.5f;
+    private static readonly float NonSettingsMaterialScrollSpeed = 5.0f;
+    private static readonly float SettingsMaterialScrollSpeed = 1.0f;
     private float offset;
 
     // Performance test
@@ -109,14 +110,13 @@ public class ProgramManager : ScriptableObject
         }
 
         // Per frame "constants"
-        isAnySensorSettingsViewActive = CheckAnySensorSettingsViewActive();
         clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
 
         // Performance report
         CheckPerformance();
 
         // Rendering
-        if (isAnySensorSettingsViewActive) UpdateAnimatedDashedLineOffset(clampedDeltaTime);
+        UpdateAnimatedDashedLineOffset(clampedDeltaTime);
         LerpGlobalBrightness(clampedDeltaTime);
         LerpTimeScale(clampedDeltaTime);
         LerpSensorUIScale(clampedDeltaTime);
@@ -143,6 +143,7 @@ public class ProgramManager : ScriptableObject
             foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
 
             totalTimeElapsed += clampedDeltaTime;
+
             // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle
             TriggerProgramUpdate(true);
         }
@@ -230,7 +231,8 @@ public class ProgramManager : ScriptableObject
 
     private void UpdateAnimatedDashedLineOffset(float deltaTime)
     {
-        offset += deltaTime * ScrollSpeed;
+        float speedFactor = isAnySensorSettingsViewActive ? SettingsMaterialScrollSpeed : NonSettingsMaterialScrollSpeed;
+        offset += deltaTime * speedFactor;
         lineMaterial.mainTextureOffset = new Vector2(offset, 0);
     }
 
@@ -276,8 +278,12 @@ public class ProgramManager : ScriptableObject
     {
         sensorDatas[sensorIndex].isSettingsViewActive = isSettingsViewActive;
 
-        // Move to the front by setting the sibling index to be the highest of all sensorUI elements
-        if (isSettingsViewActive) sensorDatas[sensorIndex].sensorUIObject.transform.SetSiblingIndex(sensorDatas.Count - 1);
+        // Move the sensor UI to either the front or the back by setting the sibling index
+        int frontIndex = sensorDatas.Count;
+        int backIndex = 0;
+        sensorDatas[sensorIndex].sensorUIObject.transform.SetSiblingIndex(isSettingsViewActive ? frontIndex : backIndex);
+
+        isAnySensorSettingsViewActive = CheckAnySensorSettingsViewActive();
     }
 
     public bool CheckAnySensorSettingsViewActive()
@@ -298,6 +304,22 @@ public class ProgramManager : ScriptableObject
         foreach (UserUIElement userUIElement in userUIElements)
         {
             if (userUIElement.pointerHoverArea.CheckIfHovering()) return true;
+        }
+        return false;
+    }
+
+    public bool CheckAnySensorBeingMoved(SensorUI sensorUIException = null)
+    {
+        foreach (SensorData sensorData in sensorDatas)
+        {
+            SensorUI sensorUI = sensorData.sensorUI;
+
+            if (sensorUIException != null)
+            {
+                if (sensorUI == sensorUIException) continue;
+            }
+
+            if (sensorUI.isBeingMoved) return true;
         }
         return false;
     }

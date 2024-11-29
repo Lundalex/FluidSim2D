@@ -17,7 +17,6 @@ public abstract class Sensor : MonoBehaviour
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
     public Vector2 localTargetPos;
     public PositionType positionType;
-    public bool useFixedScaleForDashedRectangle;
     [NonSerialized] public Vector2 lastJointPos;
 
     [Header("References")]

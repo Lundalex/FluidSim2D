@@ -12,6 +12,7 @@
 // Boundary settings
 const uint2 BoundaryDims;
 const float RigidBodyPadding;
+const float BoundaryElasticity;
 
 // Num variables
 const uint NumRigidBodies;
@@ -784,7 +785,7 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     if (denom == 0) return;
 
     // Normal impulse scalar
-    float jn = -(1 + rb.rbElasticity) * relVelAlongNormal / denom;
+    float jn = -(1 + min(rb.rbElasticity, BoundaryElasticity)) * relVelAlongNormal / denom;
 
     // Compute normal impulse vector
     float2 impulseNormal = jn * normal;
