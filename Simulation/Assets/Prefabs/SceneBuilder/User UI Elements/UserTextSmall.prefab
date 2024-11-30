@@ -36,8 +36,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 31.099998, y: -128}
-  m_SizeDelta: {x: 144.2, y: 61.61}
+  m_AnchoredPosition: {x: 31.099998, y: -123.76}
+  m_SizeDelta: {x: 144.2, y: 60}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &5503546968804118532
 CanvasRenderer:
@@ -67,8 +67,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+  m_text: "Unders\xF6k frekvenserna <color=orange><u>1,2,3</u></color>. Vad h\xE4nder?"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -95,8 +94,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 18
+  m_fontSizeBase: 18
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -105,8 +104,8 @@ MonoBehaviour:
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
-  m_characterSpacing: 10
-  m_wordSpacing: 0
+  m_characterSpacing: 5.87
+  m_wordSpacing: 6
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
@@ -223,9 +222,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8513815100387089291}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8024511988838598211}
@@ -253,11 +252,11 @@ MonoBehaviour:
   pointerHoverArea: {fileID: 7106793276356128319}
   containerTrimImage: {fileID: 8888737504865415545}
   title: {fileID: 317074631064196758}
-  titleText: Small Text
+  titleText: 'Tips:'
   primaryColor: {r: 0.882353, g: 1, b: 0, a: 1}
-  displayText: Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
-  displayTextSize: 17
+  displayText: "Unders\xF6k frekvenserna <color=orange><u>1,2,3</u></color>. Vad
+    h\xE4nder?"
+  displayTextSize: 18
   textField: {fileID: 4616159384516605862}
 --- !u!1001 &2633474770228064369
 PrefabInstance:
@@ -489,7 +488,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4160593682004186513, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_text
-      value: Small Text
+      value: 'Tips:'
       objectReference: {fileID: 0}
     - target: {fileID: 6038371284629134417, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_Name

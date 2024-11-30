@@ -26,6 +26,14 @@ MonoBehaviour:
     m_Localized: Brazo de palanca
     m_Metadata:
       m_Items: []
+  - m_Id: 406122118254592
+    m_Localized: frecuencia natural
+    m_Metadata:
+      m_Items: []
+  - m_Id: 416538110201856
+    m_Localized: "p\xE9ndulo"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

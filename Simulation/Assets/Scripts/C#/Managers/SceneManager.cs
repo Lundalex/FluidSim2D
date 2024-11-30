@@ -141,7 +141,7 @@ public class SceneManager : MonoBehaviour
             baseCol = baseCol,
             opacity = Mathf.Clamp(matInput.opacity, 0.0f, 1.0f),
             sampleColMul = matInput.sampleColorMultiplier,
-            edgeCol = matInput.edgeColor
+            edgeCol = matInput.transparentEdges ? -1 : matInput.edgeColor
         };
     }
 

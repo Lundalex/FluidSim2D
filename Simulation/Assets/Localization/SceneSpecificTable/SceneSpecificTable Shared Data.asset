@@ -23,6 +23,14 @@ MonoBehaviour:
     m_Key: TheLeverArmEffect
     m_Metadata:
       m_Items: []
+  - m_Id: 406122118254592
+    m_Key: NaturalFrequency
+    m_Metadata:
+      m_Items: []
+  - m_Id: 416538110201856
+    m_Key: Pendulum
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -243,8 +243,7 @@ public class SceneRigidBody : Polygon
         (bool hasAltCentroid, Vector2 altCentroid) = GetAlternativeCentroid();
         if (hasAltCentroid)
         {
-            centroid = altCentroid;
-            cachedCentroid = altCentroid;
+            cachedCentroid = centroid = altCentroid;
         }
         else // Compute the centroid as normal
         {

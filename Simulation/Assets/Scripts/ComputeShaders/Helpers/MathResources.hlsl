@@ -351,3 +351,20 @@ float2 rotate(float2 P, float angle)
     return float2(P.x * cosTheta - P.y * sinTheta,
                     P.x * sinTheta + P.y * cosTheta);
 }
+
+bool areAllComponentsEqualTo(float3 a, float b)
+{
+    return a.x == b && a.y == b && a.z == b;
+}
+bool areAllComponentsEqualTo(float2 a, float b)
+{
+    return a.x == b && a.y == b;
+}
+bool isAnyComponentEqualTo(float3 a, float b)
+{
+    return a.x == b || a.y == b || a.z == b;
+}
+bool isAnyComponentEqualTo(float2 a, float b)
+{
+    return a.x == b || a.y == b;
+}

@@ -130,7 +130,7 @@
             <uie:PropertyField binding-path="FluidSensorEdgeWidth" label="Edge Width" tooltip="The edge width of fluid sensor area borders" />
             <uie:PropertyField binding-path="SensorAreaAnimationSpeed" label="Animation Speed" tooltip="Animation speed, measured in simulation area units per real life second" />
         </ui:Foldout>
-        <ui:Foldout text="Background" name="Background" value="false" style="-unity-font-style: bold;">
+        <ui:Foldout text="Background" name="Background" value="true" style="-unity-font-style: bold;">
             <ui:Slider label="Settings View Change Speed" value="10" high-value="20" binding-path="GlobalSettingsViewChangeSpeed" tooltip="The interpolation speed of properties changed in response to opening a sensor settings view panel" show-input-field="true" fill="true" name="Slider" low-value="0.1" />
             <uie:ObjectField label="Texture" binding-path="backgroundTexture" />
             <uie:PropertyField binding-path="BackgroundBrightness" label="Brightness" tooltip="A multiple for the background brightness (R, G, B)" />

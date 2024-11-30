@@ -345,11 +345,16 @@ float2 MirrorRepeatUV(float2 uv)
     return fracPart;
 }
 
-[numthreads(TN_R,TN_R,1)]
-void RenderBackground(uint3 id : SV_DispatchThreadID)
+float2 GetPixelPos(uint2 pixelID)
 {
-    if (IsOutsideResolutionDims(id.xy)) return;
-    
+    return ((float2)pixelID + 0.5) * ViewScale + ViewOffset;
+}
+
+float2 ComputeBackgroundUVFromPixelPos(float2 pixelPos)
+{
+    // Reverse-engineer pixel IDs from pixel positions
+    float2 pixelID = (pixelPos - ViewOffset) / ViewScale - 0.5;
+
     // Scale texture dimensions
     float2 texDims = GetTexDims(Background);
     float scaleX = (float)Resolution.x / texDims.x;
@@ -357,28 +362,37 @@ void RenderBackground(uint3 id : SV_DispatchThreadID)
     float scale = max(scaleX, scaleY);
     float2 scaledTexDims = texDims * scale;
 
-    // Calculate the offset to the center
+    // Calculate the offset to center the background
     float2 offset = (scaledTexDims - (float2)Resolution) * 0.5;
-    
-    // Calculate the uv
-    float2 uv = ((float2)id.xy + offset) * BackgroundUpScaleFactor / scaledTexDims;
+
+    // Calculate the UV coordinates
+    float2 uv = (pixelID + offset) * BackgroundUpScaleFactor / scaledTexDims;
     uv = MirrorRepeatBackgroundUV ? MirrorRepeatUV(uv) : frac(uv);
 
-    // Sample the background texture
-    float3 sampleCol = SampleTexture(uv, 0, texDims, Background) * BackgroundBrightness;
+    return uv;
+}
+
+[numthreads(TN_R, TN_R, 1)]
+void RenderBackground(uint3 id : SV_DispatchThreadID)
+{
+    if (IsOutsideResolutionDims(id.xy)) return;
+    
+    // Calculate the uv
+    float2 pixelPos = GetPixelPos(id.xy);
+    float2 uv = ComputeBackgroundUVFromPixelPos(pixelPos);
+
+    float3 sampleCol = SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness;
     SetResultColor(id.xy, sampleCol);
 }
 
 float3 BlendWithBackground(float3 color, float opacity, uint2 threadID)
 {
-    float2 uv = MirrorRepeatUV(BackgroundUpScaleFactor * threadID / (float2)Resolution);
+    // Calculate the uv
+    float2 pixelPos = GetPixelPos(threadID);
+    float2 uv = ComputeBackgroundUVFromPixelPos(pixelPos);
+
     float transparency = 1 - opacity;
     return transparency > 0 ? color * opacity + transparency * SampleTexture(uv, 0, GetTexDims(Background), Background) * BackgroundBrightness : color;
-}
-
-float2 GetPixelPos(uint2 pixelID)
-{
-    return ((float2)pixelID + 0.5) * ViewScale + ViewOffset;
 }
 
 float DstToBorder(float2 pos, float2 min2, float2 max2)
@@ -633,7 +647,6 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         float dstSqr = dot2(pixelPos - rb.pos);
 
         #if DRAW_RB_CENTROIDS
-
             // Check proximity to centroid
             bool doRenderPoint = false;
             if (dstSqr < CENTROID_RADIUS_SQR)
@@ -657,7 +670,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
                         doRenderPoint = true;
                     }
                 }
-                else if (rb.springStiffness == 0) // Rigid
+                else if (rb.springStiffness == 0) // Rigid constraint type
                 {
                     float2 linkPos = rb.pos + rotate2D(rb.localLinkPosThisRB, rb.totRot);
                     float dstSqr = dot2(pixelPos - linkPos);
@@ -701,7 +714,10 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         float3 result;
         if (drawOutline)
         {
-            result = mat.edgeCol;
+            float3 edgeCol = mat.edgeCol;
+            if (areAllComponentsEqualTo(edgeCol, -1)) return;
+
+            result = edgeCol;
         }
         else
         {

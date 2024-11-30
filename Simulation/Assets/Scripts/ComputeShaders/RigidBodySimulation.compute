@@ -668,10 +668,8 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         if (invInertiaA > 0) deltaRotVelA += cross2D(linkPosA, impulse) * invInertiaA;
         if (invInertiaB > 0) deltaRotVelB -= cross2D(linkPosB, impulse) * invInertiaB;
     }
-    else
+    else // Spring constraint type
     {
-        // --- Spring Constraint Handling ---
-
         // Compute the vector between the link points
         float2 r = worldLinkPosA - worldLinkPosB;
         float currentLength = length(r);

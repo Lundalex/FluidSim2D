@@ -306,7 +306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   icon: {fileID: 21300000, guid: e55e4ef66043a8747866894761ac06be, type: 3}
-  title: 'Tips:'
+  title: 'Tips - Kontroller:'
   description: "Mus: Flytta objekt, v\xE4tskor och sensorer.\nP: Pausa/starta programmet.\nF:
     Simulera ett tidssteg i taget.\nR: Starta om scenen."
   notificationAnimator: {fileID: 8766761790007393530}
@@ -660,7 +660,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Tips:'
+  m_text: 'Tips - Kontroller:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fa328c1ae3ffb6b4583cf371153b0be6, type: 2}
   m_sharedMaterial: {fileID: 21918420405216288, guid: fa328c1ae3ffb6b4583cf371153b0be6, type: 2}

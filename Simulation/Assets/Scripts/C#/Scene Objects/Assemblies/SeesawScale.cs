@@ -1,4 +1,3 @@
-using System;
 using Resources2;
 using UnityEngine;
 
@@ -15,7 +14,8 @@ public class SeesawScale : Assembly
     [SerializeField] private UserSliderInput userSliderInput;
 
     // Private static
-    private static float storedLeverArmJointLerpFactor = float.PositiveInfinity;
+    private static float storedLeverArmJointLerpFactor;
+    private static bool dataHasBeenStored = false;
 
     private void OnEnable()
     {
@@ -31,12 +31,16 @@ public class SeesawScale : Assembly
 
     private void StoreData()
     {
+        dataHasBeenStored = true;
+        
         storedLeverArmJointLerpFactor = leverArmJointLerpFactor;
     }
 
     private void RetrieveData()
     {
-        if (storedLeverArmJointLerpFactor != float.PositiveInfinity) leverArmJointLerpFactor = storedLeverArmJointLerpFactor;
+        if (!dataHasBeenStored) return;
+
+        leverArmJointLerpFactor = storedLeverArmJointLerpFactor;
     }
 
     #if UNITY_EDITOR
