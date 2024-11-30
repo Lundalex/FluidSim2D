@@ -30,8 +30,9 @@ public struct RBInput
     public SceneRigidBody linkedRigidBody;
 
     [Header("Spring Properties")]
-    public float springStiffness;
+    public bool autoSpringRestLength;
     public float springRestLength;
+    public float springStiffness;
     public float damping;
 
     [Header("Linear Motor Constraint")]

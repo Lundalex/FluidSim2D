@@ -103,7 +103,6 @@ public class ProgramManager : ScriptableObject
     {
         CheckStartConfirmation();
         bool doResetScene = CheckKeyInputs();
-        frameCount++;
 
         if (doResetScene)
         {
@@ -113,9 +112,6 @@ public class ProgramManager : ScriptableObject
 
         // Per frame "constants"
         clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
-
-        // Performance report
-        CheckPerformance();
 
         // Rendering
         UpdateAnimatedDashedLineOffset(clampedDeltaTime);
@@ -139,14 +135,20 @@ public class ProgramManager : ScriptableObject
 
         if (simulateThisFrame && timeScale > MinTimeScaleForRunningProgram)
         {
+            // Performance report
+            CheckPerformance();
+
+            // Update runtime scripts
             fluidSpawnerManager.UpdateScript();
             main.UpdateScript();
 
-            foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
+            // Update sensors
+            UpdateSensorScripts();
 
+            // Update the total time elapsed
             totalTimeElapsed += clampedDeltaTime;
 
-            // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle
+            // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle (all Timer objects)
             TriggerProgramUpdate(true);
         }
         else
@@ -212,20 +214,22 @@ public class ProgramManager : ScriptableObject
     {
         if (performanceTestCompleted) return;
 
-        if (frameCount < PerformanceTestFrameLength)
+        if (clampedDeltaTime == MaxDeltaTime) performanceMisses++;
+        if (++frameCount == PerformanceTestFrameLength)
         {
-            if (clampedDeltaTime == MaxDeltaTime) performanceMisses++;
-            if (frameCount == PerformanceTestFrameLength)
-            {
-                int performanceMissesPercent = Mathf.RoundToInt(100 * performanceMisses / (float)PerformanceTestFrameLength);
-                int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
-                string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS).";
+            int performanceMissesPercent = Mathf.RoundToInt(100 * performanceMisses / (float)PerformanceTestFrameLength);
+            int averageFrameRate = Mathf.RoundToInt(PerformanceTestFrameLength / totalTimeElapsed);
+            string targetFPSText = (QualitySettings.vSyncCount == 1) ? " (using vSync)" : " (Target: " + main.TargetFrameRate + " FPS)";
 
-                Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + ". Total test duration: " + PerformanceTestFrameLength + " frames.");
-            
-                performanceTestCompleted = true;
-            }
+            Debug.Log("Performance statistics: Performance misses: " + performanceMissesPercent + "% of frames. Avg FPS: " + averageFrameRate + targetFPSText + ". Total test duration: " + PerformanceTestFrameLength + " frames.");
+        
+            performanceTestCompleted = true;
         }
+    }
+
+    private void UpdateSensorScripts()
+    {
+        foreach (SensorData sensorData in sensorDatas) sensorData.sensor.UpdateScript();
     }
 
     private void CloseAllSensorUISettingsPanels()

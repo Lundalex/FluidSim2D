@@ -98,8 +98,8 @@ struct RigidBody
 
     // Inter-RB spring constraint
     int linkedRBIndex; // -1 -> No link
-    float springStiffness; // 0 -> Fully rigid constraint
     float springRestLength;
+    float springStiffness; // 0 -> Fully rigid constraint
     float damping;
     float2 localLinkPosThisRB;
     float2 localLinkPosOtherRB;

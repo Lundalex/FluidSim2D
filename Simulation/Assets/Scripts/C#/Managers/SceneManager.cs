@@ -178,6 +178,12 @@ public class SceneManager : MonoBehaviour
 
         SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
 
+        // Compute centroids
+        foreach (SceneRigidBody rigidBody in allRigidBodies)
+        {
+            rigidBody.ComputeCentroid(rbCalcGridSpacing);
+        }
+
         // Remove duplicate points
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
@@ -202,7 +208,7 @@ public class SceneManager : MonoBehaviour
             Vector2 parentOffset = transform.position - transform.localPosition;
 
             // Transform points to local space
-            Vector2 transformedRBPos = new Vector2(rigidBody.transform.position.x, rigidBody.transform.position.y) + boundsOffset;
+            Vector2 transformedRBPos = (Vector2)rigidBody.transform.position + boundsOffset;
             Vector2[] vectors = GetTransformedPoints(rigidBody, boundsOffset, transformedRBPos);
             if (rigidBody.addInBetweenPoints) AddInBetweenPoints(ref vectors, rigidBody.doRecursiveSubdivisison, rigidBody.minDstForSubDivision);
 
@@ -218,12 +224,21 @@ public class SceneManager : MonoBehaviour
                 rbInput.constraintType = ConstraintType.None;
             }
 
+            // Calculate the spring rest length
+            float springRestLength = rbInput.springRestLength;
+            if (rbInput.linkedRigidBody != null && rbInput.autoSpringRestLength)
+            {
+                float dstBetweenLinkPoints = Vector2.Distance(rigidBody.cachedCentroid + rbInput.localLinkPosThisRB,
+                                                    rbInput.linkedRigidBody.cachedCentroid + rbInput.localLinkPosOtherRB);
+                springRestLength = dstBetweenLinkPoints;
+            }
+
             if (springLinkedRBIndex != -1 && rbInput.localLinkPosThisRB.x != 0 && rbInput.localLinkPosThisRB.y != 0 &&
                 rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.constraintType == ConstraintType.Rigid)
                 Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
             
             // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.rbInput, inertia, maxRadiusSqr, springLinkedRBIndex, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
+            allRBData.Add(InitRBData(rigidBody.rbInput, inertia, maxRadiusSqr, springLinkedRBIndex, springRestLength, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
             
             // Initialize the rigid body vector datas
             foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
@@ -355,7 +370,7 @@ public class SceneManager : MonoBehaviour
         return allFluids;
     }
 
-    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, int startIndex, int endIndex, Vector2 pos, Vector2 parentOffset)
+    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, float springRestLength, int startIndex, int endIndex, Vector2 pos, Vector2 parentOffset)
     {
         bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
         bool isRBCollider = rbInput.colliderType == ColliderType.RigidBody || rbInput.colliderType == ColliderType.All;
@@ -382,8 +397,8 @@ public class SceneManager : MonoBehaviour
             endIndex = endIndex,
             // Inter-RB spring links
             linkedRBIndex = (isSpringConstraint || isRigidConstraint) ? linkedRBIndex : -1,
+            springRestLength = isRigidConstraint ? 0 : springRestLength,
             springStiffness = isRigidConstraint ? 0 : rbInput.springStiffness,
-            springRestLength = isRigidConstraint ? 0 : rbInput.springRestLength,
             damping = isRigidConstraint ? 0 : rbInput.damping,
             localLinkPosThisRB = isLinearMotor ? rbInput.startPos + parentOffset : rbInput.localLinkPosThisRB,
             localLinkPosOtherRB = isLinearMotor ? rbInput.endPos + parentOffset : rbInput.localLinkPosOtherRB,

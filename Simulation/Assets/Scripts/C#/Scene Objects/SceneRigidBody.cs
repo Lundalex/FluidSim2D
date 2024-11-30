@@ -44,6 +44,8 @@ public class SceneRigidBody : Polygon
     private int framesSinceLastPositionChange = 0;
     private Vector2 lastFramePosition = Vector2.zero;
     private float lastFrameLerpTimeOffset = 0;
+    private Vector2 lastStartPos = Vector2.zero;
+    private Vector2 lastEndPos = Vector2.zero;
     private bool lastOverrideCentroid = false;
     private bool lastOverrideCentroidSet = false;
 
@@ -53,69 +55,70 @@ public class SceneRigidBody : Polygon
     {
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
 
-        if (!Application.isPlaying)
-        {      
-            // Check whether to update the linear motor offset
-            float newLerpTimeOffset = rbInput.lerpTimeOffset;
-            if (newLerpTimeOffset != lastFrameLerpTimeOffset)
-            {
-                lastFrameLerpTimeOffset = newLerpTimeOffset;
-                cachedLinearMotorOffset = GetLinearMotorOffset();
-                transform.localPosition = rbInput.startPos + cachedLinearMotorOffset;
-            }
-
-            if (!lastOverrideCentroidSet)
-            {
-                lastOverrideCentroid = rbInput.overrideCentroid;
-                lastOverrideCentroidSet = true;
-            }
-
-            if (rbInput.overrideCentroid != lastOverrideCentroid)
-            {
-                lastOverrideCentroid = rbInput.overrideCentroid;
-                rbInput.overrideCentroidPosition = transform.position;
-            }
-
-            // Avoid continuing if the position field is currently being modified
-            if (lastFramePosition != (Vector2)transform.localPosition)
-            {
-                lastFramePosition = transform.localPosition;
-                framesSinceLastPositionChange = 0;
-            }
-            else framesSinceLastPositionChange++;
-            if (framesSinceLastPositionChange < 20) return;
-
-            // Check whether to center the position
-            if (doCenterPosition)
-            {
-                CenterPolygonPosition();
-                doCenterPosition = false;
-            }
-
-            // Check whether any positional data field has been modified, or each second of editor time
-            bool forceUpdateCachedData = frameCount++ % 10 == 0;
-            if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 10.0f ||
-                (lastLocalLinkPosThisRB - rbInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
-                (lastLocalLinkPosOtherRB - rbInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
-                forceUpdateCachedData)
-            {
-                UpdateCachedData();
-            }
-
-            // Reset certain data is the constraintType has been modified
-            if (!lastLinkTypeSet)
-            {
-                lastLinkType = rbInput.constraintType;
-                lastLinkTypeSet = true;
-            }
-            if (lastLinkType != rbInput.constraintType)
-            {
-                lastLinkType = rbInput.constraintType;
-                CenterPolygonPosition();
-            }
-
-            SnapColliderPointsToGrid();
+        // Check whether any linear motor data has been modified
+        float newLerpTimeOffset = rbInput.lerpTimeOffset;
+        Vector2 newStartPos = rbInput.startPos;
+        Vector2 newEndPos = rbInput.endPos;
+        if (newLerpTimeOffset != lastFrameLerpTimeOffset || newStartPos != lastStartPos || newEndPos != lastEndPos)
+        {
+            lastFrameLerpTimeOffset = newLerpTimeOffset;
+            lastStartPos = newStartPos;
+            lastEndPos = newEndPos;
+            cachedLinearMotorOffset = GetLinearMotorOffset();
+            transform.localPosition = rbInput.startPos + cachedLinearMotorOffset;
         }
+
+        if (!lastOverrideCentroidSet)
+        {
+            lastOverrideCentroid = rbInput.overrideCentroid;
+            lastOverrideCentroidSet = true;
+        }
+
+        if (rbInput.overrideCentroid != lastOverrideCentroid)
+        {
+            lastOverrideCentroid = rbInput.overrideCentroid;
+            rbInput.overrideCentroidPosition = transform.position;
+        }
+
+        // Avoid continuing if the position field is currently being modified
+        if (lastFramePosition != (Vector2)transform.localPosition)
+        {
+            lastFramePosition = transform.localPosition;
+            framesSinceLastPositionChange = 0;
+        }
+        else framesSinceLastPositionChange++;
+        if (framesSinceLastPositionChange < 20) return;
+
+        // Check whether to center the position
+        if (doCenterPosition)
+        {
+            CenterPolygonPosition();
+            doCenterPosition = false;
+        }
+
+        // Check whether any positional data field has been modified, or each second of editor time
+        bool forceUpdateCachedData = frameCount++ % 10 == 0;
+        if ((lastPosition - (Vector2)transform.localPosition).sqrMagnitude > 10.0f ||
+            (lastLocalLinkPosThisRB - rbInput.localLinkPosThisRB).sqrMagnitude > 0.01f ||
+            (lastLocalLinkPosOtherRB - rbInput.localLinkPosOtherRB).sqrMagnitude > 0.01f ||
+            forceUpdateCachedData)
+        {
+            UpdateCachedData();
+        }
+
+        // Reset certain data is the constraintType has been modified
+        if (!lastLinkTypeSet)
+        {
+            lastLinkType = rbInput.constraintType;
+            lastLinkTypeSet = true;
+        }
+        if (lastLinkType != rbInput.constraintType)
+        {
+            lastLinkType = rbInput.constraintType;
+            CenterPolygonPosition();
+        }
+
+        SnapColliderPointsToGrid();
     }
     #endif
     #endregion
@@ -209,16 +212,20 @@ public class SceneRigidBody : Polygon
 
     public Vector2 ComputeCentroid(float gridSpacing)
     {
-        if (rbInput.overrideCentroid)
-            return (Vector3)rbInput.overrideCentroidPosition + transform.position - transform.localPosition;
+        // Check for alternative centroids
+        (bool hasAltCentroid, Vector2 altCentroid) = GetAlternativeCentroid();
+        if (hasAltCentroid) return altCentroid;
 
+        // Get points
         Vector2[] points = GeneratePoints(gridSpacing, Vector2.zero);
         int numPoints = points.Length;
-
+        
+        // Compute the centroid as normal
         Vector2 centroid = Vector2.zero;
         foreach (Vector2 point in points) centroid += point;
         centroid /= numPoints;
-        
+
+        cachedCentroid = centroid;
         return centroid;
     }
 
@@ -226,34 +233,62 @@ public class SceneRigidBody : Polygon
     {
         float gridSpacing = gridDensityInput ?? 0.2f;
         
+        // Get points
         Vector2[] points = GeneratePoints(gridSpacing, offset);
         int numPoints = points.Length;
         float pointMass = rbInput.mass / numPoints;
 
+        // Check for alternative centroids
         Vector2 centroid = Vector2.zero;
-        if (rbInput.overrideCentroid)
-            centroid = (Vector3)rbInput.overrideCentroidPosition + transform.position - transform.localPosition;
-        else
+        (bool hasAltCentroid, Vector2 altCentroid) = GetAlternativeCentroid();
+        if (hasAltCentroid)
+        {
+            centroid = altCentroid;
+            cachedCentroid = altCentroid;
+        }
+        else // Compute the centroid as normal
         {
             foreach (Vector2 point in points) centroid += point;
             centroid /= numPoints;
+            cachedCentroid = centroid;
         }
 
+        // Shift all vectors of the polygon to be centered with respect to the centroid
         Vector2 shift = rigidBodyPosition - centroid;
         for (int i = 0; i < vectors.Length; i++) vectors[i] += shift;
         rigidBodyPosition = centroid;
 
+        // Calculate the inertia
         float inertia = 0.0f;
-        float maxRadiusSqr = 0.0f;
         foreach (Vector2 point in points)
         {
             float dstSqr = (point - rigidBodyPosition).sqrMagnitude;
-            inertia += pointMass * dstSqr;
+            inertia += dstSqr;
         }
+        inertia *= pointMass;
 
+        // Calculate the squared distance from the centroid to the furthest vector
+        float maxRadiusSqr = 0.0f;
         foreach (Vector2 vector in vectors) maxRadiusSqr = Mathf.Max(maxRadiusSqr, vector.sqrMagnitude);
 
         return (inertia, maxRadiusSqr);
+    }
+
+    private (bool hasAltCentroid, Vector2 altCentroid) GetAlternativeCentroid()
+    {
+        if (rbInput.overrideCentroid)
+        {
+            cachedCentroid = rbInput.overrideCentroidPosition + (Vector2)transform.position - (Vector2)transform.localPosition;
+            return (true, cachedCentroid);
+        }
+        else if (rbInput.constraintType == ConstraintType.LinearMotor)
+        {
+            cachedLinearMotorOffset = GetLinearMotorOffset();
+            transform.localPosition = rbInput.startPos + cachedLinearMotorOffset;
+            cachedCentroid = rbInput.startPos + cachedLinearMotorOffset + (Vector2)transform.position - (Vector2)transform.localPosition;
+            return (true, cachedCentroid);
+        }
+        return (false, Vector2.positiveInfinity);
     }
 
     public Vector2 GetLinearMotorOffset()

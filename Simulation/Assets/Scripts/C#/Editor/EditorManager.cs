@@ -54,13 +54,26 @@ public class EditorManager : Editor
         {   
             (Vector2 startPoint, Vector2 endPoint) = GetSpringEndPoints(rigidBody);
 
-            float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
-            float approxForce = rigidBody.rbInput.springStiffness * Mathf.Abs(rigidBody.rbInput.springRestLength - approxLength);
-            
-            rigidBody.approximatedSpringLength = approxLength.ToString();
-            rigidBody.approximatedSpringForce = approxForce.ToString();
+            // Determine the spring display color, and approximated values
+            Color lerpColor;
+            bool autoSpringRestLength = rigidBody.rbInput.autoSpringRestLength;
+            if (autoSpringRestLength)
+            {
+                lerpColor = SpringBaseColor;
 
-            Color lerpColor = Color.Lerp(SpringBaseColor, SpringStressedColor, approxForce * springForceFactor);
+                rigidBody.approximatedSpringLength = "Automatic Spring Length Active";
+                rigidBody.approximatedSpringForce = "Automatic Spring Length Active";
+            }
+            else
+            {
+                float approxLength = Mathf.Sqrt(Vector2.SqrMagnitude(startPoint - endPoint));
+                float approxForce = rigidBody.rbInput.springStiffness * Mathf.Abs(rigidBody.rbInput.springRestLength - approxLength);
+
+                lerpColor = Color.Lerp(SpringBaseColor, SpringStressedColor, approxForce * springForceFactor);
+
+                rigidBody.approximatedSpringLength = approxLength.ToString();
+                rigidBody.approximatedSpringForce = approxForce.ToString();
+            }
 
             // Draw spring
             DrawZigZagSpring(startPoint, endPoint, lerpColor, springsceneObjectLineThickness, springAmplitude, numSpringPoints);

@@ -20,8 +20,8 @@ public struct RBData
 
     // Inter-RB spring constraint
     public int linkedRBIndex; // -1 -> No link
-    public float springStiffness; // 0 -> Fully rigid constraint
     public float springRestLength;
+    public float springStiffness; // 0 -> Fully rigid constraint
     public float damping;
     public float2 localLinkPosThisRB;
     public float2 localLinkPosOtherRB;
