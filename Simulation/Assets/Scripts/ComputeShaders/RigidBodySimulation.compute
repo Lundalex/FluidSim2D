@@ -1,9 +1,10 @@
 #pragma kernel SimulateRB_P // 0
-#pragma kernel UpdateRBVertices // 1
-#pragma kernel SimulateRB_RB // 2
-#pragma kernel SimulateRBSprings // 3
-#pragma kernel AdjustRBDatas // 4
+#pragma kernel SimulateRB_RB // 1
+#pragma kernel SimulateRBSprings // 2
+#pragma kernel AdjustRBDatas // 3
+#pragma kernel ResetRBVertices // 4
 #pragma kernel UpdateRigidBodies // 5
+#pragma kernel UpdateRBVertices // 6
 
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
@@ -23,9 +24,10 @@ const uint ChunksNumAll;
 const uint PTypesNum;
 
 // Rigid Body Collision solver settings
+const bool AllowLinkedRBCollisions;
 const float RB_RBCollisionCorrectionFactor;
 const float RB_RBFixedCollisionCorrection;
-const bool AllowLinkedRBCollisions;
+const float RB_RBRigidConstraintCorrectionFactor;
 
 // Safety
 const float MaxRBRotVel;
@@ -52,19 +54,6 @@ RWStructuredBuffer<PData> PDatas;
 RWStructuredBuffer<RigidBody> RigidBodies;
 RWStructuredBuffer<RBVector> RBVectors;
 RWStructuredBuffer<RBAdjustment> RBAdjustments;
-
-[numthreads(TN_RBS1,1,1)]
-void UpdateRBVertices(uint3 id : SV_DispatchThreadID)
-{
-    if (id.x >= NumVectors) return;
-    uint i = id.x;
-
-    RBVector rbVector = RBVectors[i];
-
-    float deltaRot = IntToFloat(RigidBodies[rbVector.parentIndex].rotVel_AsInt, INT_FLOAT_PRECISION_RB) * DeltaTime;
-
-    RBVectors[i].pos = rotate(rbVector.pos, deltaRot);
-}
 
 void AccumulateDeltaVel(int index, int2 deltaVel_Int2)
 {
@@ -614,7 +603,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         // Positional correction to enforce the constraint
         float2 correction = constraintError / totalInvMass;
         
-        correction *= DeltaTime;
+        correction *= DeltaTime * RB_RBRigidConstraintCorrectionFactor;
 
         // Apply corrections proportionally based on inverse masses
         float2 correctionA = correction * invMassA;
@@ -624,7 +613,6 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         rbA.pos += correctionA;
         rbB.pos += correctionB;
 
-        // Since we're modifying positions directly, we need to record the positional changes
         float2 deltaPosA = correctionA;
         float2 deltaPosB = correctionB;
 
@@ -834,6 +822,17 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     rb.pos += correction;
 }
 
+[numthreads(TN_RBS1,1,1)]
+void ResetRBVertices(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumVectors) return;
+    uint i = id.x;
+
+    RBVector rbVector = RBVectors[i];
+
+    RBVectors[i].pos = rotate(rbVector.pos, -RigidBodies[rbVector.parentIndex].totRot);
+}
+
 [numthreads(TN_RBS2,1,1)]
 void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
 {
@@ -899,17 +898,17 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
             }
         }
 
-        // Ensure the velocity is within the valid range
-        rb.vel_AsInt2 = SafeAsInt2(rb.vel_AsInt2, MaxRBVel);
-
-        // Update position
-        rb.pos += Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * DeltaTime;
-
         // Apply forces
         float2 totForce = float2(0, rb.gravity);
         bool isInteractable = rb.maxRadiusSqr > 0;
         if (isInteractable) totForce += InteractionForce(rb);
         rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, INT_FLOAT_PRECISION_RB);
+        
+        // Ensure the velocity is within the valid range
+        rb.vel_AsInt2 = SafeAsInt2(rb.vel_AsInt2, MaxRBVel);
+
+        // Update position
+        rb.pos += Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * DeltaTime;
     }
     else if (rb.mass < 0) // linkType == linearMotor
     {
@@ -942,4 +941,15 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     }
 
     RigidBodies[i] = rb;
+}
+
+[numthreads(TN_RBS1,1,1)]
+void UpdateRBVertices(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= NumVectors) return;
+    uint i = id.x;
+
+    RBVector rbVector = RBVectors[i];
+
+    RBVectors[i].pos = rotate(rbVector.pos, RigidBodies[rbVector.parentIndex].totRot);
 }

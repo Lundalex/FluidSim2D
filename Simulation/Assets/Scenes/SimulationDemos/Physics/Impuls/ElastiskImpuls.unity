@@ -1185,7 +1185,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: snapPointToGrid
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.friction
@@ -1221,7 +1221,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: approximatedSpringForce
-      value: 10,78796
+      value: 0,793457
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: doRecursiveSubdivisison
@@ -2219,6 +2219,7 @@ MonoBehaviour:
   - colorTexture: {fileID: 0}
     colorTextureUpScaleFactor: 1
     opacity: 0.6
+    transparentEdges: 0
     baseColor:
       x: 0
       y: 0
@@ -2234,6 +2235,7 @@ MonoBehaviour:
   - colorTexture: {fileID: 2800000, guid: 70862481a53a58f4998d3e06daf76f7c, type: 3}
     colorTextureUpScaleFactor: 8
     opacity: 1
+    transparentEdges: 0
     baseColor:
       x: 0
       y: 0
@@ -2249,6 +2251,7 @@ MonoBehaviour:
   - colorTexture: {fileID: 2800000, guid: d7215cefa2dcd90439e40bf03644d96d, type: 3}
     colorTextureUpScaleFactor: 100
     opacity: 1
+    transparentEdges: 0
     baseColor:
       x: 0.1
       y: 0.1
@@ -2264,6 +2267,7 @@ MonoBehaviour:
   - colorTexture: {fileID: 0}
     colorTextureUpScaleFactor: 1
     opacity: 0.4
+    transparentEdges: 0
     baseColor:
       x: 0.2
       y: 0.2

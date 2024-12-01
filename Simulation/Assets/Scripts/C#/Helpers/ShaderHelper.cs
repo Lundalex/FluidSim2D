@@ -238,19 +238,22 @@ public class ShaderHelper : MonoBehaviour
 
         rbSimShader.SetBuffer(1, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(1, "RBVectors", m.RBVectorBuffer);
+        rbSimShader.SetBuffer(1, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(2, "RigidBodies", m.RBDataBuffer);
-        rbSimShader.SetBuffer(2, "RBVectors", m.RBVectorBuffer);
         rbSimShader.SetBuffer(2, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(3, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(3, "RBAdjustments", m.RBAdjustmentBuffer);
 
         rbSimShader.SetBuffer(4, "RigidBodies", m.RBDataBuffer);
-        rbSimShader.SetBuffer(4, "RBAdjustments", m.RBAdjustmentBuffer);
+        rbSimShader.SetBuffer(4, "RBVectors", m.RBVectorBuffer);
         
         rbSimShader.SetBuffer(5, "RigidBodies", m.RBDataBuffer);
         rbSimShader.SetBuffer(5, "RBVectors", m.RBVectorBuffer);
+
+        rbSimShader.SetBuffer(6, "RigidBodies", m.RBDataBuffer);
+        rbSimShader.SetBuffer(6, "RBVectors", m.RBVectorBuffer);
     }
 
     public void UpdateRBSimShaderVariables(ComputeShader rbSimShader)
@@ -266,9 +269,10 @@ public class ShaderHelper : MonoBehaviour
         rbSimShader.SetInt("ChunksNumAll", m.ChunksNumAll);
         rbSimShader.SetInt("PTypesNum", m.PTypesNum);
 
+        rbSimShader.SetBool("AllowLinkedRBCollisions", m.AllowLinkedRBCollisions);
         rbSimShader.SetFloat("RB_RBCollisionCorrectionFactor", m.RB_RBCollisionCorrectionFactor);
         rbSimShader.SetFloat("RB_RBFixedCollisionCorrection", m.RB_RBFixedCollisionCorrection);
-        rbSimShader.SetBool("AllowLinkedRBCollisions", m.AllowLinkedRBCollisions);
+        rbSimShader.SetFloat("RB_RBRigidConstraintCorrectionFactor", m.RB_RBRigidConstraintCorrectionFactor);
 
         rbSimShader.SetFloat("MaxRBRotVel", m.MaxRBRotVel);
         rbSimShader.SetFloat("MaxRBVel", m.MaxRBVel);

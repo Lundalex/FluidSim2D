@@ -56,6 +56,7 @@ public class Main : MonoBehaviour
     public bool AllowLinkedRBCollisions = false;
     public float RB_RBCollisionCorrectionFactor = 0.8f;
     public float RB_RBFixedCollisionCorrection = 0.05f;
+    public float RB_RBRigidConstraintCorrectionFactor = 5.0f;
 #endregion
 
 #region Simulation Time
@@ -640,12 +641,13 @@ public class Main : MonoBehaviour
 
     private void RunRbSimShader()
     {
-        ComputeHelper.DispatchKernel(rbSimShader, "UpdateRBVertices", NumRigidBodyVectors, rbSimShaderThreadSize1);
         ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_RB", NumRigidBodies, rbSimShaderThreadSize2);
         ComputeHelper.DispatchKernel(rbSimShader, "SimulateRBSprings", NumRigidBodies, rbSimShaderThreadSize2);
         ComputeHelper.DispatchKernel(rbSimShader, "AdjustRBDatas", NumRigidBodies, rbSimShaderThreadSize2);
         ComputeHelper.DispatchKernel(rbSimShader, "SimulateRB_P", ParticlesNum, rbSimShaderThreadSize3);
+        ComputeHelper.DispatchKernel(rbSimShader, "ResetRBVertices", NumRigidBodyVectors, rbSimShaderThreadSize1);
         ComputeHelper.DispatchKernel(rbSimShader, "UpdateRigidBodies", NumRigidBodies, rbSimShaderThreadSize2);
+        ComputeHelper.DispatchKernel(rbSimShader, "UpdateRBVertices", NumRigidBodyVectors, rbSimShaderThreadSize1);
     }
 
     private void DispatchRenderStep(RenderStep step, int2 threadsNum)

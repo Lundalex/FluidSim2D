@@ -3,7 +3,7 @@ using UnityEngine;
 public class Pendulum : Assembly
 {
     [Header("Pendulum Length")]
-    public float pendulumLength = 40f;
+    public float pendulumLength = 100f;
 
     [Header("References")]
     [SerializeField] private SceneRigidBody rodObject;
