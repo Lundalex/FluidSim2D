@@ -11,7 +11,7 @@ public class MathematicalPendulum : Assembly
     public float pendulumGravity = 9.82f;
 
     [Header("Pendulum Rod")]
-    public float width = 2.0f;
+    public float rodWidth = 2.0f;
 
     [Header("References")]
     [SerializeField] private SceneRigidBody rodObject;
@@ -20,6 +20,9 @@ public class MathematicalPendulum : Assembly
 
     // Private static
     private static float storedPendulumLength;
+    private static float storedPendulumMass;
+    private static float storedPendulumGravity;
+    private static float storedRodWidth;
     private static bool dataHasBeenStored = false;
 
     private void OnEnable()
@@ -45,6 +48,9 @@ public class MathematicalPendulum : Assembly
         dataHasBeenStored = true;
 
         storedPendulumLength = pendulumLength;
+        storedPendulumMass = pendulumMass;
+        storedPendulumGravity = pendulumGravity;
+        storedRodWidth = rodWidth;
     }
 
     private void RetrieveData()
@@ -52,6 +58,9 @@ public class MathematicalPendulum : Assembly
         if (!dataHasBeenStored) return;
 
         pendulumLength = storedPendulumLength;
+        pendulumMass = storedPendulumMass;
+        pendulumGravity = storedPendulumGravity;
+        rodWidth = storedRodWidth;
     }
 
     public override void AssemblyUpdate()
@@ -64,8 +73,9 @@ public class MathematicalPendulum : Assembly
 
         if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
 
-        float halfWidth = width / 2.0f;
-        rodObject.OverridePolygonPoints(new Vector2[] {new(-halfWidth, 0), new(halfWidth, 0), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)});
+        float halfWidth = rodWidth / 2.0f;
+        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)};
+        rodObject.OverridePolygonPoints(rodMeshPoints);
 
         weightObject.rbInput.localLinkPosOtherRB.y = -pendulumLength;
         weightObject.transform.localPosition = new(150, 160 - pendulumLength);

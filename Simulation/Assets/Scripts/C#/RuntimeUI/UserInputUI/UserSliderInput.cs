@@ -1,3 +1,4 @@
+using Michsky.MUIP;
 using Resources2;
 using TMPro;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class UserSliderInput : UserUIElement
 {
     [Header("Settings")]
     [Range(0.0f, 1000.0f), SerializeField] private float msMaxUpdateFrequency = 100.0f;
+    [Range(0, 2), SerializeField] private int numDecimals;
     public float startValue;
     [SerializeField] private float minValue;
     [SerializeField] private float maxValue;
@@ -18,6 +20,7 @@ public class UserSliderInput : UserUIElement
 
     [Header("References")]
     [SerializeField] private Slider slider;
+    [SerializeField] private SliderInput sliderInput;
     [SerializeField] private TMP_InputField sliderInputField;
     [SerializeField] private FieldModifier fieldModifier;
 
@@ -30,6 +33,7 @@ public class UserSliderInput : UserUIElement
         slider.value = lastValue = startValue;
         slider.minValue = minValue;
         slider.maxValue = maxValue;
+        sliderInput.decimals = numDecimals;
         sliderInputField.text = StringUtils.FloatToString(startValue, 1);
         containerTrimImage.color = primaryColor;
         updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency));

@@ -237,7 +237,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "5\u200B"
+  m_text: "0\u200B"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
   m_sharedMaterial: {fileID: 21539420542967178, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
@@ -428,7 +428,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 10
   m_WholeNumbers: 0
-  m_Value: 5
+  m_Value: 0
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -699,7 +699,7 @@ MonoBehaviour:
   m_CaretColor: {r: 1, g: 1, b: 1, a: 1}
   m_CustomCaretColor: 1
   m_SelectionColor: {r: 1, g: 1, b: 1, a: 0.09803922}
-  m_Text: 5
+  m_Text: 0
   m_CaretBlinkRate: 0.85
   m_CaretWidth: 2
   m_ReadOnly: 0
@@ -905,17 +905,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pointerHoverArea: {fileID: 7431222066597752254}
   containerTrimImage: {fileID: 9140693601682780920}
-  fieldModifier: {fileID: 8182692501921918071}
   title: {fileID: 3957549203688858257}
   titleText: Slider
-  innerFieldName: No Inner Field
   primaryColor: {r: 0.882353, g: 1, b: 0, a: 1}
+  onValueChanged:
+    m_PersistentCalls:
+      m_Calls: []
   msMaxUpdateFrequency: 100
-  startingValue: 5
+  numDecimals: 1
+  startValue: 0
   minValue: 0
   maxValue: 10
+  useInnerField: 0
+  innerFieldName: No Inner Field
   slider: {fileID: 1715760548889725599}
+  sliderInput: {fileID: 1187082468179453712}
   sliderInputField: {fileID: 1279538033677037847}
+  fieldModifier: {fileID: 8182692501921918071}
 --- !u!114 &8182692501921918071
 MonoBehaviour:
   m_ObjectHideFlags: 0
