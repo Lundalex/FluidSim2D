@@ -67,7 +67,6 @@ public class RigidBodySensor : Sensor
         Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
         Vector2 pos = (Vector2)rbData.pos;
 
-        if ((vel.x < 0 && lastVel.x > 0) || (vel.x > 0 && lastVel.x < 0)) Debug.Log("hit!");
         lastVel = vel;
 
         float value = 0;

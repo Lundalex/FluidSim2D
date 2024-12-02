@@ -7,7 +7,6 @@ public class UserSelectorInput : UserUIElement
 {
     [Header("Settings")]
     [Range(0.0f, 1000.0f), SerializeField] private float msMaxUpdateFrequency = 100.0f;
-    public int startIndex;
 
     [Header("Inner Field")]
     public bool useInnerField = false;
@@ -23,13 +22,11 @@ public class UserSelectorInput : UserUIElement
 
     public void SetSelectorIndex(int index)
     {
-        selector.index = selector.defaultIndex = startIndex = index;
-        selector.SetupSelector();
+        selector.index = selector.defaultIndex = index;
     }
 
     public override void InitDisplay()
     {
-        selector.defaultIndex = startIndex;
         containerTrimImage.color = primaryColor;
         updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency));
     }

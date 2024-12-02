@@ -30,7 +30,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
         PM.Instance.ResetData();
 
         // Make sure the user UI is shown
-        userUI.SetActive(true);
+        if (!showUserUI) userUI.SetActive(true);
 
         // Show start confirmation (only when starting the program)
         if (!PM.hasShownStartConfirmation)

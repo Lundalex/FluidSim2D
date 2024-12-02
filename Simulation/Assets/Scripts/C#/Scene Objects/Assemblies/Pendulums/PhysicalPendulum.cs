@@ -1,20 +1,16 @@
 using UnityEngine;
 
-public class MathematicalPendulum : Assembly
+public class PhysicalPendulum : Assembly
 {
     [Header("Parent")]
     public bool isIndependent;
 
     [Header("Pendulum Weight")]
-    public float pendulumLength = 90f;
+    public float pendulumLength = 50f;
     public float pendulumMass = 1000f;
     public float pendulumGravity = 9.82f;
 
-    [Header("Pendulum Rod")]
-    public float width = 2.0f;
-
     [Header("References")]
-    [SerializeField] private SceneRigidBody rodObject;
     [SerializeField] private SceneRigidBody weightObject;
     [SerializeField] private UserSliderInput userSliderInput;
 
@@ -56,18 +52,14 @@ public class MathematicalPendulum : Assembly
 
     public override void AssemblyUpdate()
     {
-        if (rodObject == null || weightObject == null)
+        if (weightObject == null)
         {
-            Debug.LogWarning("All references are not set. MathematicalPendulum: " + this.name);
+            Debug.LogWarning("All references are not set. PhysicalPendulum: " + this.name);
             return;
         }
 
         if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
 
-        float halfWidth = width / 2.0f;
-        rodObject.OverridePolygonPoints(new Vector2[] {new(-halfWidth, 0), new(halfWidth, 0), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)});
-
-        weightObject.rbInput.localLinkPosOtherRB.y = -pendulumLength;
         weightObject.transform.localPosition = new(150, 160 - pendulumLength);
         weightObject.rbInput.mass = pendulumMass;
         weightObject.rbInput.gravity = pendulumGravity;
