@@ -3,7 +3,6 @@ using UnityEngine;
 
 public abstract class EditorLifeCycle : MonoBehaviour
 {
-#region Editor
 #if UNITY_EDITOR
     private void OnEnable()
     {
@@ -19,5 +18,4 @@ public abstract class EditorLifeCycle : MonoBehaviour
 
     public abstract void OnEditorUpdate();
 #endif
-#endregion
 }

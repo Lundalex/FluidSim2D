@@ -60,12 +60,6 @@ public class SpringVibrator : Assembly
         springStiffnessC = storedSpringStiffnessC;
     }
 
-    #if UNITY_EDITOR
-        private void OnValidate() => AssemblyUpdate();
-
-        public override void OnEditorUpdate() => AssemblyUpdate();
-    #endif
-
     public override void AssemblyUpdate()
     {
         if (vibrator == null || springObjectA == null || springObjectB == null || springObjectC == null)
@@ -75,10 +69,10 @@ public class SpringVibrator : Assembly
         }
         if (main == null) return;
 
-        if (vibratorFrequencyInput != null) vibratorFrequencyInput.startingValue = vibratorFrequency;
-        if (springStiffnessInputA != null) springStiffnessInputA.startingValue = springStiffnessA;
-        if (springStiffnessInputB != null) springStiffnessInputB.startingValue = springStiffnessB;
-        if (springStiffnessInputC != null) springStiffnessInputC.startingValue = springStiffnessC;
+        if (vibratorFrequencyInput != null) vibratorFrequencyInput.startValue = vibratorFrequency;
+        if (springStiffnessInputA != null) springStiffnessInputA.startValue = springStiffnessA;
+        if (springStiffnessInputB != null) springStiffnessInputB.startValue = springStiffnessB;
+        if (springStiffnessInputC != null) springStiffnessInputC.startValue = springStiffnessC;
 
         vibrator.rbInput.lerpSpeed = vibratorFrequency / main.ProgramSpeed;
         springObjectA.rbInput.springStiffness = springStiffnessA;

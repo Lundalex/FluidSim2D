@@ -6,9 +6,12 @@ using PM = ProgramManager;
 public class UserToggleInput : UserUIElement
 {
     [Header("Settings")]
-    [SerializeField] private bool startingValue;
-    public string innerFieldName = "No Inner Field";
+    [SerializeField] private bool startValue;
     public ToggleType toggleType;
+
+    [Header("Inner Field")]
+    public bool useInnerField = false;
+    public string innerFieldName;
 
     [Header("References")]
     [SerializeField] private SwitchManager toggleManager;
@@ -22,7 +25,7 @@ public class UserToggleInput : UserUIElement
     {
         if (Application.isPlaying)
         {
-            toggleManager.isOn = toggleType == ToggleType.Field && startingValue;
+            toggleManager.isOn = toggleType == ToggleType.Field && startValue;
             toggleManager.UpdateUI();
         }
         containerTrimImage.color = primaryColor;
@@ -50,8 +53,8 @@ public class UserToggleInput : UserUIElement
             if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
             else
             {
-                if (innerFieldName == "No Inner Field") fieldModifier.ModifyField(toggleManager.isOn);
-                else fieldModifier.ModifyClassField(innerFieldName, toggleManager.isOn);
+                if (useInnerField) fieldModifier.ModifyClassField(innerFieldName, toggleManager.isOn);
+                else fieldModifier.ModifyField(toggleManager.isOn);
             }
         }
     }

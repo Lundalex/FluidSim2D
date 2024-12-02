@@ -8,10 +8,12 @@ public class ProgramLifeCycleManager : MonoBehaviour
 {
     [Header("Editor Settings")]
     public bool darkMode;
+    public bool showUserUI;
 
     [Header("Serialized Fields")]
     [SerializeField] private Main main;
     [SerializeField] private GameObject darkBackground;
+    [SerializeField] private GameObject userUI;
     [SerializeField] private GameObject startConfirmationWindow;
     [SerializeField] private NotificationManager controlsTip;
 
@@ -19,12 +21,16 @@ public class ProgramLifeCycleManager : MonoBehaviour
     {
         #if UNITY_EDITOR
             darkBackground.SetActive(darkMode);
+            userUI.SetActive(showUserUI);
         #endif
     }
     
     private void Awake()
     {
         PM.Instance.ResetData();
+
+        // Make sure the user UI is shown
+        userUI.SetActive(true);
 
         // Show start confirmation (only when starting the program)
         if (!PM.hasShownStartConfirmation)

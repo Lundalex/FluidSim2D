@@ -39,6 +39,12 @@ public abstract class Polygon : EditorLifeCycle
         }
     }
 
+    public void OverridePolygonPoints(Vector2[] points)
+    {
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
+        polygonCollider.points = points;
+    }
+
     public bool IsPointInsidePolygon(Vector2 point)
     {
         if (Edges.Count == 0) SetPolygonData();

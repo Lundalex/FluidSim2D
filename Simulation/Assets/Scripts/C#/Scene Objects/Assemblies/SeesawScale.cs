@@ -43,12 +43,6 @@ public class SeesawScale : Assembly
         leverArmJointLerpFactor = storedLeverArmJointLerpFactor;
     }
 
-    #if UNITY_EDITOR
-        private void OnValidate() => AssemblyUpdate();
-
-        public override void OnEditorUpdate() => AssemblyUpdate();
-    #endif
-
     public override void AssemblyUpdate()
     {
         if (leftBucket == null || rightBucket == null || plank == null || rotationJoint == null)
@@ -57,7 +51,7 @@ public class SeesawScale : Assembly
             return;
         }
         
-        if (userSliderInput != null) userSliderInput.startingValue = leverArmJointLerpFactor;
+        if (userSliderInput != null) userSliderInput.startValue = leverArmJointLerpFactor;
 
         Vector2 leftPlank = new(-75, 0);
         Vector2 rightPlank = new(75, 0);
