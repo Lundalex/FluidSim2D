@@ -27,7 +27,7 @@ public class UserSliderInput : UserUIElement
 
     public override void InitDisplay()
     {
-        slider.value = startValue;
+        slider.value = lastValue = startValue;
         slider.minValue = minValue;
         slider.maxValue = maxValue;
         sliderInputField.text = StringUtils.FloatToString(startValue, 1);
@@ -45,6 +45,8 @@ public class UserSliderInput : UserUIElement
 
                 PM.Instance.doOnSettingsChanged = true;
                 lastValue = slider.value;
+
+                onValueChanged.Invoke();
             }
         }
     }

@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using PM = ProgramManager;
 
@@ -14,12 +15,15 @@ public abstract class UserUIElement : EditorLifeCycle
     [SerializeField] private string titleText;
     public Color primaryColor;
 
+    [Header("Unity Event")]
+    public UnityEvent onValueChanged;
+
     #if UNITY_EDITOR
     public override void OnEditorUpdate()
     {
         if (!Application.isPlaying)
         {
-            title.text = titleText;
+            if (title != null) title.text = titleText;
             InitDisplay();
         }
     }
@@ -28,7 +32,7 @@ public abstract class UserUIElement : EditorLifeCycle
     private void Start()
     {
         PM.Instance.AddUserInput(this);
-        title.text = titleText;
+        if (title != null) title.text = titleText;
         InitDisplay();
     }
 

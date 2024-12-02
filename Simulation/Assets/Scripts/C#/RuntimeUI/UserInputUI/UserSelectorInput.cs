@@ -17,12 +17,12 @@ public class UserSelectorInput : UserUIElement
     [SerializeField] private FieldModifier fieldModifier;
 
     // Private
-    private float lastValue;
+    private int lastValue;
     private Timer updateTimer;
 
     public void SetSelectorIndex(int index)
     {
-        selector.index = selector.defaultIndex = index;
+        selector.index = selector.defaultIndex = lastValue = index;
     }
 
     public override void InitDisplay()
@@ -41,6 +41,8 @@ public class UserSelectorInput : UserUIElement
 
                 PM.Instance.doOnSettingsChanged = true;
                 lastValue = selector.index;
+
+                onValueChanged.Invoke();
             }
         }
     }

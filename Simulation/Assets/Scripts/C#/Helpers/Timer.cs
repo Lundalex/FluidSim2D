@@ -42,6 +42,9 @@ public class Timer
         else return false;
     }
 
+    /// <summary>Get the elapsed time since starting/resetting the timer</summary>
+    public float GetTime() => time;
+
     /// <summary>Reset the accumulated time</summary>
     public void Reset() => time = 0;
 }
