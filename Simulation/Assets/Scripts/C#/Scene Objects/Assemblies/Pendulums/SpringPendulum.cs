@@ -60,7 +60,7 @@ public class SpringPendulum : Assembly
             return;
         }
 
-        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
+        if (userSliderInput != null && isIndependent) userSliderInput.startValue = pendulumLength;
 
         weightObject.transform.localPosition = new(150, 160 - pendulumLength);
         weightObject.rbInput.mass = mass;

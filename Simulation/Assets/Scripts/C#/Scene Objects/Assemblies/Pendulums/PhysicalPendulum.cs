@@ -70,7 +70,7 @@ public class PhysicalPendulum : Assembly
             return;
         }
 
-        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
+        if (userSliderInput != null && isIndependent) userSliderInput.startValue = pendulumLength;
 
         float halfWidth = width / 2.0f;
         Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)};
