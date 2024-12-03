@@ -75,24 +75,29 @@ public class MultiPendulum : Assembly
             case PendulumType.Mathematical:
                 setActiveMathematical = true;
                 mathematical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
+                if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
                 break;
 
             case PendulumType.Physical:
                 setActivePhysical = true;
                 physical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
+                if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
                 break;
 
             case PendulumType.Spring:
                 setActiveSpring = true;
                 spring.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
+                if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
                 break;
 
             case PendulumType.DoubleMathematical:
                 setActiveDoubleMathematical = true;
+                userSliderInput.gameObject.SetActive(false);
                 break;
 
             case PendulumType.DoubleSpring:
                 setActiveDoubleSpring = true;
+                userSliderInput.gameObject.SetActive(false);
                 break;
 
             default:
@@ -107,6 +112,5 @@ public class MultiPendulum : Assembly
         doubleSpring.SetActive(setActiveDoubleSpring);
 
         if (userSelectorInput != null) userSelectorInput.SetSelectorIndex((int)pendulumType);
-        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
     }
 }

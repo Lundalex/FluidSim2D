@@ -13,6 +13,7 @@ public class SpringVibrator : Assembly
     [Header("References")]
     [SerializeField] private Main main;
     [SerializeField] private SceneRigidBody vibrator;
+    [SerializeField] private SceneRigidBody vibratorHitBox;
     [SerializeField] private SceneRigidBody springObjectA;
     [SerializeField] private SceneRigidBody springObjectB;
     [SerializeField] private SceneRigidBody springObjectC;
@@ -74,7 +75,9 @@ public class SpringVibrator : Assembly
         if (springStiffnessInputB != null) springStiffnessInputB.startValue = springStiffnessB;
         if (springStiffnessInputC != null) springStiffnessInputC.startValue = springStiffnessC;
 
-        vibrator.rbInput.lerpSpeed = vibratorFrequency / main.ProgramSpeed;
+        float lerpSpeed = vibratorFrequency / main.ProgramSpeed;
+        vibrator.rbInput.lerpSpeed = lerpSpeed;
+        vibratorHitBox.rbInput.lerpSpeed = lerpSpeed;
         springObjectA.rbInput.springStiffness = springStiffnessA;
         springObjectB.rbInput.springStiffness = springStiffnessB;
         springObjectC.rbInput.springStiffness = springStiffnessC;

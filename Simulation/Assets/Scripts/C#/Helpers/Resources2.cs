@@ -253,6 +253,8 @@ namespace Resources2
 
             return new Vector2(x, y);
         }
+
+        public static float SinOscillation(float t0) => (Mathf.Sin((t0 + 0.75f) * Mathf.PI * 2.0f) + 1.0f) * 0.5f;
     }
 #endregion
 

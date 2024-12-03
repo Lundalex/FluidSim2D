@@ -28,11 +28,17 @@ public class UserSelectorInput : UserUIElement
     public override void InitDisplay()
     {
         containerTrimImage.color = primaryColor;
-        updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency));
+        updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency), true, true, Func.MsToSeconds(msMaxUpdateFrequency));
     }
-
+    bool setupFinnished = false;
     private void Update()
     {
+        if (!setupFinnished)
+        {
+            if (Application.isPlaying) selector.UpdateUI();
+            setupFinnished = true;
+        }
+
         if (selector.index != lastValue)
         {
             if (updateTimer.Check())
