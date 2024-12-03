@@ -54,15 +54,22 @@ public class SpringPendulum : Assembly
 
     public override void AssemblyUpdate()
     {
+        if (!isIndependent) return;
+
         if (weightObject == null)
         {
             Debug.LogWarning("All references are not set. SpringPendulum: " + this.name);
             return;
         }
 
-        if (userSliderInput != null && isIndependent) userSliderInput.startValue = pendulumLength;
+        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
 
-        weightObject.transform.localPosition = new(150, 160 - pendulumLength);
+        SetPendulumData(pendulumLength);
+    }
+
+    public void SetPendulumData(float length)
+    {
+        weightObject.transform.localPosition = new(150, 160 - length);
         weightObject.rbInput.mass = mass;
         weightObject.rbInput.springStiffness = springStiffness;
         weightObject.rbInput.damping = springDamping;

@@ -8,24 +8,15 @@ public class MultiPendulum : Assembly
     [Header("Mathematical / Physical")]
     public float pendulumLength = 30f;
 
-    [Header("DoubleMathematical")]
-    public float secondaryPendulumLength = 10f;
-
     [Header("Spring")]
     public float springStiffness = 500f;
-
-    [Header("DoubleSpring")]
-    public float secondarySpringStiffness = 200f;
-
-    [Header("References - Mathematical")]
-    [SerializeField] private GameObject mathematicalObject;
-    [SerializeField] private SceneRigidBody rodObject_Mathematical;
-    [SerializeField] private SceneRigidBody weightObject_Mathematical;
-
-    [Header("References - Physical")]
-    [SerializeField] private GameObject physicalObject;
-    [SerializeField] private SceneRigidBody weightObject_Physical;
-
+    
+    [Header("References - Pendulums")]
+    [SerializeField] private MathematicalPendulum mathematical;
+    [SerializeField] private PhysicalPendulum physical;
+    [SerializeField] private SpringPendulum spring;
+    [SerializeField] private GameObject doubleMathematical;
+    [SerializeField] private GameObject doubleSpring;
 
     [Header("References - User Inputs")]
     [SerializeField] private UserSelectorInput userSelectorInput;
@@ -66,30 +57,49 @@ public class MultiPendulum : Assembly
 
     public override void AssemblyUpdate()
     {
-        // if (rodObject == null || weightObject == null)
-        // {
-        //     Debug.LogWarning("All references are not set. Pendulum: " + this.name);
-        //     return;
-        // }
+        if (mathematical == null || physical == null || spring == null || doubleMathematical == null || doubleSpring == null )
+        {
+            Debug.LogWarning("All references are not set. MultiPendulum: " + this.name);
+            return;
+        }
 
+        bool setActiveMathematical = false;
+        bool setActivePhysical = false;
+        bool setActiveSpring = false;
+        bool setActiveDoubleMathematical = false;
+        bool setActiveDoubleSpring = false;
         switch (pendulumType)
         {
             case PendulumType.Mathematical:
-                if (pendulumLengthInput != null) pendulumLengthInput.startValue = pendulumLength;
-                mathematicalObject.SetActive(true);
-                physicalObject.SetActive(false);
+                setActiveMathematical = true;
                 break;
 
             case PendulumType.Physical:
-                if (pendulumLengthInput != null) pendulumLengthInput.startValue = pendulumLength;
-                physicalObject.SetActive(true);
-                mathematicalObject.SetActive(false);
+                setActivePhysical = true;
+                break;
+
+            case PendulumType.Spring:
+                setActiveSpring = true;
+                break;
+
+            case PendulumType.DoubleMathematical:
+                setActiveDoubleMathematical = true;
+                break;
+
+            case PendulumType.DoubleSpring:
+                setActiveDoubleSpring = true;
                 break;
 
             default:
                 Debug.Log("PendulumType '" + pendulumType + "' not recognized. Pendulum: " + this.name);
                 break;
         }
+
+        mathematical.gameObject.SetActive(setActiveMathematical);
+        physical.gameObject.SetActive(setActivePhysical);
+        spring.gameObject.SetActive(setActiveSpring);
+        doubleMathematical.SetActive(setActiveDoubleMathematical);
+        doubleSpring.SetActive(setActiveDoubleSpring);
 
         if (userSelectorInput != null) userSelectorInput.SetSelectorIndex((int)pendulumType);
     }

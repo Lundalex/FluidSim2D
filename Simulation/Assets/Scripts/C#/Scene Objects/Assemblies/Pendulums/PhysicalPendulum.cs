@@ -64,20 +64,28 @@ public class PhysicalPendulum : Assembly
 
     public override void AssemblyUpdate()
     {
+        if (!isIndependent) return;
+
         if (rodObject == null)
         {
             Debug.LogWarning("All references are not set. PhysicalPendulum: " + this.name);
             return;
         }
 
-        if (userSliderInput != null && isIndependent) userSliderInput.startValue = pendulumLength;
+        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
 
+        SetPendulumData(pendulumLength);
+    }
+
+    public void SetPendulumData(float length)
+    {
         float halfWidth = width / 2.0f;
-        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)};
+        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -length), new(-halfWidth, -length)};
         rodObject.OverridePolygonPoints(rodMeshPoints);
 
-        weightObject.rbInput.localLinkPosOtherRB.y = -pendulumLength * Const.Sqrt2Div3;
-        weightObject.transform.localPosition = new(150, 160 - pendulumLength * Const.Sqrt2Div3);
+        float modifiedLength = length * Const.Sqrt2Div3;
+        weightObject.rbInput.localLinkPosOtherRB.y = -modifiedLength;
+        weightObject.transform.localPosition = new(150, 160 - modifiedLength);
         weightObject.rbInput.mass = pendulumMass;
         weightObject.rbInput.gravity = pendulumGravity;
     }

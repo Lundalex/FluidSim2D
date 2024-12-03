@@ -65,20 +65,27 @@ public class MathematicalPendulum : Assembly
 
     public override void AssemblyUpdate()
     {
+        if (!isIndependent) return;
+
         if (rodObject == null || weightObject == null)
         {
             Debug.LogWarning("All references are not set. MathematicalPendulum: " + this.name);
             return;
         }
 
-        if (userSliderInput != null && isIndependent) userSliderInput.startValue = pendulumLength;
+        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
 
+        SetPendulumData(pendulumLength);
+    }
+
+    public void SetPendulumData(float length)
+    {
         float halfWidth = rodWidth / 2.0f;
-        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -pendulumLength), new(-halfWidth, -pendulumLength)};
+        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -length), new(-halfWidth, -length)};
         rodObject.OverridePolygonPoints(rodMeshPoints);
 
-        weightObject.rbInput.localLinkPosOtherRB.y = -pendulumLength;
-        weightObject.transform.localPosition = new(150, 160 - pendulumLength);
+        weightObject.rbInput.localLinkPosOtherRB.y = -length;
+        weightObject.transform.localPosition = new(150, 160 - length);
         weightObject.rbInput.mass = pendulumMass;
         weightObject.rbInput.gravity = pendulumGravity;
     }
