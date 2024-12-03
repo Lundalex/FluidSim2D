@@ -49,12 +49,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isIndependent: 1
   pendulumLength: 90
-  pendulumMass: 1000
-  pendulumGravity: 9.82
+  mass: 1000
+  gravity: 9.82
+  userSliderInput: {fileID: 0}
   width: 15
   rodObject: {fileID: 4702850417005761048}
   weightObject: {fileID: 3938711497833519654}
-  userSliderInput: {fileID: 0}
 --- !u!1001 &26192371403109438
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,92 +1,85 @@
 using UnityEngine;
 
-public class MathematicalPendulum : Assembly
+public class MathematicalPendulum : Pendulum
 {
-    [Header("Parent")]
-    public bool isIndependent;
-
-    [Header("Pendulum Weight")]
-    public float pendulumLength = 90f;
-    public float pendulumMass = 1000f;
-    public float pendulumGravity = 9.82f;
-
     [Header("Pendulum Rod")]
     public float rodWidth = 2.0f;
 
     [Header("References")]
     [SerializeField] private SceneRigidBody rodObject;
     [SerializeField] private SceneRigidBody weightObject;
-    [SerializeField] private UserSliderInput userSliderInput;
 
     // Private static
-    private static float storedPendulumLength;
-    private static float storedPendulumMass;
-    private static float storedPendulumGravity;
+    private static float storedMass;
+    private static float storedGravity;
     private static float storedRodWidth;
     private static bool dataHasBeenStored = false;
 
-    private void OnEnable()
+    protected override void OnEnable()
     {
+        base.OnEnable();
+
         if (isIndependent)
         {
-            ProgramManager.Instance.OnPreStart += AssemblyUpdate;
             RetrieveData();
         }
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
         if (isIndependent)
         {
             StoreData();
         }
-        ProgramManager.Instance.OnPreStart -= AssemblyUpdate;
+        base.OnDestroy();
     }
 
-    private void StoreData()
+    protected override void StoreData()
     {
+        base.StoreData();
         dataHasBeenStored = true;
 
-        storedPendulumLength = pendulumLength;
-        storedPendulumMass = pendulumMass;
-        storedPendulumGravity = pendulumGravity;
+        storedMass = mass;
+        storedGravity = gravity;
         storedRodWidth = rodWidth;
     }
 
-    private void RetrieveData()
+    protected override void RetrieveData()
     {
+        base.RetrieveData();
         if (!dataHasBeenStored) return;
 
-        pendulumLength = storedPendulumLength;
-        pendulumMass = storedPendulumMass;
-        pendulumGravity = storedPendulumGravity;
+        mass = storedMass;
+        gravity = storedGravity;
         rodWidth = storedRodWidth;
     }
 
     public override void AssemblyUpdate()
     {
-        if (!isIndependent) return;
+        base.AssemblyUpdate();
 
         if (rodObject == null || weightObject == null)
         {
             Debug.LogWarning("All references are not set. MathematicalPendulum: " + this.name);
             return;
         }
-
-        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
-
-        SetPendulumData(pendulumLength);
     }
 
-    public void SetPendulumData(float length)
+    public override void SetPendulumData(float length, float mass, float gravity)
     {
         float halfWidth = rodWidth / 2.0f;
-        Vector2[] rodMeshPoints = new Vector2[] {new(-halfWidth, halfWidth), new(halfWidth, halfWidth), new(halfWidth, -length), new(-halfWidth, -length)};
+        Vector2[] rodMeshPoints = new Vector2[]
+        {
+            new Vector2(-halfWidth, halfWidth),
+            new Vector2(halfWidth, halfWidth),
+            new Vector2(halfWidth, -length),
+            new Vector2(-halfWidth, -length)
+        };
         rodObject.OverridePolygonPoints(rodMeshPoints);
 
         weightObject.rbInput.localLinkPosOtherRB.y = -length;
-        weightObject.transform.localPosition = new(150, 160 - length);
-        weightObject.rbInput.mass = pendulumMass;
-        weightObject.rbInput.gravity = pendulumGravity;
+        weightObject.transform.localPosition = new Vector3(150, 160 - length);
+        weightObject.rbInput.mass = mass;
+        weightObject.rbInput.gravity = gravity;
     }
 }

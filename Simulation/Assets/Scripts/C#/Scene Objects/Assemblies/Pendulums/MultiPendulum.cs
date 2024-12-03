@@ -7,6 +7,8 @@ public class MultiPendulum : Assembly
 
     [Header("Mathematical / Physical")]
     public float pendulumLength = 30f;
+    public float pendulumMass = 1000f;
+    public float pendulumGravity = 9.82f;
 
     [Header("Spring")]
     public float springStiffness = 500f;
@@ -20,7 +22,7 @@ public class MultiPendulum : Assembly
 
     [Header("References - User Inputs")]
     [SerializeField] private UserSelectorInput userSelectorInput;
-    [SerializeField] private UserSliderInput pendulumLengthInput;
+    [SerializeField] private UserSliderInput userSliderInput;
 
     // Private static
     private static PendulumType storedPendulumType;
@@ -72,14 +74,17 @@ public class MultiPendulum : Assembly
         {
             case PendulumType.Mathematical:
                 setActiveMathematical = true;
+                mathematical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
                 break;
 
             case PendulumType.Physical:
                 setActivePhysical = true;
+                physical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
                 break;
 
             case PendulumType.Spring:
                 setActiveSpring = true;
+                spring.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
                 break;
 
             case PendulumType.DoubleMathematical:
@@ -102,5 +107,6 @@ public class MultiPendulum : Assembly
         doubleSpring.SetActive(setActiveDoubleSpring);
 
         if (userSelectorInput != null) userSelectorInput.SetSelectorIndex((int)pendulumType);
+        if (userSliderInput != null) userSliderInput.startValue = pendulumLength;
     }
 }
