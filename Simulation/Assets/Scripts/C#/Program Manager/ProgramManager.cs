@@ -192,13 +192,14 @@ public class ProgramManager : ScriptableObject
             Debug.Log("'R' key pressed. Scene resetting...");
             return true;
         }
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             programPaused = !programPaused;
             Debug.Log(programPaused ? "Program paused" : "Program resumed");
         }
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.S))
         {
+            programPaused = true;
             frameStep = !frameStep;
             Debug.Log("Stepping forward one frame");
         }

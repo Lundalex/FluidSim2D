@@ -32,7 +32,7 @@ EditorBuildSettings:
     path: "Assets/Scenes/SimulationDemos/Physics/Ha\u0308vsta\u030Ang/H\xE4vst\xE5ngA.unity"
     guid: bc27dcb6f9d1e5a4e8e2eec8c1e127cb
   - enabled: 1
-    path: "Assets/Scenes/SimulationDemos/Physics/Pendelro\u0308relse/Egenfrekvens.unity"
+    path: "Assets/Scenes/SimulationDemos/Physics/Pendelro\u0308relse/InverteradPendel.unity"
     guid: 2c1730f5cc4833448897619b858ba061
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 043f03d50e9131443a9d54bdd055368f, type: 2}

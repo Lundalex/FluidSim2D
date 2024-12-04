@@ -1366,12 +1366,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6966798653328401209, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: titleText
-      value: 'Tips:'
+      value: "Unders<b>\xF6</b>k"
       objectReference: {fileID: 0}
     - target: {fileID: 6966798653328401209, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: displayText
-      value: "M\xE4t pendeltiden f\xF6r n\xE5gra olika l\xE4ngder p\xE5 pendeln,
-        ex. <color=orange><u>1,4,9,25</u></color>. <u>Ser du n\xE5got samband?</u>"
+      value: "M\xE4t <color=orange>pendeltiden</color> f\xF6r n\xE5gra olika <color=orange>l\xE4ngder</color>
+        p\xE5 den matematiska pendeln. <u>Ser du n\xE5got samband?</u>"
       objectReference: {fileID: 0}
     - target: {fileID: 6966798653328401209, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: primaryColor.r
