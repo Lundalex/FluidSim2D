@@ -740,7 +740,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 65
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.y
@@ -2752,11 +2752,12 @@ MonoBehaviour:
   containerTrimImage: {fileID: 905655987}
   title: {fileID: 77409670}
   titleText: "L<b>\xE4</b>r dig mer"
-  primaryColor: {r: 0.882353, g: 1, b: 0, a: 1}
+  primaryColor: {r: 1, g: 0.011764705, b: 0.62721586, a: 1}
   onValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  displayText: "Den <u>h<b>\xE4</b>r</u> youtube-videon f\xF6rklarar fenomenet!"
+  displayText: "Den <color=#4583e6><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
+    fenomenet!"
   displayTextSize: 18
   textField: {fileID: 4616159385083059679}
 --- !u!4 &3694722153196442411 stripped
@@ -2955,7 +2956,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Den <u>h<b>\xE4</b>r</u> youtube-videon f\xF6rklarar fenomenet!"
+  m_text: "Den <color=#4583e6><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
+    fenomenet!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -3064,7 +3066,7 @@ GameObject:
   - component: {fileID: 1717552392749121145}
   - component: {fileID: 3562273165393633997}
   m_Layer: 5
-  m_Name: UserTextSmall
+  m_Name: VideoLink
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
