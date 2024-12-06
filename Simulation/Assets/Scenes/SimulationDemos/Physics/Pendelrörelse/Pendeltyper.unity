@@ -3266,6 +3266,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1007705394678629575, guid: 11c5f435613f06c4188ff31649444102, type: 3}
+      propertyPath: m_StringReference.m_TableEntryReference.m_KeyId
+      value: 1811707908853760
+      objectReference: {fileID: 0}
     - target: {fileID: 2295286191025438085, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.x
       value: 379
@@ -3458,6 +3462,10 @@ PrefabInstance:
       propertyPath: onClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1360447224}
+    - target: {fileID: 8990295309981177255, guid: 11c5f435613f06c4188ff31649444102, type: 3}
+      propertyPath: m_text
+      value: Pendeltyper
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -39,6 +39,12 @@ public class UserSliderInput : UserUIElement
         updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency));
     }
 
+    public void SetValue(float value)
+    {
+        startValue = value;
+        InitDisplay();
+    }
+
     private void Update()
     {
         if (slider.value != lastValue)

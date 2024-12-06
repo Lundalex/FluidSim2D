@@ -6,6 +6,8 @@ using Vector3 = UnityEngine.Vector3;
 using Resources2;
 using System.Collections.Generic;
 using PM = ProgramManager;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 
 public class Main : MonoBehaviour
 {

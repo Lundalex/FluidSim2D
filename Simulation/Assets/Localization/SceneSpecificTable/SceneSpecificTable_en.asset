@@ -34,6 +34,14 @@ MonoBehaviour:
     m_Localized: Pendulum
     m_Metadata:
       m_Items: []
+  - m_Id: 1763658146779136
+    m_Localized: Inverted Pendulum
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1811707908853760
+    m_Localized: Pendulum Types
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

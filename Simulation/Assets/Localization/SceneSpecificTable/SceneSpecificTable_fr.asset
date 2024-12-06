@@ -34,6 +34,14 @@ MonoBehaviour:
     m_Localized: pendule
     m_Metadata:
       m_Items: []
+  - m_Id: 1763658146779136
+    m_Localized: "\r\nPendule invers\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1811707908853760
+    m_Localized: Types de pendules
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

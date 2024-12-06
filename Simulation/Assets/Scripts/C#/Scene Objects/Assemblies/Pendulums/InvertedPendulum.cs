@@ -29,9 +29,17 @@ public class InvertedPendulum : Assembly
     private static float storedDamping;
     private static bool dataHasBeenStored = false;
 
-    private void OnEnable() => RetrieveData();
+    private void OnEnable()
+    {
+        ProgramManager.Instance.OnPreStart += AssemblyUpdate;
+        RetrieveData();
+    }
 
-    private void OnDestroy() => StoreData();
+    private void OnDestroy()
+    {
+        StoreData();
+        ProgramManager.Instance.OnPreStart -= AssemblyUpdate;
+    }
 
     private void StoreData()
     {
@@ -66,7 +74,7 @@ public class InvertedPendulum : Assembly
         }
         if (main == null) return;
 
-        if (userSliderInput != null) userSliderInput.startValue = frequency;
+        if (userSliderInput != null && Application.isPlaying) userSliderInput.SetValue(frequency);
 
         SetPendulumData();
     }
@@ -84,9 +92,6 @@ public class InvertedPendulum : Assembly
 
         // Spring
         weightObject.rbInput.springStiffness = stiffness;
-        weightObject.rbInput.damping = damping;
-
-
-    // private static float storedLength;      
+        weightObject.rbInput.damping = damping;   
     }
 }

@@ -65,6 +65,10 @@ public class ProgramManager : ScriptableObject
     private bool performanceTestCompleted;
     private int performanceMisses;
 
+    // Key inputs
+    private Timer rapidFrameSteppingTimer;
+    private static readonly float rapidFrameSteppingDelay = 0.1f;
+
     // Singleton
     private static ProgramManager _instance;
     public static ProgramManager Instance
@@ -183,7 +187,6 @@ public class ProgramManager : ScriptableObject
             startConfirmationStatus = StartConfirmationStatus.None;
         }
     }
-
     private bool CheckKeyInputs()
     {
         bool allowRestart = startConfirmationStatus == StartConfirmationStatus.NotStarted || startConfirmationStatus == StartConfirmationStatus.None;
@@ -197,11 +200,11 @@ public class ProgramManager : ScriptableObject
             programPaused = !programPaused;
             Debug.Log(programPaused ? "Program paused" : "Program resumed");
         }
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKey(KeyCode.S) && rapidFrameSteppingTimer.Check())
         {
+            if (!programPaused) Debug.Log("Program paused");
             programPaused = true;
             frameStep = !frameStep;
-            Debug.Log("Stepping forward one frame");
         }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -282,6 +285,7 @@ public class ProgramManager : ScriptableObject
 
         sensorDatas = new();
         userUIElements = new();
+        rapidFrameSteppingTimer = new(rapidFrameSteppingDelay, false, true, rapidFrameSteppingDelay);
     }
 
     public void AddSensor(SensorUI sensorUI, Sensor sensor)
