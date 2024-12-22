@@ -275,9 +275,10 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         bool rigidConstraintFlagB = rbB.springStiffness == 0;
         bool isNotRBColliderB = rbB.rbElasticity == -1;
         bool rigidConstraint = ((int)rbAIndex == rbB.linkedRBIndex && rigidConstraintFlagB) || ((int)rbBIndex == rbA.linkedRBIndex && rigidConstraintFlagA) || !AllowLinkedRBCollisions;
-        
+        bool bothStationary = rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0;
+
         // Exit early if both rigid bodies are flagged as stationary, or rigidConstraint == true
-        if ((rbA.mass == 0 && rbB.mass == 0 && rbA.inertia == 0 && rbB.inertia == 0) || rigidConstraint || isNotRBColliderB) continue;
+        if (bothStationary || rigidConstraint || isNotRBColliderB) continue;
 
         // Record initial positions
         float2 posRecA = rbA.pos;
@@ -515,7 +516,7 @@ void GetRBBounds(RigidBody rb, inout float2 boundsMin, inout float2 boundsMax, i
     uint endIndex = rb.endIndex;
     for (uint vecIndex = startIndex; vecIndex < endIndex; vecIndex++)
     {
-        float2 worldVec = RBVectors[vecIndex].pos + rb.pos;
+        float2 worldVec = rotate2D(RBVectors[vecIndex].pos, rb.totRot) + rb.pos;
 
         boundsMin = min(boundsMin, worldVec);
         boundsMax = max(boundsMax, worldVec);
@@ -714,7 +715,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     if (length(springForce) != 0)
     {
         // Record the springForce exerted on the rigid bodies
-        float absSpringForce = length(springForce) * 0.001;
+        float absSpringForce = length(springForce) * 0.001; // Convert to base unit (N)
         int recordedSpringForce_Int = FloatAsInt(absSpringForce, INT_FLOAT_PRECISION_RB);
 
         AccumulateSpringForce(i, recordedSpringForce_Int);
@@ -772,7 +773,8 @@ void ResolveCollisionRB_Boundary(inout RigidBody rb, float2 collisionPoint, floa
     if (denom == 0) return;
 
     // Normal impulse scalar
-    float jn = -(1 + min(rb.rbElasticity, BoundaryElasticity)) * relVelAlongNormal / denom;
+    float elasticity = rb.rbElasticity < 0 ? 0.5 : rb.rbElasticity;
+    float jn = -(1 + min(elasticity, BoundaryElasticity)) * relVelAlongNormal / denom;
 
     // Compute normal impulse vector
     float2 impulseNormal = jn * normal;
@@ -850,51 +852,47 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
     bool canMove = rb.mass > 0;
     if (canMove)
     {
-        bool isRBCollider = rb.rbElasticity != -1;
-        if (isRBCollider)
+        // Make sure the rigid body is inside simulation bounds
+        if (IsNearBoundary(rb.pos, abs(rb.maxRadiusSqr)))
         {
-            // Make sure rigid body is inside simulation bounds
-            if (IsNearBoundary(rb.pos, abs(rb.maxRadiusSqr)))
+            float2 boundsMin = float2(1.#INF, 1.#INF);
+            float2 boundsMax = float2(-1.#INF, -1.#INF);
+            float2 minXVec = float2(1.#INF, 0);
+            float2 maxXVec = float2(-1.#INF, 0);
+            float2 minYVec = float2(0, 1.#INF);
+            float2 maxYVec = float2(0, -1.#INF);
+            GetRBBounds(rb, boundsMin, boundsMax, minXVec, maxXVec, minYVec, maxYVec);
+
+            // Left boundary collision
+            if (boundsMin.x < RigidBodyPadding)
             {
-                float2 boundsMin = float2(1.#INF, 1.#INF);
-                float2 boundsMax = float2(-1.#INF, -1.#INF);
-                float2 minXVec = float2(1.#INF, 0);
-                float2 maxXVec = float2(-1.#INF, 0);
-                float2 minYVec = float2(0, 1.#INF);
-                float2 maxYVec = float2(0, -1.#INF);
-                GetRBBounds(rb, boundsMin, boundsMax, minXVec, maxXVec, minYVec, maxYVec);
+                float2 collisionNormal = float2(1, 0); // right
+                float2 collisionPoint = minXVec;
+                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+            }
 
-                // Left boundary collision
-                if (boundsMin.x < RigidBodyPadding)
-                {
-                    float2 collisionNormal = float2(1, 0); // right
-                    float2 collisionPoint = minXVec;
-                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-                }
+            // Right boundary collision
+            if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
+            {
+                float2 collisionNormal = float2(-1, 0); // left
+                float2 collisionPoint = maxXVec;
+                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+            }
 
-                // Right boundary collision
-                if (boundsMax.x > BoundaryDims.x - RigidBodyPadding)
-                {
-                    float2 collisionNormal = float2(-1, 0); // left
-                    float2 collisionPoint = maxXVec;
-                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-                }
+            // Bottom boundary collision
+            if (boundsMin.y < RigidBodyPadding)
+            {
+                float2 collisionNormal = float2(0, 1); // up
+                float2 collisionPoint = minYVec;
+                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
+            }
 
-                // Bottom boundary collision
-                if (boundsMin.y < RigidBodyPadding)
-                {
-                    float2 collisionNormal = float2(0, 1); // up
-                    float2 collisionPoint = minYVec;
-                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-                }
-
-                // Top boundary collision
-                if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
-                {
-                    float2 collisionNormal = float2(0, -1); // down
-                    float2 collisionPoint = maxYVec;
-                    ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
-                }
+            // Top boundary collision
+            if (boundsMax.y > BoundaryDims.y - RigidBodyPadding)
+            {
+                float2 collisionNormal = float2(0, -1); // down
+                float2 collisionPoint = maxYVec;
+                ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
             }
         }
 

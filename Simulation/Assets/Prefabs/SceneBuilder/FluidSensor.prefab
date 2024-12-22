@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3858022677190404988}
   - component: {fileID: 4070848776831518849}
   m_Layer: 0
-  m_Name: FluidVelocitySensorPrefab
+  m_Name: FluidSensor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -47,16 +47,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultDataView: 0
   numDecimals: 2
-  NewUnitCooldown: 0.5
+  minPrefixIndex: 0
+  newLowerPrefixThreshold: 0.5
+  valueOffset: 0
   primaryColor: {r: 0, g: 0.796659, b: 1, a: 1}
   sensorScale: 0.9
-  targetPosition: {x: 0, y: 50}
+  localTargetPos: {x: 0, y: 0}
   positionType: 1
-  useFixedScaleForDashedRectangle: 1
   sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
   dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
   graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
-  mainCanvas: {fileID: 0}
   fluidSensorType: 11
   lineColor: {r: 0.003921569, g: 0.003921569, b: 0.003921569, a: 1}
   areaColor: {r: 1, g: 0.11022433, b: 0, a: 0.39215687}
@@ -67,7 +67,7 @@ MonoBehaviour:
     width: 100
     height: 50
   patternModulo: 10
-  SampleDensity: 2
+  SampleSpacing: 1
 --- !u!114 &4070848776831518849
 MonoBehaviour:
   m_ObjectHideFlags: 0

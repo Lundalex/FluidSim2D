@@ -99,7 +99,7 @@ namespace Resources2
 #endregion
 
 #region Math Functions
-    public class Func
+    public static class Func
     {
         public static void Log2(ref int a, bool doCeil = false)
         {
@@ -254,6 +254,11 @@ namespace Resources2
             return new Vector2(x, y);
         }
 
+        public static float Avg(float a, float b)
+        {
+            return (a + b) * 0.5f;
+        }
+
         public static float SinOscillation(float t0) => (Mathf.Sin((t0 + 0.75f) * Mathf.PI * 2.0f) + 1.0f) * 0.5f;
     }
 #endregion
@@ -344,7 +349,7 @@ namespace Resources2
 #endregion
 
 #region Arrays
-    public class ArrayUtils
+    public static class ArrayUtils
     {
         public static T[] RemoveElementAtIndex<T>(ref T[] array, int index)
         {
@@ -387,4 +392,31 @@ namespace Resources2
         }
     }
 #endregion
+
+    public static class GeometryUtils
+    {
+        public static Vector2[] Rectangle(float top, float bottom, float left, float right)
+        {
+            return new Vector2[]
+            {
+                new(left, bottom),
+                new(right, bottom),
+                new(right, top),
+                new(left, top)
+            };
+        }
+
+        public static Vector2[] CenteredRectangle(float width, float height)
+        {
+        float halfWidth = width / 2.0f;
+        float halfHeight = height / 2.0f;
+        return new Vector2[]
+            {
+                new(-halfWidth, -halfHeight),
+                new(halfWidth, -halfHeight),
+                new(halfWidth, halfHeight),
+                new(-halfWidth, halfHeight)
+            };
+        }
+    }
 }

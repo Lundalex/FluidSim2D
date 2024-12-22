@@ -79,10 +79,10 @@ public class SensorUI : MonoBehaviour
     {
         if (PM.Instance.isAnySensorSettingsViewActive) return;
 
-        bool isTryingToMove = pointerHoverArea.CheckIfHovering() && Input.GetMouseButton(0) && !Main.MousePressed.x && !PM.Instance.CheckAnySensorBeingMoved(this);
+        bool isTryingToMove = Input.GetMouseButton(0) && !Main.MousePressed.x && !PM.Instance.CheckAnySensorBeingMoved(this);
         if (isTryingToMove)
         {
-            if (!pointerMoveTimer.Check(false)) return;
+            if (!pointerMoveTimer.Check(false) || (!pointerHoverArea.CheckIfHovering() && !isBeingMoved)) return;
             isBeingMoved = true;
 
             // Get mouse position
@@ -101,13 +101,16 @@ public class SensorUI : MonoBehaviour
             {
                 sensor.localTargetPos = mouseSimPos;
             }
+            
+            if (dashedRectangle != null)
+            {
+                // Activate dashed rectangle object
+                dashedRectangle.SetActive(true);
 
-            // Activate dashed rectangle object
-            dashedRectangle.SetActive(true);
-
-            // Set dashed rectangle position
-            dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(mouseSimPos));
-            dashedRectangle.SetScale(GetTotalScale() / SettingsViewActiveFixedScale);
+                // Set dashed rectangle position
+                dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(mouseSimPos));
+                dashedRectangle.SetScale(GetTotalScale() / SettingsViewActiveFixedScale);
+            }
         }
         else
         {
@@ -115,7 +118,7 @@ public class SensorUI : MonoBehaviour
             pointerMoveTimer.Reset();
 
             // Activate dashed rectangle object
-            dashedRectangle.SetActive(false);
+            if (dashedRectangle != null) dashedRectangle.SetActive(false);
         }
     }
 
@@ -148,10 +151,12 @@ public class SensorUI : MonoBehaviour
             Debug.LogWarning("Trying to change the sensor UI position type of a rigid body sensor. This is not allowed. RigidBodySensor: " + sensor.name);
             return;
         }
-        if (dashedRectangle == null) return;
 
         // Set the new position
-        dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(ClampToScreenBounds(GetPositionFromInputFields())));
+        if (dashedRectangle != null)
+        {
+            dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(ClampToScreenBounds(GetPositionFromInputFields())));
+        }
     }
 
     public void OnScaleChanged() => userScale = scaleSlider.value;
@@ -261,7 +266,7 @@ public class SensorUI : MonoBehaviour
         OnSettingsViewStatusChanged?.Invoke(true);
 
         // Make sure the dashed rectangle outline is hidden / showing depending on the sensor type
-        dashedRectangle.SetActive(sensor is FluidSensor);
+        if (dashedRectangle != null) dashedRectangle.SetActive(sensor is FluidSensor);
 
         if (sensor is FluidSensor)
         {
@@ -296,8 +301,11 @@ public class SensorUI : MonoBehaviour
             positionYInput.text = ((int)simPos.y).ToString();
 
             // Set the dashed rectangle transform
-            dashedRectangle.SetPosition(worldSpacePos);
-            dashedRectangle.SetScale(GetDashedRectangleSettingsViewScale());
+            if (dashedRectangle != null)
+            {
+                dashedRectangle.SetPosition(worldSpacePos);
+                dashedRectangle.SetScale(GetDashedRectangleSettingsViewScale());
+            }
 
             yield return new WaitForSeconds(1 / 30.0f);
         }
@@ -309,7 +317,7 @@ public class SensorUI : MonoBehaviour
         OnSettingsViewStatusChanged?.Invoke(false);
 
         // Make sure the dashed rectangle outline is hidden
-        dashedRectangle.SetActive(false);
+        if (dashedRectangle != null) dashedRectangle.SetActive(false);
     }
 
     public void SetDataWindow(string windowName) => dataViewWindowManager.OpenPanel(windowName);

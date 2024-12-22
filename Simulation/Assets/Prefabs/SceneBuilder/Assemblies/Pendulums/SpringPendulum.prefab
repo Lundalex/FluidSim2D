@@ -50,10 +50,10 @@ MonoBehaviour:
   pendulumLength: 70
   mass: 1000
   gravity: 9.82
+  userSliderInput: {fileID: 0}
   springStiffness: 1000
   springDamping: 10
   weightObject: {fileID: 3905030066846586082}
-  userSliderInput: {fileID: 0}
 --- !u!1001 &246975119352652362
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -108,7 +108,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.canRotate
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: addInBetweenPoints

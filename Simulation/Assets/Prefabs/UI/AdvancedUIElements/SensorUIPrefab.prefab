@@ -13792,7 +13792,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Avg. Summativ Hastighet
+  - itemName: Avg. Destruktiv Hastighet
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:
@@ -13810,7 +13810,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  - itemName: Avg. Destruktiv Hastighet
+  - itemName: Avg. Summativ Hastighet
     itemIcon: {fileID: 0}
     itemIndex: 0
     OnItemSelection:

@@ -49,48 +49,46 @@ MonoBehaviour:
   gridSpacing: 5
   LineColor: {r: 0, g: 0, b: 0, a: 1}
   BodyColor: {r: 0, g: 1, b: 0.060328007, a: 1}
-  DoCenterPosition: 0
-  DoDrawBody: 1
-  EditorLineAnimationSpeed: 10
+  doCenterPosition: 0
+  doDrawBody: 1
+  editorLineAnimationSpeed: 10
   defaultGridSpacing: 0.5
-  LinkedSensors: []
-  RBInput:
-    includeInSimulation: 1
+  addInBetweenPoints: 1
+  doRecursiveSubdivisison: 0
+  minDstForSubDivision: 0.5
+  linkedSensors: []
+  rbInput:
+    includeInSimulation: 0
     overrideCentroid: 0
     isInteractable: 0
-    isCollider: 1
-    canMove: 1
-    canRotate: 1
-    mass: 1000
-    gravity: 5
-    elasticity: 0.3
+    colliderType: 0
+    canMove: 0
+    canRotate: 0
+    mass: 0
+    gravity: 0
+    rbElasticity: 0
+    fluidElasticity: 0
+    friction: 0
     heatingStrength: 0
     constraintType: 0
-    springStiffness: 0
-    springRestLength: 0
-    damping: 0
-    localLinkPosThisRB:
-      x: 0
-      y: 0
-    localLinkPosOtherRB:
-      x: 0
-      y: 0
+    localLinkPosThisRB: {x: 0, y: 0}
+    localLinkPosOtherRB: {x: 0, y: 0}
     linkedRigidBody: {fileID: 0}
+    autoSpringRestLength: 0
+    springRestLength: 0
+    springStiffness: 0
+    damping: 0
     lerpSpeed: 0
     lerpTimeOffset: 0
     doRoundTrip: 0
-    startPos:
-      x: 0
-      y: 0
-    endPos:
-      x: 0
-      y: 0
+    startPos: {x: 0, y: 0}
+    endPos: {x: 0, y: 0}
+    overrideCentroidPosition: {x: 0, y: 0}
     angularVelocity: 0
-    velocity:
-      x: 0
-      y: 0
-    renderPriority: 1
-    matIndex: 1
+    velocity: {x: 0, y: 0}
+    disableRender: 0
+    renderPriority: 0
+    matIndex: 0
     springMatIndex: 0
   approximatedSpringLength: No Active Spring Link
   approximatedSpringForce: No Active Spring Link

@@ -391,7 +391,7 @@ public class SceneManager : MonoBehaviour
             gravity = rbInput.gravity,
             rbElasticity = isRBCollider ? Mathf.Max(rbInput.rbElasticity, 0.05f) : -1,
             fluidElasticity = isFluidCollider ? Mathf.Max(rbInput.fluidElasticity, 0.05f) : -1,
-            friction = isRBCollider ? rbInput.friction : -1,
+            friction = rbInput.friction,
             maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,
@@ -410,7 +410,7 @@ public class SceneManager : MonoBehaviour
             // Recorded spring force
             recordedSpringForce = 0,
             // Display
-            renderPriority = rbInput.renderPriority,
+            renderPriority = rbInput.disableRender ? -1 : rbInput.renderPriority,
             matIndex = rbInput.matIndex,
             springMatIndex = rbInput.springMatIndex
         };

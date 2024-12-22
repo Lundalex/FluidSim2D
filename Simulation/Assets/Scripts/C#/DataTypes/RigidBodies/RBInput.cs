@@ -1,5 +1,4 @@
 using System;
-using Unity.Mathematics;
 using UnityEngine;
 
 [Serializable]
@@ -48,6 +47,7 @@ public struct RBInput
     public Vector2 velocity;
 
     [Header("Display")]
+    public bool disableRender;
     public int renderPriority;
     public int matIndex;
     public int springMatIndex;

@@ -53,24 +53,30 @@ MonoBehaviour:
   doDrawBody: 1
   editorLineAnimationSpeed: 10
   defaultGridSpacing: 1.1
+  addInBetweenPoints: 1
+  doRecursiveSubdivisison: 0
+  minDstForSubDivision: 0.5
   linkedSensors: []
   rbInput:
     includeInSimulation: 1
     overrideCentroid: 0
     isInteractable: 0
-    isCollider: 1
+    colliderType: 0
     canMove: 1
     canRotate: 1
     mass: 1000
     gravity: 9.82
-    elasticity: 0.1
+    rbElasticity: 0
+    fluidElasticity: 0
+    friction: 0
     heatingStrength: 0
     constraintType: 3
     localLinkPosThisRB: {x: 0, y: 0}
     localLinkPosOtherRB: {x: 0, y: 0}
     linkedRigidBody: {fileID: 0}
-    springStiffness: 0
+    autoSpringRestLength: 0
     springRestLength: 0
+    springStiffness: 0
     damping: 0
     lerpSpeed: 0
     lerpTimeOffset: 0
@@ -131,8 +137,8 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 1, y: 0.33333334}
-      - {x: -1, y: 0.33333334}
-      - {x: -1, y: -0.33333334}
-      - {x: 1, y: -0.33333334}
+    - - {x: 1.125, y: 0.25}
+      - {x: -1.125, y: 0.25}
+      - {x: -1.125, y: -0.25}
+      - {x: 1.125, y: -0.25}
   m_UseDelaunayMesh: 0

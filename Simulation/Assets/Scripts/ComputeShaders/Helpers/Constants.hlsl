@@ -1,4 +1,4 @@
-static const uint MAX_RIGIDBODIES_NUM = 9;
+static const uint MAX_RIGIDBODIES_NUM = 20;
 
 // --- Thread Nums ---
 

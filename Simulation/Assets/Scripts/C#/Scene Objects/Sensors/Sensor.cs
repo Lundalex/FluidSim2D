@@ -72,15 +72,18 @@ public abstract class Sensor : MonoBehaviour
     private void InitSensorUI()
     {
         GameObject sensorUIObject = Instantiate(sensorUIPrefab, sensorUIContainer);
-        GameObject sensorUIOutline = Instantiate(dashedRectanglePrefab, sensorOutlineContainer);
         sensorUI = sensorUIObject.GetComponent<SensorUI>();
+        if (PM.Instance.doAllowDashedRectangles)
+        {
+            GameObject sensorUIOutline = Instantiate(dashedRectanglePrefab, sensorOutlineContainer);
+            sensorUIOutline.SetActive(false);
+            sensorUI.dashedRectangleObject = sensorUIOutline;
+            sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
+            sensorUI.dashedRectangle.sensorUI = sensorUI;
+        }
         GameObject sensorUIGraphChartObject = Instantiate(graphChartPrefab, sensorUI.graphChartContainer);
         graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
         itemLabels = sensorUIGraphChartObject.GetComponent<ItemLabels>();
-        sensorUIOutline.SetActive(false);
-        sensorUI.dashedRectangleObject = sensorUIOutline;
-        sensorUI.dashedRectangle = sensorUIOutline.GetComponent<DashedRectangle>();
-        sensorUI.dashedRectangle.sensorUI = sensorUI;
         mainCanvas = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;

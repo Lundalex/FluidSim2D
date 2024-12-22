@@ -69,13 +69,8 @@ public class PhysicalPendulum : Pendulum
     public override void SetPendulumData(float length, float mass, float gravity)
     {
         float halfWidth = width / 2.0f;
-        Vector2[] rodMeshPoints = new Vector2[]
-        {
-            new Vector2(-halfWidth, halfWidth),
-            new Vector2(halfWidth, halfWidth),
-            new Vector2(halfWidth, -length),
-            new Vector2(-halfWidth, -length)
-        };
+        Vector2[] rodMeshPoints = GeometryUtils.Rectangle(halfWidth, halfWidth + length, halfWidth, halfWidth);
+        
         rodObject.OverridePolygonPoints(rodMeshPoints);
 
         float modifiedLength = length * Const.Sqrt2Div3;

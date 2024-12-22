@@ -325,9 +325,8 @@ float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
 {
     float2 causticsTexDims = GetTexDims(Caustics);
     float2 baseCausticsRes = 512;
-    float2 baseScreenRes = float2(1920, 1080);
 
-    uint2 wrappedThreadID = (threadID * causticsTexDims * baseScreenRes / (baseCausticsRes * Resolution)) % causticsTexDims;
+    uint2 wrappedThreadID = (threadID * causticsTexDims / (baseCausticsRes)) % causticsTexDims;
 
     float3 fluidCol = sampleColMul * Caustics[wrappedThreadID].rgb;
 
@@ -722,7 +721,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         else
         {
             float2 localPixelPos = rotate2D(pixelPos - transformData.xy, -transformData.z);
-            float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / (float2)BoundaryDims);
+            float2 localUV = MirrorRepeatUV(mat.colTexUpScaleFactor * localPixelPos / min(BoundaryDims.x, BoundaryDims.y));
 
             float3 color = GetMaterialColor(mat, localUV, Atlas);
 

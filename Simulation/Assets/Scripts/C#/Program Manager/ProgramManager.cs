@@ -4,6 +4,7 @@ using Resources2;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
+using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
 [CreateAssetMenu(fileName = "ProgramManagerAsset", menuName = "ProgramManager")]
@@ -27,6 +28,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public float timeScale = 1;
     [NonSerialized] public bool isAnySensorSettingsViewActive;
     [NonSerialized] public bool programPaused;
+    [NonSerialized] public bool slowMotionActive;
     [NonSerialized] public bool frameStep;
     [NonSerialized] public float totalTimeElapsed;
     [NonSerialized] public int frameCount;
@@ -39,6 +41,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public Vector2 ScreenToViewFactor;
     [NonSerialized] public Vector2 ViewScale;
     [NonSerialized] public Vector2 ViewOffset;
+    [NonSerialized] public bool doAllowDashedRectangles;
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
     public event Action OnPreStart;
@@ -49,11 +52,12 @@ public class ProgramManager : ScriptableObject
     public static StartConfirmationStatus startConfirmationStatus;
     public static bool hasShownStartConfirmation = false;
 
-    // Private - Camera
+    // Private - Camera & Render
     private Camera uiCam;
     private Vector2 uiViewMin;
     private Vector2 uiViewDims;
     private bool viewTransformInitiated;
+    private readonly Vector2 StandardResolution = new(1920, 1080);
 
     // Private - Animated Texture Scrolling
     private static readonly float NonSettingsMaterialScrollSpeed = 5.0f;
@@ -68,6 +72,7 @@ public class ProgramManager : ScriptableObject
     // Key inputs
     private Timer rapidFrameSteppingTimer;
     private static readonly float rapidFrameSteppingDelay = 0.1f;
+    private static readonly float SlowMotionFactor = 4.0f;
 
     // Singleton
     private static ProgramManager _instance;
@@ -195,18 +200,36 @@ public class ProgramManager : ScriptableObject
             Debug.Log("'R' key pressed. Scene resetting...");
             return true;
         }
-        if (Input.GetKeyDown(KeyCode.Space))
+        else if (Input.GetKeyDown(KeyCode.Space))
         {
             programPaused = !programPaused;
             Debug.Log(programPaused ? "Program paused" : "Program resumed");
         }
-        if (Input.GetKey(KeyCode.S) && rapidFrameSteppingTimer.Check())
+        else if (Input.GetKey(KeyCode.F) && rapidFrameSteppingTimer.Check())
         {
             if (!programPaused) Debug.Log("Program paused");
             programPaused = true;
             frameStep = !frameStep;
         }
-        if (Input.GetKeyDown(KeyCode.Escape))
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            if (frameStep || programPaused)
+            {
+                if (programPaused)
+                {
+                    programPaused = false;
+                    Debug.Log("Program resumed");
+                }
+                frameStep = false;
+                Debug.Log("Slow motion activated");
+                if (slowMotionActive) return false;
+            }
+            slowMotionActive = !slowMotionActive;
+            Debug.Log(slowMotionActive ? "Slow motion activated" : "Slow motion deactivated");
+            if (slowMotionActive) main.ProgramSpeed /= SlowMotionFactor;
+            else main.ProgramSpeed *= SlowMotionFactor;
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape))
         {
             CloseAllSensorUISettingsPanels();
         }
@@ -266,6 +289,7 @@ public class ProgramManager : ScriptableObject
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
+        slowMotionActive = false;
 
         if (!hasShownStartConfirmation)
         {
@@ -329,6 +353,15 @@ public class ProgramManager : ScriptableObject
         foreach (UserUIElement userUIElement in userUIElements)
         {
             if (userUIElement.pointerHoverArea.CheckIfHovering()) return true;
+        }
+        return false;
+    }
+
+    public bool CheckAnyUIElementMoved()
+    {
+        foreach (SensorData sensorData in sensorDatas)
+        {
+            if (sensorData.sensorUI.isBeingMoved) return true;
         }
         return false;
     }
@@ -457,6 +490,20 @@ public class ProgramManager : ScriptableObject
     {
         Resolution = Utils.Int2ToVector2(main.Resolution);
         ResolutionInt2 = main.Resolution;
+        doAllowDashedRectangles = Resolution == StandardResolution;
+
+        // Make sure all resolution settings match
+        int screenWidth = Screen.width;
+        int screenHeight = Screen.height;
+        Vector2 screenResolution = new(screenWidth, screenHeight);
+        if (Resolution != screenResolution) Debug.LogWarning("Screen resolution and resolution setting in Main do not match. Rendering artifacts may appear.");
+
+        Vector2 uiCanvasResolution = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>().GetComponent<CanvasScaler>().referenceResolution;
+        if (Resolution != uiCanvasResolution) Debug.LogWarning("UICanvas reference resolution and resolution setting in Main do not match. Rendering artifacts may appear.");
+
+        float resolutionRatio = Resolution.x / Resolution.y;
+        float boundaryDimsRatio = main.BoundaryDims.x / (float)main.BoundaryDims.y;
+        if (resolutionRatio != boundaryDimsRatio) Debug.LogWarning("Resolution ratio and BoundaryDims setting in Main do not match. Rendering artifacts may appear");
     }
 
     private void SetStaticUIPositions()

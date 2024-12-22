@@ -409,7 +409,7 @@ public class Main : MonoBehaviour
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
         if (!skipUpdatingMouseInputs)
         {
-            bool disallowMouseInputs = PM.Instance.CheckAnyUIElementHovered() || PM.Instance.isAnySensorSettingsViewActive;
+            bool disallowMouseInputs = PM.Instance.CheckAnyUIElementHovered() || PM.Instance.CheckAnyUIElementMoved() || PM.Instance.isAnySensorSettingsViewActive;
             MousePressed = disallowMouseInputs ? false : currentMouseInputs;
         }
 
