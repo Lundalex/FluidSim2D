@@ -392,6 +392,7 @@ public class SceneManager : MonoBehaviour
             rbElasticity = isRBCollider ? Mathf.Max(rbInput.rbElasticity, 0.05f) : -1,
             fluidElasticity = isFluidCollider ? Mathf.Max(rbInput.fluidElasticity, 0.05f) : -1,
             friction = rbInput.friction,
+            passiveDamping = rbInput.passiveDamping,
             maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
             startIndex = startIndex,
             endIndex = endIndex,

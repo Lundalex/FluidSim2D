@@ -6,6 +6,8 @@
 #pragma kernel UpdateRigidBodies // 5
 #pragma kernel UpdateRBVertices // 6
 
+#pragma multi_compile _ DO_USE_FAST_COMPILATION
+
 #include "./Helpers/DataTypes.hlsl"
 #include "./Helpers/Constants.hlsl"
 #include "./Helpers/MathResources.hlsl"
@@ -263,8 +265,10 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
 
     bool isNotRBCollider = baseRB.rbElasticity == -1;
     if (isNotRBCollider) return;
-
-    [unroll(MAX_RIGIDBODIES_NUM)]
+    
+    #if !DO_USE_FAST_COMPILATION
+        [unroll(MAX_RIGIDBODIES_NUM)]
+    #endif
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < NumRigidBodies; rbBIndex++)
     {
         RigidBody rbA = baseRB;
@@ -904,6 +908,7 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         
         // Ensure the velocity is within the valid range
         rb.vel_AsInt2 = SafeAsInt2(rb.vel_AsInt2, MaxRBVel);
+        rb.vel_AsInt2 *= (1 - rb.passiveDamping * DeltaTime);
 
         // Update position
         rb.pos += Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB) * DeltaTime;

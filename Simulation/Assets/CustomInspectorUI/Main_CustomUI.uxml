@@ -76,6 +76,7 @@
         <ui:Toggle label="Unoccupied Area" binding-path="DoDrawUnoccupiedFluidSensorArea" tooltip="Whether to tint unoccupied fluid sensor area." value="true" />
         <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)." binding-path="DoDrawRBOutlines" />
         <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)." />
+        <ui:Toggle label="Fast Compilation" binding-path="DoUseFastShaderCompilation" tooltip="Recommended: OFF (for builds), ON (in editor). Whether to enable shader compilation optimisations. This may slightly reduce runtime performance." />
         <uie:PropertyField binding-path="RenderOrder" name="PropertyField" tooltip="Recommended: Keep default settings. The render order of different program layers." />
     </ui:Foldout>
     <ui:Foldout text="Render Display" name="RenderDisplay" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">

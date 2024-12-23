@@ -92,6 +92,7 @@ struct RigidBody
     float rbElasticity;
     float fluidElasticity;
     float friction;
+    float passiveDamping;
     float maxRadiusSqr;
     int startIndex;
     int endIndex;

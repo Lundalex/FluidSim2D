@@ -12,6 +12,7 @@
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
 #pragma multi_compile _ USE_BILINEAR_SAMPLER
+#pragma multi_compile _ DO_USE_FAST_COMPILATION
 
 #include "./Helpers/MathResources.hlsl"
 #include "./Helpers/DataTypes.hlsl"
@@ -850,7 +851,9 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     float springForce = 0;
     int matIndex = 0;
     int highestRenderPriority = -1;
-    [unroll(MAX_RIGIDBODIES_NUM)]
+    #if !DO_USE_FAST_COMPILATION
+        [unroll(MAX_RIGIDBODIES_NUM)]
+    #endif
     for (uint rbIndex = 0; rbIndex < MAX_RIGIDBODIES_NUM; rbIndex++)
     {
         if (rbIndex >= NumRigidBodies) break;

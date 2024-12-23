@@ -6,7 +6,6 @@ using Vector3 = UnityEngine.Vector3;
 using Resources2;
 using System.Collections.Generic;
 using PM = ProgramManager;
-using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 
 public class Main : MonoBehaviour
@@ -93,6 +92,7 @@ public class Main : MonoBehaviour
     public bool DoDrawUnoccupiedFluidSensorArea;
     public bool DoDrawRBOutlines;
     public bool DoDrawRBCentroids;
+    public bool DoUseFastShaderCompilation;
 
     // The list that defines the order of render steps
     public List<RenderStep> RenderOrder = new()
@@ -427,14 +427,6 @@ public class Main : MonoBehaviour
         rbSimShader.SetBool("RMousePressed", MousePressed.y);
         renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
 
-        // Multi-compilation - pSimShader
-        if (DoSimulateParticleViscosity) pSimShader.EnableKeyword("SIMULATE_PARTICLE_VISCOSITY");
-        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_VISCOSITY");
-        if (DoSimulateParticleSprings) pSimShader.EnableKeyword("SIMULATE_PARTICLE_SPRINGS");
-        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_SPRINGS");
-        if (DoSimulateParticleTemperature) pSimShader.EnableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
-        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
-
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
         pSimShader.SetBool("FrameBufferCycle", FrameBufferCycle);
@@ -456,6 +448,9 @@ public class Main : MonoBehaviour
 
     private void SetShaderKeywords()
     {
+        if (DoUseFastShaderCompilation) Debug.LogWarning("Fast shader compilation enabled. This may slightly decrease runtime performance");
+
+        // Render shader
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");
         else renderShader.DisableKeyword("DRAW_RB_CENTROIDS");
         if (DoDrawFluidOutlines) renderShader.EnableKeyword("DRAW_FLUID_OUTLINES");
@@ -472,6 +467,20 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("USE_METABALLS");
         if (SampleMethod == SampleMethod.Bilinear) renderShader.EnableKeyword("USE_BILINEAR_SAMPLER");
         else renderShader.DisableKeyword("USE_BILINEAR_SAMPLER");
+        if (DoUseFastShaderCompilation) renderShader.EnableKeyword("DO_USE_FAST_COMPILATION");
+        else renderShader.DisableKeyword("DO_USE_FAST_COMPILATION");
+
+        // Particle simulation shader
+        if (DoSimulateParticleViscosity) pSimShader.EnableKeyword("SIMULATE_PARTICLE_VISCOSITY");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_VISCOSITY");
+        if (DoSimulateParticleSprings) pSimShader.EnableKeyword("SIMULATE_PARTICLE_SPRINGS");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_SPRINGS");
+        if (DoSimulateParticleTemperature) pSimShader.EnableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
+        else pSimShader.DisableKeyword("SIMULATE_PARTICLE_TEMPERATURE");
+
+        // Rigid body simulation shader
+        if (DoUseFastShaderCompilation) rbSimShader.EnableKeyword("DO_USE_FAST_COMPILATION");
+        else rbSimShader.DisableKeyword("DO_USE_FAST_COMPILATION");
     }
 
     private void CameraSetup()

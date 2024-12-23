@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using Resources2;
 
 [ExecuteAlways]
 public abstract class Polygon : EditorLifeCycle
@@ -23,6 +24,8 @@ public abstract class Polygon : EditorLifeCycle
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
         Vector2 offset = offsetInput ?? Vector2.zero;
 
+        ValidatePolygonPointsOrder();
+
         Edges = new List<Edge>();
         MeshPoints = new List<Vector2>();
         Vector2[] points = polygonCollider.points;
@@ -36,6 +39,17 @@ public abstract class Polygon : EditorLifeCycle
 
             Edge edge = new(startPoint + offset, endPoint + offset);
             Edges.Add(edge);
+        }
+    }
+
+    private void ValidatePolygonPointsOrder()
+    {
+        if (GeometryUtils.IsClockwise(polygonCollider.points))
+        {
+            // Reverse the polygonCollider points to be anti-clockwise
+            Vector2[] pts = polygonCollider.points;
+            Array.Reverse(pts);
+            polygonCollider.points = pts;
         }
     }
 

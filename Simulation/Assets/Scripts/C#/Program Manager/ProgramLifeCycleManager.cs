@@ -16,6 +16,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
     [SerializeField] private GameObject userUI;
     [SerializeField] private GameObject startConfirmationWindow;
     [SerializeField] private NotificationManager controlsTip;
+    [SerializeField] private NotificationManager slowMotionTip;
 
     private void OnValidate()
     {
@@ -89,6 +90,18 @@ public class ProgramLifeCycleManager : MonoBehaviour
 
         // Show controls tip
         yield return new WaitForSeconds(Func.MsToSeconds(PM.msControlsTipDelay));
+        OpenControlsTip();
+    }
+
+    public void OpenSlowMotionTip()
+    {
+        controlsTip.CloseNotification();
+        slowMotionTip.OpenNotification();
+    }
+
+    public void OpenControlsTip()
+    {
+        slowMotionTip.CloseNotification();
         controlsTip.OpenNotification();
     }
 }

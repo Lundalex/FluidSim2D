@@ -18,6 +18,7 @@ public struct RBInput
     public float rbElasticity;
     public float fluidElasticity;
     public float friction;
+    public float passiveDamping;
 
     [Header("Particle Interaction")]
     public float heatingStrength;

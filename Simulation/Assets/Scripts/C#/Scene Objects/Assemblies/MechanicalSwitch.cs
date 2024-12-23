@@ -33,11 +33,12 @@ public class MechanicalSwitch : Assembly
 
     public override void AssemblyUpdate()
     {
-        if (borderCollider == null || sceneCollider == null || railVisualization == null || main == null)
+        if (borderCollider == null || sceneCollider == null || railVisualization == null)
         {
             Debug.LogWarning("All references are not set. MechanicalSwitch: " + this.name);
             return;
         }
+        if (main == null) return;
 
         // Offset values
         Vector2 xOffset = Vector2.zero;

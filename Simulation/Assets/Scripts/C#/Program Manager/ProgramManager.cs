@@ -12,6 +12,7 @@ public class ProgramManager : ScriptableObject
 {
     // References
     public Material lineMaterial;
+    [NonSerialized] public ProgramLifeCycleManager lifeCycleManager;
     [NonSerialized] public Main main;
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public FluidSpawnerManager fluidSpawnerManager;
@@ -226,7 +227,11 @@ public class ProgramManager : ScriptableObject
             }
             slowMotionActive = !slowMotionActive;
             Debug.Log(slowMotionActive ? "Slow motion activated" : "Slow motion deactivated");
-            if (slowMotionActive) main.ProgramSpeed /= SlowMotionFactor;
+            if (slowMotionActive)
+            {
+                main.ProgramSpeed /= SlowMotionFactor;
+                lifeCycleManager.OpenSlowMotionTip();
+            }
             else main.ProgramSpeed *= SlowMotionFactor;
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
@@ -277,6 +282,7 @@ public class ProgramManager : ScriptableObject
 
     private void SetReferences()
     {
+        lifeCycleManager = GameObject.FindGameObjectWithTag("LifeCycleManager").GetComponent<ProgramLifeCycleManager>();
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
         fluidSpawnerManager = GameObject.FindGameObjectWithTag("FluidSpawnerManager").GetComponent<FluidSpawnerManager>();

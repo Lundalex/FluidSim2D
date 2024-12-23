@@ -14,6 +14,7 @@ public struct RBData
     public float rbElasticity;
     public float fluidElasticity;
     public float friction;
+    public float passiveDamping;
     public float maxRadiusSqr;
     public int startIndex;
     public int endIndex;

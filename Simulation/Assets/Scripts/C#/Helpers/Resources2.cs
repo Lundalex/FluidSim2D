@@ -393,6 +393,7 @@ namespace Resources2
     }
 #endregion
 
+#region Geometry
     public static class GeometryUtils
     {
         public static Vector2[] Rectangle(float top, float bottom, float left, float right)
@@ -418,5 +419,19 @@ namespace Resources2
                 new(-halfWidth, halfHeight)
             };
         }
+
+        public static bool IsClockwise(Vector2[] points)
+        {
+            float area = 0f;
+            for (int i = 0; i < points.Length; i++)
+            {
+                Vector2 p1 = points[i];
+                Vector2 p2 = points[(i + 1) % points.Length];
+                area += (p1.x * p2.y) - (p2.x * p1.y);
+            }
+            // If area is negative, the polygon is oriented clockwise
+            return area < 0f;
+        }
     }
+#endregion
 }
