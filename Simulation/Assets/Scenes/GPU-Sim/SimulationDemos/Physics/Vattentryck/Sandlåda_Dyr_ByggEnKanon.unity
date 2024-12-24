@@ -242,6 +242,7 @@ MonoBehaviour:
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
+  MinRBVelForMovement: 0.1
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -384,7 +385,7 @@ MonoBehaviour:
   FluidSensorEdgeWidth: 1
   SensorAreaAnimationSpeed: 10
   GlobalSettingsViewChangeSpeed: 10
-  backgroundTexture: {fileID: 2800000, guid: e9d764f2127a5d346a1a1e722c0e9e5e, type: 3}
+  backgroundTexture: {fileID: 2800000, guid: 1c21b07edd22649b487f8a12651b8af0, type: 3}
   BackgroundBrightness:
     x: 1
     y: 1
