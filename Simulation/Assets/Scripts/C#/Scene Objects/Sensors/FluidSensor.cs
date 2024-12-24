@@ -132,6 +132,10 @@ public class FluidSensor : Sensor
         {
             switch (fluidSensorType)
             {
+                case FluidSensorType.Liquid_Depth:
+                    value = 423;
+                    break;
+
                 case FluidSensorType.Energy_Total_Kinetic:
                     value = kineticEnergy;
                     break;
@@ -200,6 +204,10 @@ public class FluidSensor : Sensor
         string baseUnit = prefix;
         switch (fluidSensorType)
         {
+            case FluidSensorType.Liquid_Depth:
+                baseUnit = "m";
+                break;
+
             case FluidSensorType.Energy_Total_Kinetic:
             case FluidSensorType.Energy_Total_Thermal:
             case FluidSensorType.Energy_Total_Both:
@@ -261,45 +269,52 @@ public class FluidSensor : Sensor
 
     public override void SetSensorTitle()
     {
+        string title = "NoTitleSet";
         switch (fluidSensorType)
         {
+            case FluidSensorType.Liquid_Depth:
+                title = "Djup";
+                break;
+
             case FluidSensorType.Energy_Total_Kinetic:
             case FluidSensorType.Energy_Average_Kinetic:
-                sensorUI.SetTitle("K. Energi");
+                title = "K. Energi";
                 break;
 
             case FluidSensorType.Energy_Total_Thermal:
             case FluidSensorType.Energy_Average_Thermal:
-                sensorUI.SetTitle("T. Energi");
+                title = "T. Energi";
                 break;
 
             case FluidSensorType.Energy_Total_Both:
             case FluidSensorType.Energy_Average_Both:
-                sensorUI.SetTitle("Energi");
+                title = "Energi";
                 break;
 
             case FluidSensorType.TotalMass:
-                sensorUI.SetTitle("Massa");
+                title = "Massa";
                 break;
 
             case FluidSensorType.AveragePressure:
-                sensorUI.SetTitle("Tryck");
+                title = "Tryck";
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
             case FluidSensorType.AverageTemperatureKelvin:
-                sensorUI.SetTitle("Temperatur");
+                title = "Temperatur";
                 break;
 
             case FluidSensorType.Velocity_Absolute_Destructive:
             case FluidSensorType.Velocity_Absolute_Summative:
-                sensorUI.SetTitle("Hastighet");
+                title = "Hastighet";
                 break;
 
             default:
                 Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
                 break;
         }
+
+        sensorUI.SetTitle(title);
     }
 
     public override void UpdateSensorTypeDropdown()
@@ -307,52 +322,56 @@ public class FluidSensor : Sensor
         int itemIndex = 0;
         switch (fluidSensorType)
         {
-            case FluidSensorType.Energy_Total_Kinetic:
+            case FluidSensorType.Liquid_Depth:
                 itemIndex = 0;
                 break;
 
-            case FluidSensorType.Energy_Total_Thermal:
+            case FluidSensorType.Energy_Total_Kinetic:
                 itemIndex = 1;
                 break;
 
-            case FluidSensorType.Energy_Total_Both:
+            case FluidSensorType.Energy_Total_Thermal:
                 itemIndex = 2;
                 break;
 
-            case FluidSensorType.Energy_Average_Kinetic:
+            case FluidSensorType.Energy_Total_Both:
                 itemIndex = 3;
                 break;
 
-            case FluidSensorType.Energy_Average_Thermal:
+            case FluidSensorType.Energy_Average_Kinetic:
                 itemIndex = 4;
                 break;
 
-            case FluidSensorType.Energy_Average_Both:
+            case FluidSensorType.Energy_Average_Thermal:
                 itemIndex = 5;
                 break;
 
-            case FluidSensorType.TotalMass:
+            case FluidSensorType.Energy_Average_Both:
                 itemIndex = 6;
                 break;
 
-            case FluidSensorType.AveragePressure:
+            case FluidSensorType.TotalMass:
                 itemIndex = 7;
                 break;
 
-            case FluidSensorType.AverageTemperatureCelcius:
+            case FluidSensorType.AveragePressure:
                 itemIndex = 8;
                 break;
 
-            case FluidSensorType.AverageTemperatureKelvin:
+            case FluidSensorType.AverageTemperatureCelcius:
                 itemIndex = 9;
                 break;
 
-            case FluidSensorType.Velocity_Absolute_Destructive:
+            case FluidSensorType.AverageTemperatureKelvin:
                 itemIndex = 10;
                 break;
 
-            case FluidSensorType.Velocity_Absolute_Summative:
+            case FluidSensorType.Velocity_Absolute_Destructive:
                 itemIndex = 11;
+                break;
+
+            case FluidSensorType.Velocity_Absolute_Summative:
+                itemIndex = 12;
                 break;
 
             default:

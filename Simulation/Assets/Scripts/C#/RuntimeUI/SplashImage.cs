@@ -11,6 +11,10 @@ public class SplashImage : MonoBehaviour
     // Nonserialized
     private float timePassed = 0.0f;
 
+#if UNITY_EDITOR
+    private void Start() => gameObject.SetActive(false);
+#endif
+
     private void Update()
     {
         timePassed += Mathf.Min(Time.deltaTime, PM.MaxDeltaTime);

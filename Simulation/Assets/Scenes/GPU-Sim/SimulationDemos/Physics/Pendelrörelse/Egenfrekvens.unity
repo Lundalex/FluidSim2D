@@ -242,6 +242,7 @@ MonoBehaviour:
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
+  MinRBVelForMovement: 0.1
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -260,7 +261,7 @@ MonoBehaviour:
   RB_RBFixedCollisionCorrection: 0.05
   RB_RBRigidConstraintCorrectionFactor: 5
   TimeStepsPerFrame: 1
-  SubTimeStepsPerFrame: 1
+  SubTimeStepsPerFrame: 4
   TimeStepType: 1
   TargetFrameRate: 120
   TimeStep: 0.02
@@ -3148,54 +3149,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2002973397}
     m_Modifications:
-    - target: {fileID: 475883828713107543, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: 0.16666667
-      objectReference: {fileID: 0}
-    - target: {fileID: 475883828713107543, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
-      value: 0.16666667
-      objectReference: {fileID: 0}
-    - target: {fileID: 475883828713107543, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
-      value: -0.16666667
-      objectReference: {fileID: 0}
-    - target: {fileID: 475883828713107543, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
-      value: -0.16666667
-      objectReference: {fileID: 0}
-    - target: {fileID: 880632964389661650, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: -7.0833335
-      objectReference: {fileID: 0}
-    - target: {fileID: 880632964389661650, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
-      value: -7.0833335
-      objectReference: {fileID: 0}
-    - target: {fileID: 880632964389661650, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
-      value: 7.0833335
-      objectReference: {fileID: 0}
-    - target: {fileID: 880632964389661650, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
-      value: 7.0833335
-      objectReference: {fileID: 0}
-    - target: {fileID: 2836872399633533280, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: 0.5833333
-      objectReference: {fileID: 0}
-    - target: {fileID: 2836872399633533280, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
-      value: 0.5833333
-      objectReference: {fileID: 0}
-    - target: {fileID: 2836872399633533280, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
-      value: -0.5833333
-      objectReference: {fileID: 0}
-    - target: {fileID: 2836872399633533280, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
-      value: -0.5833333
-      objectReference: {fileID: 0}
     - target: {fileID: 3560894859015958527, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
       propertyPath: main
       value: 
@@ -3219,6 +3172,10 @@ PrefabInstance:
     - target: {fileID: 3993904208264195790, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
       propertyPath: m_Name
       value: SpringVibrator
+      objectReference: {fileID: 0}
+    - target: {fileID: 4026777146569457958, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
+      propertyPath: rbInput.linkedRigidBody
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4215410381692905686, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3259,22 +3216,6 @@ PrefabInstance:
     - target: {fileID: 4215410381692905686, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7398908196091977878, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: -6.033334
-      objectReference: {fileID: 0}
-    - target: {fileID: 7398908196091977878, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
-      value: -6.033334
-      objectReference: {fileID: 0}
-    - target: {fileID: 7398908196091977878, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
-      value: 6.033334
-      objectReference: {fileID: 0}
-    - target: {fileID: 7398908196091977878, guid: f986f2aa7d176ef448aab454aadfa130, type: 3}
-      propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
-      value: 6.033334
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

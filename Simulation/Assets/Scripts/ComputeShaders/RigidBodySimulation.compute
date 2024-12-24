@@ -555,10 +555,10 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
 bool IsNearBoundary(float2 pos, float maxRadiusDstSqr)
 {
     float maxRadiusDst = sqrt(maxRadiusDstSqr);
-    return (pos.x - maxRadiusDst < RigidBodyPadding)
-        || (pos.x + maxRadiusDst > BoundaryDims.x - RigidBodyPadding)
-        || (pos.y - maxRadiusDst < RigidBodyPadding)
-        || (pos.y + maxRadiusDst > BoundaryDims.y - RigidBodyPadding);
+    return (pos.x - maxRadiusDst <= RigidBodyPadding)
+        || (pos.x + maxRadiusDst >= BoundaryDims.x - RigidBodyPadding)
+        || (pos.y - maxRadiusDst <= RigidBodyPadding)
+        || (pos.y + maxRadiusDst >= BoundaryDims.y - RigidBodyPadding);
 }
 
 void GetRBBounds(RigidBody rb,
@@ -855,28 +855,28 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
                         minXVec, maxXVec, minYVec, maxYVec);
 
             // Left boundary
-            if (boundsMin.x < RigidBodyPadding)
+            if (boundsMin.x <= RigidBodyPadding)
             {
                 float2 collisionNormal = float2(1, 0);
                 float2 collisionPoint  = minXVec;
                 ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
             }
             // Right boundary
-            if (boundsMax.x > (BoundaryDims.x - RigidBodyPadding))
+            if (boundsMax.x >= (BoundaryDims.x - RigidBodyPadding))
             {
                 float2 collisionNormal = float2(-1, 0);
                 float2 collisionPoint  = maxXVec;
                 ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
             }
             // Bottom
-            if (boundsMin.y < RigidBodyPadding)
+            if (boundsMin.y <= RigidBodyPadding)
             {
                 float2 collisionNormal = float2(0, 1);
                 float2 collisionPoint  = minYVec;
                 ResolveCollisionRB_Boundary(rb, collisionPoint, collisionNormal);
             }
             // Top
-            if (boundsMax.y > (BoundaryDims.y - RigidBodyPadding))
+            if (boundsMax.y >= (BoundaryDims.y - RigidBodyPadding))
             {
                 float2 collisionNormal = float2(0, -1);
                 float2 collisionPoint  = maxYVec;

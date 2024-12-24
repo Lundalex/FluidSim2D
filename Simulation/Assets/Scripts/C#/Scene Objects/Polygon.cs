@@ -45,8 +45,11 @@ public abstract class Polygon : EditorLifeCycle
     {
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
         Vector2 offset = offsetInput ?? Vector2.zero;
-
-        ValidatePolygonPointsOrderMultiPath();
+    
+        if (Application.isPlaying)
+        {
+            ValidatePolygonPointsOrderMultiPath();
+        }
 
         Edges.Clear();
         MeshPoints.Clear();

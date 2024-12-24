@@ -61,7 +61,7 @@ public class ProgramManager : ScriptableObject
     private readonly Vector2 StandardResolution = new(1920, 1080);
 
     // Private - Animated Texture Scrolling
-    private static readonly float NonSettingsMaterialScrollSpeed = 5.0f;
+    private static readonly float NonSettingsMaterialScrollSpeed = 2.0f;
     private static readonly float SettingsMaterialScrollSpeed = 1.0f;
     private float offset;
 
@@ -509,7 +509,11 @@ public class ProgramManager : ScriptableObject
 
         float resolutionRatio = Resolution.x / Resolution.y;
         float boundaryDimsRatio = main.BoundaryDims.x / (float)main.BoundaryDims.y;
-        if (resolutionRatio != boundaryDimsRatio) Debug.LogWarning("Resolution ratio and BoundaryDims setting in Main do not match. Rendering artifacts may appear");
+        float resBoundsratioDiff = Mathf.Abs(resolutionRatio / boundaryDimsRatio - 1);
+        if (resBoundsratioDiff > 0.05) // Small tolerance to prevent small adjustments by sceneManager.GetBounds in Main to trigger unnecessary warnings
+        {
+            Debug.LogWarning("Resolution ratio and BoundaryDims setting in Main do not match. Rendering artifacts may appear");
+        }
     }
 
     private void SetStaticUIPositions()

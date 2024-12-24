@@ -242,6 +242,7 @@ MonoBehaviour:
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
+  MinRBVelForMovement: 0.1
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 3
@@ -265,9 +266,9 @@ MonoBehaviour:
   TargetFrameRate: 120
   TimeStep: 0.002
   ProgramSpeed: 10
-  MaxInteractionRadius: 25
-  InteractionAttractionPower: 8
-  InteractionFountainPower: 4
+  MaxInteractionRadius: 35
+  InteractionAttractionPower: 10
+  InteractionFountainPower: 0
   InteractionTemperaturePower: 0
   RB_MaxInteractionRadius: 100
   RB_InteractionAttractionPower: 1.5
@@ -512,7 +513,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enabledFluidSensors: []
+  enabledFluidSensors:
+  - {fileID: 1772650994}
+  - {fileID: 1986674132}
   msRigidBodyDataRetrievalInterval: 50
   msFluidDataRetrievalInterval: 50
   msGraphPointSubmissionFrequency: 250
@@ -1074,18 +1077,18 @@ MonoBehaviour:
       x: 1
       y: 1
       z: 1
-  - colorTexture: {fileID: 2800000, guid: d7215cefa2dcd90439e40bf03644d96d, type: 3}
-    colorTextureUpScaleFactor: 25
+  - colorTexture: {fileID: 2800000, guid: a2965a568e7b64937b89fe841854a77c, type: 3}
+    colorTextureUpScaleFactor: 1
     opacity: 1
     transparentEdges: 0
     baseColor:
-      x: 0.1
-      y: 0.1
-      z: 0.1
+      x: 0
+      y: 0
+      z: 0
     sampleColorMultiplier:
-      x: 2
-      y: 2
-      z: 2
+      x: 0.8
+      y: 0.8
+      z: 0.8
     edgeColor:
       x: 1
       y: 1
@@ -1638,15 +1641,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: fluidSensorType
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.x
-      value: 59.5
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.y
-      value: 162.5
+      value: 157.5
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
@@ -1654,7 +1657,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.y
-      value: 45
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
@@ -1662,7 +1665,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.height
-      value: 100
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: newLowerPrefixThreshold
@@ -1718,6 +1721,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
   m_PrefabInstance: {fileID: 1772650991}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1772650994 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+  m_PrefabInstance: {fileID: 1772650991}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1948123782
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1932,7 +1946,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6990916900791070344, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.size
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6990916900791070344, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
@@ -1965,7 +1979,7 @@ PrefabInstance:
     - target: {fileID: 8182692501921918071, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: fieldReference.targetScript
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2034251805}
     - target: {fileID: 9140693601682780920, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: m_Color.b
       value: 0.08627451
@@ -2040,15 +2054,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: fluidSensorType
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.x
-      value: 259.5
+      value: 260.5
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.y
-      value: 162.5
+      value: 157.5
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
@@ -2056,7 +2070,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.y
-      value: 45
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
@@ -2064,7 +2078,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.height
-      value: 100
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: newLowerPrefixThreshold
@@ -2120,6 +2134,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
   m_PrefabInstance: {fileID: 1986674129}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1986674132 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+  m_PrefabInstance: {fileID: 1986674129}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d40786d9088f53f4ab9239f7878836d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2002973396
 GameObject:
   m_ObjectHideFlags: 0
@@ -2149,8 +2174,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2034251804}
   - {fileID: 748329969}
+  - {fileID: 2034251804}
   - {fileID: 1418732513}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2174,6 +2199,14 @@ PrefabInstance:
       propertyPath: userSliderInput
       value: 
       objectReference: {fileID: 1948123785}
+    - target: {fileID: 2290701706720569405, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: leverArmJointLerpFactor
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2823105918141524047, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2889811140312861043, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: m_LocalPosition.x
       value: 159
@@ -2246,6 +2279,14 @@ PrefabInstance:
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
       value: -47.7205
       objectReference: {fileID: 0}
+    - target: {fileID: 5583961373984396234, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -99.47963
+      objectReference: {fileID: 0}
+    - target: {fileID: 5583961373984396234, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.5124359
+      objectReference: {fileID: 0}
     - target: {fileID: 6910812484190179102, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: defaultGridSpacing
       value: 1.6
@@ -2273,6 +2314,14 @@ PrefabInstance:
     - target: {fileID: 8303967165309582595, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
       value: -35.68343
+      objectReference: {fileID: 0}
+    - target: {fileID: 8835858234831154406, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 100.51996
+      objectReference: {fileID: 0}
+    - target: {fileID: 8835858234831154406, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.5167694
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

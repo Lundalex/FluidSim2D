@@ -1,5 +1,6 @@
 public enum FluidSensorType
 {
+    Liquid_Depth,
     Energy_Total_Kinetic,
     Energy_Total_Thermal,
     Energy_Total_Both,

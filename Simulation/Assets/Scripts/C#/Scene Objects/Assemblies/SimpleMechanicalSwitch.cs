@@ -15,6 +15,10 @@ public class SimpleMechanicalSwitch : Assembly
     public float height;
     public float mass;
 
+    [Header("Rail Settings")]
+    public float railPadding;
+    public bool doRenderRail;
+
     [Header("References")]
     [SerializeField] private SceneRigidBody borderCollider;
     [SerializeField] private SceneRigidBody sceneCollider;
@@ -84,10 +88,11 @@ public class SimpleMechanicalSwitch : Assembly
             railSize = new(width, height + minOffset + maxOffset);
             offset   = new(0f, (maxOffset - minOffset) * 0.5f);
         }
-        Vector2[] railVisualizationPoints = GeometryUtils.CenteredRectangle(railSize.x, railSize.y);
+        Vector2[] railVisualizationPoints = GeometryUtils.CenteredRectangle(railSize.x + railPadding, railSize.y + railPadding);
         railVisualization.OverridePolygonPoints(railVisualizationPoints);
         railVisualization.gameObject.transform.position = position + offset;
-        railVisualization.rbInput.localLinkPosOtherRB   = (position - borderBoundaryCenter) + offset;
+        railVisualization.rbInput.localLinkPosOtherRB = (position - borderBoundaryCenter) + offset;
+        railVisualization.rbInput.includeInSimulation = doRenderRail;
 
         // Other properties
         borderCollider.rbInput.mass = mass;
