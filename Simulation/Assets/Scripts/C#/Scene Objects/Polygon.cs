@@ -11,52 +11,100 @@ public abstract class Polygon : EditorLifeCycle
     public float gridSpacing = 1.0f;
     public Color LineColor = Color.black;
     public Color BodyColor = Color.white;
+
     [NonSerialized] public List<Edge> Edges = new();
-    [NonSerialized] public List<Vector2> MeshPoints = new();
+    [NonSerialized] public List<Vector2> MeshPoints = new(); // All points combined
+    [NonSerialized] public List<List<Vector2>> MeshPointsPerPath = new(); // Multi-path drawing
     [NonSerialized] public PolygonCollider2D polygonCollider;
 
-    #if UNITY_EDITOR
-        public override abstract void OnEditorUpdate();
-    #endif
-    
+#if UNITY_EDITOR
+    public override abstract void OnEditorUpdate();
+
+    public virtual void SnapPointsToGrid()
+    {
+        Transform colliderTransform = polygonCollider.transform;
+        int pathCount = polygonCollider.pathCount;
+        for (int p = 0; p < pathCount; p++)
+        {
+            Vector2[] pathPoints = polygonCollider.GetPath(p);
+            for (int i = 0; i < pathPoints.Length; i++)
+            {
+                Vector2 worldPoint = colliderTransform.TransformPoint(pathPoints[i]);
+                worldPoint = new Vector2(
+                    Mathf.Round(worldPoint.x / gridSpacing) * gridSpacing,
+                    Mathf.Round(worldPoint.y / gridSpacing) * gridSpacing
+                );
+                pathPoints[i] = colliderTransform.InverseTransformPoint(worldPoint);
+            }
+            polygonCollider.SetPath(p, pathPoints);
+        }
+    }
+#endif
+
     public void SetPolygonData(Vector2? offsetInput = null)
     {
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
         Vector2 offset = offsetInput ?? Vector2.zero;
 
-        ValidatePolygonPointsOrder();
+        ValidatePolygonPointsOrderMultiPath();
 
-        Edges = new List<Edge>();
-        MeshPoints = new List<Vector2>();
-        Vector2[] points = polygonCollider.points;
-        
-        for (int i = 0; i < points.Length; i++) MeshPoints.Add(transform.TransformPoint(points[i]));
+        Edges.Clear();
+        MeshPoints.Clear();
+        MeshPointsPerPath.Clear();
 
-        for (int i = 0; i < points.Length; i++)
+        // Get edges and meshPoints from all paths
+        int pathCount = polygonCollider.pathCount;
+        for (int p = 0; p < pathCount; p++)
         {
-            Vector2 startPoint = MeshPoints[i];
-            Vector2 endPoint = MeshPoints[(i + 1) % points.Length];
+            Vector2[] localPoints = polygonCollider.GetPath(p);
+            List<Vector2> currentPath = new();
 
-            Edge edge = new(startPoint + offset, endPoint + offset);
-            Edges.Add(edge);
+            // Create points
+            for (int i = 0; i < localPoints.Length; i++)
+            {
+                Vector2 worldPt = transform.TransformPoint(localPoints[i] + offset);
+                MeshPoints.Add(worldPt);
+                currentPath.Add(worldPt);
+            }
+            MeshPointsPerPath.Add(currentPath);
+
+            // Create edges
+            for (int i = 0; i < localPoints.Length; i++)
+            {
+                Vector2 startPoint = transform.TransformPoint(localPoints[i] + offset);
+                Vector2 endPoint = transform.TransformPoint(localPoints[(i + 1) % localPoints.Length] + offset);
+                Edges.Add(new Edge(startPoint, endPoint));
+            }
         }
     }
 
-    private void ValidatePolygonPointsOrder()
+    private void ValidatePolygonPointsOrderMultiPath()
     {
-        if (GeometryUtils.IsClockwise(polygonCollider.points))
+        // Ensure each path is counter clockwise by reversing if clockwise
+        int pathCount = polygonCollider.pathCount;
+        for (int i = 0; i < pathCount; i++)
         {
-            // Reverse the polygonCollider points to be anti-clockwise
-            Vector2[] pts = polygonCollider.points;
-            Array.Reverse(pts);
-            polygonCollider.points = pts;
+            // Get path points (world space)
+            Vector2[] pathPoints = polygonCollider.GetPath(i);
+            Vector2[] worldPathPoints = pathPoints;
+            for (int j = 0; j < worldPathPoints.Length; j++)
+            {
+                worldPathPoints[j] = transform.TransformPoint(worldPathPoints[j]);
+            }
+
+            // Ensure the point ordering is CCW
+            if (GeometryUtils.IsClockwise(worldPathPoints))
+            {
+                Array.Reverse(pathPoints);
+                polygonCollider.SetPath(i, pathPoints);
+            }
         }
     }
 
-    public void OverridePolygonPoints(Vector2[] points)
+    public void OverridePolygonPoints(Vector2[] points, int path = 0)
     {
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-        polygonCollider.points = points;
+        polygonCollider.SetPath(path, points);
     }
 
     public bool IsPointInsidePolygon(Vector2 point)
@@ -70,45 +118,53 @@ public abstract class Polygon : EditorLifeCycle
             Vector2 p2 = edge.end;
 
             // Skip horizontal edges
-            if (p1.y == p2.y) continue;
+            if (Mathf.Approximately(p1.y, p2.y)) continue;
 
-            // Check ray-line intersection
+            // Check ray intersection
             if ((point.y > Mathf.Min(p1.y, p2.y)) && (point.y <= Mathf.Max(p1.y, p2.y)))
             {
                 float xIntersection = (p2.x - p1.x) * (point.y - p1.y) / (p2.y - p1.y) + p1.x;
-
                 if (xIntersection > point.x) intersectionCount++;
             }
         }
 
-        // Point is inside the polygon if intersection count is odd
+        // Odd -> inside, Even -> outside
         return (intersectionCount % 2) == 1;
     }
 
     public void CenterPolygonPosition()
     {
-        // Get the collider's points
-        Vector2[] points = polygonCollider.points;
+        if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
 
-        // Calculate the centroid of the collider in local space
-        Vector2 centroid = Vector2.zero;
-        foreach (Vector2 point in points)
+        // Collect all points
+        List<Vector2> allPoints = new();
+        int pathCount = polygonCollider.pathCount;
+        for (int p = 0; p < pathCount; p++)
         {
-            centroid += point;
+            Vector2[] pathPoints = polygonCollider.GetPath(p);
+            allPoints.AddRange(pathPoints);
         }
-        centroid /= points.Length;
 
-        // Move the transform's position by the centroid offset
+        if (allPoints.Count == 0) return;
+
+        // Compute local centroid
+        Vector2 centroid = Vector2.zero;
+        foreach (Vector2 pt in allPoints) centroid += pt;
+        centroid /= allPoints.Count;
+
+        // Shift transform by that centroid in world space
         Vector3 worldCentroidOffset = transform.TransformVector(centroid);
         transform.position += worldCentroidOffset;
 
-        // Adjust points so that centroid is at local (0,0)
-        for (int i = 0; i < points.Length; i++)
+        // Then offset each path so that centroid is local(0,0)
+        for (int p = 0; p < pathCount; p++)
         {
-            points[i] -= centroid;
+            Vector2[] pathPoints = polygonCollider.GetPath(p);
+            for (int i = 0; i < pathPoints.Length; i++)
+            {
+                pathPoints[i] -= centroid;
+            }
+            polygonCollider.SetPath(p, pathPoints);
         }
-
-        // Apply the adjusted points back to the collider
-        polygonCollider.points = points;
     }
 }

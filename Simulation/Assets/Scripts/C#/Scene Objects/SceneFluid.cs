@@ -31,15 +31,16 @@ public class SceneFluid : Polygon
     private int framesSinceLastPositionChange = 0;
     private Vector2 lastFramePosition = Vector2.zero;
 
-#region Editor
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     public override void OnEditorUpdate()
     {
+        bool userIsModifying = Tools.current == Tool.Move || Tools.current == Tool.Rotate || Tools.current == Tool.Scale;
+        if (userIsModifying) return;
+
         if (polygonCollider == null) polygonCollider = GetComponent<PolygonCollider2D>();
-        
+
         if (!Application.isPlaying)
         {
-            // Avoid continuing if the position field is currently being modified
             if (lastFramePosition.x != transform.position.x || lastFramePosition.y != transform.position.y)
             {
                 lastFramePosition = transform.position;
@@ -48,37 +49,16 @@ public class SceneFluid : Polygon
             else framesSinceLastPositionChange++;
             if (framesSinceLastPositionChange < 10) return;
 
-            // Check whether to center the position
             if (DoCenterPosition)
             {
                 CenterPolygonPosition();
                 DoCenterPosition = false;
             }
             
-            if (snapPointToGrid)
-            {
-                Vector2[] points = polygonCollider.points;
-                Transform colliderTransform = polygonCollider.transform;
-
-                // Snap points to grid in world space
-                for (int i = 0; i < points.Length; i++)
-                {
-                    Vector2 worldPoint = colliderTransform.TransformPoint(points[i]);
-
-                    worldPoint = new Vector2(
-                        Mathf.Round(worldPoint.x / gridSpacing) * gridSpacing,
-                        Mathf.Round(worldPoint.y / gridSpacing) * gridSpacing
-                    );
-
-                    points[i] = colliderTransform.InverseTransformPoint(worldPoint);
-                }
-
-                polygonCollider.points = points;
-            }
+            if (snapPointToGrid) SnapPointsToGrid();
         }
     }
-    #endif
-#endregion
+#endif
 
     private void OnValidate() => PM.Instance.doOnSettingsChanged = true;
     
@@ -90,7 +70,6 @@ public class SceneFluid : Polygon
         SetPolygonData();
         List<Vector2> generatedPoints = GeneratePoints(gridSpacing);
 
-        // Check if pTypeIndex is within range of all pTypes
         if (pTypeIndex >= pTypeInput.particleTypeStates.Length * 3) Debug.LogError("pTypeIndex outside valid range. SceneFluid: " + this.name);
 
         PData[] pDatas = new PData[generatedPoints.Count];
@@ -106,14 +85,13 @@ public class SceneFluid : Polygon
     {
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
-        bool editorView = gridSpacing == -1;
+        bool editorView = (gridSpacing == -1);
         if (editorView) gridSpacing = editorGridSpacing;
         else if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
 
         SceneRigidBody[] allRigidBodies = SceneManager.GetAllSceneRigidBodies();
         SceneFluid[] allFluids = SceneManager.GetAllSceneFluids();
 
-        // Find the bounding box of the polygon
         Vector2 min = Func.MinVector2(Edges.Select(edge => Func.MinVector2(edge.start, edge.end)).ToArray());
         Vector2 max = Func.MaxVector2(Edges.Select(edge => Func.MaxVector2(edge.start, edge.end)).ToArray());
 
@@ -122,7 +100,6 @@ public class SceneFluid : Polygon
         max.x += max.x % editorGridSpacing;
         max.y += max.y % editorGridSpacing;
 
-        // Generate grid points within the bounding box
         int iterationCount = 0;
         List<Vector2> generatedPoints = new();
         for (float x = min.x; x <= max.x; x += gridSpacing)
@@ -131,9 +108,12 @@ public class SceneFluid : Polygon
             {
                 Vector2 point = new(x, y);
 
-                if (IsPointInsidePolygon(point) && sceneManager.IsPointInsideBounds(point) && sceneManager.IsSpaceEmpty(point, this, allRigidBodies, allFluids))
+                if (IsPointInsidePolygon(point) &&
+                    sceneManager.IsPointInsideBounds(point) &&
+                    sceneManager.IsSpaceEmpty(point, this, allRigidBodies, allFluids))
                 {
-                    if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints;
+                    if (++iterationCount > MaxGizmosIterations && editorView)
+                        return generatedPoints;
 
                     generatedPoints.Add(point);
                 }
@@ -149,13 +129,13 @@ public class SceneFluid : Polygon
         {
             predPos = new float2(0.0f, 0.0f),
             pos = pos,
-            vel = new(0, 0),
+            vel = new float2(0, 0),
             lastVel = new float2(0.0f, 0.0f),
             density = 0.0f,
             nearDensity = 0.0f,
             temperature = Utils.CelsiusToKelvin(tempCelsius),
             temperatureExchangeBuffer = 0.0f,
-            lastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll // flattened equivelant to PType = 1
+            lastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll
         };
     }
 }

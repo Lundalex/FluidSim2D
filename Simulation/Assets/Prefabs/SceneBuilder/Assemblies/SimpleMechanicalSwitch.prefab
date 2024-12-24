@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2603694296442392666}
   - component: {fileID: 8289308510336658660}
   m_Layer: 0
-  m_Name: MechanicalSwitch
+  m_Name: SimpleMechanicalSwitch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

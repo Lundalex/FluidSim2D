@@ -15,6 +15,7 @@ namespace Resources2
         public static readonly float Sqrt2Div3 = 0.8165f; // sqrt(2 / 3)
         public static readonly float PI = 3.14159265f;
         public static readonly float LARGE_FLOAT = 1e6f;
+        public static readonly Vector2 Vector2Epsilon = new(1e-6f, 1e-6f);
     }
 #endregion
 
@@ -396,15 +397,20 @@ namespace Resources2
 #region Geometry
     public static class GeometryUtils
     {
-        public static Vector2[] Rectangle(float top, float bottom, float left, float right)
+        public static Vector2[] Rectangle(float top, float bottom, float left, float right, Vector2? offsetInput = null)
         {
-            return new Vector2[]
+            Vector2[] vertices = new Vector2[]
             {
                 new(left, bottom),
                 new(right, bottom),
                 new(right, top),
                 new(left, top)
             };
+
+            Vector2 offset = offsetInput ?? Vector2.zero;
+            for (int i = 0; i < 4 && offset != Vector2.zero; i++) vertices[i] += offset;
+
+            return vertices;
         }
 
         public static Vector2[] CenteredRectangle(float width, float height)

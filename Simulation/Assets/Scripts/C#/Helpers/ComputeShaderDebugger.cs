@@ -50,5 +50,7 @@ public class ComputeShaderDebugger
         debugShader.SetFloat("CS_MIR", m.MaxInfluenceRadius);
         debugShader.SetVector("CS_BOUNDARY_DIMS", new Vector2(m.BoundaryDims.x, m.BoundaryDims.y));
         debugShader.SetInt("CS_PTYPES_NUM_COPY", pTypeInput.particleTypeStates.Length * 3);
+
+        debugShader.SetFloat("CS_PATH_FLAG_OFFSET", Main.PathFlagOffset);
     }
 }

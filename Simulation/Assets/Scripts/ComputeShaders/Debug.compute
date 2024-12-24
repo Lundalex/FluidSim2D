@@ -19,6 +19,8 @@ const float CS_MIR; // Key: 10, MaxInfluenceRadius
 const int2 CS_BOUNDARY_DIMS; // Key: 11
 const int CS_PTYPES_NUM_COPY; // Key: 12
 
+const int CS_PATH_FLAG_OFFSET; // Key: 13
+
 struct DebugData
 {
     int incorrectVariableKey; // -1 -> No incorrect variables
@@ -48,6 +50,7 @@ void CheckShaderConstants (uint3 id : SV_DispatchThreadID)
     else if (CS_TN_S != TN_S) incorrectVariableKey = 7;
     else if (CS_INT_FLOAT_PRECISION_RB != INT_FLOAT_PRECISION_RB) incorrectVariableKey = 8;
     else if (CS_INT_FLOAT_PRECISION_P != INT_FLOAT_PRECISION_P) incorrectVariableKey = 9;
+    else if (CS_PATH_FLAG_OFFSET != PATH_FLAG_OFFSET) incorrectVariableKey = 13;
 
     DebugDatas[id.x] = InitDebugData(incorrectVariableKey);
 }

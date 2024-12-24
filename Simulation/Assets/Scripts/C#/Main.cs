@@ -30,13 +30,14 @@ public class Main : MonoBehaviour
     public float FloatIntPrecisionP = 1000.0f; // Particle Simulation
 #endregion
 
-#region Fluid Simulation
-    // Safety
+#region Safety
     public float MaxPVel = 100;
     public float MaxRBRotVel = 100;
     public float MaxRBVel = 100;
+    public float MinRBVelForMovement = 0.1f;
+#endregion
 
-    // (Other settings)
+#region Fluid Simulation
     public float LookAheadTime = 0.017f;
     public float StateThresholdPadding = 3.0f;
     public int MaxInfluenceRadius = 2;
@@ -163,6 +164,10 @@ public class Main : MonoBehaviour
     public float3 BackgroundBrightness;
     public float BackgroundUpScaleFactor;
     public bool MirrorRepeatBackgroundUV;
+
+    // Rigid body path flags
+    public static readonly float PathFlagOffset = 100000.0f;
+    public static readonly float PathFlagThreshold = PathFlagOffset / 2.0f;
 #endregion
 
 #region References

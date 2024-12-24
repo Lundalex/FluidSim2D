@@ -276,6 +276,7 @@ public class ShaderHelper : MonoBehaviour
 
         rbSimShader.SetFloat("MaxRBRotVel", m.MaxRBRotVel);
         rbSimShader.SetFloat("MaxRBVel", m.MaxRBVel);
+        rbSimShader.SetFloat("MinRBVelForMovement", m.MinRBVelForMovement);
 
         rbSimShader.SetFloat("RB_MaxInteractionRadius", m.RB_MaxInteractionRadius);
         rbSimShader.SetFloat("RB_InteractionAttractionPower", m.RB_InteractionAttractionPower);

@@ -1,7 +1,7 @@
 using UnityEngine;
 using Resources2;
 using PM = ProgramManager;
-public class MechanicalSwitch : Assembly
+public class SimpleMechanicalSwitch : Assembly
 {
     [Header("Movability Settings")]
     [SerializeField] private Axis2D axis;

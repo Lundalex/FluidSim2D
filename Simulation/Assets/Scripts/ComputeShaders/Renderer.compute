@@ -53,6 +53,7 @@ const float SpringRenderRodLength;
 const float TaperThresoldNormalised;
 const float2 SpringTextureUVFactor;
 
+// Other
 const uint2 Resolution;
 const uint2 BoundaryDims;
 const float2 ScreenToViewFactor;
@@ -213,7 +214,6 @@ void SetResultColor(uint2 id, float3 color)
     color *= GlobalBrightness * GlobalBrightnessFactor;
 
     color = saturate(color);
-
     Result[id] = float4(color, 1.0);
 }
 
@@ -242,33 +242,60 @@ bool IsOutsideSimBounds(float2 pixelPos)
     return 0 > pixelPos.x || pixelPos.x > (float)BoundaryDims.x || 0 > pixelPos.y || pixelPos.y > (float)BoundaryDims.y;
 }
 
+// This function is called often, and performs in O(n) time (n: number of vertices in rb)
+// Overall, worst scenario, each thread performs at O(n^2) time (n: number of vertices of each rb)
+// For very large amounts of rb:s, the program performs in O(n^2 * k) time (n: number of vertices of each rb, k: number of rbs)
+// This is also true for RayRBDstHitInfo (rbSimShader), IsPointInsideRB (rbSimShader), and DstToRB (renderShader)
+// TODO: Implement a BVH-sort of method for improving the O-complexity for large scenes
 bool IsPointInsideRB(float2 pos, RigidBody rb)
 {
-    // Transform the point position into the local coordinate space of the rigid body
-    float2 localPos = pos - rb.pos;
+    // Shift to local space
+    pos -= rb.pos;
 
     uint intersections = 0;
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
     uint numVertices = endIndex - startIndex + 1;
+    uint pathStartIndex  = startIndex;
+    
+    // First vertex
+    float2 firstPathVec = RBVectors[startIndex].pos;
+    float2 lastVec = firstPathVec;
 
-    float2 lastVec = RBVectors[startIndex].pos;
-    for (uint i = 0; i < numVertices; i++)
+    // Perform point-line tests for every edge
+    for (uint i = 1; i <= numVertices; i++)
     {
-        uint vecIndex = wrapUint(startIndex + i, startIndex, endIndex);
+        // Wrap at the end
+        uint vecIndex = (i == numVertices) ? pathStartIndex : (startIndex + i);
         float2 newVec = RBVectors[vecIndex].pos;
 
-        // Check if the edge from lastVec to newVec intersects the horizontal ray to the right of localPos
-        if (IsPointToTheLeftOfLine(localPos, lastVec, newVec)) intersections++;
+        bool newPathFlag = (newVec.x > PATH_FLAG_THRESHOLD);
+        if (newPathFlag)
+        {
+            // Close the subpath: (lastVec -> firstPathVec)
+            if (IsPointToTheLeftOfLine(pos, lastVec, firstPathVec)) intersections++;
 
-        lastVec = newVec;
+            // Remove the marker offset
+            newVec.x -= PATH_FLAG_OFFSET;
+
+            // Start a new subpath
+            firstPathVec = newVec;
+            lastVec = newVec;
+            pathStartIndex = vecIndex;
+        }
+        else
+        {
+            // Normal edge: (lastVec -> newVec)
+            if (IsPointToTheLeftOfLine(pos, lastVec, newVec)) intersections++;
+
+            lastVec = newVec;
+        }
     }
 
-    // The point is inside the polygon if the number of intersections is odd
-    bool isInside = (intersections % 2) == 1;
-
-    return isInside;
+    // Odd # intersections => inside
+    return ((intersections % 2) == 1);
 }
+
 
 bool IsInsideArea(float2 pos, float2 min2, float2 max2)
 {
@@ -277,27 +304,58 @@ bool IsInsideArea(float2 pos, float2 min2, float2 max2)
 
 float DstToRB(float2 pos, RigidBody rb)
 {
-    // Keep the last vector stored to avoid redundant data fetches
-    RBVector lastVec = RBVectors[rb.startIndex];
+    pos -= rb.pos;
 
+    // Track the minimum distance-squared
     float minDstSqr = 1.#INF;
+
     uint startIndex = rb.startIndex;
     uint endIndex = rb.endIndex;
-    for (uint vecIndex = startIndex + 1; vecIndex <= endIndex; vecIndex++)
+    uint numVertices = endIndex - startIndex + 1;
+    uint pathStartIndex = startIndex;
+
+    // First vertex
+    float2 firstPathVec = RBVectors[startIndex].pos;
+    float2 lastVec = firstPathVec;
+
+    // Perform point-line tests for every edge
+    for (uint i = 1; i <= numVertices; i++)
     {
-        RBVector newVec = RBVectors[wrapUint(vecIndex, startIndex, endIndex)];
+        uint vecIndex = (i == numVertices) ? pathStartIndex : (startIndex + i);
+        float2 newVec    = RBVectors[vecIndex].pos;
 
-        float2 dst = DstToLineSegment(lastVec.pos + rb.pos, newVec.pos + rb.pos, pos);
+        bool newPathFlag = (newVec.x > PATH_FLAG_THRESHOLD);
+        if (newPathFlag)
+        {
+            // Close the subpath: (lastVec -> firstPathVec)
+            // Block-scope for local variables
+            {
+                float2 dst = DstToLineSegment(lastVec, firstPathVec, pos);
+                float dstSqr = dot2(dst);
+                if (dstSqr < minDstSqr)
+                    minDstSqr = dstSqr;
+            }
 
-        float dstSqr = dot2(dst);
-        if (dstSqr < minDstSqr) minDstSqr = dstSqr;
+            // Remove the marker offset
+            newVec.x -= PATH_FLAG_OFFSET;
 
-        lastVec = newVec;
+            // Start a new subpath
+            firstPathVec = newVec;
+            lastVec = newVec;
+            pathStartIndex = vecIndex;
+        }
+        else
+        {
+            // Normal edge: (lastVec -> newVec)
+            float2 dst = DstToLineSegment(lastVec, newVec, pos);
+            float dstSqr = dot2(dst);
+            if (dstSqr < minDstSqr) minDstSqr = dstSqr;
+
+            lastVec = newVec;
+        }
     }
 
-    float dst = minDstSqr == 1.#INF ? 1.#INF : sqrt(minDstSqr);
-
-    return dst;
+    return (minDstSqr == 1.#INF) ? 1.#INF : sqrt(minDstSqr);
 }
 
 float MetaballsDensity(float dst, float invRadius)
@@ -352,7 +410,7 @@ float2 GetPixelPos(uint2 pixelID)
 
 float2 ComputeBackgroundUVFromPixelPos(float2 pixelPos)
 {
-    // Reverse-engineer pixel IDs from pixel positions
+    // pixelID from pixel positions
     float2 pixelID = (pixelPos - ViewOffset) / ViewScale - 0.5;
 
     // Scale texture dimensions
@@ -546,10 +604,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             float patternPos = pixelPos.x + pixelPos.y + RealTimeElapsed * SensorAreaAnimationSpeed;
             float patternPosMod = patternPos % patternMod;
 
-            if (patternPosMod < patternMod * 0.5)
-            {
-                sensorAreaTint += sensorArea.colorTint;
-            }
+            if (patternPosMod < patternMod * 0.5) sensorAreaTint += sensorArea.colorTint;
         }
     }
 
@@ -608,19 +663,13 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     }
 
     #if DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
-        // If no particle was found, but the pixel is inside a sensor area
         if (!doDrawFluid && isInsideAnySensorArea)
         {
-            // Optionally, blend with background if needed
             float3 background = BlendWithBackground(0, 0, id.xy);
             result = sensorAreaTint.rgb * sensorAreaTint.a + background * (1.0 - sensorAreaTint.a);
         }
         else if (doDrawFluid) { } // Do nothing
-        else
-        {
-            // Set result to background color color
-            result = BlendWithBackground(0, 0, id.xy);
-        }
+        else result = BlendWithBackground(0, 0, id.xy);
 
         if (isInsideAnySensorArea) result = sensorAreaTint.rgb * sensorAreaTint.a + result * (1.0 - sensorAreaTint.a);
 
@@ -647,12 +696,7 @@ void RenderRigidBodies(uint3 id : SV_DispatchThreadID)
         float dstSqr = dot2(pixelPos - rb.pos);
 
         #if DRAW_RB_CENTROIDS
-            // Check proximity to centroid
-            bool doRenderPoint = false;
-            if (dstSqr < CENTROID_RADIUS_SQR)
-            {
-                doRenderPoint = true;
-            }
+            bool doRenderPoint = dstSqr < CENTROID_RADIUS_SQR;
             
             // Check proximity to other important positions
             if (!doRenderPoint)
@@ -863,7 +907,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
 
         // Check if:
         // 1. The rigid body is linked to another rigid body
-        // 2. The link is a non-rigid constraint (i.e., if springLength != 0)
+        // 2. The link is a non-rigid constraint (that is, if springLength != 0)
         // 3. The rigid body render priority is higher than the currently rendered spring
         bool isLinked = rbA.linkedRBIndex != -1 && rbA.linkedRBIndex != (int)rbIndex;
         bool rigidConstraint = stiffness == 0.0;

@@ -37,10 +37,9 @@ public class SceneManager : MonoBehaviour
     public int2 GetBounds(int maxInfluenceRadius)
     {
         int2 bounds = new(Mathf.CeilToInt(transform.localScale.x), Mathf.CeilToInt(transform.localScale.y));
-
         int2 boundsMod = bounds % maxInfluenceRadius;
 
-        // Round bounds up to next multiple of maxInfluenceRadius
+        // Round bounds up to the next multiple of maxInfluenceRadius
         if (boundsMod.x != 0) bounds.x += maxInfluenceRadius - boundsMod.x;
         if (boundsMod.y != 0) bounds.y += maxInfluenceRadius - boundsMod.y;
 
@@ -66,7 +65,7 @@ public class SceneManager : MonoBehaviour
 
     public bool IsSpaceEmpty(Vector2 point, SceneFluid thisFluid, SceneRigidBody[] allRigidBodies, SceneFluid[] allFluids)
     {
-        // Check whether the point if inside of any rigid body. If so, the rigid body will take priority for this point in space.
+        // Check whether the point is inside any rigid body with a fluid collider
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
             ColliderType colliderType = rigidBody.rbInput.colliderType;
@@ -74,12 +73,12 @@ public class SceneManager : MonoBehaviour
             if (rigidBody.IsPointInsidePolygon(point) && isFluidCollider) return false;
         }
 
-        // Sort fluids with respect to the sibling indices
+        // Sort fluids with respect to sibling indices
         SceneFluid[] sortedFluids = allFluids
             .OrderBy(fluid => fluid.transform.GetSiblingIndex())
             .ToArray();
         
-        // Check if any other fluid with a lower sibling index occupies the same space.
+        // Check if a lower index fluid occupies the same space
         int thisFluidIndex = Array.IndexOf(sortedFluids, thisFluid);
         for (int i = 0; i < thisFluidIndex; i++)
         {
@@ -96,7 +95,10 @@ public class SceneManager : MonoBehaviour
         {
             if (mat.colorTexture != null)
             {
-                if (!mat.colorTexture.isReadable) Debug.LogWarning("Color Texture " + mat.colorTexture.name + " is not readable. Read/Write needs to be set to true");
+                if (!mat.colorTexture.isReadable)
+                {
+                    Debug.LogWarning("Color Texture " + mat.colorTexture.name + " is not readable. Enable Read/Write.");
+                }
                 textures.Add(mat.colorTexture);
             }
         }
@@ -105,7 +107,7 @@ public class SceneManager : MonoBehaviour
         Rect[] rects = new Rect[0];
         if (textures.Count > 0) rects = atlas.PackTextures(textures.ToArray(), 1, MaxAtlasDims);
 
-        StringUtils.LogIfInEditor("Texture atlas constructed with " + rects.Length + " textures. Width: " + atlas.width + ". Height: " + atlas.height);
+        StringUtils.LogIfInEditor("Texture atlas: " + rects.Length + " textures. " + atlas.width + "x" + atlas.height);
 
         int2 GetTexLoc(Rect rect) => new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height));
         int2 GetTexDims(Rect rect) => new((int)(rect.width * atlas.width), (int)(rect.height * atlas.height));
@@ -115,7 +117,6 @@ public class SceneManager : MonoBehaviour
         for (int i = 0; i < matInputs.Length; i++)
         {
             MatInput matInput = matInputs[i];
-
             Mat mat;
             if (matInput.colorTexture != null)
             {
@@ -123,8 +124,10 @@ public class SceneManager : MonoBehaviour
                 mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rect), GetTexDims(rect));
                 rectIndex++;
             }
-            else mat = InitMat(matInput, matInput.baseColor, -1, -1);
-
+            else
+            {
+                mat = InitMat(matInput, matInput.baseColor, -1, -1);
+            }
             renderMats[i] = mat;
         }
 
@@ -149,17 +152,14 @@ public class SceneManager : MonoBehaviour
     {
         if (maxParticlesNum == 0) return new PData[0];
 
-        // Get all fluid instances
+        // Gather all fluids
         SceneFluid[] allFluids = GetAllSceneFluids();
-
         Vector2 offset = GetBoundsOffset();
 
-        // Get the particle positions for each fluid object in the scene
         List<PData> allPDatas = new();
         foreach (SceneFluid fluid in allFluids)
         {
             PData[] pDatas = fluid.GenerateParticles(offset, gridSpacing);
-
             foreach (var pData in pDatas)
             {
                 allPDatas.Add(pData);
@@ -173,7 +173,6 @@ public class SceneManager : MonoBehaviour
     public (RBData[], RBVector[], SensorArea[]) CreateRigidBodies(float? rbCalcGridSpacingInput = null)
     {
         float rbCalcGridSpacing = rbCalcGridSpacingInput ?? 0.2f;
-
         if (!referencesHaveBeenSet) SetReferences();
 
         SceneRigidBody[] allRigidBodies = GetAllSceneRigidBodies();
@@ -184,75 +183,107 @@ public class SceneManager : MonoBehaviour
             rigidBody.ComputeCentroid(rbCalcGridSpacing);
         }
 
-        // Remove duplicate points
+        // Remove duplicates
         foreach (SceneRigidBody rigidBody in allRigidBodies)
         {
-            if (rigidBody.polygonCollider == null) rigidBody.polygonCollider = rigidBody.GetComponent<PolygonCollider2D>();
-            rigidBody.polygonCollider.points = ArrayUtils.RemoveAdjacentDuplicates(rigidBody.polygonCollider.points);
+            if (rigidBody.polygonCollider == null)
+            {
+                rigidBody.polygonCollider = rigidBody.GetComponent<PolygonCollider2D>();
+            }
+
+            int pathCount = rigidBody.polygonCollider.pathCount;
+            for (int p = 0; p < pathCount; p++)
+            {
+                Vector2[] pathPoints = rigidBody.polygonCollider.GetPath(p);
+                pathPoints = ArrayUtils.RemoveAdjacentDuplicates(pathPoints);
+                rigidBody.polygonCollider.SetPath(p, pathPoints);
+            }
         }
 
         Vector2 boundsOffset = GetBoundsOffset();
 
-        // Get the rigidBody data for each rigidBody
+        // Final data
         List<RBData> allRBData = new();
         List<RBVector> allRBVectors = new();
         List<Sensor> sensors = new();
+
         for (int i = 0; i < allRigidBodies.Length; i++)
         {
             SceneRigidBody rigidBody = allRigidBodies[i];
-
             if (!rigidBody.rbInput.includeInSimulation) continue;
 
-            // Calculate the parent offset
             Transform transform = rigidBody.transform;
             Vector2 parentOffset = transform.position - transform.localPosition;
 
-            // Transform points to local space
-            Vector2 transformedRBPos = (Vector2)rigidBody.transform.position + boundsOffset;
-            Vector2[] vectors = GetTransformedPoints(rigidBody, boundsOffset, transformedRBPos);
-            if (rigidBody.addInBetweenPoints) AddInBetweenPoints(ref vectors, rigidBody.doRecursiveSubdivisison, rigidBody.minDstForSubDivision);
+            Vector2[] vectors = GetTransformedMultiPathPoints(rigidBody, boundsOffset, out Vector2 transformedRBPos);
+            if (rigidBody.addInBetweenPoints)
+            {
+                AddInBetweenPoints(ref vectors, rigidBody.doRecursiveSubdivisison, rigidBody.minDstForSubDivision);
+            }
 
-            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridSpacing);
+            (float inertia, float maxRadiusSqr) = rigidBody.ComputeInertiaAndBalanceRigidBody(
+                ref vectors, ref transformedRBPos, boundsOffset, rbCalcGridSpacing
+            );
 
-            // Get the index of the rigid body linked via a spring
             RBInput rbInput = rigidBody.rbInput;
-            int springLinkedRBIndex = rbInput.linkedRigidBody == null ? -1 : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
-            if (rigidBody.rbInput.constraintType == ConstraintType.Spring && springLinkedRBIndex == -1) Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            int springLinkedRBIndex = rbInput.linkedRigidBody == null
+                ? -1
+                : Array.IndexOf(allRigidBodies, rbInput.linkedRigidBody);
+
+            if (rbInput.constraintType == ConstraintType.Spring && springLinkedRBIndex == -1)
+            {
+                Debug.LogError("Linked rigid body not set. SceneRigidBody: " + rigidBody.name);
+            }
             else if (i == springLinkedRBIndex)
             {
-                Debug.LogWarning("Attempted to link rigid body via spring to itself. Link will be removed");
+                Debug.LogWarning("Spring to self. Removed.");
                 rbInput.constraintType = ConstraintType.None;
             }
 
-            // Calculate the spring rest length
+            // Auto-spring length
             float springRestLength = rbInput.springRestLength;
             if (rbInput.linkedRigidBody != null && rbInput.autoSpringRestLength)
             {
-                float dstBetweenLinkPoints = Vector2.Distance(rigidBody.cachedCentroid + rbInput.localLinkPosThisRB,
-                                                    rbInput.linkedRigidBody.cachedCentroid + rbInput.localLinkPosOtherRB);
-                springRestLength = dstBetweenLinkPoints;
+                float distance = Vector2.Distance(
+                    rigidBody.cachedCentroid + rbInput.localLinkPosThisRB,
+                    rbInput.linkedRigidBody.cachedCentroid + rbInput.localLinkPosOtherRB
+                );
+                springRestLength = distance;
             }
 
-            if (springLinkedRBIndex != -1 && rbInput.localLinkPosThisRB.x != 0 && rbInput.localLinkPosThisRB.y != 0 &&
-                rbInput.localLinkPosOtherRB.x != 0 && rbInput.localLinkPosOtherRB.y != 0 && rbInput.constraintType == ConstraintType.Rigid)
-                Debug.LogWarning("Rigid links should not have points with offsets from both linked rigid bodies. This may cause to simulation instabilities");
-            
-            // Initialize the rigid body data
-            allRBData.Add(InitRBData(rigidBody.rbInput, inertia, maxRadiusSqr, springLinkedRBIndex, springRestLength, allRBVectors.Count, allRBVectors.Count + vectors.Length, transformedRBPos, parentOffset));
-            
-            // Initialize the rigid body vector datas
-            foreach (Vector2 vector in vectors) allRBVectors.Add(new RBVector(vector, i));
+            int startIndex = allRBVectors.Count;
+            foreach (Vector2 v in vectors)
+            {
+                allRBVectors.Add(new RBVector(v, i));
+            }
+            int endIndex = allRBVectors.Count - 1;
 
-            // Add sensor to sensors, while making sure there are no dupicate assignments
+            allRBData.Add(InitRBData(
+                rbInput,
+                inertia,
+                maxRadiusSqr,
+                springLinkedRBIndex,
+                springRestLength,
+                startIndex,
+                endIndex,
+                transformedRBPos,
+                parentOffset
+            ));
+
+            // Sensors
             foreach (var sensor in rigidBody.linkedSensors)
             {
-                if (sensors.Contains(sensor)) Debug.LogWarning("Duplicate sensor rigid body assignments. Sensor name: " + sensor.name);
+                if (sensors.Contains(sensor))
+                {
+                    Debug.LogWarning("Duplicate sensor " + sensor.name);
+                }
                 else
                 {
                     if (sensor is RigidBodySensor rigidBodySensor && rigidBodySensor != null)
                     {
                         rigidBodySensor.linkedRBIndex = i;
                         sensors.Add(sensor);
+
                         sensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
                         sensor.Initialize(transformedRBPos);
                     }
@@ -260,32 +291,61 @@ public class SceneManager : MonoBehaviour
             }
         }
 
-        // Initialize fluid sensors and get related data
+        // Fluid sensors
         List<SensorArea> sensorAreas = new();
         foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
         {
-            if (fluidSensor != null)
-            {
-                sensors.Add(fluidSensor);
-                fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
-                fluidSensor.Initialize(Vector2.zero);
-                sensorAreas.Add(fluidSensor.GetSensorAreaData());
-            }
+            if (fluidSensor == null) continue;
+            sensors.Add(fluidSensor);
+
+            fluidSensor.SetReferences(sensorUIContainer, sensorOutlineContainer, main, sensorManager, canvasResolution);
+            fluidSensor.Initialize(Vector2.zero);
+
+            sensorAreas.Add(fluidSensor.GetSensorAreaData());
         }
 
-        // Assign sensors to sensorManager
+        // Assign
         sensorManager.sensors = sensors;
 
         return (allRBData.ToArray(), allRBVectors.ToArray(), sensorAreas.ToArray());
     }
 
-    public static void AddInBetweenPointsRecursively(ref Vector2[] vectors, float minDst)
+    private Vector2[] GetTransformedMultiPathPoints(SceneRigidBody rigidBody, Vector2 offset, out Vector2 transformedRBPos)
+    {
+        List<Vector2> combined = new();
+        PolygonCollider2D poly = rigidBody.GetComponent<PolygonCollider2D>();
+
+        for (int p = 0; p < poly.pathCount; p++)
+        {
+            Vector2[] pathPoints = poly.GetPath(p);
+
+            for (int i = 0; i < pathPoints.Length; i++)
+            {
+                Vector2 worldPt = rigidBody.transform.TransformPoint(pathPoints[i]);
+                
+                // Mark the start of a new sub-path
+                if (p > 0 && i == 0) worldPt.x += Main.PathFlagOffset;
+
+                combined.Add(worldPt);
+            }
+        }
+
+        transformedRBPos = (Vector2)rigidBody.transform.position + offset;
+        for (int i = 0; i < combined.Count; i++)
+        {
+            combined[i] = combined[i] + offset - transformedRBPos;
+        }
+
+        return combined.ToArray();
+    }
+
+    // Not tested thoroughly with multi-path polygons
+    private static void AddInBetweenPointsRecursively(ref Vector2[] vectors, float minDst)
     {
         bool needsSubdivision = false;
         List<Vector2> newVectors = new();
 
         int count = vectors.Length;
-
         for (int i = 0; i < count; i++)
         {
             Vector2 current = vectors[i];
@@ -293,22 +353,30 @@ public class SceneManager : MonoBehaviour
 
             newVectors.Add(current);
 
-            float distance = Vector2.Distance(current, next);
+            // Check subpath markers
+            bool currentIsMarker = current.x > Main.PathFlagThreshold;
+            bool nextIsMarker    = next.x > Main.PathFlagThreshold;
 
-            if (distance > minDst)
+            // Only subdivide if neither vertex is a marker
+            if (!currentIsMarker && !nextIsMarker)
             {
-                // Compute the in-between point
-                Vector2 inBetween = (current + next) / 2;
-
-                newVectors.Add(inBetween);
-                needsSubdivision = true;
+                float distance = Vector2.Distance(current, next);
+                if (distance > minDst)
+                {
+                    Vector2 inBetween = (current + next) / 2f;
+                    newVectors.Add(inBetween);
+                    needsSubdivision = true;
+                }
             }
         }
 
         vectors = newVectors.ToArray();
 
-        // Recursively call the function if any subdivisions were made
-        if (needsSubdivision) AddInBetweenPointsRecursively(ref vectors, minDst);
+        // If we added any new midpoints, another subdivision might be required
+        if (needsSubdivision)
+        {
+            AddInBetweenPointsRecursively(ref vectors, minDst);
+        }
     }
 
     public static void AddInBetweenPoints(ref Vector2[] vectors, bool doRecursiveSubdivisison, float minDst)
@@ -320,44 +388,65 @@ public class SceneManager : MonoBehaviour
         }
         else
         {
-            int count = vectors.Length;
+            int numVectors = vectors.Length;
             List<Vector2> newVectors = new();
-            for (int i = 0; i < count; i++)
+
+            int pathStartIndex = 0;
+            Vector2 firstPathVec = vectors[0];
+            Vector2 lastVec = firstPathVec;
+            newVectors.Add(lastVec);
+
+            for (int i = 1; i <= numVectors; i++)
             {
-                Vector2 current = vectors[i];
-                Vector2 next = vectors[(i + 1) % count];
+                bool endOfArray = i == numVectors;
+                int vecIndex = endOfArray ? pathStartIndex : i;
+                Vector2 nextVec = vectors[vecIndex];
 
-                newVectors.Add(current);
+                Vector2 inBetween;
+                bool newPathFlag = nextVec.x > Main.PathFlagThreshold;
+                if (newPathFlag)
+                {
+                    nextVec.x -= Main.PathFlagOffset;
+                    
+                    inBetween = (lastVec + firstPathVec) / 2.0f;
+                    
+                    firstPathVec = nextVec;
+                    lastVec = nextVec;
+                    pathStartIndex = vecIndex;
 
-                Vector2 inBetween = (current + next) / 2;
+                    nextVec.x += Main.PathFlagOffset;
+                }
+                else
+                {
+                    inBetween = (lastVec + nextVec) / 2.0f;
+                    lastVec = nextVec;
+                }
 
                 newVectors.Add(inBetween);
+                if (!endOfArray) newVectors.Add(nextVec);
             }
 
             vectors = newVectors.ToArray();
         }
     }
 
-    private Vector2[] GetTransformedPoints(SceneRigidBody rigidBody, Vector2 offset, Vector2 transformedRBPos)
+    private Vector2 GetBoundsOffset()
     {
-        Vector2[] vectors = rigidBody.GetComponent<PolygonCollider2D>().points;
-
-        for (int i = 0; i < vectors.Length; i++) vectors[i] = (Vector2)rigidBody.transform.TransformPoint(vectors[i]) + offset - transformedRBPos;
-        
-        return vectors;
+        return new Vector2(
+            transform.localScale.x * 0.5f - transform.position.x,
+            transform.localScale.y * 0.5f - transform.position.y
+        );
     }
 
     public static SceneRigidBody[] GetAllSceneRigidBodies()
     {
         List<GameObject> rigidBodyObjects = GameObject.FindGameObjectsWithTag("RigidBody").ToList();
-
         List<SceneRigidBody> validRigidBodies = new();
         foreach (GameObject rigidBodyObject in rigidBodyObjects)
         {
-            SceneRigidBody rigidBody = rigidBodyObject.GetComponent<SceneRigidBody>();
-            if (rigidBody.rbInput.includeInSimulation) validRigidBodies.Add(rigidBody);
+            SceneRigidBody rb = rigidBodyObject.GetComponent<SceneRigidBody>();
+            if (rb.rbInput.includeInSimulation) validRigidBodies.Add(rb);
         }
-
         return validRigidBodies.ToArray();
     }
 
@@ -365,12 +454,22 @@ public class SceneManager : MonoBehaviour
     {
         GameObject[] fluidObjects = GameObject.FindGameObjectsWithTag("Fluid");
         SceneFluid[] allFluids = new SceneFluid[fluidObjects.Length];
-        for (int i = 0; i < fluidObjects.Length; i++) allFluids[i] = fluidObjects[i].GetComponent<SceneFluid>();
-
+        for (int i = 0; i < fluidObjects.Length; i++)
+        {
+            allFluids[i] = fluidObjects[i].GetComponent<SceneFluid>();
+        }
         return allFluids;
     }
 
-    private RBData InitRBData(RBInput rbInput, float inertia, float maxRadiusSqr, int linkedRBIndex, float springRestLength, int startIndex, int endIndex, Vector2 pos, Vector2 parentOffset)
+    private RBData InitRBData(RBInput rbInput,
+                              float inertia,
+                              float maxRadiusSqr,
+                              int linkedRBIndex,
+                              float springRestLength,
+                              int startIndex,
+                              int endIndex,
+                              Vector2 pos,
+                              Vector2 parentOffset)
     {
         bool canMove = rbInput.canMove && rbInput.constraintType != ConstraintType.LinearMotor;
         bool isRBCollider = rbInput.colliderType == ColliderType.RigidBody || rbInput.colliderType == ColliderType.All;
@@ -378,44 +477,57 @@ public class SceneManager : MonoBehaviour
         bool isLinearMotor = rbInput.constraintType == ConstraintType.LinearMotor;
         bool isRigidConstraint = rbInput.constraintType == ConstraintType.Rigid;
         bool isSpringConstraint = rbInput.constraintType == ConstraintType.Spring;
+
         return new RBData
         {
             pos = pos,
             vel_AsInt2 = rbInput.canMove ? Func.Float2AsInt2(rbInput.velocity, main.FloatIntPrecisionRB) : 0,
             nextPos = 0,
             nextVel = 0,
-            rotVel_AsInt = rbInput.canRotate ? Func.FloatAsInt(rbInput.angularVelocity, main.FloatIntPrecisionRB) : 0,
+            rotVel_AsInt = rbInput.canRotate
+                ? Func.FloatAsInt(rbInput.angularVelocity, main.FloatIntPrecisionRB)
+                : 0,
             totRot = 0,
-            mass = canMove ? rbInput.mass : (isLinearMotor ? (rbInput.doRoundTrip ? -2 : -1) : 0),
+            mass = canMove
+                ? rbInput.mass
+                : (isLinearMotor
+                    ? (rbInput.doRoundTrip ? -2 : -1)
+                    : 0),
             inertia = rbInput.canRotate ? inertia : 0,
             gravity = rbInput.gravity,
+
             rbElasticity = isRBCollider ? Mathf.Max(rbInput.rbElasticity, 0.05f) : -1,
             fluidElasticity = isFluidCollider ? Mathf.Max(rbInput.fluidElasticity, 0.05f) : -1,
             friction = rbInput.friction,
             passiveDamping = rbInput.passiveDamping,
+
             maxRadiusSqr = rbInput.isInteractable ? maxRadiusSqr : -maxRadiusSqr,
+
             startIndex = startIndex,
-            endIndex = endIndex,
-            // Inter-RB spring links
+            endIndex = endIndex, // inclusive
+
+            // Springs
             linkedRBIndex = (isSpringConstraint || isRigidConstraint) ? linkedRBIndex : -1,
             springRestLength = isRigidConstraint ? 0 : springRestLength,
             springStiffness = isRigidConstraint ? 0 : rbInput.springStiffness,
             damping = isRigidConstraint ? 0 : rbInput.damping,
-            localLinkPosThisRB = isLinearMotor ? rbInput.startPos + parentOffset : rbInput.localLinkPosThisRB,
-            localLinkPosOtherRB = isLinearMotor ? rbInput.endPos + parentOffset : rbInput.localLinkPosOtherRB,
-            // Linear motor
+
+            localLinkPosThisRB = isLinearMotor
+                ? rbInput.startPos + parentOffset
+                : rbInput.localLinkPosThisRB,
+            localLinkPosOtherRB = isLinearMotor
+                ? rbInput.endPos + parentOffset
+                : rbInput.localLinkPosOtherRB,
+
             lerpSpeed = isLinearMotor ? rbInput.lerpSpeed : 0,
             lerpTimeOffset = rbInput.lerpTimeOffset,
-            // Heating
+
             heatingStrength = rbInput.heatingStrength,
-            // Recorded spring force
             recordedSpringForce = 0,
-            // Display
+
             renderPriority = rbInput.disableRender ? -1 : rbInput.renderPriority,
             matIndex = rbInput.matIndex,
             springMatIndex = rbInput.springMatIndex
         };
     }
-
-    private Vector2 GetBoundsOffset() => new(transform.localScale.x * 0.5f - transform.position.x, transform.localScale.y * 0.5f - transform.position.y);
 }
