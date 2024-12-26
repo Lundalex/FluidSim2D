@@ -31,9 +31,10 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public bool programPaused;
     [NonSerialized] public bool slowMotionActive;
     [NonSerialized] public bool frameStep;
-    [NonSerialized] public float totalTimeElapsed;
     [NonSerialized] public int frameCount;
     [NonSerialized] public float clampedDeltaTime;
+    [NonSerialized] public float totalTimeElapsed;
+    [NonSerialized] public float totalScaledTimeElapsed;
     [NonSerialized] public float timeSetRandTimer;
     [NonSerialized] public Vector2 Resolution;
     [NonSerialized] public int2 ResolutionInt2;
@@ -157,6 +158,7 @@ public class ProgramManager : ScriptableObject
 
             // Update the total time elapsed
             totalTimeElapsed += clampedDeltaTime;
+            totalScaledTimeElapsed += clampedDeltaTime * timeScale * (slowMotionActive ? 0.25f : 1.0f);
 
             // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle (all Timer objects)
             TriggerProgramUpdate(true);

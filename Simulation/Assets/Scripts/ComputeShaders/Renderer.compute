@@ -78,7 +78,7 @@ const float Saturation;
 const float Gamma;
 
 // Per-timestep-set variables
-const float RealTimeElapsed;
+const float TotalScaledTimeElapsed;
 const int LastTimeSetRand;
 const int NextTimeSetRand;
 const float TimeSetLerpFactor;
@@ -601,7 +601,7 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             
             // Draw striped pattern
             float patternMod = sensorArea.patternMod;
-            float patternPos = pixelPos.x + pixelPos.y + RealTimeElapsed * SensorAreaAnimationSpeed;
+            float patternPos = pixelPos.x + pixelPos.y + TotalScaledTimeElapsed * SensorAreaAnimationSpeed;
             float patternPosMod = patternPos % patternMod;
 
             if (patternPosMod < patternMod * 0.5) sensorAreaTint += sensorArea.colorTint;

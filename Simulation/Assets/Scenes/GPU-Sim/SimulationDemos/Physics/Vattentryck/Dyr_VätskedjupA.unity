@@ -244,7 +244,7 @@ MonoBehaviour:
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
   SimUnitToMetersFactor: 0.005
-  VolumeFactor: 13.4
+  VolumeFactor: 150
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -272,6 +272,7 @@ MonoBehaviour:
   InteractionAttractionPower: 16
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
+  InteractionDampening: 0.1
   RB_MaxInteractionRadius: 30
   RB_InteractionAttractionPower: 5
   RB_InteractionRepulsionPower: 0.5
@@ -537,6 +538,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 553362498}
     m_Modifications:
     - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: rbInput.includeInSimulation
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
       value: -98
       objectReference: {fileID: 0}
@@ -589,8 +594,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: defaultGridSpacing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.colliderType
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: doOverrideGridSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.isInteractable
@@ -948,6 +961,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 553362498}
     m_Modifications:
     - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: rbInput.includeInSimulation
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
       value: -40
       objectReference: {fileID: 0}
@@ -996,8 +1013,16 @@ PrefabInstance:
       value: 100000
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: defaultGridSpacing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.colliderType
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: doOverrideGridSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.isInteractable
@@ -1574,6 +1599,18 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.a
+      value: 0.27450982
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numDecimals
       value: 1
       objectReference: {fileID: 0}
@@ -1591,7 +1628,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: minPrefixIndex
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: primaryColor.b
@@ -2769,6 +2806,18 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.a
+      value: 0.27450982
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numDecimals
       value: 1
       objectReference: {fileID: 0}
@@ -2786,7 +2835,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: minPrefixIndex
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: primaryColor.b
@@ -3058,6 +3107,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 553362498}
     m_Modifications:
     - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: rbInput.includeInSimulation
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
       value: 18
       objectReference: {fileID: 0}
@@ -3106,8 +3159,16 @@ PrefabInstance:
       value: 100000
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: defaultGridSpacing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.colliderType
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
+      propertyPath: doOverrideGridSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2900878208140321311, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.isInteractable
@@ -3324,8 +3385,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: defaultGridSpacing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.colliderType
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: doOverrideGridSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.renderPriority
@@ -3485,6 +3554,18 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.a
+      value: 0.27450982
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.r
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numDecimals
       value: 1
       objectReference: {fileID: 0}
@@ -3502,7 +3583,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: minPrefixIndex
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: primaryColor.b
@@ -4520,8 +4601,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: defaultGridSpacing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.colliderType
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: doOverrideGridSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.renderPriority

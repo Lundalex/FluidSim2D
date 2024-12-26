@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class SeesawScale : Assembly
 {
-    [Header("Lever Arm Settings")]
+    [Header("Lever Arm")]
     [Range(0.1f, 0.9f)] public float leverArmJointLerpFactor = 0.5f;
 
     [Header("References")]

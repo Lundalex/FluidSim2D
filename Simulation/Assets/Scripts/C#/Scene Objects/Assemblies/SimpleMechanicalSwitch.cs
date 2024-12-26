@@ -3,19 +3,19 @@ using Resources2;
 using PM = ProgramManager;
 public class SimpleMechanicalSwitch : Assembly
 {
-    [Header("Movability Settings")]
+    [Header("Movability")]
     [SerializeField] private Axis2D axis;
     public float minOffset;
     public float maxOffset;
 
-    [Header("Collider Settings")]
+    [Header("Collider")]
     public ColliderType colliderType;
     public Vector2 position;
     public float width;
     public float height;
     public float mass;
 
-    [Header("Rail Settings")]
+    [Header("Rail")]
     public float railPadding;
     public bool doRenderRail;
 

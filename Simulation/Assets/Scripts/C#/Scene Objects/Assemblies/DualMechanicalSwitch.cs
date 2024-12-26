@@ -3,12 +3,12 @@ using Resources2;
 using PM = ProgramManager;
 public class DualMechanicalSwitch : Assembly
 {
-    [Header("Movability Settings")]
+    [Header("Movability")]
     [SerializeField] private Axis2D axis;
     public float minOffset;
     public float maxOffset;
 
-    [Header("Collider Settings")]
+    [Header("Collider")]
     public ColliderType colliderType;
     public Vector2 position;
     public float width;
@@ -16,7 +16,7 @@ public class DualMechanicalSwitch : Assembly
     public float splitSize;
     public float mass;
 
-    [Header("Rail Settings")]
+    [Header("Rail")]
     public float railPadding;
     public bool doRenderRail;
 

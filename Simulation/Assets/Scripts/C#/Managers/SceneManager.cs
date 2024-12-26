@@ -339,6 +339,58 @@ public class SceneManager : MonoBehaviour
         return combined.ToArray();
     }
 
+    public static void AddInBetweenPoints(ref Vector2[] vectors, bool doRecursiveSubdivisison, float minDst)
+    {
+        if (doRecursiveSubdivisison)
+        {
+            minDst = Mathf.Max(minDst, 0.5f);
+            AddInBetweenPointsRecursively(ref vectors, minDst);
+        }
+        else
+        {
+            int numVectors = vectors.Length;
+            List<Vector2> newVectors = new();
+
+            int pathStartIndex = 0;
+            Vector2 firstPathVec = vectors[0];
+            Vector2 lastVec = firstPathVec;
+            newVectors.Add(lastVec);
+
+            for (int i = 1; i <= numVectors; i++)
+            {
+                bool endOfArray = i == numVectors;
+                int vecIndex = endOfArray ? pathStartIndex : i;
+                Vector2 nextVec = vectors[vecIndex];
+
+                Vector2 inBetween;
+                bool newPathFlag = nextVec.x > Main.PathFlagThreshold;
+                if (newPathFlag)
+                {
+                    nextVec.x -= Main.PathFlagOffset;
+                    
+                    float randOffset = UnityEngine.Random.Range(-0.05f, 0.05f);
+                    inBetween = (lastVec * (1 + randOffset) + firstPathVec * (1 - randOffset)) / 2.0f;
+                    
+                    firstPathVec = nextVec;
+                    lastVec = nextVec;
+                    pathStartIndex = vecIndex;
+
+                    nextVec.x += Main.PathFlagOffset;
+                }
+                else
+                {
+                    inBetween = (lastVec + nextVec) / 2.0f;
+                    lastVec = nextVec;
+                }
+
+                newVectors.Add(inBetween);
+                if (!endOfArray) newVectors.Add(nextVec);
+            }
+
+            vectors = newVectors.ToArray();
+        }
+    }
+
     // Not tested thoroughly with multi-path polygons
     private static void AddInBetweenPointsRecursively(ref Vector2[] vectors, float minDst)
     {
@@ -376,57 +428,6 @@ public class SceneManager : MonoBehaviour
         if (needsSubdivision)
         {
             AddInBetweenPointsRecursively(ref vectors, minDst);
-        }
-    }
-
-    public static void AddInBetweenPoints(ref Vector2[] vectors, bool doRecursiveSubdivisison, float minDst)
-    {
-        if (doRecursiveSubdivisison)
-        {
-            minDst = Mathf.Max(minDst, 0.5f);
-            AddInBetweenPointsRecursively(ref vectors, minDst);
-        }
-        else
-        {
-            int numVectors = vectors.Length;
-            List<Vector2> newVectors = new();
-
-            int pathStartIndex = 0;
-            Vector2 firstPathVec = vectors[0];
-            Vector2 lastVec = firstPathVec;
-            newVectors.Add(lastVec);
-
-            for (int i = 1; i <= numVectors; i++)
-            {
-                bool endOfArray = i == numVectors;
-                int vecIndex = endOfArray ? pathStartIndex : i;
-                Vector2 nextVec = vectors[vecIndex];
-
-                Vector2 inBetween;
-                bool newPathFlag = nextVec.x > Main.PathFlagThreshold;
-                if (newPathFlag)
-                {
-                    nextVec.x -= Main.PathFlagOffset;
-                    
-                    inBetween = (lastVec + firstPathVec) / 2.0f;
-                    
-                    firstPathVec = nextVec;
-                    lastVec = nextVec;
-                    pathStartIndex = vecIndex;
-
-                    nextVec.x += Main.PathFlagOffset;
-                }
-                else
-                {
-                    inBetween = (lastVec + nextVec) / 2.0f;
-                    lastVec = nextVec;
-                }
-
-                newVectors.Add(inBetween);
-                if (!endOfArray) newVectors.Add(nextVec);
-            }
-
-            vectors = newVectors.ToArray();
         }
     }
 

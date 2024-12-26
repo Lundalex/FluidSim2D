@@ -159,6 +159,7 @@ public class ShaderHelper : MonoBehaviour
         pSimShader.SetFloat("InteractionAttractionPower", m.InteractionAttractionPower);
         pSimShader.SetFloat("InteractionFountainPower", m.InteractionFountainPower);
         pSimShader.SetFloat("InteractionTemperaturePower", m.InteractionTemperaturePower);
+        pSimShader.SetFloat("InteractionDampening", m.InteractionDampening);
     }
 
     public void UpdateRenderShaderVariables(ComputeShader renderShader)

@@ -186,6 +186,7 @@ public class SensorUI : MonoBehaviour
         // Configure the sensor UI for the newly selected sensor type (if the type has been changed by the user)
         sensor.doUseCustomTitle = false;
         sensor.valueOffset = 0.0f;
+        sensor.minPrefixIndex = 0;
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
             rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);

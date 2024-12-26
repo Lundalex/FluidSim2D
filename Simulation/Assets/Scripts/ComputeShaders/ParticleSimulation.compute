@@ -39,6 +39,7 @@ const float MaxPVel;
 const float InteractionAttractionPower;
 const float InteractionFountainPower;
 const float InteractionTemperaturePower;
+const float InteractionDampening;
 
 // Per-timestep-set variables
 const float DeltaTime;
@@ -310,14 +311,14 @@ float3 InteractionEffects(int pIndex)
     float TemperatureEffect = -dir * InteractionTemperaturePower;
     if (absDst == 0) return float3(0, 0, TemperatureEffect);
 
-    float2 interactionGradient = normalize(dst) * absInteractionGradient;
+    float2 interactionGradient = normalize(dst) * absInteractionGradient + 0.1 * InteractionDampening * PDatas[pIndex].vel;
 
     float2 baseInteractionForce = interactionGradient * InteractionAttractionPower * dir;
     float fountainInteractionForce = 0;
     if (dir == -1)
     {
-        float dstX = MaxInteractionRadius - abs(dst.x);
-        fountainInteractionForce = 0.0025 * InteractionFountainPower * absInteractionGradient * dstX;
+        float x = MaxInteractionRadius - abs(dst.x);
+        fountainInteractionForce = 0.0025 * InteractionFountainPower * absInteractionGradient * x;
     }
 
     float2 interactionForce = baseInteractionForce + float2(0, fountainInteractionForce);
@@ -562,10 +563,11 @@ void ParticleForces (uint3 id : SV_DispatchThreadID)
             }
         }
     }
-
+    
     float3 interactionEffects = pType.mass * InteractionEffects(i);
+    float2 gravityForce = float2(0, -pType.gravity);
 
-    float2 totForce = totPressureForce + totSpringForce + totViscocityForce + interactionEffects.xy - float2(0, pType.gravity);
+    float2 totForce = totPressureForce + totSpringForce + totViscocityForce + interactionEffects.xy + gravityForce;
     PDatas[i].vel += totForce * DeltaTime / pType.mass;
     PDatas[i].temperatureExchangeBuffer = totTemperatureExchange + interactionEffects.z * DeltaTime;
 
@@ -658,7 +660,7 @@ void RecordFluidData (uint3 id : SV_DispatchThreadID)
     PData pData = PDatas[i];
     PType pType = PTypes[Extract_PType(pData.lastChunkKey_PType_POrder)];
     int lastChunkKey = Extract_LastChunkKey(pData.lastChunkKey_PType_POrder);
-    float mass = pType.mass * 0.001;
+    float mass = pType.mass;
     float temperature = pData.temperature;
 
     int2 chunk = GetChunk(lastChunkKey);

@@ -87,7 +87,7 @@ public class FluidSensor : Sensor
                 int totChunkDepths = 0;
                 int totColumnsWithLiquid = 0;
                 int totChunksWithLiquid = 0;
-                int numContributions = 0;
+                float numContributions = 0;
                 RecordedFluidData_Translated sumFluidDatas = new();
                 for (int x = minX; x <= maxX; x += SampleSpacing)
                 {
@@ -102,7 +102,7 @@ public class FluidSensor : Sensor
                         
                         int chunkKey = GetChunkKey(x, y);
 
-                        RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
+                        RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], main.FloatIntPrecisionP);
                         if (fluidData.numContributions > 0)
                         {
                             // Add recorded fluid data
@@ -123,6 +123,9 @@ public class FluidSensor : Sensor
                     if (anyLiquidInColumn) totColumnsWithLiquid++;
                 }
 
+                sumFluidDatas.MultiplyAllProperties(sampleDensityCorrection);
+                sumFluidDatas.numContributions = numContributions * sampleDensityCorrection;
+
                 // Final liquid depth, width & volume calculations
                 float chunkSize = main.MaxInfluenceRadius * main.SimUnitToMetersFactor;
                 float avgChunkDepth = totChunkDepths * SampleSpacing / Mathf.Max(totColumnsWithLiquid, 0.1f);
@@ -130,7 +133,10 @@ public class FluidSensor : Sensor
                 float estimatedWidth = totColumnsWithLiquid * SampleSpacing * chunkSize;
                 float estimatedVolume = totChunksWithLiquid * Func.Sqr(SampleSpacing * chunkSize) * main.VolumeFactor;
 
-                sumFluidDatas.numContributions = numContributions;
+                sumFluidDatas.totMass *= 0.001f;
+                sumFluidDatas.totVelAbs *= main.SimUnitToMetersFactor;
+                sumFluidDatas.totVelComponents *= main.SimUnitToMetersFactor;
+
                 UpdateSensorContents(sumFluidDatas, estimatedDepth, estimatedWidth, estimatedVolume);
             }
         }
@@ -151,7 +157,7 @@ public class FluidSensor : Sensor
         float kineticEnergy = sumFluidDatas.totMass * Mathf.Pow(sumFluidDatas.totVelAbs, 2) / 2.0f;
         float thermalEnergy = sumFluidDatas.totThermalEnergy;
 
-        float avgTemperature = sumFluidDatas.totTemp / sumFluidDatas.numContributions;
+        float avgTemperature = sumFluidDatas.totTemp / Mathf.Max(sumFluidDatas.numContributions, 0.1f);
 
         float value = 0;
         if (sumFluidDatas.numContributions > 0)

@@ -81,6 +81,7 @@ public class Main : MonoBehaviour
     public float InteractionAttractionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
+    public float InteractionDampening = 1.0f;
 
     // Rigid Bodies
     public float RB_MaxInteractionRadius = 40.0f;
@@ -434,7 +435,7 @@ public class Main : MonoBehaviour
         rbSimShader.SetVector("MousePos", mouseSimPos);
         rbSimShader.SetBool("LMousePressed", MousePressed.x);
         rbSimShader.SetBool("RMousePressed", MousePressed.y);
-        renderShader.SetFloat("RealTimeElapsed", Time.realtimeSinceStartup);
+        renderShader.SetFloat("TotalScaledTimeElapsed", PM.Instance.totalScaledTimeElapsed);
 
         FrameBufferCycle = !FrameBufferCycle;
         sortShader.SetBool("FrameBufferCycle", FrameBufferCycle);
@@ -457,7 +458,15 @@ public class Main : MonoBehaviour
 
     private void SetShaderKeywords()
     {
-        if (DoUseFastShaderCompilation) Debug.LogWarning("Fast shader compilation enabled. This may slightly decrease runtime performance");
+        if (DoUseFastShaderCompilation)
+        {
+            string message = "Fast shader compilation enabled in build version. This may slightly decrease runtime performance";
+            #if !UNITY_EDITOR
+                Debug.LogError(message);
+            #else
+                Debug.Log(message);
+            #endif
+        }
 
         // Render shader
         if (DoDrawRBCentroids) renderShader.EnableKeyword("DRAW_RB_CENTROIDS");

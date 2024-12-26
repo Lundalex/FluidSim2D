@@ -243,6 +243,8 @@ MonoBehaviour:
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
+  SimUnitToMetersFactor: 0.005
+  VolumeFactor: 67
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -270,6 +272,7 @@ MonoBehaviour:
   InteractionAttractionPower: 8
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
+  InteractionDampening: 1
   RB_MaxInteractionRadius: 50
   RB_InteractionAttractionPower: 1.5
   RB_InteractionRepulsionPower: 0.5

@@ -244,7 +244,7 @@ MonoBehaviour:
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
   SimUnitToMetersFactor: 0.005
-  VolumeFactor: 13.4
+  VolumeFactor: 67
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 3
@@ -265,13 +265,14 @@ MonoBehaviour:
   TimeStepsPerFrame: 3
   SubTimeStepsPerFrame: 3
   TimeStepType: 1
-  TargetFrameRate: 120
+  TargetFrameRate: 0
   TimeStep: 0.002
   ProgramSpeed: 10
-  MaxInteractionRadius: 35
-  InteractionAttractionPower: 10
+  MaxInteractionRadius: 40
+  InteractionAttractionPower: 12
   InteractionFountainPower: 0
   InteractionTemperaturePower: 0
+  InteractionDampening: 0.5
   RB_MaxInteractionRadius: 100
   RB_InteractionAttractionPower: 1.5
   RB_InteractionRepulsionPower: 0.5
@@ -308,7 +309,7 @@ MonoBehaviour:
     x: 10
     y: 1
   LiquidMetaballsThreshold: 2.5
-  LiquidMetaballsEdgeDensityWidth: 1
+  LiquidMetaballsEdgeDensityWidth: 0.7
   VisualLiquidParticleRadius: 1.5
   LiquidEdgeWidth: 0.5
   LiquidVelocityGradient:
