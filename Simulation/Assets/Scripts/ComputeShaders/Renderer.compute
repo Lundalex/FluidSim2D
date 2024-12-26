@@ -896,7 +896,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     int matIndex = 0;
     int highestRenderPriority = -1;
     #if !DO_USE_FAST_COMPILATION
-        // [unroll(MAX_RIGIDBODIES_NUM)]
+        [unroll(MAX_RIGIDBODIES_NUM)]
     #endif
     for (uint rbIndex = 0; rbIndex < MAX_RIGIDBODIES_NUM; rbIndex++)
     {

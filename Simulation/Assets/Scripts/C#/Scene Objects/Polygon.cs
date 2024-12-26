@@ -87,12 +87,14 @@ public abstract class Polygon : EditorLifeCycle
         int pathCount = polygonCollider.pathCount;
         for (int i = 0; i < pathCount; i++)
         {
-            // Get path points (world space)
+            // Get path points (local space)
             Vector2[] pathPoints = polygonCollider.GetPath(i);
-            Vector2[] worldPathPoints = pathPoints;
-            for (int j = 0; j < worldPathPoints.Length; j++)
+
+            // Create a deep copy for world space transformation
+            Vector2[] worldPathPoints = new Vector2[pathPoints.Length];
+            for (int j = 0; j < pathPoints.Length; j++)
             {
-                worldPathPoints[j] = transform.TransformPoint(worldPathPoints[j]);
+                worldPathPoints[j] = transform.TransformPoint(pathPoints[j]);
             }
 
             // Ensure the point ordering is CCW

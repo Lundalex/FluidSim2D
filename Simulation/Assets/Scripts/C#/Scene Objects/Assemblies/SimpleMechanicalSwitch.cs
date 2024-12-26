@@ -23,7 +23,7 @@ public class SimpleMechanicalSwitch : Assembly
     [SerializeField] private SceneRigidBody borderCollider;
     [SerializeField] private SceneRigidBody sceneCollider;
     [SerializeField] private SceneRigidBody railVisualization;
-    [SerializeField] private Main main;
+    private Main main;
 
     private void OnEnable()
     {
@@ -42,6 +42,7 @@ public class SimpleMechanicalSwitch : Assembly
             Debug.LogWarning("All references are not set. MechanicalSwitch: " + this.name);
             return;
         }
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera")?.GetComponent<Main>();
         if (main == null) return;
 
         // Offset values

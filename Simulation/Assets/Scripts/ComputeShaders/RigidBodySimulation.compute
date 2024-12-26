@@ -305,7 +305,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     if (isNotRBCollider) return;
     
     #if !DO_USE_FAST_COMPILATION
-        // [unroll(MAX_RIGIDBODIES_NUM)]
+        [unroll(MAX_RIGIDBODIES_NUM)]
     #endif
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < NumRigidBodies; rbBIndex++)
     {

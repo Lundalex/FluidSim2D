@@ -53,15 +53,15 @@
         <uie:PropertyField binding-path="VolumeFactor" label="Volume Factor" tooltip="Calculated volume values are multiplied by this value" />
     </ui:Foldout>
     <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
-        <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="false">
+        <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="true">
             <ui:Slider label="Interaction Radius" value="40" high-value="100" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
-            <ui:Slider label="Attraction Power" value="42" high-value="25" binding-path="InteractionAttractionPower" low-value="0" fill="true" show-input-field="true" />
+            <ui:Slider label="Attraction Power" value="253" high-value="30" binding-path="InteractionAttractionPower" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Fountain Power" value="42" high-value="10" binding-path="InteractionFountainPower" show-input-field="true" fill="true" />
             <ui:Slider label="Temperature Power" value="0" high-value="25" binding-path="InteractionTemperaturePower" low-value="-25" fill="true" show-input-field="true" />
         </ui:Foldout>
-        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="false">
+        <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="true">
             <ui:Slider label="Interaction Radius" value="42" high-value="100" show-input-field="true" fill="true" binding-path="RB_MaxInteractionRadius" />
-            <ui:Slider label="Attraction Power" value="42" high-value="10" show-input-field="true" fill="true" binding-path="RB_InteractionAttractionPower" tooltip="A factor of the attraction force applied to rigid bodies when interacted with by the mouse." />
+            <ui:Slider label="Attraction Power" value="42" high-value="30" show-input-field="true" fill="true" binding-path="RB_InteractionAttractionPower" tooltip="A factor of the attraction force applied to rigid bodies when interacted with by the mouse." />
             <ui:Slider label="Repulsion Power" value="42" high-value="10" show-input-field="true" fill="true" binding-path="RB_InteractionRepulsionPower" tooltip="A factor of the repulsion force applied to rigid bodies when interacted with by the mouse." />
             <ui:Slider label="Interaction Dampening" value="42" high-value="1" show-input-field="true" fill="true" binding-path="RB_InteractionDampening" tooltip="A factor used for calculating the dampening forces applied to interacted rigid bodies." />
         </ui:Foldout>

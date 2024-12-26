@@ -16,6 +16,7 @@ public class SceneRigidBody : Polygon
     public float editorLineAnimationSpeed = 10;
     
     [Header("Simulation Object Settings")]
+    public bool doOverrideGridSpacing = false;
     [Range(0.1f, 10.0f)] public float defaultGridSpacing = 0.5f;
     public bool addInBetweenPoints = true;
     public bool doRecursiveSubdivisison = false;
@@ -52,7 +53,7 @@ public class SceneRigidBody : Polygon
     public override void OnEditorUpdate()
     {
         if (Application.isPlaying) return;
-        
+
         // Skip re‑assigning collider points if user is actively dragging handles
         bool userIsModifying = Tools.current == Tool.Move || Tools.current == Tool.Rotate || Tools.current == Tool.Scale;
         if (userIsModifying) return;
@@ -179,7 +180,10 @@ public class SceneRigidBody : Polygon
 
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
     {
-        if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
+        if (gridSpacing == 0 || doOverrideGridSpacing) gridSpacing = defaultGridSpacing;
+        #if UNITY_EDITOR
+            gridSpacing *= 2;
+        #endif
         SetPolygonData();
 
         List<Vector2> generatedPoints = new();
@@ -187,10 +191,16 @@ public class SceneRigidBody : Polygon
         Vector2 min = Func.MinVector2(Edges.Select(edge => Func.MinVector2(edge.start, edge.end)).ToArray());
         Vector2 max = Func.MaxVector2(Edges.Select(edge => Func.MaxVector2(edge.start, edge.end)).ToArray());
 
+        int safetyCounter = 0;
         for (float x = min.x; x <= max.x; x += gridSpacing)
         {
             for (float y = min.y; y <= max.y; y += gridSpacing)
             {
+                if (safetyCounter++ > 1000000)
+                {
+                    Debug.LogError("SceneRigidBody point generation took too many iterations to complete. Make sure the polygon geometry is set correctly, or increase the grid spacing override setting. SceneRigidBody: " + this.name);
+                    return generatedPoints.ToArray();
+                }
                 Vector2 point = new Vector2(x, y) + offset;
                 if (IsPointInsidePolygon(point))
                 {

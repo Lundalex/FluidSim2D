@@ -24,7 +24,7 @@ public class DualMechanicalSwitch : Assembly
     [SerializeField] private SceneRigidBody borderCollider;
     [SerializeField] private SceneRigidBody sceneCollider;
     [SerializeField] private SceneRigidBody railVisualization;
-    [SerializeField] private Main main;
+    private Main main;
 
     private void OnEnable()
     {
@@ -43,6 +43,7 @@ public class DualMechanicalSwitch : Assembly
             Debug.LogWarning("All references are not set. MechanicalSwitch: " + this.name);
             return;
         }
+        if (main == null) main = GameObject.FindGameObjectWithTag("MainCamera")?.GetComponent<Main>();
         if (main == null) return;
 
         float halfWidth = width / 2.0f;
