@@ -112,13 +112,14 @@ public class RigidBodySensor : Sensor
         value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
-        SetSensorUnit(prefix);
+        bool isNewUnit = SetSensorUnit(prefix);
 
-        sensorUI.SetMeasurement(displayValue, numDecimals);
+        sensorUI.SetMeasurement(displayValue, numDecimals, isNewUnit);
         AddSensorDataToGraph(value);
     }
 
-    public override void SetSensorUnit(string prefix = "")
+    // Returns whether the unit is different from last frame
+    public override bool SetSensorUnit(string prefix = "")
     {
         string baseUnit = "";
         switch (rigidBodySensorType)
@@ -158,49 +159,56 @@ public class RigidBodySensor : Sensor
         {
             sensorUI.SetUnit(baseUnit, unit);
             lastUnit = unit;
+            return true;
         }
+
+        return false;
     }
 
     public override void SetSensorTitle()
     {
-        switch (rigidBodySensorType)
+        string title = "Titel här";
+        if (doUseCustomTitle) title = customTitle;
+        else switch (rigidBodySensorType)
         {
             case RigidBodySensorType.Mass:
-                sensorUI.SetTitle("Massa");
+                title = "Massa";
                 break;
 
             case RigidBodySensorType.Velocity:
-                sensorUI.SetTitle("Fart");
+                title = "Fart";
                 break;
 
             case RigidBodySensorType.Velocity_X:
-                sensorUI.SetTitle("Hastighet X");
+                title = "Hastighet X";
                 break;
 
             case RigidBodySensorType.Velocity_Y:
-                sensorUI.SetTitle("Hastighet Y");
+                title = "Hastighet Y";
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
-                sensorUI.SetTitle("Vinkelhastighet");
+                title = "Vinkelhastighet";
                 break;
 
             case RigidBodySensorType.Position_X:
-                sensorUI.SetTitle("Position X");
+                title = "Position X";
                 break;
 
             case RigidBodySensorType.Position_Y:
-                sensorUI.SetTitle("Position Y");
+                title = "Position Y";
                 break;
 
             case RigidBodySensorType.SpringForce:
-                sensorUI.SetTitle("Dragkraft");
+                title = "Dragkraft";
                 break;
 
             default:
                 Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
                 break;
         }
+
+        sensorUI.SetTitle(title);
     }
 
     public override void UpdateSensorTypeDropdown()

@@ -12,12 +12,24 @@ public abstract class Sensor : MonoBehaviour
     [Range(1, 2)] public int numDecimals;
     [Range(0, 3)] public int minPrefixIndex;
     [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
-    public float valueOffset;
-    public Color primaryColor;
+    [SerializeField] public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
     public Vector2 localTargetPos;
     public PositionType positionType;
     [NonSerialized] public Vector2 lastJointPos;
+
+    [Header("Value Interpolation")]
+    public bool doDisplayValueLerp = true;
+    [Range(0.0f, 200.0f)] public float displayValueLerpThreshold = 0.05f;
+    public float baseLerpSpeed = 5.0f;
+    public float lerpSpeedMultiplier = 10.0f;
+    public float minLerpSpeed = 1.0f;
+    public float maxLerpSpeed = 20.0f;
+
+    [Header("Overrides")]
+    public bool doUseCustomTitle = false;
+    public string customTitle = "Title Here";
+    public float valueOffset = 0.0f;
 
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;
@@ -110,7 +122,7 @@ public abstract class Sensor : MonoBehaviour
     public abstract void UpdateSensor();
     public abstract void UpdateSensorTypeDropdown();
     public abstract void SetSensorTitle();
-    public abstract void SetSensorUnit(string unit = "");
+    public abstract bool SetSensorUnit(string unit = "");
 
     public (string prefix, float newValue) GetMagnitudePrefix(float value, int minPrefixIndex)
     {

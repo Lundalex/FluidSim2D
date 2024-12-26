@@ -69,10 +69,16 @@ public class SensorUI : MonoBehaviour
     private const float GraphViewActiveFixedScale = 1.5f;
     private const float MouseDraggingFixedScale = 1.2f;
 
+    // Display value interpolation
+    private float currentValue = 0f;
+    private float targetValue = 0f;
+    private bool isInterpolating = false;
+
     public void Initialize()
     {
         pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
         pointerMoveTimer = new Timer(PointerMoveDelay, true, true, 0);
+        SetDisplayValue(0, Mathf.Clamp(sensor.numDecimals, 1, 2));
     }
 
     private void Update()
@@ -178,6 +184,8 @@ public class SensorUI : MonoBehaviour
         sensor.graphController.ResetGraph();
 
         // Configure the sensor UI for the newly selected sensor type (if the type has been changed by the user)
+        sensor.doUseCustomTitle = false;
+        sensor.valueOffset = 0.0f;
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
             rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
@@ -217,15 +225,60 @@ public class SensorUI : MonoBehaviour
 #endregion
 
 #region Set UI position & display values
-    public void SetMeasurement(float val, int numDecimals)
+    public void SetMeasurement(float val, int numDecimals, bool newPrefix)
     {
+        if (Mathf.Abs(currentValue - val) <= sensor.displayValueLerpThreshold) return;
+
         numDecimals = Mathf.Clamp(numDecimals, 1, 2);
+        targetValue = Mathf.Clamp(val, -999, 999); // Clamp to max 3 characters
 
-        int integerPart = Mathf.Clamp((int)val, -99, 999); // Clamp to max 3 characters
-        int decimalPart = Mathf.Clamp(Mathf.RoundToInt(Mathf.Abs(val - integerPart) * Mathf.Pow(10, numDecimals)), 0, (int)Mathf.Pow(10, numDecimals)-1);
+        if (sensor.doDisplayValueLerp && !newPrefix)
+        {
+            if (!isInterpolating)
+            {
+                StartCoroutine(LerpMeasurementCoroutine(numDecimals));
+            }
+        }
+        else
+        {
+            currentValue = targetValue;
+            SetDisplayValue(currentValue, numDecimals);
+        }
+    }
 
+    private IEnumerator LerpMeasurementCoroutine(int numDecimals)
+    {
+        isInterpolating = true;
+
+        // Interpolate towards targetValue
+        while (Mathf.Abs(currentValue - targetValue) > sensor.displayValueLerpThreshold)
+        {
+            float difference = Mathf.Abs(targetValue - currentValue);
+            float currentLerpSpeed = Mathf.Clamp(sensor.baseLerpSpeed + (difference * sensor.lerpSpeedMultiplier), sensor.minLerpSpeed, sensor.maxLerpSpeed);
+
+            currentValue = Mathf.Lerp(currentValue, targetValue, Time.deltaTime * currentLerpSpeed);
+            currentValue = Mathf.Clamp(currentValue, -999, 999);
+
+            SetDisplayValue(currentValue, numDecimals);
+
+            yield return null;
+        }
+
+        // Set the final value precisely
+        currentValue = targetValue;
+        SetDisplayValue(currentValue, numDecimals);
+
+        isInterpolating = false;
+    }
+
+    private void SetDisplayValue(float val, int numDecimals)
+    {
+        int integerPart = Mathf.Clamp((int)val, -999, 999); // Clamp to max 3 characters
+        int decimalPart = Mathf.Clamp(Mathf.RoundToInt(Mathf.Abs(val - integerPart) * Mathf.Pow(10, numDecimals)), 0, (int)Mathf.Pow(10, numDecimals) - 1);
+
+        // Update the UI text fields
         integerText.text = integerPart.ToString();
-        decimalText.text = decimalPart.ToString();
+        decimalText.text = decimalPart.ToString($"D{numDecimals}");
     }
 
     public void SetUnit(string baseUnit, string unit)

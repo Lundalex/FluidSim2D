@@ -119,6 +119,11 @@ namespace Resources2
             return (int)powValue;
         }
 
+        public static float Sqr(float a)
+        {
+            return a * a;
+        }
+
         public static int NextPow2(int a)
         {
             int nextPow2 = 1;

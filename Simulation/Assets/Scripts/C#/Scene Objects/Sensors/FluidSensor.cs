@@ -17,7 +17,6 @@ public class FluidSensor : Sensor
     private int minX, maxX, minY, maxY;
     private float sampleDensityCorrection;
     private int2 chunksNum;
-    private float maxInfluenceRadius;
 
     int GetChunkKey(int x, int y) => x + y * main.ChunksNum.x;
 
@@ -36,7 +35,7 @@ public class FluidSensor : Sensor
     {
         if (main == null) return;
         chunksNum = main.ChunksNum;
-        maxInfluenceRadius = main.MaxInfluenceRadius;
+        float maxInfluenceRadius = main.MaxInfluenceRadius;
 
         minX = Mathf.Max(Mathf.FloorToInt(measurementZone.min.x / maxInfluenceRadius), 0);
         minY = Mathf.Max(Mathf.FloorToInt(measurementZone.min.y / maxInfluenceRadius), 0);
@@ -84,28 +83,55 @@ public class FluidSensor : Sensor
                 Debug.Log("Measurement zone has no width or height. It will not be updated. FluidSensor: " + this.name);
             else
             {
-                // Collect all data constributions
+                // Collect all data contributions and estimate the liquid depth & width
+                int totChunkDepths = 0;
+                int totColumnsWithLiquid = 0;
+                int totChunksWithLiquid = 0;
                 int numContributions = 0;
                 RecordedFluidData_Translated sumFluidDatas = new();
                 for (int x = minX; x <= maxX; x += SampleSpacing)
                 {
+                    if (0 > x || x >= chunksNum.x) continue;
+
+                    bool anyLiquidInColumn = false;
+                    bool underSurface = true;
+                    int chunkDepth = 0;
                     for (int y = minY; y <= maxY; y += SampleSpacing)
                     {
-                        if (0 <= x && x < chunksNum.x && 0 <= y && y < chunksNum.y)
+                        if (0 > y || y >= chunksNum.y) continue;
+                        
+                        int chunkKey = GetChunkKey(x, y);
+
+                        RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
+                        if (fluidData.numContributions > 0)
                         {
-                            int chunkKey = GetChunkKey(x, y);
-                            RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], sampleDensityCorrection, main.FloatIntPrecisionP);
-                            if (fluidData.numContributions > 0)
-                            {
-                                AddRecordedFluidData(ref sumFluidDatas, fluidData);
-                                numContributions += fluidData.numContributions;
-                            }
+                            // Add recorded fluid data
+                            AddRecordedFluidData(ref sumFluidDatas, fluidData);
+                            numContributions += fluidData.numContributions;
+
+                            if (!anyLiquidInColumn) underSurface = true;
+                            anyLiquidInColumn = true;
+
+                            // Liquid depth & volume check
+                            totChunksWithLiquid++;
+                            if (underSurface) chunkDepth++;
                         }
+                        else underSurface = false;
                     }
+
+                    totChunkDepths += chunkDepth;
+                    if (anyLiquidInColumn) totColumnsWithLiquid++;
                 }
 
+                // Final liquid depth, width & volume calculations
+                float chunkSize = main.MaxInfluenceRadius * main.SimUnitToMetersFactor;
+                float avgChunkDepth = totChunkDepths * SampleSpacing / Mathf.Max(totColumnsWithLiquid, 0.1f);
+                float estimatedDepth = avgChunkDepth * chunkSize;
+                float estimatedWidth = totColumnsWithLiquid * SampleSpacing * chunkSize;
+                float estimatedVolume = totChunksWithLiquid * Func.Sqr(SampleSpacing * chunkSize) * main.VolumeFactor;
+
                 sumFluidDatas.numContributions = numContributions;
-                UpdateSensorContents(sumFluidDatas);
+                UpdateSensorContents(sumFluidDatas, estimatedDepth, estimatedWidth, estimatedVolume);
             }
         }
     }
@@ -120,7 +146,7 @@ public class FluidSensor : Sensor
         a.totMass += b.totMass;
     }
 
-    private void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas)
+    private void UpdateSensorContents(RecordedFluidData_Translated sumFluidDatas, float estimatedDepth, float estimatedWidth, float estimatedVolume)
     {
         float kineticEnergy = sumFluidDatas.totMass * Mathf.Pow(sumFluidDatas.totVelAbs, 2) / 2.0f;
         float thermalEnergy = sumFluidDatas.totThermalEnergy;
@@ -132,8 +158,24 @@ public class FluidSensor : Sensor
         {
             switch (fluidSensorType)
             {
-                case FluidSensorType.Liquid_Depth:
-                    value = 423;
+                case FluidSensorType.Mass:
+                    value = sumFluidDatas.totMass;
+                    break;
+
+                case FluidSensorType.Depth:
+                    value = estimatedDepth;
+                    break;
+
+                case FluidSensorType.Volume:
+                    value = estimatedVolume;
+                    break;
+
+                case FluidSensorType.Density:
+                    value = 1000 * sumFluidDatas.totMass / estimatedVolume; // *1000: m^3 -> dm^3
+                    break;
+
+                case FluidSensorType.Pressure:
+                    value = sumFluidDatas.totPressure / sumFluidDatas.numContributions;
                     break;
 
                 case FluidSensorType.Energy_Total_Kinetic:
@@ -158,14 +200,6 @@ public class FluidSensor : Sensor
 
                 case FluidSensorType.Energy_Average_Both:
                     value = (kineticEnergy + thermalEnergy) / sumFluidDatas.numContributions;
-                    break;
-
-                case FluidSensorType.TotalMass:
-                    value = sumFluidDatas.totMass;
-                    break;
-
-                case FluidSensorType.AveragePressure:
-                    value = sumFluidDatas.totPressure / sumFluidDatas.numContributions;
                     break;
 
                 case FluidSensorType.AverageTemperatureCelcius:
@@ -193,19 +227,35 @@ public class FluidSensor : Sensor
         value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
-        SetSensorUnit(prefix);
+        bool isNewUnit = SetSensorUnit(prefix);
 
-        sensorUI.SetMeasurement(displayValue, numDecimals);
+        sensorUI.SetMeasurement(displayValue, numDecimals, isNewUnit);
         AddSensorDataToGraph(value);
     }
 
-    public override void SetSensorUnit(string prefix = "")
+    public override bool SetSensorUnit(string prefix = "")
     {
         string baseUnit = prefix;
         switch (fluidSensorType)
         {
-            case FluidSensorType.Liquid_Depth:
+            case FluidSensorType.Mass:
+                baseUnit = "kg";
+                break;
+
+            case FluidSensorType.Depth:
                 baseUnit = "m";
+                break;
+
+            case FluidSensorType.Volume:
+                baseUnit = "l";
+                break;
+
+            case FluidSensorType.Density:
+                baseUnit = "kg/m<sup>3</sup>";
+                break;
+
+            case FluidSensorType.Pressure:
+                baseUnit = "Pa";
                 break;
 
             case FluidSensorType.Energy_Total_Kinetic:
@@ -215,14 +265,6 @@ public class FluidSensor : Sensor
             case FluidSensorType.Energy_Average_Thermal:
             case FluidSensorType.Energy_Average_Both:
                 baseUnit = "J";
-                break;
-
-            case FluidSensorType.TotalMass:
-                baseUnit = "kg";
-                break;
-
-            case FluidSensorType.AveragePressure:
-                baseUnit = "Pa";
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
@@ -251,7 +293,10 @@ public class FluidSensor : Sensor
         {
             sensorUI.SetUnit(baseUnit, unit);
             lastUnit = unit;
+            return true;
         }
+
+        return false;
     }
 
     private void ApplyUnitExceptions(ref string unit)
@@ -269,11 +314,28 @@ public class FluidSensor : Sensor
 
     public override void SetSensorTitle()
     {
-        string title = "NoTitleSet";
-        switch (fluidSensorType)
+        string title = "Titel här";
+        if (doUseCustomTitle) title = customTitle;
+        else switch (fluidSensorType)
         {
-            case FluidSensorType.Liquid_Depth:
+            case FluidSensorType.Mass:
+                title = "Massa";
+                break;
+
+            case FluidSensorType.Depth:
                 title = "Djup";
+                break;
+
+            case FluidSensorType.Volume:
+                title = "Volym";
+                break;
+
+            case FluidSensorType.Density:
+                title = "Densitet";
+                break;
+
+            case FluidSensorType.Pressure:
+                title = "Tryck";
                 break;
 
             case FluidSensorType.Energy_Total_Kinetic:
@@ -289,14 +351,6 @@ public class FluidSensor : Sensor
             case FluidSensorType.Energy_Total_Both:
             case FluidSensorType.Energy_Average_Both:
                 title = "Energi";
-                break;
-
-            case FluidSensorType.TotalMass:
-                title = "Massa";
-                break;
-
-            case FluidSensorType.AveragePressure:
-                title = "Tryck";
                 break;
 
             case FluidSensorType.AverageTemperatureCelcius:
@@ -322,56 +376,64 @@ public class FluidSensor : Sensor
         int itemIndex = 0;
         switch (fluidSensorType)
         {
-            case FluidSensorType.Liquid_Depth:
+            case FluidSensorType.Mass:
                 itemIndex = 0;
                 break;
 
-            case FluidSensorType.Energy_Total_Kinetic:
+            case FluidSensorType.Depth:
                 itemIndex = 1;
                 break;
 
-            case FluidSensorType.Energy_Total_Thermal:
+            case FluidSensorType.Volume:
                 itemIndex = 2;
                 break;
 
-            case FluidSensorType.Energy_Total_Both:
+            case FluidSensorType.Density:
                 itemIndex = 3;
                 break;
 
-            case FluidSensorType.Energy_Average_Kinetic:
+            case FluidSensorType.Pressure:
                 itemIndex = 4;
                 break;
 
-            case FluidSensorType.Energy_Average_Thermal:
+            case FluidSensorType.Energy_Total_Kinetic:
                 itemIndex = 5;
                 break;
 
-            case FluidSensorType.Energy_Average_Both:
+            case FluidSensorType.Energy_Average_Kinetic:
                 itemIndex = 6;
                 break;
 
-            case FluidSensorType.TotalMass:
+            case FluidSensorType.Energy_Total_Thermal:
                 itemIndex = 7;
                 break;
 
-            case FluidSensorType.AveragePressure:
+            case FluidSensorType.Energy_Average_Thermal:
                 itemIndex = 8;
                 break;
 
-            case FluidSensorType.AverageTemperatureCelcius:
+            case FluidSensorType.Energy_Total_Both:
                 itemIndex = 9;
                 break;
 
-            case FluidSensorType.AverageTemperatureKelvin:
+            case FluidSensorType.Energy_Average_Both:
                 itemIndex = 10;
                 break;
 
-            case FluidSensorType.Velocity_Absolute_Destructive:
+            case FluidSensorType.AverageTemperatureCelcius:
                 itemIndex = 11;
                 break;
 
-            case FluidSensorType.Velocity_Absolute_Summative:
+            case FluidSensorType.AverageTemperatureKelvin:
                 itemIndex = 12;
+                break;
+
+            case FluidSensorType.Velocity_Absolute_Destructive:
+                itemIndex = 13;
+                break;
+
+            case FluidSensorType.Velocity_Absolute_Summative:
+                itemIndex = 14;
                 break;
 
             default:

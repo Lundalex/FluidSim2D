@@ -15,12 +15,6 @@
         <ui:Slider label="Boundary Elasticity" value="0.2" high-value="1" binding-path="BoundaryElasticity" fill="true" page-size="0" show-input-field="true" tooltip="The boundary elasticity used for rigidbody-boundary collisions." />
         <ui:Slider label="Boundary Friction" value="0" high-value="1" binding-path="BoundaryFriction" fill="true" page-size="0" show-input-field="true" tooltip="The boundary friction used for rigidbody-boundary interactions." />
     </ui:Foldout>
-    <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
-        <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies." />
-        <ui:Slider label="Correction Factor" value="42" high-value="1" binding-path="RB_RBCollisionCorrectionFactor" fill="true" page-size="0" show-input-field="true" tooltip="Correction factor for RB-RB collisions. A low value results in a smoother simulation, but slightly decreases simulation accuracy." />
-        <ui:Slider label="Fixed Correction" value="42" high-value="0.5" binding-path="RB_RBFixedCollisionCorrection" show-input-field="true" fill="true" tooltip="Fixed offset applied to colliding rigid bodies to prevent them &quot;sinking&quot; into each other. A high value may introduce jittering artifacts." low-value="0.01" />
-        <ui:Slider label="Rigid Correction" value="5" high-value="10" binding-path="RB_RBRigidConstraintCorrectionFactor" show-input-field="true" fill="true" tooltip="Correction factor for rigid RB-RB constraints. A low value will decrease jittering at the cost of simulation accuracy. A very high value may make the simulation unstable." low-value="0.1" />
-    </ui:Foldout>
     <ui:Foldout text="Engine Optimisations" name="EngineOptimisations" value="true" style="-unity-font-style: bold; -unity-text-outline-width: 0; text-shadow: 0 0 0 rgb(0, 0, 0); -unity-text-outline-color: rgba(55, 55, 55, 0); background-color: rgba(46, 46, 46, 0); border-bottom-color: rgb(0, 0, 0); border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px; border-top-color: rgba(0, 0, 0, 0); border-right-color: rgba(0, 0, 0, 0); border-left-color: rgba(0, 0, 0, 0); padding-bottom: 4px; padding-top: 1px; padding-right: 4px; padding-left: 4px;">
         <ui:Foldout text="Fluids" name="Fluids" value="false">
             <ui:Toggle label="Viscosity" binding-path="DoSimulateParticleViscosity" tooltip="Cost: Medium. Whether to include viscosity in the simulation" />
@@ -54,6 +48,10 @@
         <uie:PropertyField binding-path="MaxRBVel" label="Max Rigid Body Velocity" tooltip="Recommended: Keep at a high value unless simulation stability issues are encountered. Rigid body velocities cannot exceed this value." />
         <uie:PropertyField binding-path="MinRBVelForMovement" label="Min Rigid Body Velocity" tooltip="Recommended: Keep only high enough to visual jittering. A velocity threshold, below which rigid bodies will not move by their velocities. Intended to avoid jittering for rigid bodies moving very slowly. Too high of a value may decrease rigid body collision solver accuracy for very slow moving rigid bodies" />
     </ui:Foldout>
+    <ui:Foldout text="Sensor Normalization" name="Sensors" value="true" tooltip="Settings for normalizing sensor display data" style="-unity-font-style: bold; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 2px; border-top-width: 2px; border-bottom-color: rgb(0, 0, 0);">
+        <uie:PropertyField binding-path="SimUnitToMetersFactor" label="Sim To Meters" tooltip="Convertion factor for simulation length to meters. This value is used in sensor calculations and affects length calculations, as well as derived values such as volume, density, etc." />
+        <uie:PropertyField binding-path="VolumeFactor" label="Volume Factor" tooltip="Calculated volume values are multiplied by this value" />
+    </ui:Foldout>
     <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="false">
             <ui:Slider label="Interaction Radius" value="40" high-value="100" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
@@ -77,7 +75,7 @@
         <ui:Toggle label="Unoccupied Area" binding-path="DoDrawUnoccupiedFluidSensorArea" tooltip="Whether to tint unoccupied fluid sensor area." value="true" />
         <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)." binding-path="DoDrawRBOutlines" />
         <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)." />
-        <ui:Toggle label="Fast Compilation" binding-path="DoUseFastShaderCompilation" tooltip="Recommended: OFF (for builds), ON (in editor). Whether to enable shader compilation optimisations. This may slightly reduce runtime performance." />
+        <ui:Toggle label="Fast Compilation" binding-path="DoUseFastShaderCompilation" tooltip="Recommended: OFF (for builds), ON (in editor). Whether to enable shader compilation optimisations. This may slightly reduce runtime performance." value="true" />
         <uie:PropertyField binding-path="RenderOrder" name="PropertyField" tooltip="Recommended: Keep default settings. The render order of different program layers." />
     </ui:Foldout>
     <ui:Foldout text="Render Display" name="RenderDisplay" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
@@ -156,5 +154,11 @@
         <uie:ObjectField label="Rigid Body Simulation" binding-path="rbSimShader" />
         <uie:ObjectField label="Spatial Sorting" binding-path="sortShader" />
         <uie:ObjectField label="Debug" binding-path="debugShader" />
+    </ui:Foldout>
+    <ui:Foldout text="Rigid Body Simulation" name="RigidBodySimulation" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
+        <ui:Toggle label="Linked RB Collisions" value="false" tooltip="Recommended: OFF. Allow rigid bodies linked via springs to collide. Enabling this setting for rigid bodies with very high spring forces between each other may lead to solver inaccuracies." />
+        <ui:Slider label="Correction Factor" value="42" high-value="1" binding-path="RB_RBCollisionCorrectionFactor" fill="true" page-size="0" show-input-field="true" tooltip="Correction factor for RB-RB collisions. A low value results in a smoother simulation, but slightly decreases simulation accuracy." />
+        <ui:Slider label="Fixed Correction" value="42" high-value="0.5" binding-path="RB_RBFixedCollisionCorrection" show-input-field="true" fill="true" tooltip="Fixed offset applied to colliding rigid bodies to prevent them &quot;sinking&quot; into each other. A high value may introduce jittering artifacts." low-value="0.01" />
+        <ui:Slider label="Rigid Correction" value="5" high-value="10" binding-path="RB_RBRigidConstraintCorrectionFactor" show-input-field="true" fill="true" tooltip="Correction factor for rigid RB-RB constraints. A low value will decrease jittering at the cost of simulation accuracy. A very high value may make the simulation unstable." low-value="0.1" />
     </ui:Foldout>
 </ui:UXML>

@@ -6,14 +6,20 @@ public class SplashImage : MonoBehaviour
 {
     // Inspector
     [SerializeField] private float fadeDuration;
+    [SerializeField] private bool doEditorAnimation;
     [SerializeField] private Image image;
 
     // Nonserialized
     private float timePassed = 0.0f;
 
-#if UNITY_EDITOR
-    private void Start() => gameObject.SetActive(false);
-#endif
+    private void Start()
+    {
+        if (Application.isEditor && !doEditorAnimation) 
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+    }
 
     private void Update()
     {

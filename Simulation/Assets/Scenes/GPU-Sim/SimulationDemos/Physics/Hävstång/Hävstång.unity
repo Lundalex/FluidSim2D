@@ -243,6 +243,8 @@ MonoBehaviour:
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
+  SimUnitToMetersFactor: 0.005
+  VolumeFactor: 13.4
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 3
@@ -1086,9 +1088,9 @@ MonoBehaviour:
       y: 0
       z: 0
     sampleColorMultiplier:
-      x: 0.8
-      y: 0.8
-      z: 0.8
+      x: 0.6
+      y: 0.6
+      z: 0.6
     edgeColor:
       x: 1
       y: 1
@@ -1242,6 +1244,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: rbInput.canRotate
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
+      propertyPath: addInBetweenPoints
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3844977559221810856, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
@@ -1621,11 +1627,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: areaColor.a
-      value: 0.21568628
+      value: 0.15686275
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.b
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: areaColor.g
-      value: 0.39215687
+      value: 0.79607844
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.r
+      value: 0.011764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: customTitle
+      value: Massa
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numDecimals
@@ -1636,12 +1654,24 @@ PrefabInstance:
       value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: maxLerpSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: baseLerpSpeed
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: minPrefixIndex
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: fluidSensorType
-      value: 7
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseCustomTitle
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.x
@@ -1660,6 +1690,14 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doDisplayValueLerp
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: lerpSpeedMultiplier
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 49
       objectReference: {fileID: 0}
@@ -1670,6 +1708,10 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: newLowerPrefixThreshold
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: displayValueLerpThreshold
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2034,11 +2076,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: areaColor.a
-      value: 0.21568628
+      value: 0.15686275
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.b
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: areaColor.g
-      value: 0.39215687
+      value: 0.79607844
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: areaColor.r
+      value: 0.011764706
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numDecimals
@@ -2049,12 +2099,20 @@ PrefabInstance:
       value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: maxLerpSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: baseLerpSpeed
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: minPrefixIndex
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: fluidSensorType
-      value: 7
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: localTargetPos.x
@@ -2073,6 +2131,14 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doDisplayValueLerp
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: lerpSpeedMultiplier
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 49
       objectReference: {fileID: 0}
@@ -2083,6 +2149,10 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: newLowerPrefixThreshold
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: displayValueLerpThreshold
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2191,6 +2261,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SeesawScale
       objectReference: {fileID: 0}
+    - target: {fileID: 1466733679118251568, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: addInBetweenPoints
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1939773281320194819, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: defaultGridSpacing
       value: 1.6
@@ -2287,13 +2361,25 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: -0.5124359
       objectReference: {fileID: 0}
+    - target: {fileID: 6317896277337044518, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: addInBetweenPoints
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6910812484190179102, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: defaultGridSpacing
       value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 6939163259239549194, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: addInBetweenPoints
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6939163259239549194, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: defaultGridSpacing
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7325246861867846705, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: addInBetweenPoints
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8303967165309582595, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x

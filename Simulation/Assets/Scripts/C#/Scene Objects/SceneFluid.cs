@@ -34,6 +34,9 @@ public class SceneFluid : Polygon
 #if UNITY_EDITOR
     public override void OnEditorUpdate()
     {
+        if (Application.isPlaying) return;
+
+        // Skip re‑assigning collider points if user is actively dragging handles
         bool userIsModifying = Tools.current == Tool.Move || Tools.current == Tool.Rotate || Tools.current == Tool.Scale;
         if (userIsModifying) return;
 

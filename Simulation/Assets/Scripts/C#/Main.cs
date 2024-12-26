@@ -37,6 +37,11 @@ public class Main : MonoBehaviour
     public float MinRBVelForMovement = 0.1f;
 #endregion
 
+#region Sensor Normalization
+    public float SimUnitToMetersFactor = 0.005f;
+    public float VolumeFactor = 13.4f;
+#endregion
+
 #region Fluid Simulation
     public float LookAheadTime = 0.017f;
     public float StateThresholdPadding = 3.0f;
@@ -220,7 +225,6 @@ public class Main : MonoBehaviour
     [NonSerialized] public int ParticlesNum;
     [NonSerialized] public int MaxInfluenceRadiusSqr;
     [NonSerialized] public float InvMaxInfluenceRadius;
-    [NonSerialized] public float MarchScale;
     [NonSerialized] public int2 ChunksNum;
     [NonSerialized] public int ChunksNumAll;
     [NonSerialized] public int ParticleSpringsCombinedHalfLength;

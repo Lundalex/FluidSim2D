@@ -26,7 +26,7 @@ public class EditorManager : Editor
     [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
     static void DrawRigidBodyObjects(SceneRigidBody rigidBody, GizmoType gizmoType)
     {
-        if (rigidBody == null) return;
+        if (Application.isPlaying || rigidBody == null) return;
 
         rigidBody.SetPolygonData();
 
@@ -145,7 +145,7 @@ public class EditorManager : Editor
     [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
     static void DrawFluidObjects(SceneFluid fluid, GizmoType gizmoType)
     {
-        if (fluid == null) return;
+        if (fluid == null || Application.isPlaying) return;
 
         fluid.SetPolygonData();
 
@@ -186,7 +186,7 @@ public class EditorManager : Editor
     [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
     static void DrawFluidSpawnerObjects(FluidSpawner fluidSpawner, GizmoType gizmoType)
     {
-        if (fluidSpawner == null) return;
+        if (fluidSpawner == null || Application.isPlaying) return;
 
         fluidSpawner.SetPolygonData();
 
@@ -211,7 +211,7 @@ public class EditorManager : Editor
     [DrawGizmo(GizmoType.NotInSelectionHierarchy | GizmoType.Selected)]
     static void DrawFluidSensorObjects(FluidSensor fluidSensor, GizmoType gizmoType)
     {
-        if (fluidSensor == null) return;
+        if (fluidSensor == null || Application.isPlaying) return;
 
         Vector2 min = fluidSensor.measurementZone.min;
         Vector2 max = min + new Vector2(fluidSensor.measurementZone.width, fluidSensor.measurementZone.height);
