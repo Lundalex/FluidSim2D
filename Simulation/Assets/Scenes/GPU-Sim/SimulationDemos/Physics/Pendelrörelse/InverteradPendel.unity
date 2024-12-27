@@ -238,11 +238,14 @@ MonoBehaviour:
   rbSimShaderThreadSize2: 32
   rbSimShaderThreadSize3: 512
   FloatIntPrecisionRB: 50000
-  FloatIntPrecisionP: 1000
+  FloatIntPrecisionP: 5000
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
+  SimUnitToMetersFactor: 0.005
+  VolumeFactor: 40
+  PressureFactor: 1.77
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -270,6 +273,7 @@ MonoBehaviour:
   InteractionAttractionPower: 8
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
+  InteractionDampening: 1
   RB_MaxInteractionRadius: 50
   RB_InteractionAttractionPower: 2
   RB_InteractionRepulsionPower: 0.5
@@ -282,7 +286,7 @@ MonoBehaviour:
   DoDrawUnoccupiedFluidSensorArea: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 0
-  DoUseFastShaderCompilation: 0
+  DoUseFastShaderCompilation: 1
   RenderOrder: 0000000001000000020000000300000004000000
   Resolution:
     x: 1920
@@ -913,7 +917,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 65
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.y
@@ -1970,8 +1974,8 @@ MonoBehaviour:
       x: 1
       y: 1
       z: 1
-  - colorTexture: {fileID: 2800000, guid: 43f5d8c8ae1feec49bb8aad25b1d3842, type: 3}
-    colorTextureUpScaleFactor: 12.5
+  - colorTexture: {fileID: 2800000, guid: 1c21b07edd22649b487f8a12651b8af0, type: 3}
+    colorTextureUpScaleFactor: 6
     opacity: 1
     transparentEdges: 0
     baseColor:
@@ -1979,9 +1983,9 @@ MonoBehaviour:
       y: 0
       z: 0
     sampleColorMultiplier:
-      x: 1.2
-      y: 1.7
-      z: 1.7
+      x: 3
+      y: 4
+      z: 4
     edgeColor:
       x: 1
       y: 1
@@ -3332,6 +3336,10 @@ PrefabInstance:
     - target: {fileID: 1023477759102473719, guid: eef413e48f5f84d7ebd80d22b90f4cdf, type: 3}
       propertyPath: snapPointToGrid
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1023477759102473719, guid: eef413e48f5f84d7ebd80d22b90f4cdf, type: 3}
+      propertyPath: rbInput.matIndex
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1042140269648478111, guid: eef413e48f5f84d7ebd80d22b90f4cdf, type: 3}
       propertyPath: m_LocalPosition.x

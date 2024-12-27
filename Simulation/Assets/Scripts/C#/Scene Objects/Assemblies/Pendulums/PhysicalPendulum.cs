@@ -3,10 +3,13 @@ using UnityEngine;
 
 public class PhysicalPendulum : Pendulum
 {
+    [Header("Position")]
+    [SerializeField] private Vector2 position;
     [Header("Pendulum Rod")]
     public float width = 15.0f;
 
     [Header("References")]
+    [SerializeField] private SceneRigidBody fixedPoint;
     [SerializeField] private SceneRigidBody rodObject;
     [SerializeField] private SceneRigidBody weightObject;
 
@@ -59,7 +62,7 @@ public class PhysicalPendulum : Pendulum
     {
         base.AssemblyUpdate();
 
-        if (rodObject == null)
+        if (fixedPoint == null || rodObject == null || weightObject == null)
         {
             Debug.LogWarning("All references are not set. PhysicalPendulum: " + this.name);
             return;
@@ -69,10 +72,10 @@ public class PhysicalPendulum : Pendulum
     public override void SetPendulumData(float length, float mass, float gravity)
     {
         float halfWidth = width / 2.0f;
-        Vector2[] rodMeshPoints = GeometryUtils.Rectangle(halfWidth, halfWidth + length, halfWidth, halfWidth);
+        Vector2[] rodMeshPoints = GeometryUtils.Rectangle(halfWidth, -halfWidth - length, -halfWidth, halfWidth);
         
         rodObject.OverridePolygonPoints(rodMeshPoints);
-
+        
         float modifiedLength = length * Const.Sqrt2Div3;
         weightObject.rbInput.localLinkPosOtherRB.y = -modifiedLength;
         weightObject.transform.localPosition = new Vector3(150, 160 - modifiedLength);

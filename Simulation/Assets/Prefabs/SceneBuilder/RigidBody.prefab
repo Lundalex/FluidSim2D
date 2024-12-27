@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3844977559221810856}
   - component: {fileID: 6132482722789610898}
   m_Layer: 0
-  m_Name: RigidBodyPrefab
+  m_Name: RigidBody
   m_TagString: RigidBody
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

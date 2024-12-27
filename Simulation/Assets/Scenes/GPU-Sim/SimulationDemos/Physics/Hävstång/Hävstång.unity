@@ -238,13 +238,14 @@ MonoBehaviour:
   rbSimShaderThreadSize2: 32
   rbSimShaderThreadSize3: 512
   FloatIntPrecisionRB: 50000
-  FloatIntPrecisionP: 1000
+  FloatIntPrecisionP: 5000
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
   SimUnitToMetersFactor: 0.005
-  VolumeFactor: 67
+  VolumeFactor: 13.4
+  PressureFactor: 1.77
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 3
@@ -285,7 +286,7 @@ MonoBehaviour:
   DoDrawUnoccupiedFluidSensorArea: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 0
-  DoUseFastShaderCompilation: 0
+  DoUseFastShaderCompilation: 1
   RenderOrder: 0000000001000000020000000300000004000000
   Resolution:
     x: 1920
@@ -1080,24 +1081,24 @@ MonoBehaviour:
       x: 1
       y: 1
       z: 1
-  - colorTexture: {fileID: 2800000, guid: a2965a568e7b64937b89fe841854a77c, type: 3}
-    colorTextureUpScaleFactor: 1
+  - colorTexture: {fileID: 2800000, guid: d7215cefa2dcd90439e40bf03644d96d, type: 3}
+    colorTextureUpScaleFactor: 25
     opacity: 1
     transparentEdges: 0
     baseColor:
-      x: 0
-      y: 0
-      z: 0
+      x: 0.05
+      y: 0.05
+      z: 0.05
     sampleColorMultiplier:
-      x: 0.6
-      y: 0.6
-      z: 0.6
+      x: 1.4
+      y: 1.4
+      z: 1.4
     edgeColor:
       x: 1
       y: 1
       z: 1
-  - colorTexture: {fileID: 2800000, guid: 088c9683d0588d84eb1c17165c2d629a, type: 3}
-    colorTextureUpScaleFactor: 25
+  - colorTexture: {fileID: 2800000, guid: 74378026f0ba74aada3804247d938d0b, type: 3}
+    colorTextureUpScaleFactor: 4
     opacity: 1
     transparentEdges: 0
     baseColor:
@@ -1124,6 +1125,22 @@ MonoBehaviour:
       x: 1
       y: 1.7
       z: 1.7
+    edgeColor:
+      x: 1
+      y: 1
+      z: 1
+  - colorTexture: {fileID: 2800000, guid: 1c21b07edd22649b487f8a12651b8af0, type: 3}
+    colorTextureUpScaleFactor: 6
+    opacity: 1
+    transparentEdges: 0
+    baseColor:
+      x: 0
+      y: 0
+      z: 0
+    sampleColorMultiplier:
+      x: 2
+      y: 3
+      z: 3
     edgeColor:
       x: 1
       y: 1
@@ -2263,6 +2280,10 @@ PrefabInstance:
       value: SeesawScale
       objectReference: {fileID: 0}
     - target: {fileID: 1466733679118251568, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: rbInput.matIndex
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1466733679118251568, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: addInBetweenPoints
       value: 0
       objectReference: {fileID: 0}
@@ -2363,6 +2384,10 @@ PrefabInstance:
       value: -0.5124359
       objectReference: {fileID: 0}
     - target: {fileID: 6317896277337044518, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: rbInput.matIndex
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6317896277337044518, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: addInBetweenPoints
       value: 0
       objectReference: {fileID: 0}
@@ -2371,12 +2396,20 @@ PrefabInstance:
       value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 6939163259239549194, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: rbInput.matIndex
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6939163259239549194, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: addInBetweenPoints
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6939163259239549194, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: defaultGridSpacing
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7325246861867846705, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
+      propertyPath: rbInput.matIndex
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7325246861867846705, guid: 7dffbfe5a5cadd247a723b02c34399ca, type: 3}
       propertyPath: addInBetweenPoints

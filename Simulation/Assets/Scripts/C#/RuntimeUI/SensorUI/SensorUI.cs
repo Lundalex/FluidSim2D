@@ -78,7 +78,7 @@ public class SensorUI : MonoBehaviour
     {
         pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
         pointerMoveTimer = new Timer(PointerMoveDelay, true, true, 0);
-        SetDisplayValue(0, Mathf.Clamp(sensor.numDecimals, 1, 2));
+        SetDisplayValue(0, sensor.numDecimals);
     }
 
     private void Update()
@@ -186,7 +186,7 @@ public class SensorUI : MonoBehaviour
         // Configure the sensor UI for the newly selected sensor type (if the type has been changed by the user)
         sensor.doUseCustomTitle = false;
         sensor.valueOffset = 0.0f;
-        sensor.minPrefixIndex = 0;
+        sensor.minPrefixIndex = 2;
         if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
         {
             rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);

@@ -47,8 +47,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultDataView: 0
   numDecimals: 2
+  numGraphDecimals: 0
   minPrefixIndex: 0
   newLowerPrefixThreshold: 0.5
+  minDisplayValue: 0.1
   primaryColor: {r: 0.107794166, g: 1, b: 0, a: 1}
   sensorScale: 0.9
   localTargetPos: {x: 0, y: 0}
@@ -62,13 +64,13 @@ MonoBehaviour:
   doUseCustomTitle: 0
   customTitle: Title Here
   valueOffset: 0
+  graphPositionOffsetX: 5
   sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
   dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
   graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
   rigidBodySensorType: 1
   doInterpolation: 1
   moveSpeed: 10
-  minAbsVelocity: 1
 --- !u!114 &1779848012781042100
 MonoBehaviour:
   m_ObjectHideFlags: 0

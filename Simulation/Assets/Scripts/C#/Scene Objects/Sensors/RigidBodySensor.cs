@@ -11,9 +11,6 @@ public class RigidBodySensor : Sensor
     [NonSerialized] public int linkedRBIndex = -1;
     [NonSerialized] public bool firstDataRecieved = false;
 
-    [Header("RB Sensor Display")]
-    [SerializeField] private float minAbsVelocity = 1.0f;
-
     // Private
     private Vector2 currentTargetPosition;
 
@@ -42,13 +39,15 @@ public class RigidBodySensor : Sensor
             else
             {
                 RBData[] retrievedRBDatas = sensorManager.retrievedRBDatas;
+
                 RBData rbData = retrievedRBDatas[linkedRBIndex];
                 lastJointPos = (Vector2)rbData.pos;
 
                 // Init sensor UI position
                 if (!firstDataRecieved)
                 {
-                    currentTargetPosition = localTargetPos + lastJointPos;
+                    currentTargetPosition = localTargetPos;
+                    if (positionType == PositionType.Relative) currentTargetPosition += lastJointPos;
                     sensorUI.SetPosition(SimSpaceToCanvasSpace(currentTargetPosition));
                     firstDataRecieved = true;
                 }
@@ -61,10 +60,12 @@ public class RigidBodySensor : Sensor
 
     private void UpdateSensorContents(RBData[] rBDatas, int linkedRBIndex)
     {
+        float simUnitToMetersFactor = main.SimUnitToMetersFactor;
+
         RBData rbData = rBDatas[linkedRBIndex];
 
-        Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB);
-        Vector2 pos = (Vector2)rbData.pos;
+        Vector2 vel = Func.Int2ToFloat2(rbData.vel_AsInt2, main.FloatIntPrecisionRB) * simUnitToMetersFactor;
+        Vector2 pos = (Vector2)rbData.pos * simUnitToMetersFactor;
 
         float value = 0;
         switch (rigidBodySensorType)
@@ -75,17 +76,14 @@ public class RigidBodySensor : Sensor
 
             case RigidBodySensorType.Velocity:
                 value = vel.magnitude;
-                if (value < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.Velocity_X:
                 value = vel.x;
-                if (Mathf.Abs(value) < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.Velocity_Y:
                 value = vel.y;
-                if (Mathf.Abs(value) < minAbsVelocity) value = 0;
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
@@ -108,6 +106,8 @@ public class RigidBodySensor : Sensor
                 Debug.LogWarning("Unrecognised RigidBodySensorType: " + this.name);
                 break;
         }
+
+        if (Mathf.Abs(value * Mathf.Pow(10, 3 * (3 - minPrefixIndex))) < minDisplayValue) value = 0.0f;
         
         value += valueOffset;
 

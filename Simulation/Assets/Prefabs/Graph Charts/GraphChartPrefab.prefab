@@ -122,7 +122,7 @@ MonoBehaviour:
       m_Calls: []
   itemFormat: <?y>
   Data:
-    automaticVerticalViewGap: 3
+    automaticVerticalViewGap: 0.01
     automaticVerticallView: 1
     automaticcHorizontaViewGap: 0
     automaticHorizontalView: 0

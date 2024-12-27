@@ -243,6 +243,9 @@ MonoBehaviour:
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
+  SimUnitToMetersFactor: 0.005
+  VolumeFactor: 40
+  PressureFactor: 1.77
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
@@ -270,6 +273,7 @@ MonoBehaviour:
   InteractionAttractionPower: 5
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
+  InteractionDampening: 1
   RB_MaxInteractionRadius: 50
   RB_InteractionAttractionPower: 1.5
   RB_InteractionRepulsionPower: 0.5
@@ -282,7 +286,7 @@ MonoBehaviour:
   DoDrawUnoccupiedFluidSensorArea: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 0
-  DoUseFastShaderCompilation: 0
+  DoUseFastShaderCompilation: 1
   RenderOrder: 0000000001000000020000000300000004000000
   Resolution:
     x: 1080

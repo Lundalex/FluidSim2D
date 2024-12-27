@@ -362,7 +362,7 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
         // Check if any points of rbB are inside rbA
         uint startIndexB = rbB.startIndex;
         uint endIndexB = rbB.endIndex;
-        for (uint vecIndex = startIndexB; vecIndex <= endIndexB; vecIndex++)
+        for (vecIndex = startIndexB; vecIndex <= endIndexB; vecIndex++)
         {
             float2 vertexB = RBVectors[vecIndex].pos;
             EnsureNoPathMarker(vertexB);
@@ -636,7 +636,8 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     float invInertiaA = (rbA.inertia > 0) ? 1.0 / rbA.inertia : 0;
     float invInertiaB = (rbB.inertia > 0) ? 1.0 / rbB.inertia : 0;
 
-    float2 springForce = 0;
+    float totalForceMagnitude = 0;
+    float springForceMagnitude = 0;
     bool rigidConstraint = (stiffness == 0.0);
     if (rigidConstraint)
     {
@@ -693,7 +694,7 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         float displacement = currentLength - springRestLength;
 
         // Hooke's law
-        float springForceMagnitude = -stiffness * displacement;
+        springForceMagnitude = -stiffness * displacement;
 
         float2 velAtLinkA = Int2ToFloat2(rbA.vel_AsInt2, INT_FLOAT_PRECISION_RB)
                           + crossZ(IntToFloat(rbA.rotVel_AsInt, INT_FLOAT_PRECISION_RB), linkPosA);
@@ -704,16 +705,16 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
         float relVelAlongSpring = dot(relVel, direction);
 
         float dampingForceMagnitude = -damping * relVelAlongSpring;
-        float totalForceMagnitude = springForceMagnitude + dampingForceMagnitude;
-        springForce = totalForceMagnitude * direction;
+        totalForceMagnitude = springForceMagnitude + dampingForceMagnitude;
+        float2 totSpringForce = totalForceMagnitude * direction;
 
-        if (invMassA > 0) deltaVelA += springForce * invMassA * DeltaTime;
-        if (invMassB > 0) deltaVelB += (-springForce) * invMassB * DeltaTime;
+        if (invMassA > 0) deltaVelA += totSpringForce * invMassA * DeltaTime;
+        if (invMassB > 0) deltaVelB += (-totSpringForce) * invMassB * DeltaTime;
 
         if (invInertiaA > 0)
-            deltaRotVelA += cross2D(linkPosA, springForce) * invInertiaA * DeltaTime;
+            deltaRotVelA += cross2D(linkPosA, totSpringForce) * invInertiaA * DeltaTime;
         if (invInertiaB > 0)
-            deltaRotVelB += cross2D(linkPosB, -springForce) * invInertiaB * DeltaTime;
+            deltaRotVelB += cross2D(linkPosB, -totSpringForce) * invInertiaB * DeltaTime;
     }
 
     // Accumulate final velocities
@@ -727,9 +728,10 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     AccumulateDeltaRotVel(i, deltaRotVelA_Int);
     AccumulateDeltaRotVel(rbA.linkedRBIndex, deltaRotVelB_Int);
 
-    if (length(springForce) != 0)
+    // Accumulate spring force (not considering dampingForceMagnitude)
+    if (springForceMagnitude != 0) // Alternatively: totalForceMagnitude
     {
-        float absSpringForce = length(springForce) * 0.001;
+        float absSpringForce = abs(totalForceMagnitude) * 0.001; // Alternatively: totalForceMagnitude
         int recordedSpringForce_Int = FloatAsInt(absSpringForce, INT_FLOAT_PRECISION_RB);
         AccumulateSpringForce(i, recordedSpringForce_Int);
     }

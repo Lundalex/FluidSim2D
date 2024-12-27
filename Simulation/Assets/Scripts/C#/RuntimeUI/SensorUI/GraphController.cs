@@ -24,6 +24,7 @@ public class GraphController : MonoBehaviour
     // References
     [NonSerialized] private GraphChart graphChart;
     [NonSerialized] private ItemLabels itemLabels;
+    [NonSerialized] private VerticalAxis verticalAxis;
 
     // Private
     private List<Vector2> pointList;
@@ -31,10 +32,11 @@ public class GraphController : MonoBehaviour
     private bool isFirstPointDrawn;
     private Timer pointSubmissionTimer;
 
-    public void InitGraph(GraphChart graphChartInput, ItemLabels itemLabels)
+    public void InitGraph(GraphChart graphChartInput, ItemLabels itemLabels, VerticalAxis verticalAxis, int numGraphDecimals)
     {
         this.graphChart = graphChartInput;
         this.itemLabels = itemLabels;
+        this.verticalAxis = verticalAxis;
         if (overrideGraphDataCategory && isBezierCurve)
         {
             Debug.LogWarning("The bezier curve setting cannot be combined with graph data category override. The graph data category will not be overridden");
@@ -47,6 +49,8 @@ public class GraphController : MonoBehaviour
 
         float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
         pointSubmissionTimer = new(pointSubmissionFrequency, false, false);
+
+        SetNumGraphDecimals(numGraphDecimals);
 
         ResetGraph();
     }
@@ -72,6 +76,16 @@ public class GraphController : MonoBehaviour
         {
             suffix = " " + suffix
         };
+    }
+
+    public void SetVerticalAxisSuffix(string suffix)
+    {
+        verticalAxis.MainDivisions.TextSuffix = suffix;
+    }
+
+    public void SetNumGraphDecimals(int numDecimals)
+    {
+        verticalAxis.MainDivisions.FractionDigits = numDecimals;
     }
 
     public void AddPointsToGraph(params Vector2[] points)

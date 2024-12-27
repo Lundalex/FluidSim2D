@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4245315013079076013}
   - component: {fileID: 1603245141139881648}
   m_Layer: 0
-  m_Name: FluidPrefab
+  m_Name: Fluid
   m_TagString: Fluid
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -39,7 +39,8 @@ public class Main : MonoBehaviour
 
 #region Sensor Normalization
     public float SimUnitToMetersFactor = 0.005f;
-    public float VolumeFactor = 13.4f;
+    public float VolumeFactor = 40.0f;
+    public float PressureFactor = 1.77f;
 #endregion
 
 #region Fluid Simulation
@@ -419,7 +420,7 @@ public class Main : MonoBehaviour
         bool skipUpdatingMouseInputs = (currentMouseInputs.x && MousePressed.x) || (currentMouseInputs.y && MousePressed.y);
         if (!skipUpdatingMouseInputs)
         {
-            bool disallowMouseInputs = PM.Instance.CheckAnyUIElementHovered() || PM.Instance.CheckAnyUIElementMoved() || PM.Instance.isAnySensorSettingsViewActive;
+            bool disallowMouseInputs = PM.Instance.CheckAnyUIElementHovered() || PM.Instance.CheckAnySensorBeingMoved() || PM.Instance.isAnySensorSettingsViewActive;
             MousePressed = disallowMouseInputs ? false : currentMouseInputs;
         }
 

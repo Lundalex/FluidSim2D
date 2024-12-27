@@ -603,10 +603,12 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
             float patternMod = sensorArea.patternMod;
             float patternPos = pixelPos.x + pixelPos.y + TotalScaledTimeElapsed * SensorAreaAnimationSpeed;
             float patternPosMod = patternPos % patternMod;
-
+            
             if (patternPosMod < patternMod * 0.5) sensorAreaTint += sensorArea.colorTint;
         }
     }
+    
+    sensorAreaTint.a = clamp(sensorAreaTint.a, 0.0, 1.0);
 
     int nearestLastChunkKey_PType_POrder = nearestIsNotGas ? nearestNonGasLastChunkKey_PType_POrder : nearestGasLastChunkKey_PType_POrder;
     if (doDrawFluid)
@@ -954,6 +956,7 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     if (springFound)
     {
         Mat mat = Materials[matIndex];
+        if (mat.opacity <= 0) return;
 
         float2 uv = MirrorRepeatUV(mat.colTexUpScaleFactor * posNorm / (float2)BoundaryDims);
         uv *= SpringTextureUVFactor;

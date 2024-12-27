@@ -54,9 +54,10 @@
         <uie:PropertyField binding-path="MaxRBVel" label="Max Rigid Body Velocity" tooltip="Recommended: Keep at a high value unless simulation stability issues are encountered. Rigid body velocities cannot exceed this value." />
         <uie:PropertyField binding-path="MinRBVelForMovement" label="Min Rigid Body Velocity" tooltip="Recommended: Keep only high enough to visual jittering. A velocity threshold, below which rigid bodies will not move by their velocities. Intended to avoid jittering for rigid bodies moving very slowly. Too high of a value may decrease rigid body collision solver accuracy for very slow moving rigid bodies" />
     </ui:Foldout>
-    <ui:Foldout text="Sensor Normalization" name="Sensors" value="true" tooltip="Settings for normalizing sensor display data" style="-unity-font-style: bold; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 2px; border-top-width: 2px; border-bottom-color: rgb(0, 0, 0);">
+    <ui:Foldout text="Sensor Normalization" name="SensorNormalization" value="true" tooltip="Settings for normalizing sensor display data" style="-unity-font-style: bold; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 2px; border-top-width: 2px; border-bottom-color: rgb(0, 0, 0);">
         <uie:PropertyField binding-path="SimUnitToMetersFactor" label="Sim To Meters" tooltip="Convertion factor for simulation length to meters. This value is used in sensor calculations and affects length calculations, as well as derived values such as volume, density, etc." />
         <uie:PropertyField binding-path="VolumeFactor" label="Volume Factor" tooltip="Calculated volume values are multiplied by this value" />
+        <uie:PropertyField binding-path="PressureFactor" label="Pressure Factor" tooltip="Calculated pressure values are multiplied by this value" />
     </ui:Foldout>
     <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="true">

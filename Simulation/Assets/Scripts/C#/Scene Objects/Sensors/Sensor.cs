@@ -10,8 +10,10 @@ public abstract class Sensor : MonoBehaviour
     [Header("Display")]
     [SerializeField] private DataView defaultDataView;
     [Range(1, 2)] public int numDecimals;
+    [Range(0, 2)] public int numGraphDecimals;
     [Range(0, 3)] public int minPrefixIndex;
     [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
+    public float minDisplayValue = 0.1f;
     [SerializeField] public Color primaryColor;
     [Range(0.5f, 2.0f)] public float sensorScale = 1;
     public Vector2 localTargetPos;
@@ -30,6 +32,7 @@ public abstract class Sensor : MonoBehaviour
     public bool doUseCustomTitle = false;
     public string customTitle = "Title Here";
     public float valueOffset = 0.0f;
+    public float graphPositionOffsetX = 0.0f;
 
     [Header("References")]
     [SerializeField] private GameObject sensorUIPrefab;
@@ -46,6 +49,7 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] public Vector2 canvasResolution;
     [NonSerialized] private GraphChart graphChart;
     [NonSerialized] private ItemLabels itemLabels;
+    [NonSerialized] private VerticalAxis verticalAxis;
 
     // Display
     [NonSerialized] public SensorUI sensorUI;
@@ -62,7 +66,7 @@ public abstract class Sensor : MonoBehaviour
     {
         InitSensorUI();
         InitSensor(sensorUIPos);
-        graphController.InitGraph(graphChart, itemLabels);
+        graphController.InitGraph(graphChart, itemLabels, verticalAxis, numGraphDecimals);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
         
         newPrefixTimer = new Timer(newLowerPrefixThreshold, true, true);
@@ -94,8 +98,11 @@ public abstract class Sensor : MonoBehaviour
             sensorUI.dashedRectangle.sensorUI = sensorUI;
         }
         GameObject sensorUIGraphChartObject = Instantiate(graphChartPrefab, sensorUI.graphChartContainer);
+        Vector3 curPos = sensorUIGraphChartObject.transform.position;
+        sensorUIGraphChartObject.transform.position = curPos + new Vector3(graphPositionOffsetX + numGraphDecimals * 3.0f, 0, 0);
         graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
         itemLabels = sensorUIGraphChartObject.GetComponent<ItemLabels>();
+        verticalAxis = sensorUIGraphChartObject.GetComponent<VerticalAxis>();
         mainCanvas = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;

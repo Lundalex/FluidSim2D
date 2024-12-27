@@ -133,9 +133,11 @@ public class FluidSensor : Sensor
                 float estimatedWidth = totColumnsWithLiquid * SampleSpacing * chunkSize;
                 float estimatedVolume = totChunksWithLiquid * Func.Sqr(SampleSpacing * chunkSize) * main.VolumeFactor;
 
+                // Normalize sumFluidDatas values
                 sumFluidDatas.totMass *= 0.001f;
                 sumFluidDatas.totVelAbs *= main.SimUnitToMetersFactor;
                 sumFluidDatas.totVelComponents *= main.SimUnitToMetersFactor;
+                sumFluidDatas.totPressure *= main.PressureFactor;
 
                 UpdateSensorContents(sumFluidDatas, estimatedDepth, estimatedWidth, estimatedVolume);
             }
@@ -230,6 +232,8 @@ public class FluidSensor : Sensor
             }
         }
 
+        if (Mathf.Abs(value * Mathf.Pow(10, 3 * (3 - minPrefixIndex))) < minDisplayValue) value = 0.0f;
+
         value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
@@ -293,7 +297,7 @@ public class FluidSensor : Sensor
 
         string unit = prefix + baseUnit;
 
-        ApplyUnitExceptions(ref unit);
+        ApplyUnitExceptions(ref prefix, ref unit);
 
         if (unit != lastUnit)
         {
@@ -305,11 +309,12 @@ public class FluidSensor : Sensor
         return false;
     }
 
-    private void ApplyUnitExceptions(ref string unit)
+    private void ApplyUnitExceptions(ref string prefix, ref string unit)
     {
         switch (unit)
         {
             case "mkg":
+                prefix = "";
                 unit = "g";
                 break;
             

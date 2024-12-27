@@ -354,6 +354,10 @@ public class ProgramManager : ScriptableObject
 
     public bool CheckAnyUIElementHovered()
     {
+        // Return false if the program is starting up
+        if (startConfirmationStatus == StartConfirmationStatus.Waiting || startConfirmationStatus == StartConfirmationStatus.NotStarted) return false;
+
+        // Check each ui element for pointer hovering
         foreach (SensorData sensorData in sensorDatas)
         {
             if (sensorData.sensorUI.isPointerHovering) return true;
@@ -365,8 +369,11 @@ public class ProgramManager : ScriptableObject
         return false;
     }
 
-    public bool CheckAnyUIElementMoved()
+    public bool CheckAnySensorBeingMoved()
     {
+        // Return false if the program is starting up
+        if (startConfirmationStatus == StartConfirmationStatus.Waiting || startConfirmationStatus == StartConfirmationStatus.NotStarted) return false;
+
         foreach (SensorData sensorData in sensorDatas)
         {
             if (sensorData.sensorUI.isBeingMoved) return true;
