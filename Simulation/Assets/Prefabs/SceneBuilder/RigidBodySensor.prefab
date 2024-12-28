@@ -48,6 +48,7 @@ MonoBehaviour:
   defaultDataView: 0
   numDecimals: 2
   numGraphDecimals: 0
+  numGraphTimeDecimals: 1
   minPrefixIndex: 0
   newLowerPrefixThreshold: 0.5
   minDisplayValue: 0.1
@@ -64,7 +65,7 @@ MonoBehaviour:
   doUseCustomTitle: 0
   customTitle: Title Here
   valueOffset: 0
-  graphPositionOffsetX: 5
+  graphPositionOffsetX: 3
   sensorUIPrefab: {fileID: 543588523128582091, guid: 3e2119cd7f521694090bd021ac6503fa, type: 3}
   dashedRectanglePrefab: {fileID: 2308313777125520936, guid: 6c145194039508d48836a83dd28a17ce, type: 3}
   graphChartPrefab: {fileID: 7840501847409516935, guid: 6361c917c1126c543975ef69f15678c5, type: 3}
@@ -86,7 +87,11 @@ MonoBehaviour:
   overrideGraphDataCategory: 0
   isBezierCurve: 0
   bezierTension: 0.5
-  HorizontalViewLength: 5
+  HorizontalViewSize: 3
+  doUseAdaptiveViewY: 1
+  adaptivePaddingYPercent: 0.1
+  fixedViewMinY: -10
+  fixedViewMaxY: 10
   lineMaterial: {fileID: 2100000, guid: 17705335a6baae7449e02ba5755f88ea, type: 2}
   fillMaterial: {fileID: 2100000, guid: 084574ea59b3e084ebd7ab1a38b8a5de, type: 2}
   pointMaterial: {fileID: 2100000, guid: fa0b3a0e33fedd249b4527b6027ba69e, type: 2}

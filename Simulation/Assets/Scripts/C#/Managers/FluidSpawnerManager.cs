@@ -19,7 +19,7 @@ public class FluidSpawnerManager : MonoBehaviour
         {
             FluidSpawner fluidSpawner = enabledFluidSpawners[i];
 
-            if (i >= timers.Count) timers.Add(new(Func.MsToSeconds(fluidSpawner.msSpawnInterval), true, true));
+            if (i >= timers.Count) timers.Add(new(Func.MsToSeconds(fluidSpawner.msSpawnInterval), TimeType.Clamped, true));
 
             if (timers[i].Check())
             {

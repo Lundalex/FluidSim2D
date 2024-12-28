@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6121839725252329173}
   - component: {fileID: 5413159690790359341}
   m_Layer: 5
-  m_Name: UserTextVerySmall
+  m_Name: UserTextXS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -35,7 +35,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -25, y: 401.7}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5413159690790359341
@@ -55,8 +55,12 @@ MonoBehaviour:
   title: {fileID: 8106837955286907082}
   titleText: Very Small
   primaryColor: {r: 0.882353, g: 1, b: 0, a: 1}
+  onValueChanged:
+    m_PersistentCalls:
+      m_Calls: []
   displayText: Lorem Ipsum is simply dummy text of the printing and typesetting industry.
     Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+  displayTextSize: 17
   textField: {fileID: 0}
 --- !u!1001 &1227891057513631292
 PrefabInstance:

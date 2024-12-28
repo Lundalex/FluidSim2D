@@ -5,14 +5,14 @@ public class Timer
 {
     private float time;
     private readonly float threshold;
-    private readonly bool useClampedTime;
+    private readonly TimeType timeType;
     private readonly bool resetTimerOnThresholdReached;
 
     /// <summary>A timer which is automatically subscribed to the program update life cycle</summary>
-    public Timer(float threshold, bool useClampedTime = true, bool resetTimerOnThresholdReached = true, float time = 0)
+    public Timer(float threshold, TimeType timeType = TimeType.Clamped, bool resetTimerOnThresholdReached = true, float time = 0)
     {
         this.threshold = threshold;
-        this.useClampedTime = useClampedTime;
+        this.timeType = timeType;
         this.resetTimerOnThresholdReached = resetTimerOnThresholdReached;
         this.time = time;
         
@@ -21,8 +21,25 @@ public class Timer
 
     private void Update(bool doUpdateClampedTime)
     {
-        if (!doUpdateClampedTime && useClampedTime) return;
-        time += useClampedTime ? PM.Instance.clampedDeltaTime : Time.deltaTime;
+        if (!doUpdateClampedTime && timeType != TimeType.NonClamped) return;
+        switch (timeType)
+        {
+            case TimeType.Clamped:
+                time += PM.Instance.clampedDeltaTime;
+                break;
+
+            case TimeType.NonClamped:
+                time += Time.deltaTime;
+                break;
+
+            case TimeType.Scaled:
+                time += PM.Instance.scaledDeltaTime;
+                break;
+
+            default:
+                Debug.Log("TimeType not recognised. See class 'Timer'");
+                break;
+        }
     }
 
     /// <summary>Check whether the internal accumulated time has exceeded the threshold</summary>

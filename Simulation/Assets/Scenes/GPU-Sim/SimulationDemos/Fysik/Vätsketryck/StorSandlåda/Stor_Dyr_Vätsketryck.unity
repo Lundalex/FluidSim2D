@@ -1024,6 +1024,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphDecimals
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
       value: 248.5
       objectReference: {fileID: 0}
@@ -1040,6 +1044,14 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 30
       objectReference: {fileID: 0}
@@ -1050,6 +1062,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1520,7 +1544,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numGraphDecimals
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
@@ -1539,6 +1563,14 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 30
       objectReference: {fileID: 0}
@@ -1549,6 +1581,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1619,6 +1663,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7426780360149379722}
     m_Modifications:
+    - target: {fileID: 1779848012781042100, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 1779848012781042100, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1779848012781042100, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6569177160939710243, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1710,6 +1766,10 @@ PrefabInstance:
     - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: rigidBodySensorType
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2364,7 +2424,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
-      value: 72.5
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 2603694296442392666, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2452,7 +2512,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3627676980895701930, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
-      value: 72.5
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 5190138399230247205, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
@@ -2813,6 +2873,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphDecimals
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
       value: 248.5
       objectReference: {fileID: 0}
@@ -2829,6 +2893,14 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 30
       objectReference: {fileID: 0}
@@ -2839,6 +2911,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3831,6 +3915,10 @@ PrefabInstance:
       value: 158
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphDecimals
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
       value: 144
       objectReference: {fileID: 0}
@@ -3847,6 +3935,10 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 84
       objectReference: {fileID: 0}
@@ -3857,6 +3949,22 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: HorizontalViewSize
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4280,7 +4388,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1227694708897028629, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
-      value: 72.5
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 2603694296442392666, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4368,7 +4476,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3627676980895701930, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: rbInput.localLinkPosOtherRB.y
-      value: 72.5
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 5190138399230247205, guid: 5531f8177f4284259a0158e9e59fdc36, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
@@ -5678,7 +5786,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: numGraphDecimals
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
@@ -5698,7 +5806,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: graphPositionOffsetX
-      value: 5
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
@@ -5711,6 +5823,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6742,6 +6866,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphDecimals
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
       value: 144
       objectReference: {fileID: 0}
@@ -6758,6 +6886,14 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 84
       objectReference: {fileID: 0}
@@ -6768,6 +6904,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6869,7 +7017,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: sensorScale
-      value: 1
+      value: 0.95
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: maxLerpSpeed
@@ -6916,6 +7064,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.x
       value: 144
       objectReference: {fileID: 0}
@@ -6932,6 +7084,14 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: numGraphTimeDecimals
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: measurementZone.width
       value: 84
       objectReference: {fileID: 0}
@@ -6942,6 +7102,18 @@ PrefabInstance:
     - target: {fileID: 3858022677190404988, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMaxY
+      value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: fixedViewMinY
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070848776831518849, guid: b8a9a129d9792492394a5073de7451df, type: 3}
+      propertyPath: doUseAdaptiveViewY
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6659919282265780785, guid: b8a9a129d9792492394a5073de7451df, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7484,7 +7656,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 65
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6520455285656269561, guid: 11c5f435613f06c4188ff31649444102, type: 3}
       propertyPath: m_SizeDelta.y

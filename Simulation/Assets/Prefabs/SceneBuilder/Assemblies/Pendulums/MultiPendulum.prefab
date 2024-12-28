@@ -59,6 +59,11 @@ MonoBehaviour:
   spring: {fileID: 7447881423568491887}
   doubleMathematical: {fileID: 1494191368714799167}
   doubleSpring: {fileID: 906541229591328800}
+  mathematicalText: {fileID: 0}
+  physicalText: {fileID: 0}
+  springText: {fileID: 0}
+  doubleMathematicalText: {fileID: 0}
+  doubleSpringText: {fileID: 0}
   userSelectorInput: {fileID: 0}
   userSliderInput: {fileID: 0}
 --- !u!1001 &3130609892405541616

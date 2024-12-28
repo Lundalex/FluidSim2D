@@ -76,8 +76,8 @@ public class SensorUI : MonoBehaviour
 
     public void Initialize()
     {
-        pointerHoverTimer = new Timer(PointerHoverCooldown, true, true, PointerHoverCooldown);
-        pointerMoveTimer = new Timer(PointerMoveDelay, true, true, 0);
+        pointerHoverTimer = new Timer(PointerHoverCooldown, TimeType.Clamped, true, PointerHoverCooldown);
+        pointerMoveTimer = new Timer(PointerMoveDelay, TimeType.Clamped, true, 0);
         SetDisplayValue(0, sensor.numDecimals);
     }
 
@@ -184,16 +184,19 @@ public class SensorUI : MonoBehaviour
         sensor.graphController.ResetGraph();
 
         // Configure the sensor UI for the newly selected sensor type (if the type has been changed by the user)
-        sensor.doUseCustomTitle = false;
-        sensor.valueOffset = 0.0f;
-        sensor.minPrefixIndex = 2;
-        if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
+        if (rigidBodySensorTypeDropdownUsed || fluidSensorTypeDropdownUsed)
         {
-            rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
-        }
-        else if (fluidSensorTypeDropdownUsed && sensor is FluidSensor fluidSensor)
-        {
-            fluidSensor.SetFluidSensorType(selectedFluidSensorType);
+            sensor.doUseCustomTitle = false;
+            sensor.valueOffset = 0.0f;
+            sensor.minPrefixIndex = 2;
+            if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
+            {
+                rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);
+            }
+            else if (fluidSensorTypeDropdownUsed && sensor is FluidSensor fluidSensor)
+            {
+                fluidSensor.SetFluidSensorType(selectedFluidSensorType);
+            }
         }
     }
 

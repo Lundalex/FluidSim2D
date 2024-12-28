@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5312364514376658118
+--- !u!1 &8670199683279308229
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,59 +8,62 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3074724865059488557}
-  - component: {fileID: 6966798653328401209}
+  - component: {fileID: 3460292128769666087}
+  - component: {fileID: 9169070572743149652}
   m_Layer: 5
-  m_Name: UserTextLarge
+  m_Name: UserTextXL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &3074724865059488557
+--- !u!224 &3460292128769666087
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5312364514376658118}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_GameObject: {fileID: 8670199683279308229}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8715785649910618817}
-  - {fileID: 2519005789447205668}
-  - {fileID: 2455564268203439973}
+  - {fileID: 4335393267721994751}
+  - {fileID: 3361195807553147380}
+  - {fileID: 4574178053013004084}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -245.6}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 108, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &6966798653328401209
+--- !u!114 &9169070572743149652
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5312364514376658118}
+  m_GameObject: {fileID: 8670199683279308229}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ae778eee5a5a10489ead220b25896bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointerHoverArea: {fileID: 8433022365635408573}
-  containerTrimImage: {fileID: 7850715706272902651}
-  title: {fileID: 3373716539890737633}
-  titleText: Large Text
-  primaryColor: {r: 0.882353, g: 1, b: 0, a: 1}
-  displayText: Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
-  displayTextSize: 17
-  textField: {fileID: 8146972876516773553}
---- !u!1 &8997229339966953640
+  pointerHoverArea: {fileID: 3591274092590885251}
+  containerTrimImage: {fileID: 2895112783640655557}
+  title: {fileID: 2486491659401413425}
+  titleText: "Unders<b>\xF6</b>k"
+  primaryColor: {r: 0, g: 1, b: 0, a: 1}
+  onValueChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  displayText: "De r\xF6relsem\xF6nster som den dubb pendeltyp ger upphov till kallas
+    f\xF6r 'kaotisk r\xF6relse'. Ge pendeln lite energi och analysera fartgrafen."
+  displayTextSize: 19.8
+  textField: {fileID: 2048595069182291226}
+--- !u!1 &9092802669794201664
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -68,11 +71,11 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2455564268203439973}
-  - component: {fileID: 76508308868227575}
-  - component: {fileID: 8146972876516773553}
-  - component: {fileID: 6091633998387866855}
-  - component: {fileID: 3529869048870776410}
+  - component: {fileID: 4574178053013004084}
+  - component: {fileID: 4290336730538282279}
+  - component: {fileID: 2048595069182291226}
+  - component: {fileID: 7092435617017311042}
+  - component: {fileID: 2609054201199559577}
   m_Layer: 5
   m_Name: MainText
   m_TagString: Untagged
@@ -80,40 +83,40 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &2455564268203439973
+--- !u!224 &4574178053013004084
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8997229339966953640}
+  m_GameObject: {fileID: 9092802669794201664}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 3074724865059488557}
+  m_Father: {fileID: 3460292128769666087}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 31.099998, y: -69.7}
-  m_SizeDelta: {x: 144.2, y: 126.2}
+  m_AnchoredPosition: {x: 32.599987, y: -36}
+  m_SizeDelta: {x: 141.19998, y: 264.85}
   m_Pivot: {x: 0.5, y: 1}
---- !u!222 &76508308868227575
+--- !u!222 &4290336730538282279
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8997229339966953640}
+  m_GameObject: {fileID: 9092802669794201664}
   m_CullTransparentMesh: 0
---- !u!114 &8146972876516773553
+--- !u!114 &2048595069182291226
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8997229339966953640}
+  m_GameObject: {fileID: 9092802669794201664}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
@@ -127,8 +130,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+  m_text: "De r\xF6relsem\xF6nster som den dubb pendeltyp ger upphov till kallas
+    f\xF6r 'kaotisk r\xF6relse'. Ge pendeln lite energi och analysera fartgrafen."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -155,8 +158,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 19.8
+  m_fontSizeBase: 19.8
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -165,7 +168,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
-  m_characterSpacing: 10
+  m_characterSpacing: 8.45
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -199,13 +202,13 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &6091633998387866855
+--- !u!114 &7092435617017311042
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8997229339966953640}
+  m_GameObject: {fileID: 9092802669794201664}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
@@ -219,13 +222,13 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!114 &3529869048870776410
+--- !u!114 &2609054201199559577
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8997229339966953640}
+  m_GameObject: {fileID: 9092802669794201664}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
@@ -244,7 +247,7 @@ MonoBehaviour:
   m_UpdateString:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 8146972876516773553}
+      - m_Target: {fileID: 2048595069182291226}
         m_TargetAssemblyTypeName: TMPro.TMP_Text, Unity.TextMeshPro
         m_MethodName: set_text
         m_Mode: 0
@@ -259,13 +262,13 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!1001 &1687931465453810800
+--- !u!1001 &1962636044655384224
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 3074724865059488557}
+    m_TransformParent: {fileID: 3460292128769666087}
     m_Modifications:
     - target: {fileID: 3390435097152062931, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -349,7 +352,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3862385142839576404, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 11
+      value: 48.1
       objectReference: {fileID: 0}
     - target: {fileID: 3862385142839576404, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -365,7 +368,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4160593682004186513, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_text
-      value: Large Text
+      value: "Unders<b>\xF6</b>k"
       objectReference: {fileID: 0}
     - target: {fileID: 6038371284629134417, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       propertyPath: m_Name
@@ -377,36 +380,36 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8042619594427877854, guid: aa9473ef872df4fa79950866d3678032, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8519839703668259138}
+      addedObject: {fileID: 2456155555408740462}
   m_SourcePrefab: {fileID: 100100000, guid: aa9473ef872df4fa79950866d3678032, type: 3}
---- !u!224 &2519005789447205668 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 3862385142839576404, guid: aa9473ef872df4fa79950866d3678032, type: 3}
-  m_PrefabInstance: {fileID: 1687931465453810800}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &3373716539890737633 stripped
+--- !u!114 &2486491659401413425 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4160593682004186513, guid: aa9473ef872df4fa79950866d3678032, type: 3}
-  m_PrefabInstance: {fileID: 1687931465453810800}
+  m_PrefabInstance: {fileID: 1962636044655384224}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8714926323818855854}
+  m_GameObject: {fileID: 8404192981874614142}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &8714926323818855854 stripped
+--- !u!224 &3361195807553147380 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3862385142839576404, guid: aa9473ef872df4fa79950866d3678032, type: 3}
+  m_PrefabInstance: {fileID: 1962636044655384224}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8404192981874614142 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8042619594427877854, guid: aa9473ef872df4fa79950866d3678032, type: 3}
-  m_PrefabInstance: {fileID: 1687931465453810800}
+  m_PrefabInstance: {fileID: 1962636044655384224}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8519839703668259138
+--- !u!114 &2456155555408740462
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8714926323818855854}
+  m_GameObject: {fileID: 8404192981874614142}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
@@ -425,7 +428,7 @@ MonoBehaviour:
   m_UpdateString:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 3373716539890737633}
+      - m_Target: {fileID: 2486491659401413425}
         m_TargetAssemblyTypeName: TMPro.TMP_Text, Unity.TextMeshPro
         m_MethodName: set_text
         m_Mode: 0
@@ -440,13 +443,13 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!1001 &3684930363117645043
+--- !u!1001 &8646165057987917773
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 3074724865059488557}
+    m_TransformParent: {fileID: 3460292128769666087}
     m_Modifications:
     - target: {fileID: 1036092839532756133, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_Name
@@ -458,7 +461,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3410821896102752961, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 400
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 4267652668880890090, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_SizeDelta.x
@@ -466,7 +469,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4267652668880890090, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 370
+      value: 470
       objectReference: {fileID: 0}
     - target: {fileID: 5464889975846942258, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_LocalScale.x
@@ -522,7 +525,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6904256768211435784, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_Color.r
-      value: 0.882353
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7570431356015010846, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_SizeDelta.x
@@ -530,17 +533,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7570431356015010846, guid: 5d4737114fad748469f7803ee7438546, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 385
+      value: 485
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5d4737114fad748469f7803ee7438546, type: 3}
---- !u!114 &7850715706272902651 stripped
+--- !u!114 &2895112783640655557 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6904256768211435784, guid: 5d4737114fad748469f7803ee7438546, type: 3}
-  m_PrefabInstance: {fileID: 3684930363117645043}
+  m_PrefabInstance: {fileID: 8646165057987917773}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -548,10 +551,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &8433022365635408573 stripped
+--- !u!114 &3591274092590885251 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5056308235925118542, guid: 5d4737114fad748469f7803ee7438546, type: 3}
-  m_PrefabInstance: {fileID: 3684930363117645043}
+  m_PrefabInstance: {fileID: 8646165057987917773}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -559,8 +562,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41c516ebd12f84af78891e33b2acda86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!4 &8715785649910618817 stripped
+--- !u!4 &4335393267721994751 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5464889975846942258, guid: 5d4737114fad748469f7803ee7438546, type: 3}
-  m_PrefabInstance: {fileID: 3684930363117645043}
+  m_PrefabInstance: {fileID: 8646165057987917773}
   m_PrefabAsset: {fileID: 0}

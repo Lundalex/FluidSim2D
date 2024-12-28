@@ -11,8 +11,11 @@ public class GraphController : MonoBehaviour
     [SerializeField] private bool overrideGraphDataCategory;
     [SerializeField] private bool isBezierCurve;
     [SerializeField, Range(0.0f, 1.0f)] private float bezierTension = 0.5f;
-    [SerializeField, Range(1.0f, 10.0f)] private float HorizontalViewLength = 5.0f;
-    [SerializeField, Range(0.0f, 0.2f)] private float paddingYPercent = 0.1f;
+    [SerializeField, Range(1, 10)] private int HorizontalViewSize = 3;
+    [SerializeField] private bool doUseAdaptiveViewY = true;
+    [SerializeField, Range(0.0f, 0.2f)] private float adaptivePaddingYPercent = 0.1f;
+    [SerializeField] private float fixedViewMinY = -10;
+    [SerializeField] private float fixedViewMaxY = 10;
     [SerializeField] private Material lineMaterial;
     [SerializeField] private Material fillMaterial;
     [SerializeField] private Material pointMaterial;
@@ -26,6 +29,7 @@ public class GraphController : MonoBehaviour
     [NonSerialized] private GraphChart graphChart;
     [NonSerialized] private ItemLabels itemLabels;
     [NonSerialized] private VerticalAxis verticalAxis;
+    [NonSerialized] private HorizontalAxis horizontalAxis;
 
     // Private
     private List<Vector2> currentPoints;
@@ -33,11 +37,12 @@ public class GraphController : MonoBehaviour
     private bool isFirstPointDrawn;
     private Timer pointSubmissionTimer;
 
-    public void InitGraph(GraphChart graphChartInput, ItemLabels itemLabels, VerticalAxis verticalAxis, int numGraphDecimals)
+    public void InitGraph(GraphChart graphChartInput, ItemLabels itemLabels, VerticalAxis verticalAxis, HorizontalAxis horizontalAxis, int numGraphDecimals, int numGraphTimeDecimals)
     {
         this.graphChart = graphChartInput;
         this.itemLabels = itemLabels;
         this.verticalAxis = verticalAxis;
+        this.horizontalAxis = horizontalAxis;
         if (overrideGraphDataCategory && isBezierCurve)
         {
             Debug.LogWarning("The bezier curve setting cannot be combined with graph data category override. The graph data category will not be overridden");
@@ -49,9 +54,11 @@ public class GraphController : MonoBehaviour
         }
 
         float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
-        pointSubmissionTimer = new Timer(pointSubmissionFrequency, false, false);
+        pointSubmissionTimer = new Timer(pointSubmissionFrequency, TimeType.Clamped, false);
+        
+        horizontalAxis.MainDivisions.Total = HorizontalViewSize; // Each division is seperated by 1 second
 
-        SetNumGraphDecimals(numGraphDecimals);
+        SetNumGraphDecimals(numGraphDecimals, numGraphTimeDecimals);
 
         ResetGraph();
     }
@@ -65,8 +72,8 @@ public class GraphController : MonoBehaviour
         }
 
         // Reset data lists and flags
-        currentPoints = new List<Vector2>();
-        pendingPoints = new List<Vector2>();
+        currentPoints = new();
+        pendingPoints = new();
         isFirstPointDrawn = false;
         pointSubmissionTimer.Reset();
     }
@@ -84,9 +91,12 @@ public class GraphController : MonoBehaviour
         verticalAxis.MainDivisions.TextSuffix = suffix;
     }
 
-    public void SetNumGraphDecimals(int numDecimals)
+    public void SetNumGraphDecimals(int numDecimals, int numGraphTimeDecimals)
     {
         verticalAxis.MainDivisions.FractionDigits = numDecimals;
+        horizontalAxis.MainDivisions.FractionDigits = numGraphTimeDecimals;
+
+        verticalAxis.MainDivisions.TextSeperation = -40 - numDecimals * 10f;
     }
 
     public void SetXViewRange(float minX, float sizeX)
@@ -126,8 +136,8 @@ public class GraphController : MonoBehaviour
         if (PM.Instance.programPaused || isPointerHovering || pendingPoints.Count == 0) return;
 
         // Current X-axis view origin and size
-        float currentMinX = Mathf.Max(PM.Instance.totalTimeElapsed - HorizontalViewLength, 0f);
-        float currentMaxX = currentMinX + HorizontalViewLength;
+        float currentMinX = Mathf.Max(PM.Instance.totalScaledTimeElapsed - HorizontalViewSize, 0f);
+        float currentMaxX = currentMinX + HorizontalViewSize;
 
         // Add stored points to currentPoints
         foreach (Vector2 point in pendingPoints)
@@ -180,10 +190,10 @@ public class GraphController : MonoBehaviour
         // Remove points from currentPoints that are outside the current X-view range
         RemoveOldPoints(currentMinX);
 
-        // Calculate dynamic Y-axis range based on current visible points
-        CalculateAndSetDynamicYRange(currentMinX, currentMaxX);
+        if (doUseAdaptiveViewY) CalculateAndSetDynamicYRange(currentMinX, currentMaxX);
+        else SetYViewRange(fixedViewMinY, fixedViewMaxY - fixedViewMinY);
 
-        SetXViewRange(currentMinX, HorizontalViewLength);
+        SetXViewRange(currentMinX, HorizontalViewSize);
     }
 
     private void RemoveOldPoints(float currentMinX)
@@ -222,7 +232,7 @@ public class GraphController : MonoBehaviour
         if (visiblePoints.Count == 0)
         {
             // Default Y range if no points are visible
-            SetYViewRange(-10f, 10f);
+            SetYViewRange(-10f, 20f);
             return;
         }
 
@@ -235,7 +245,7 @@ public class GraphController : MonoBehaviour
             if (point.y > maxY) maxY = point.y;
         }
 
-        float padding = (maxY - minY) * paddingYPercent;
+        float padding = (maxY - minY) * adaptivePaddingYPercent;
         minY -= padding;
         maxY += padding;
         float sizeY = maxY - minY;

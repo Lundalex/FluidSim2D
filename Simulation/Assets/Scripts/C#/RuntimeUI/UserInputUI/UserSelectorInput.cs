@@ -28,7 +28,7 @@ public class UserSelectorInput : UserUIElement
     public override void InitDisplay()
     {
         containerTrimImage.color = primaryColor;
-        updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency), true, true, Func.MsToSeconds(msMaxUpdateFrequency));
+        updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency), TimeType.Clamped, true, Func.MsToSeconds(msMaxUpdateFrequency));
     }
     bool setupFinnished = false;
     private void Update()

@@ -33,6 +33,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public bool frameStep;
     [NonSerialized] public int frameCount;
     [NonSerialized] public float clampedDeltaTime;
+    [NonSerialized] public float scaledDeltaTime;
     [NonSerialized] public float totalTimeElapsed;
     [NonSerialized] public float totalScaledTimeElapsed;
     [NonSerialized] public float timeSetRandTimer;
@@ -123,6 +124,7 @@ public class ProgramManager : ScriptableObject
 
         // Per frame "constants"
         clampedDeltaTime = Mathf.Min(Time.deltaTime, MaxDeltaTime);
+        scaledDeltaTime = clampedDeltaTime * timeScale * (slowMotionActive ? 1.0f / SlowMotionFactor : 1.0f);
 
         // Rendering
         UpdateAnimatedDashedLineOffset(clampedDeltaTime);
@@ -158,7 +160,7 @@ public class ProgramManager : ScriptableObject
 
             // Update the total time elapsed
             totalTimeElapsed += clampedDeltaTime;
-            totalScaledTimeElapsed += clampedDeltaTime * timeScale * (slowMotionActive ? 0.25f : 1.0f);
+            totalScaledTimeElapsed += scaledDeltaTime;
 
             // Update all non-mono behaviour objects subscribed to the ProgramUpdate life cycle (all Timer objects)
             TriggerProgramUpdate(true);
@@ -317,7 +319,7 @@ public class ProgramManager : ScriptableObject
 
         sensorDatas = new();
         userUIElements = new();
-        rapidFrameSteppingTimer = new(rapidFrameSteppingDelay, false, true, rapidFrameSteppingDelay);
+        rapidFrameSteppingTimer = new(rapidFrameSteppingDelay, TimeType.NonClamped, true, rapidFrameSteppingDelay);
     }
 
     public void AddSensor(SensorUI sensorUI, Sensor sensor)

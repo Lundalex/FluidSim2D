@@ -11,6 +11,7 @@ public abstract class Sensor : MonoBehaviour
     [SerializeField] private DataView defaultDataView;
     [Range(1, 2)] public int numDecimals;
     [Range(0, 2)] public int numGraphDecimals;
+    [Range(0, 1)] public int numGraphTimeDecimals = 1;
     [Range(0, 3)] public int minPrefixIndex;
     [Range(0.1f, 5.0f)] public float newLowerPrefixThreshold = 0.5f;
     public float minDisplayValue = 0.1f;
@@ -50,6 +51,7 @@ public abstract class Sensor : MonoBehaviour
     [NonSerialized] private GraphChart graphChart;
     [NonSerialized] private ItemLabels itemLabels;
     [NonSerialized] private VerticalAxis verticalAxis;
+    [NonSerialized] private HorizontalAxis horizontalAxis;
 
     // Display
     [NonSerialized] public SensorUI sensorUI;
@@ -66,10 +68,10 @@ public abstract class Sensor : MonoBehaviour
     {
         InitSensorUI();
         InitSensor(sensorUIPos);
-        graphController.InitGraph(graphChart, itemLabels, verticalAxis, numGraphDecimals);
+        graphController.InitGraph(graphChart, itemLabels, verticalAxis, horizontalAxis, numGraphDecimals, numGraphTimeDecimals);
         PM.Instance.sensorManager.SubscribeGraphToCoroutine(graphController);
         
-        newPrefixTimer = new Timer(newLowerPrefixThreshold, true, true);
+        newPrefixTimer = new Timer(newLowerPrefixThreshold, TimeType.Clamped, true);
 
         PM.Instance.AddSensor(sensorUI, this);
     }
@@ -103,6 +105,7 @@ public abstract class Sensor : MonoBehaviour
         graphChart = sensorUIGraphChartObject.GetComponent<GraphChart>();
         itemLabels = sensorUIGraphChartObject.GetComponent<ItemLabels>();
         verticalAxis = sensorUIGraphChartObject.GetComponent<VerticalAxis>();
+        horizontalAxis = sensorUIGraphChartObject.GetComponent<HorizontalAxis>();
         mainCanvas = GameObject.FindGameObjectWithTag("UICanvas").GetComponent<Canvas>();
         sensorUI.swayElementA.mainCanvas = mainCanvas;
         sensorUI.swayElementB.mainCanvas = mainCanvas;
@@ -196,5 +199,5 @@ public abstract class Sensor : MonoBehaviour
         return boundaryDims;
     }
 
-    public void AddSensorDataToGraph(float y) => graphController.AddPointsToGraph(new Vector2(PM.Instance.totalTimeElapsed, y));
+    public void AddSensorDataToGraph(float y) => graphController.AddPointsToGraph(new Vector2(PM.Instance.totalScaledTimeElapsed, y));
 }
