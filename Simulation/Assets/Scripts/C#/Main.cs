@@ -461,11 +461,10 @@ public class Main : MonoBehaviour
     {
         if (DoUseFastShaderCompilation)
         {
-            string message = "Fast shader compilation enabled in build version. This may slightly decrease runtime performance";
             #if !UNITY_EDITOR
-                Debug.LogError(message);
+                Debug.LogError("Fast shader compilation enabled in build version. This may slightly decrease runtime performance");
             #else
-                Debug.Log(message);
+                // Debug.Log("Fast shader compilation enabled in build version. This may slightly decrease runtime performance");
             #endif
         }
 

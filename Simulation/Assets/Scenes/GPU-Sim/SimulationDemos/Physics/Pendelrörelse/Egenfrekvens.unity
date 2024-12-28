@@ -1346,11 +1346,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1715760548889725599, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: m_MaxValue
-      value: 5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1715760548889725599, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: m_MinValue
-      value: 0.1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1772818744154082915, guid: 97b6f669bb11c194c843f200317b8792, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1884,13 +1884,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: UserWideTitleSmall
       objectReference: {fileID: 0}
+    - target: {fileID: 3638761093424410822, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
+      propertyPath: m_Color.b
+      value: 0.7237179
+      objectReference: {fileID: 0}
     - target: {fileID: 4826184713592013583, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
       propertyPath: m_SizeDelta.x
       value: 1240
       objectReference: {fileID: 0}
+    - target: {fileID: 5446492934369288677, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
+      propertyPath: m_text
+      value: Experiment - Egenfrekvens
+      objectReference: {fileID: 0}
     - target: {fileID: 6239207739992709412, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
       propertyPath: m_SizeDelta.x
       value: 1210
+      objectReference: {fileID: 0}
+    - target: {fileID: 8282535602872075279, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
+      propertyPath: m_text
+      value: "Unders\xF6k olika frekvenser, ex. <color=orange><u>1,2,3</u></color>.
+        <u>Vad m\xE4rker du?</u>"
       objectReference: {fileID: 0}
     - target: {fileID: 9007636645379489293, guid: 373c796f32aa402479fcf998b708cba9, type: 3}
       propertyPath: m_Pivot.x
@@ -2025,8 +2038,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 623520793}
   - {fileID: 644664866}
+  - {fileID: 623520793}
   - {fileID: 553501664}
   m_Father: {fileID: 415270256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3726,6 +3739,14 @@ PrefabInstance:
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 3602262786608468395, guid: b85c1c4fa8a3aea45a4a783ae7704946, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3602262786608468395, guid: b85c1c4fa8a3aea45a4a783ae7704946, type: 3}
+      propertyPath: m_Color.g
+      value: 0.6698086
+      objectReference: {fileID: 0}
+    - target: {fileID: 3602262786608468395, guid: b85c1c4fa8a3aea45a4a783ae7704946, type: 3}
       propertyPath: m_Color.r
       value: 0
       objectReference: {fileID: 0}
@@ -3799,7 +3820,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8776249611549786562, guid: b85c1c4fa8a3aea45a4a783ae7704946, type: 3}
       propertyPath: m_text
-      value: "Gr<b>\xF6</b>n Fj<b>\xE4</b>der"
+      value: "Bl<b>\xE5</b> Fj<b>\xE4</b>der"
       objectReference: {fileID: 0}
     - target: {fileID: 8776249611549786562, guid: b85c1c4fa8a3aea45a4a783ae7704946, type: 3}
       propertyPath: m_fontAsset

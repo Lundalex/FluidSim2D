@@ -1819,8 +1819,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 623520793}
   - {fileID: 644664866}
+  - {fileID: 623520793}
   - {fileID: 1523927067}
   m_Father: {fileID: 415270256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3243,6 +3243,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3373716539890737633, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
+      propertyPath: m_text
+      value: 'Vikter:'
+      objectReference: {fileID: 0}
     - target: {fileID: 5312364514376658118, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_Name
       value: UserTextLarge
@@ -3275,13 +3279,21 @@ PrefabInstance:
       propertyPath: displayTextSize
       value: 24
       objectReference: {fileID: 0}
+    - target: {fileID: 7850715706272902651, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
+      propertyPath: m_Color.b
+      value: 0.111094
+      objectReference: {fileID: 0}
+    - target: {fileID: 7850715706272902651, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
+      propertyPath: m_Color.r
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8146972876516773553, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_text
       value: "Liten vikt: 1kg\nStor vikt: 2kg\nFj\xE4derstopp: 4kg"
       objectReference: {fileID: 0}
     - target: {fileID: 8146972876516773553, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_fontSize
-      value: 25
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 8146972876516773553, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_fontAsset
@@ -3293,7 +3305,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8146972876516773553, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_fontSizeBase
-      value: 25
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 8146972876516773553, guid: ebc3fb5969e88c045ac2a2ab24499c4b, type: 3}
       propertyPath: m_sharedMaterial

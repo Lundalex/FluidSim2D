@@ -361,7 +361,7 @@ namespace ChartAndGraph
                 RealtimeDataChanged(index, category);
         }
 
-        protected void RaiseViewPortionChanged()
+        public void RaiseViewPortionChanged()
         {
             if (mSuspendEvents)
                 return;

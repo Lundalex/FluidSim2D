@@ -131,7 +131,7 @@ public class RigidBodySensor : Sensor
             case RigidBodySensorType.Velocity:
             case RigidBodySensorType.Velocity_X:
             case RigidBodySensorType.Velocity_Y:
-                baseUnit = "l.e/s";
+                baseUnit = "m/s";
                 break;
 
             case RigidBodySensorType.RotationalVelocity:
@@ -140,7 +140,7 @@ public class RigidBodySensor : Sensor
 
             case RigidBodySensorType.Position_X:
             case RigidBodySensorType.Position_Y:
-                baseUnit = "l.e";
+                baseUnit = "m";
                 break;
 
             case RigidBodySensorType.SpringForce:

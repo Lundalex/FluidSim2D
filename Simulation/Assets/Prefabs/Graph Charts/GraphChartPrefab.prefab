@@ -101,7 +101,7 @@ MonoBehaviour:
   maintainLabelSize: 1
   autoScrollHorizontally: 0
   horizontalScrolling: 0
-  autoScrollVertically: 1
+  autoScrollVertically: 0
   verticalScrolling: 0
   raycastTarget: 1
   MousePan:
@@ -123,7 +123,7 @@ MonoBehaviour:
   itemFormat: <?y>
   Data:
     automaticVerticalViewGap: 0.01
-    automaticVerticallView: 1
+    automaticVerticallView: 0
     automaticcHorizontaViewGap: 0
     automaticHorizontalView: 0
     horizontalViewSize: 5

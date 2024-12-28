@@ -12,6 +12,7 @@ public class GraphController : MonoBehaviour
     [SerializeField] private bool isBezierCurve;
     [SerializeField, Range(0.0f, 1.0f)] private float bezierTension = 0.5f;
     [SerializeField, Range(1.0f, 10.0f)] private float HorizontalViewLength = 5.0f;
+    [SerializeField, Range(0.0f, 0.2f)] private float paddingYPercent = 0.1f;
     [SerializeField] private Material lineMaterial;
     [SerializeField] private Material fillMaterial;
     [SerializeField] private Material pointMaterial;
@@ -27,8 +28,8 @@ public class GraphController : MonoBehaviour
     [NonSerialized] private VerticalAxis verticalAxis;
 
     // Private
-    private List<Vector2> pointList;
-    private List<Vector2> storedPoints;
+    private List<Vector2> currentPoints;
+    private List<Vector2> pendingPoints;
     private bool isFirstPointDrawn;
     private Timer pointSubmissionTimer;
 
@@ -48,7 +49,7 @@ public class GraphController : MonoBehaviour
         }
 
         float pointSubmissionFrequency = Func.MsToSeconds(PM.Instance.sensorManager.msGraphPointSubmissionFrequency);
-        pointSubmissionTimer = new(pointSubmissionFrequency, false, false);
+        pointSubmissionTimer = new Timer(pointSubmissionFrequency, false, false);
 
         SetNumGraphDecimals(numGraphDecimals);
 
@@ -57,15 +58,15 @@ public class GraphController : MonoBehaviour
 
     public void ResetGraph()
     {
-        // Reset graph
+        // Clear the "SensorDatas" category if it exists
         if (graphChart.DataSource.HasCategory("SensorDatas"))
         {
             graphChart.DataSource.ClearCategory("SensorDatas");
         }
 
-        // Reset data
-        pointList = new();
-        storedPoints = new();
+        // Reset data lists and flags
+        currentPoints = new List<Vector2>();
+        pendingPoints = new List<Vector2>();
         isFirstPointDrawn = false;
         pointSubmissionTimer.Reset();
     }
@@ -88,41 +89,65 @@ public class GraphController : MonoBehaviour
         verticalAxis.MainDivisions.FractionDigits = numDecimals;
     }
 
+    public void SetXViewRange(float minX, float sizeX)
+    {
+        graphChart.ScrollableData.HorizontalViewOrigin = minX;
+        graphChart.ScrollableData.HorizontalViewSize = sizeX;
+
+        graphChart.ScrollableData.AutomaticHorizontalView = false;
+    }
+
+    public void SetYViewRange(float minY, float sizeY)
+    {
+        graphChart.ScrollableData.VerticalViewOrigin = minY;
+        graphChart.ScrollableData.VerticalViewSize = sizeY;
+
+        graphChart.ScrollableData.AutomaticVerticallView = false;
+    }
+
     public void AddPointsToGraph(params Vector2[] points)
     {
         if (points == null || points.Length == 0) return;
         
-        // Add points to storedPoints
+        // Add points to pendingPoints if they are valid
         foreach (Vector2 point in points)
         {
             if (float.IsNaN(point.x) || float.IsNaN(point.y)) continue;
 
             if (!pointSubmissionTimer.Check()) break;
 
-            storedPoints.Add(point);
+            pendingPoints.Add(point);
         }
     }
 
     public void UpdateGraph()
     {
-        if (PM.Instance.programPaused || isPointerHovering || storedPoints.Count == 0) return;
+        // Exit early if the program is paused, pointer is hovering, or there are no stored points
+        if (PM.Instance.programPaused || isPointerHovering || pendingPoints.Count == 0) return;
 
-        // Update the graph
-        foreach (Vector2 point in storedPoints)
+        // Current X-axis view origin and size
+        float currentMinX = Mathf.Max(PM.Instance.totalTimeElapsed - HorizontalViewLength, 0f);
+        float currentMaxX = currentMinX + HorizontalViewLength;
+
+        // Add stored points to currentPoints
+        foreach (Vector2 point in pendingPoints)
         {
-
-            pointList.Add(pointList.Count == 0 ? new(point.x > 2.0f ? point.x : 0, point.y) : point);
+            // Only add points within the current X-view range
+            if (point.x >= currentMinX && point.x <= currentMaxX)
+            {
+                currentPoints.Add(currentPoints.Count == 0 ? new Vector2(point.x > 2.0f ? point.x : 0, point.y) : point);
+            }
 
             if (isBezierCurve)
             {
-                if (pointList.Count < 2) continue;
+                if (currentPoints.Count < 2) continue;
 
-                int i = pointList.Count - 2;
+                int i = currentPoints.Count - 2;
 
-                Vector2 p0 = i > 0 ? pointList[i - 1] : pointList[i];
-                Vector2 p1 = pointList[i];
-                Vector2 p2 = pointList[i + 1];
-                Vector2 p3 = i + 2 < pointList.Count ? pointList[i + 2] : pointList[i + 1];
+                Vector2 p0 = i > 0 ? currentPoints[i - 1] : currentPoints[i];
+                Vector2 p1 = currentPoints[i];
+                Vector2 p2 = currentPoints[i + 1];
+                Vector2 p3 = i + 2 < currentPoints.Count ? currentPoints[i + 2] : currentPoints[i + 1];
 
                 if (!isFirstPointDrawn)
                 {
@@ -149,10 +174,73 @@ public class GraphController : MonoBehaviour
             }
         }
 
-        // Empty all stored points
-        storedPoints = new();
+        // Clear stored points after processing
+        pendingPoints.Clear();
 
-        // Automatic scrolling
-        graphChart.HorizontalScrolling = Mathf.Max(PM.Instance.totalTimeElapsed - HorizontalViewLength, 0);
+        // Remove points from currentPoints that are outside the current X-view range
+        RemoveOldPoints(currentMinX);
+
+        // Calculate dynamic Y-axis range based on current visible points
+        CalculateAndSetDynamicYRange(currentMinX, currentMaxX);
+
+        SetXViewRange(currentMinX, HorizontalViewLength);
+    }
+
+    private void RemoveOldPoints(float currentMinX)
+    {
+        // Find the index where points start to be within the current X-view
+        int firstValidIndex = 0;
+        for (int i = 0; i < currentPoints.Count; i++)
+        {
+            if (currentPoints[i].x >= currentMinX)
+            {
+                firstValidIndex = i;
+                break;
+            }
+        }
+
+        // Remove all points before the firstValidIndex
+        if (firstValidIndex > 0)
+        {
+            currentPoints.RemoveRange(0, firstValidIndex);
+        }
+    }
+
+    private void CalculateAndSetDynamicYRange(float currentMinX, float currentMaxX)
+    {
+        // Collect points within the current X-view range
+        List<Vector2> visiblePoints = new();
+
+        foreach (Vector2 point in currentPoints)
+        {
+            if (point.x >= currentMinX && point.x <= currentMaxX)
+            {
+                visiblePoints.Add(point);
+            }
+        }
+
+        if (visiblePoints.Count == 0)
+        {
+            // Default Y range if no points are visible
+            SetYViewRange(-10f, 10f);
+            return;
+        }
+
+        // Find minY and maxY from visible points
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+        foreach (Vector2 point in visiblePoints)
+        {
+            if (point.y < minY) minY = point.y;
+            if (point.y > maxY) maxY = point.y;
+        }
+
+        float padding = (maxY - minY) * paddingYPercent;
+        minY -= padding;
+        maxY += padding;
+        float sizeY = maxY - minY;
+
+        // Set the dynamic Y-axis range
+        SetYViewRange(minY, sizeY);
     }
 }
