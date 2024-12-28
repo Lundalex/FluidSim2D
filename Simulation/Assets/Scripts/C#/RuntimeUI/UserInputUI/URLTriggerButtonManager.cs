@@ -3,7 +3,10 @@ using UnityEngine.UI;
 
 public class UserURL : MonoBehaviour
 {
+    [Header("URL")]
     [SerializeField] private string url = "URL Here";
+
+    [Header("Refrences")]
     [SerializeField] private Image backgroundImage;
 
     void Awake()

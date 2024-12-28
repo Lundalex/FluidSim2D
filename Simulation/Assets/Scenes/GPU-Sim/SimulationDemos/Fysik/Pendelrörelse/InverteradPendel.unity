@@ -3151,7 +3151,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls: []
-  displayText: "Den <color=#4583e6><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
+  displayText: "Den <color=#00c8ff><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
     fenomenet!"
   displayTextSize: 18
   textField: {fileID: 4616159385083059679}
@@ -3351,7 +3351,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Den <color=#4583e6><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
+  m_text: "Den <color=#00c8ff><u>h<b>\xE4</b>r</u></color> youtube-videon f\xF6rklarar
     fenomenet!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
