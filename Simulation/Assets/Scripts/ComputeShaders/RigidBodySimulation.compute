@@ -524,8 +524,7 @@ void SimulateRB_P(uint3 id : SV_DispatchThreadID)
             {
                 float deltaRotVel;
                 float2 deltaCenterVel;
-                ResolveCollisionRB_P(pData, pMass, rb,
-                                     deltaRotVel, deltaCenterVel);
+                ResolveCollisionRB_P(pData, pMass, rb, deltaRotVel, deltaCenterVel);
 
                 if (deltaCenterVel.x != 0 || deltaCenterVel.y != 0)
                 {

@@ -46,6 +46,10 @@ MonoBehaviour:
     m_Localized: "Presi\xF3n de fluido"
     m_Metadata:
       m_Items: []
+  - m_Id: 10806112692461568
+    m_Localized: interferencia
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

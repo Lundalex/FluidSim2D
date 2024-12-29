@@ -238,13 +238,13 @@ MonoBehaviour:
   rbSimShaderThreadSize2: 32
   rbSimShaderThreadSize3: 512
   FloatIntPrecisionRB: 50000
-  FloatIntPrecisionP: 1000
+  FloatIntPrecisionP: 5000
   MaxPVel: 999999
   MaxRBRotVel: 999999
   MaxRBVel: 999999
   MinRBVelForMovement: 0.1
   SimUnitToMetersFactor: 0.005
-  VolumeFactor: 67
+  VolumeFactor: 40
   PressureFactor: 1.77
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36

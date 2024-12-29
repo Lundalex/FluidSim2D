@@ -21,6 +21,7 @@ TagManager:
   - SceneManager
   - LanguageSelect
   - LifeCycleManager
+  - FluidSensor
   layers:
   - Default
   - TransparentFX

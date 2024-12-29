@@ -293,7 +293,9 @@ public class SceneManager : MonoBehaviour
 
         // Fluid sensors
         List<SensorArea> sensorAreas = new();
-        foreach (FluidSensor fluidSensor in sensorManager.enabledFluidSensors)
+        GameObject[] fluidSensorObjects = GameObject.FindGameObjectsWithTag("FluidSensor");
+        FluidSensor[] fluidSensors = Array.ConvertAll(fluidSensorObjects, obj => obj.GetComponent<FluidSensor>());
+        foreach (FluidSensor fluidSensor in fluidSensors)
         {
             if (fluidSensor == null) continue;
             sensors.Add(fluidSensor);

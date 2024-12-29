@@ -7,7 +7,6 @@ using Resources2;
 
 public class SensorManager : MonoBehaviour
 {
-    public FluidSensor[] enabledFluidSensors;
     [Range(10.0f, 100.0f), SerializeField] private float msRigidBodyDataRetrievalInterval;
     [Range(10.0f, 100.0f), SerializeField] private float msFluidDataRetrievalInterval;
     [Range(20.0f, 500.0f)] public float msGraphPointSubmissionFrequency;
