@@ -52,8 +52,9 @@ MonoBehaviour:
   doCenterPosition: 0
   doDrawBody: 1
   editorLineAnimationSpeed: 10
+  doOverrideGridSpacing: 0
   defaultGridSpacing: 1.1
-  addInBetweenPoints: 1
+  addInBetweenPoints: 0
   doRecursiveSubdivisison: 0
   minDstForSubDivision: 0.5
   linkedSensors: []
@@ -69,6 +70,7 @@ MonoBehaviour:
     rbElasticity: 0
     fluidElasticity: 0
     friction: 0
+    passiveDamping: 0
     heatingStrength: 0
     constraintType: 3
     localLinkPosThisRB: {x: 0, y: 0}
@@ -86,6 +88,7 @@ MonoBehaviour:
     overrideCentroidPosition: {x: 0, y: 0}
     angularVelocity: 0
     velocity: {x: 0, y: 0}
+    disableRender: 0
     renderPriority: 1
     matIndex: 1
     springMatIndex: 0
@@ -137,8 +140,8 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 1.125, y: 0.25}
-      - {x: -1.125, y: 0.25}
-      - {x: -1.125, y: -0.25}
-      - {x: 1.125, y: -0.25}
+    - - {x: 1, y: 0.3333333}
+      - {x: -1, y: 0.3333333}
+      - {x: -1, y: -0.3333333}
+      - {x: 1, y: -0.3333333}
   m_UseDelaunayMesh: 0

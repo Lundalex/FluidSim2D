@@ -80,6 +80,7 @@ public class Main : MonoBehaviour
     // Particles
     public float MaxInteractionRadius = 40.0f;
     public float InteractionAttractionPower = 3.5f;
+    public float InteractionRepulsionPower = 3.5f;
     public float InteractionFountainPower = 1.0f;
     public float InteractionTemperaturePower = 1.0f;
     public float InteractionDampening = 1.0f;

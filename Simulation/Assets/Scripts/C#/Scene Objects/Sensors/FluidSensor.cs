@@ -261,7 +261,7 @@ public class FluidSensor : Sensor
                 break;
 
             case FluidSensorType.Density:
-                baseUnit = "kg/m<sup>3</sup>";
+                baseUnit = "kg/m^3";
                 break;
 
             case FluidSensorType.Pressure:

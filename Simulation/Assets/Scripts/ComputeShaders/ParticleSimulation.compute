@@ -37,6 +37,7 @@ const float MaxPVel;
 
 // Interation settings
 const float InteractionAttractionPower;
+const float InteractionRepulsionPower;
 const float InteractionFountainPower;
 const float InteractionTemperaturePower;
 const float InteractionDampening;

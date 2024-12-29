@@ -583,7 +583,7 @@ void GetRBBounds(RigidBody rb,
     }
 }
 
-float2 InteractionForce(RigidBody rb)
+float2 interactionAcceleration(RigidBody rb)
 {
     if (!LMousePressed && !RMousePressed) return 0;
 
@@ -597,9 +597,9 @@ float2 InteractionForce(RigidBody rb)
 
     float absInteractionGradient = RB_MaxInteractionRadius - absDst;
     float2 interactionGradient = normalize(dst) * absInteractionGradient + RB_InteractionDampening * Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB);
-    float2 interactionForce = interactionGradient * factor - (LMousePressed ? float2(0, rb.gravity) : 0);
+    float2 interactionAcceleration = interactionGradient * factor - (LMousePressed ? float2(0, rb.gravity) : 0);
 
-    return interactionForce;
+    return interactionAcceleration;
 }
 
 [numthreads(TN_RBS3,1,1)]
@@ -838,22 +838,50 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
 
     // Update totRot
     rb.totRot += IntToFloat(rb.rotVel_AsInt, INT_FLOAT_PRECISION_RB) * DeltaTime;
+    
+    bool isLinearMotor = rb.mass < 0;
+    bool canMove = rb.mass > 0;
+    if (isLinearMotor)
+    {
+        bool doRoundTrip = (rb.mass == -2);
 
-    bool canMove = (rb.mass > 0);
-    if (canMove)
+        float2 startAnchor = rb.localLinkPosThisRB;
+        float2 endAnchor   = rb.localLinkPosOtherRB;
+        
+        float t0 = rb.lerpSpeed * SimTimeElapsed + rb.lerpTimeOffset;
+        float t;
+        float dt_dt0;
+
+        if (doRoundTrip)
+        {
+            t = (sin((t0 + 0.75) * PI * 2.0) + 1.0) * 0.5;
+            dt_dt0 = PI * cos(2.0 * PI * (t0 + 0.75));
+        }
+        else
+        {
+            t = fmod(t0, 1.0);
+            dt_dt0 = 1.0;
+        }
+
+        float2 lerpPos = lerp(startAnchor, endAnchor, t);
+        rb.pos = lerpPos;
+
+        float2 vel = (endAnchor - startAnchor) * rb.lerpSpeed * dt_dt0;
+        rb.vel_AsInt2 = Float2AsInt2(vel, INT_FLOAT_PRECISION_RB);
+    }
+    else if (canMove)
     {
         // Check near boundary
         if (IsNearBoundary(rb.pos, abs(rb.maxRadiusSqr)))
         {
             float2 boundsMin = float2(1.#INF, 1.#INF);
             float2 boundsMax = float2(-1.#INF, -1.#INF);
-            float2 minXVec   = float2(1.#INF, 0);
-            float2 maxXVec   = float2(-1.#INF, 0);
-            float2 minYVec   = float2(0, 1.#INF);
-            float2 maxYVec   = float2(0, -1.#INF);
+            float2 minXVec = float2(1.#INF, 0);
+            float2 maxXVec = float2(-1.#INF, 0);
+            float2 minYVec = float2(0, 1.#INF);
+            float2 maxYVec = float2(0, -1.#INF);
 
-            GetRBBounds(rb, boundsMin, boundsMax,
-                        minXVec, maxXVec, minYVec, maxYVec);
+            GetRBBounds(rb, boundsMin, boundsMax, minXVec, maxXVec, minYVec, maxYVec);
 
             // Left boundary
             if (boundsMin.x <= RigidBodyPadding)
@@ -885,12 +913,12 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
             }
         }
 
-        // Apply forces
-        float2 totForce = float2(0, rb.gravity);
+        // Apply acceleration
+        float2 totAcceleration = float2(0, -rb.gravity);
         bool isInteractable = (rb.maxRadiusSqr > 0);
-        if (isInteractable) totForce += InteractionForce(rb);
+        if (isInteractable) totAcceleration += -interactionAcceleration(rb);
 
-        rb.vel_AsInt2 -= Float2AsInt2(totForce * DeltaTime, INT_FLOAT_PRECISION_RB);
+        rb.vel_AsInt2 += Float2AsInt2(totAcceleration * DeltaTime, INT_FLOAT_PRECISION_RB);
 
         // Velocity clamp
         rb.vel_AsInt2 = SafeAsInt2(rb.vel_AsInt2, MaxRBVel);
@@ -901,34 +929,6 @@ void UpdateRigidBodies(uint3 id : SV_DispatchThreadID)
         // Update pos
         float2 vel = Int2ToFloat2(rb.vel_AsInt2, INT_FLOAT_PRECISION_RB);
         if (length(vel) > MinRBVelForMovement) rb.pos += vel * DeltaTime;
-    }
-    else if (rb.mass < 0) // linearMotor
-    {
-        bool doRoundTrip = (rb.mass == -2);
-
-        float2 startAnchor = rb.localLinkPosThisRB;
-        float2 endAnchor   = rb.localLinkPosOtherRB;
-        
-        float t0 = rb.lerpSpeed * SimTimeElapsed + rb.lerpTimeOffset;
-        float t;
-        float dt_dt0;
-
-        if (doRoundTrip)
-        {
-            t = (sin((t0 + 0.75) * PI * 2.0) + 1.0) * 0.5;
-            dt_dt0 = PI * cos(2.0 * PI * (t0 + 0.75));
-        }
-        else
-        {
-            t = fmod(t0, 1.0);
-            dt_dt0 = 1.0;
-        }
-
-        float2 lerpPos = lerp(startAnchor, endAnchor, t);
-        rb.pos = lerpPos;
-
-        float2 vel = (endAnchor - startAnchor) * rb.lerpSpeed * dt_dt0;
-        rb.vel_AsInt2 = Float2AsInt2(vel, INT_FLOAT_PRECISION_RB);
     }
 
     RigidBodies[i] = rb;

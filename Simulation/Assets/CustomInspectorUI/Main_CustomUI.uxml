@@ -63,6 +63,7 @@
         <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="true">
             <ui:Slider label="Interaction Radius" value="40" high-value="100" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Attraction Power" value="50" high-value="50" binding-path="InteractionAttractionPower" low-value="0" fill="true" show-input-field="true" />
+            <ui:Slider label="Repulsion Power" value="0.5" high-value="10" binding-path="InteractionRepulsionPower" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Fountain Power" value="42" high-value="10" binding-path="InteractionFountainPower" show-input-field="true" fill="true" />
             <ui:Slider label="Temperature Power" value="0" high-value="25" binding-path="InteractionTemperaturePower" low-value="-25" fill="true" show-input-field="true" />
             <ui:Slider label="Interaction Dampening" value="0.5" high-value="1" binding-path="InteractionDampening" low-value="0" fill="true" show-input-field="true" />
