@@ -909,6 +909,7 @@ MonoBehaviour:
   fluidSensorTypeSelect: {fileID: 6018835074648558562}
   pointerHoverArea: {fileID: 2776221007149565758}
   graphChartContainer: {fileID: 340192652922321315}
+  positionTitle: {fileID: 2290885567091599314}
   positionTypeSelector: {fileID: 3342610501526695762}
   positionInputFields: {fileID: 1433942781267880754}
 --- !u!1 &561190224003969640
@@ -10954,8 +10955,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 69.005005, y: -27}
-  m_SizeDelta: {x: 98.01, y: 54}
+  m_AnchoredPosition: {x: 89.075, y: -27}
+  m_SizeDelta: {x: 138.15, y: 54}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2492224908219942914
 CanvasRenderer:
@@ -18058,6 +18059,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 605035094490372366}
   m_SourcePrefab: {fileID: 100100000, guid: aa9473ef872df4fa79950866d3678032, type: 3}
+--- !u!1 &2290885567091599314 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6038371284629134417, guid: aa9473ef872df4fa79950866d3678032, type: 3}
+  m_PrefabInstance: {fileID: 5478144035454286723}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2565742342683570781 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8042619594427877854, guid: aa9473ef872df4fa79950866d3678032, type: 3}

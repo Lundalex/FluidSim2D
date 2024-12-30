@@ -70,4 +70,13 @@ public class UserSliderInput : UserUIElement
             else fieldModifier.ModifyField(slider.value);
         }
     }
+
+    public static void ActivateSlider(UserSliderInput userSliderInput, bool active, float activeValue)
+    {
+        if (userSliderInput != null)
+        {
+            userSliderInput.gameObject.SetActive(active);
+            if (active) userSliderInput.startValue = activeValue;
+        }
+    }
 }

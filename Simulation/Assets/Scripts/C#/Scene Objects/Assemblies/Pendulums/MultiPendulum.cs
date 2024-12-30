@@ -12,21 +12,13 @@ public class MultiPendulum : Assembly
 
     [Header("Spring")]
     public float springStiffness = 500f;
-    
-    [Header("References - Pendulums")]
+
+    [Header("References")]
     [SerializeField] private MathematicalPendulum mathematical;
     [SerializeField] private PhysicalPendulum physical;
     [SerializeField] private SpringPendulum spring;
-    [SerializeField] private GameObject doubleMathematical;
-    [SerializeField] private GameObject doubleSpring;
+    [SerializeField] private ConfigHelper configHelper;
 
-    [Header("References - User Texts")]
-    [SerializeField] private GameObject mathematicalText;
-    [SerializeField] private GameObject physicalText;
-    [SerializeField] private GameObject springText;
-    [SerializeField] private GameObject doubleMathematicalText;
-    [SerializeField] private GameObject doubleSpringText;
-    
     [Header("References - User Inputs")]
     [SerializeField] private UserSelectorInput userSelectorInput;
     [SerializeField] private UserSliderInput userSliderInput;
@@ -51,7 +43,6 @@ public class MultiPendulum : Assembly
     private void StoreData()
     {
         dataHasBeenStored = true;
-
         storedPendulumType = pendulumType;
         storedPendulumLength = pendulumLength;
     }
@@ -59,84 +50,58 @@ public class MultiPendulum : Assembly
     private void RetrieveData()
     {
         if (!dataHasBeenStored) return;
-
         pendulumType = storedPendulumType;
         pendulumLength = storedPendulumLength;
     }
 
     public override void AssemblyUpdate()
     {
-        if (mathematical == null || physical == null || spring == null || doubleMathematical == null || doubleSpring == null )
+        if (mathematical == null || physical == null || spring == null)
         {
             Debug.LogWarning("All references are not set. MultiPendulum: " + this.name);
             return;
         }
+        if (configHelper == null) return;
 
-        bool setActiveMathematical = false;
-        bool setActivePhysical = false;
-        bool setActiveSpring = false;
-        bool setActiveDoubleMathematical = false;
-        bool setActiveDoubleSpring = false;
+        // Set pendulum data, set the config, and manage the userSliderInput
+        bool setSliderActive;
         switch (pendulumType)
         {
             case PendulumType.Mathematical:
-                setActiveMathematical = true;
                 mathematical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
-                if (userSliderInput != null)
-                {
-                    userSliderInput.gameObject.SetActive(true);
-                    userSliderInput.startValue = pendulumLength;
-                }
+                setSliderActive = true;
+                configHelper.SetActiveConfigByName("Pendulums", "Mathematical");
                 break;
 
             case PendulumType.Physical:
-                setActivePhysical = true;
                 physical.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
-                if (userSliderInput != null)
-                {
-                    userSliderInput.gameObject.SetActive(true);
-                    userSliderInput.startValue = pendulumLength;
-                }
+                setSliderActive = true;
+                configHelper.SetActiveConfigByName("Pendulums", "Physical");
                 break;
 
             case PendulumType.Spring:
-                setActiveSpring = true;
                 spring.SetPendulumData(pendulumLength, pendulumMass, pendulumGravity);
-                if (userSliderInput != null)
-                {
-                    userSliderInput.gameObject.SetActive(true);
-                    userSliderInput.startValue = pendulumLength;
-                }
+                setSliderActive = true;
+                configHelper.SetActiveConfigByName("Pendulums", "Spring");
                 break;
 
             case PendulumType.DoubleMathematical:
-                setActiveDoubleMathematical = true;
-                userSliderInput.gameObject.SetActive(false);
+                setSliderActive = false;
+                configHelper.SetActiveConfigByName("Pendulums", "DoubleMathematical");
                 break;
 
             case PendulumType.DoubleSpring:
-                setActiveDoubleSpring = true;
-                userSliderInput.gameObject.SetActive(false);
+                setSliderActive = false;
+                configHelper.SetActiveConfigByName("Pendulums", "DoubleSpring");
                 break;
 
             default:
-                Debug.Log("PendulumType '" + pendulumType + "' not recognized. Pendulum: " + this.name);
+                setSliderActive = false;
+                Debug.LogWarning("PendulumType '" + pendulumType + "' not recognized. MultiPendulum: " + this.name);
                 break;
         }
 
-        // Set only chosen pendulum to be active
-        mathematical.gameObject.SetActive(setActiveMathematical);
-        physical.gameObject.SetActive(setActivePhysical);
-        spring.gameObject.SetActive(setActiveSpring);
-        doubleMathematical.SetActive(setActiveDoubleMathematical);
-        doubleSpring.SetActive(setActiveDoubleSpring);
-
-        // Set the corresponding user text to be active
-        if (mathematicalText != null) mathematicalText.SetActive(setActiveMathematical);
-        if (physicalText != null) physicalText.SetActive(setActivePhysical);
-        if (springText != null) springText.SetActive(setActiveSpring);
-        if (doubleMathematicalText != null) doubleMathematicalText.SetActive(setActiveDoubleMathematical);
-        if (doubleSpringText != null) doubleSpringText.SetActive(setActiveDoubleSpring);
+        UserSliderInput.ActivateSlider(userSliderInput, setSliderActive, pendulumLength);
 
         if (userSelectorInput != null) userSelectorInput.SetSelectorIndex((int)pendulumType);
     }

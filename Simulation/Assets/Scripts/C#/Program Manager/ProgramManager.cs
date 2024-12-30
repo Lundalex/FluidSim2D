@@ -44,7 +44,7 @@ public class ProgramManager : ScriptableObject
     [NonSerialized] public Vector2 ScreenToViewFactor;
     [NonSerialized] public Vector2 ViewScale;
     [NonSerialized] public Vector2 ViewOffset;
-    [NonSerialized] public bool doAllowDashedRectangles;
+    [NonSerialized] public bool isStandardResolution;
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
     public event Action OnPreStart;
@@ -507,7 +507,7 @@ public class ProgramManager : ScriptableObject
     {
         Resolution = Utils.Int2ToVector2(main.Resolution);
         ResolutionInt2 = main.Resolution;
-        doAllowDashedRectangles = Resolution == StandardResolution;
+        isStandardResolution = Resolution == StandardResolution;
 
         // Make sure all resolution settings match
         int screenWidth = Screen.width;

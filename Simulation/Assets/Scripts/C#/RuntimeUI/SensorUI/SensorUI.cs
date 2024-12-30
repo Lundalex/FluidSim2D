@@ -34,6 +34,7 @@ public class SensorUI : MonoBehaviour
     [SerializeField] public CustomDropdown fluidSensorTypeSelect;
     [SerializeField] public PointerHoverArea pointerHoverArea;
     [SerializeField] public Transform graphChartContainer;
+    [SerializeField] public GameObject positionTitle;
     [SerializeField] public GameObject positionTypeSelector;
     [SerializeField] public GameObject positionInputFields;
 

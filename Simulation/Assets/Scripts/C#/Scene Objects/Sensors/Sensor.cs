@@ -91,7 +91,8 @@ public abstract class Sensor : MonoBehaviour
     {
         GameObject sensorUIObject = Instantiate(sensorUIPrefab, sensorUIContainer);
         sensorUI = sensorUIObject.GetComponent<SensorUI>();
-        if (PM.Instance.doAllowDashedRectangles)
+        bool isStandardResolution = PM.Instance.isStandardResolution;
+        if (isStandardResolution)
         {
             GameObject sensorUIOutline = Instantiate(dashedRectanglePrefab, sensorOutlineContainer);
             sensorUIOutline.SetActive(false);
@@ -115,7 +116,8 @@ public abstract class Sensor : MonoBehaviour
         sensorUI.rigidBodySensorTypeSelectObject.SetActive(isRigidBodySensor);
         sensorUI.fluidSensorTypeSelectObject.SetActive(!isRigidBodySensor);
         sensorUI.positionTypeSelector.SetActive(isRigidBodySensor);
-        sensorUI.positionInputFields.SetActive(!isRigidBodySensor);
+        sensorUI.positionTitle.SetActive((!isRigidBodySensor && isStandardResolution) || isRigidBodySensor);
+        sensorUI.positionInputFields.SetActive(!isRigidBodySensor && isStandardResolution);
         sensorUI.SetPrimaryColor(primaryColor);
         sensorUI.sensor = this;
         sensorUI.scaleSlider.value = sensorScale;

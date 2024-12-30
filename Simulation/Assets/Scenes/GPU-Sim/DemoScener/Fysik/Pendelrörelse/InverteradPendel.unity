@@ -271,6 +271,7 @@ MonoBehaviour:
   ProgramSpeed: 10
   MaxInteractionRadius: 25
   InteractionAttractionPower: 8
+  InteractionRepulsionPower: 3.5
   InteractionFountainPower: 4
   InteractionTemperaturePower: 0
   InteractionDampening: 1
@@ -538,7 +539,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cf28dd9adb54841b93cdace1f74f43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enabledFluidSensors: []
   msRigidBodyDataRetrievalInterval: 40
   msFluidDataRetrievalInterval: 40
   msGraphPointSubmissionFrequency: 50
@@ -3700,9 +3700,9 @@ SceneRoots:
   - {fileID: 1751344380}
   - {fileID: 155133419}
   - {fileID: 1184897559}
+  - {fileID: 1360447223}
   - {fileID: 2045799466}
   - {fileID: 415270256}
   - {fileID: 2002973397}
   - {fileID: 1543420960}
-  - {fileID: 1360447223}
   - {fileID: 1325691964}
