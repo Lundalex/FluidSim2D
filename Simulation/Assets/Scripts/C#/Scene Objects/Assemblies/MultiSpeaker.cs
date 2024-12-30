@@ -58,8 +58,7 @@ public class MultiSpeaker : Assembly
             Debug.LogWarning("All references are not set. MultiPendulum: " + this.name);
             return;
         }
-        if (main == null) return;
-        if (configHelper == null) return;
+        if (main == null || configHelper == null) return;
 
         // Set speaker data, set the config, and manage the userSliderInput
         bool setSliderActive;

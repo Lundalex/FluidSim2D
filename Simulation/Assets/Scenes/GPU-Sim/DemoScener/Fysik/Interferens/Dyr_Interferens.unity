@@ -558,6 +558,7 @@ MonoBehaviour:
   msRigidBodyDataRetrievalInterval: 40
   msFluidDataRetrievalInterval: 40
   msGraphPointSubmissionFrequency: 50
+  doUpdateGraphsAsync: 0
   msGraphUpdateFrequency: 1000
 --- !u!1 &195317908
 GameObject:

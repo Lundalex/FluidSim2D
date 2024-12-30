@@ -10,6 +10,7 @@ public class SensorManager : MonoBehaviour
     [Range(10.0f, 100.0f), SerializeField] private float msRigidBodyDataRetrievalInterval;
     [Range(10.0f, 100.0f), SerializeField] private float msFluidDataRetrievalInterval;
     [Range(20.0f, 500.0f)] public float msGraphPointSubmissionFrequency;
+    [SerializeField] private bool doUpdateGraphsAsync = true;
     [Range(100.0f, 2000.0f), SerializeField] private float msGraphUpdateFrequency;
 
     // Retrieved data
@@ -104,8 +105,13 @@ public class SensorManager : MonoBehaviour
 
                 graphControllers[graphCount].UpdateGraph();
             }
+            
+            float waitTimeSeconds;
+            bool doInstantUpdate = !doUpdateGraphsAsync && graphCount != 0;
+            if (doUpdateGraphsAsync) waitTimeSeconds = Func.MsToSeconds(graphControllers.Count > 0 ? (msGraphUpdateFrequency / graphControllers.Count) : 10.0f);
+            else waitTimeSeconds = Func.MsToSeconds(doInstantUpdate ? 10.0f : msGraphUpdateFrequency);
 
-            yield return new WaitForSeconds(Func.MsToSeconds(msGraphUpdateFrequency / (graphControllers.Count > 0 ? graphControllers.Count : 100)));
+            yield return new WaitForSeconds(waitTimeSeconds);
         }
     }
 
