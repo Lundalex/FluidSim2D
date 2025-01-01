@@ -93,6 +93,7 @@ public class GraphController : MonoBehaviour
 
     public void SetNumGraphDecimals(int numDecimals, int numGraphTimeDecimals)
     {
+        itemLabels.FractionDigits = numDecimals;
         verticalAxis.MainDivisions.FractionDigits = numDecimals;
         horizontalAxis.MainDivisions.FractionDigits = numGraphTimeDecimals;
 

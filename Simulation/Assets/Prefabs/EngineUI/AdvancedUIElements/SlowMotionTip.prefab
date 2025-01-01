@@ -60,13 +60,13 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: e55e4ef66043a8747866894761ac06be, type: 3}
   title: Slow motion
   description: "Slow motion \xE4r aktiverat. F\xF6r att \xE5terg\xE5 till vanlig
-    hastighet, tryck p\xE5 'S'. "
+    hastighet, tryck p\xE5 <u>'S'</u>. "
   notificationAnimator: {fileID: 3717262848000200268}
   iconObj: {fileID: 4798463209904916805}
   titleObj: {fileID: 2832237584243672554}
   descriptionObj: {fileID: 3657297656031760735}
   enableTimer: 1
-  timer: 15
+  timer: 8
   useCustomContent: 0
   closeOnClick: 1
   useStacking: 0
@@ -285,8 +285,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 199.5, y: -74.51}
-  m_SizeDelta: {x: 363, y: 0}
+  m_AnchoredPosition: {x: 189.5, y: -74.51}
+  m_SizeDelta: {x: 343, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &69982267070384125
 CanvasRenderer:
@@ -317,7 +317,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "Slow motion \xE4r aktiverat. F\xF6r att \xE5terg\xE5 till vanlig hastighet,
-    tryck p\xE5 'S'. "
+    tryck p\xE5 <u>'S'</u>. "
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}
   m_sharedMaterial: {fileID: 21539420542967178, guid: 4bd810f1cbcb0f446a8f5a31453e243f, type: 2}

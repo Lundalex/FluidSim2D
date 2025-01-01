@@ -4903,7 +4903,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8725045048329426919, guid: accda708857495f47a6173f791cbb82b, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 806.9
       objectReference: {fileID: 0}
     - target: {fileID: 8725045048329426919, guid: accda708857495f47a6173f791cbb82b, type: 3}
       propertyPath: m_SizeDelta.y
@@ -5023,7 +5023,7 @@ MonoBehaviour:
   shiftColors:
   - {r: 0, g: 1, b: 0.098039225, a: 1}
   - {r: 1, g: 0.44855016, b: 0, a: 1}
-  triggerThreshold: 7
+  triggerThreshold: 5
   tipNotification: {fileID: 7568045235980450266}
 --- !u!114 &8784666147394591685 stripped
 MonoBehaviour:

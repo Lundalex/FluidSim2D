@@ -32,10 +32,10 @@ EditorBuildSettings:
     path: "Assets/Scenes/GPU-Sim/SimulationDemos/Physics/Ha\u0308vsta\u030Ang/H\xE4vst\xE5ngA.unity"
     guid: bc27dcb6f9d1e5a4e8e2eec8c1e127cb
   - enabled: 0
-    path: "Assets/Scenes/GPU-Sim/DemoScener/Fysik/Pendelro\u0308relse/InverteradPendel.unity"
+    path: "Assets/Scenes/GPU-Sim/DemoScener/Fysik/Pendelro\u0308relse/DenInverteradePendeln.unity"
     guid: 2c1730f5cc4833448897619b858ba061
   - enabled: 0
-    path: "Assets/Scenes/GPU-Sim/DemoScener/Fysik/Pendelro\u0308relse/Pendeltyper.unity"
+    path: "Assets/Scenes/GPU-Sim/DemoScener/Fysik/Pendelro\u0308relse/OlikaPendlar.unity"
     guid: 03f60467e0ae38347a2427450c6ed374
   - enabled: 1
     path: "Assets/Scenes/GPU-Sim/DemoScener/Fysik/Pendelro\u0308relse/Egenfrekvens.unity"

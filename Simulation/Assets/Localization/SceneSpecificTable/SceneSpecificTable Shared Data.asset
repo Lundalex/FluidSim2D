@@ -32,11 +32,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1763658146779136
-    m_Key: InvertedPendulum
+    m_Key: TheInvertedPendulum
     m_Metadata:
       m_Items: []
   - m_Id: 1811707908853760
-    m_Key: PendulumTypes
+    m_Key: DifferentPendulums
     m_Metadata:
       m_Items: []
   - m_Id: 1813621383892992

@@ -88,7 +88,7 @@ public class SceneFluid : Polygon
     {
         if (sceneManager == null) sceneManager = GameObject.Find("SceneManager").GetComponent<SceneManager>();
 
-        bool editorView = (gridSpacing == -1);
+        bool editorView = gridSpacing == -1;
         if (editorView) gridSpacing = editorGridSpacing;
         else if (gridSpacing == 0) gridSpacing = defaultGridSpacing;
 
@@ -109,14 +109,14 @@ public class SceneFluid : Polygon
         {
             for (float y = min.y; y <= max.y; y += gridSpacing)
             {
-                Vector2 point = new(x, y);
+                // Offset the spawning of each particle slightly to avoid visual rendering artifacts the first few frames
+                Vector2 point = new Vector2(x, y) + SmallRandVector2(0.1f * gridSpacing);
 
                 if (IsPointInsidePolygon(point) &&
                     sceneManager.IsPointInsideBounds(point) &&
                     sceneManager.IsSpaceEmpty(point, this, allRigidBodies, allFluids))
                 {
-                    if (++iterationCount > MaxGizmosIterations && editorView)
-                        return generatedPoints;
+                    if (++iterationCount > MaxGizmosIterations && editorView) return generatedPoints;
 
                     generatedPoints.Add(point);
                 }
@@ -140,5 +140,14 @@ public class SceneFluid : Polygon
             temperatureExchangeBuffer = 0.0f,
             lastChunkKey_PType_POrder = pTypeIndex * main.ChunksNumAll
         };
+    }
+
+    private static Vector2 SmallRandVector2(float range)
+    {
+        // Randomize each component within the range
+        float x = UnityEngine.Random.Range(-range, range);
+        float y = UnityEngine.Random.Range(-range, range);
+
+        return new Vector2(x, y);
     }
 }

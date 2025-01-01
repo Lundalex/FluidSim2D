@@ -1,19 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-
-[System.Serializable]
-public class ConfigCollection
-{
-    public string name;
-    public Config[] configs;
-}
-
-[System.Serializable]
-public class Config
-{
-    public string name;
-    public GameObject[] gameObjects;
-}
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
 public class ConfigHelper : MonoBehaviour
 {
@@ -47,7 +36,9 @@ public class ConfigHelper : MonoBehaviour
         }
         else return;
 
-        SetActiveConfigByIndex(collectionIndex, configIndex);
+        // Delay the execution when not playing to avoid SendMessage warnings
+        if (Application.isPlaying) SetActiveConfigByIndex(collectionIndex, configIndex);
+        else EditorApplication.delayCall += () => SetActiveConfigByIndex(collectionIndex, configIndex);
     }
 
     public void SetActiveConfigByIndex(int collectionIndex, int configIndex)
@@ -121,6 +112,8 @@ public class ConfigHelper : MonoBehaviour
             return;
         }
 
-        SetActiveConfigByIndex(collectionIndex, configIndex);
+        // Delay the execution when not playing to avoid SendMessage warnings
+        if (Application.isPlaying) SetActiveConfigByIndex(collectionIndex, configIndex);
+        else EditorApplication.delayCall += () => SetActiveConfigByIndex(collectionIndex, configIndex);
     }
 }

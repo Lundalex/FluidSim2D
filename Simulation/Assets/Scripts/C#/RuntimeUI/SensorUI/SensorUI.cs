@@ -190,6 +190,9 @@ public class SensorUI : MonoBehaviour
             sensor.doUseCustomTitle = false;
             sensor.valueOffset = 0.0f;
             sensor.minPrefixIndex = 2;
+            sensor.numGraphDecimals = 0;
+            sensor.numGraphTimeDecimals = 1;
+            sensor.graphController.SetNumGraphDecimals(sensor.numGraphDecimals, sensor.numGraphTimeDecimals);
             if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
             {
                 rigidBodySensor.SetRigidBodySensorType(selectedRigidBodySensorType);

@@ -6,19 +6,25 @@ using PM = ProgramManager;
 public class UserSelectorInput : UserUIElement
 {
     [Header("Settings")]
+    [SerializeField] private bool disallowAutoModifyField;
     [Range(0.0f, 1000.0f), SerializeField] private float msMaxUpdateFrequency = 100.0f;
 
     [Header("Inner Field")]
     public bool useInnerField = false;
     public string innerFieldName;
 
+    [Header("Data Storage")]
+    [SerializeField] private bool doUseDataStorage;
+    [SerializeField] private DataStorage dataStorage;
+
     [Header("References")]
     [SerializeField] private HorizontalSelector selector;
     [SerializeField] private FieldModifier fieldModifier;
 
     // Private
-    private int lastValue;
+    private int lastValue = -1;
     private Timer updateTimer;
+    private bool setupFinnished = false;
 
     public void SetSelectorIndex(int index)
     {
@@ -30,7 +36,7 @@ public class UserSelectorInput : UserUIElement
         containerTrimImage.color = primaryColor;
         updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency), TimeType.Clamped, true, Func.MsToSeconds(msMaxUpdateFrequency));
     }
-    bool setupFinnished = false;
+
     private void Update()
     {
         if (!setupFinnished)
@@ -43,7 +49,7 @@ public class UserSelectorInput : UserUIElement
         {
             if (updateTimer.Check())
             {
-                ModifyField();
+                if (!disallowAutoModifyField) ModifyField();
 
                 PM.Instance.doOnSettingsChanged = true;
                 lastValue = selector.index;
@@ -60,6 +66,26 @@ public class UserSelectorInput : UserUIElement
         {
             if (useInnerField) fieldModifier.ModifyClassField(innerFieldName, selector.index);
             else fieldModifier.ModifyField(selector.index);
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (doUseDataStorage && dataStorage != null && Application.isPlaying)
+        {
+            if (DataStorage.hasValue)
+            {
+                SetSelectorIndex(dataStorage.GetValue<int>());
+            }
+            ModifyField();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (doUseDataStorage && dataStorage != null && Application.isPlaying)
+        {
+            dataStorage.SetValue(selector.index);
         }
     }
 }

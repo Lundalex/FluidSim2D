@@ -14,6 +14,7 @@ public class ProgramManager : ScriptableObject
     public Material lineMaterial;
     [NonSerialized] public ProgramLifeCycleManager lifeCycleManager;
     [NonSerialized] public Main main;
+    [NonSerialized] public NotificationManager2 notificationManager;
     [NonSerialized] public SensorManager sensorManager;
     [NonSerialized] public FluidSpawnerManager fluidSpawnerManager;
     [NonSerialized] public Transform languageSelectDropdown;
@@ -48,6 +49,8 @@ public class ProgramManager : ScriptableObject
     public event Action<bool> OnProgramUpdate;
     public event Action OnNewLanguageSelected;
     public event Action OnPreStart;
+    public event Action<bool> OnSetNewPauseState;
+    public event Action<bool> OnSetNewSlowMotionState;
 
     // Start confirmation timing
     [NonSerialized] public static readonly float msStartConfimationDelay = 650.0f;
@@ -98,6 +101,7 @@ public class ProgramManager : ScriptableObject
         ScreenToViewFactor = GetScreenToViewFactor();
         (ViewScale, ViewOffset) = GetViewTransform();
         SetStaticUIPositions();
+        SubscribeToActions();
     }
 
     public void Start()
@@ -207,8 +211,7 @@ public class ProgramManager : ScriptableObject
         }
         else if (Input.GetKeyDown(KeyCode.Space))
         {
-            programPaused = !programPaused;
-            Debug.Log(programPaused ? "Program paused" : "Program resumed");
+            OnSetNewPauseState?.Invoke(!programPaused);
         }
         else if (Input.GetKey(KeyCode.F) && rapidFrameSteppingTimer.Check())
         {
@@ -222,21 +225,13 @@ public class ProgramManager : ScriptableObject
             {
                 if (programPaused)
                 {
-                    programPaused = false;
-                    Debug.Log("Program resumed");
+                    OnSetNewPauseState?.Invoke(!programPaused);
                 }
                 frameStep = false;
                 Debug.Log("Slow motion activated");
                 if (slowMotionActive) return false;
             }
-            slowMotionActive = !slowMotionActive;
-            Debug.Log(slowMotionActive ? "Slow motion activated" : "Slow motion deactivated");
-            if (slowMotionActive)
-            {
-                main.ProgramSpeed /= SlowMotionFactor;
-                lifeCycleManager.OpenSlowMotionTip();
-            }
-            else main.ProgramSpeed *= SlowMotionFactor;
+            OnSetNewSlowMotionState?.Invoke(!slowMotionActive);
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -289,6 +284,7 @@ public class ProgramManager : ScriptableObject
         lifeCycleManager = GameObject.FindGameObjectWithTag("LifeCycleManager").GetComponent<ProgramLifeCycleManager>();
         sensorManager = GameObject.FindGameObjectWithTag("SensorManager").GetComponent<SensorManager>();
         main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+        notificationManager = GameObject.FindGameObjectWithTag("NotificationManager2").GetComponent<NotificationManager2>();
         fluidSpawnerManager = GameObject.FindGameObjectWithTag("FluidSpawnerManager").GetComponent<FluidSpawnerManager>();
         languageSelectDropdown = GameObject.FindGameObjectWithTag("LanguageSelect")?.GetComponent<Transform>();
     }
@@ -545,6 +541,36 @@ public class ProgramManager : ScriptableObject
         }
     }
 
+    private void SubscribeToActions()
+    {
+        OnSetNewPauseState += OnNewPauseState;
+        OnSetNewSlowMotionState += OnNewSlowMotionState;
+    }
+
+    private void OnNewPauseState(bool state)
+    {
+        programPaused = state;
+        Debug.Log(programPaused ? "Program paused" : "Program resumed");
+        if (programPaused) notificationManager.OpenNotification("PauseTip");
+        else notificationManager.CloseNotification("PauseTip");
+    }
+
+    private void OnNewSlowMotionState(bool state)
+    {
+        slowMotionActive = state;
+        Debug.Log(slowMotionActive ? "Slow motion activated" : "Slow motion deactivated");
+        if (slowMotionActive)
+        {
+            main.ProgramSpeed /= SlowMotionFactor;
+            notificationManager.OpenNotification("SlowMotionTip");
+        }
+        else
+        {
+            main.ProgramSpeed *= SlowMotionFactor;
+            notificationManager.CloseNotification("SlowMotionTip");
+        }
+    }
+
     public void SetNewLanguage(int languageIndex)
     {
         LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.Locales[languageIndex];
@@ -552,4 +578,6 @@ public class ProgramManager : ScriptableObject
     }
 
     private void TriggerNewLanguageSelected() => OnNewLanguageSelected?.Invoke();
+    public void TriggerSetPauseState(bool state) => OnSetNewPauseState?.Invoke(state);
+    public void TriggerSetSlowMotionState(bool state) => OnSetNewSlowMotionState?.Invoke(state);
 }

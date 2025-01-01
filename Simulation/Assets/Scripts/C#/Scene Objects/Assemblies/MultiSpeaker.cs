@@ -5,8 +5,9 @@ public class MultiSpeaker : Assembly
     [Header("SpeakerType")]
     public SpeakerType speakerType;
 
-    [Header("Speaker Frequency")]
+    [Header("Speakers")]
     public float speakerFrequency;
+    public float speakerMotorRailLength;
 
     [Header("References")]
     [SerializeField] private Main main;
@@ -23,6 +24,7 @@ public class MultiSpeaker : Assembly
     // Private static
     private static SpeakerType storedSpeakerType;
     private static float storedSpeakerFrequency;
+    private static float storedSpeakerMotorRailLength;
     private static bool dataHasBeenStored = false;
 
     private void OnEnable()
@@ -42,6 +44,7 @@ public class MultiSpeaker : Assembly
         dataHasBeenStored = true;
         storedSpeakerType = speakerType;
         storedSpeakerFrequency = speakerFrequency;
+        storedSpeakerMotorRailLength = speakerMotorRailLength;
     }
 
     private void RetrieveData()
@@ -49,6 +52,7 @@ public class MultiSpeaker : Assembly
         if (!dataHasBeenStored) return;
         speakerType = storedSpeakerType;
         speakerFrequency = storedSpeakerFrequency;
+        speakerMotorRailLength = storedSpeakerMotorRailLength;
     }
 
     public override void AssemblyUpdate()
@@ -74,6 +78,7 @@ public class MultiSpeaker : Assembly
 
             case SpeakerType.OnePoint:
                 onePointSpeaker.rbInput.lerpSpeed = lerpSpeed;
+                onePointSpeaker.rbInput.startPos = onePointSpeaker.rbInput.endPos - new Vector2(speakerMotorRailLength / speakerFrequency, 0);
                 setSliderActive = true;
                 configHelper.SetActiveConfigByName("Waves", "OnePoint");
                 break;
@@ -81,6 +86,8 @@ public class MultiSpeaker : Assembly
             case SpeakerType.TwoPoints:
                 twoPointSpeakerA.rbInput.lerpSpeed = lerpSpeed;
                 twoPointSpeakerB.rbInput.lerpSpeed = lerpSpeed;
+                twoPointSpeakerA.rbInput.startPos = twoPointSpeakerA.rbInput.endPos - new Vector2(speakerMotorRailLength / speakerFrequency, 0);
+                twoPointSpeakerB.rbInput.startPos = twoPointSpeakerB.rbInput.endPos - new Vector2(speakerMotorRailLength / speakerFrequency, 0);
                 setSliderActive = true;
                 configHelper.SetActiveConfigByName("Waves", "TwoPoints");
                 break;

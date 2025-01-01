@@ -31,10 +31,6 @@ public class Chain : Assembly
     private void OnDestroy()
     {
         PM.Instance.OnPreStart -= AssemblyUpdate;
-
-        // Destroy the whole link chain
-        foreach (GameObject linkObject in links) Destroy(linkObject);
-        links.Clear();
     }
 
     public override void AssemblyUpdate()

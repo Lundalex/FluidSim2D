@@ -4,6 +4,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using PM = ProgramManager;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class UserSliderInput : UserUIElement
 {
@@ -17,6 +20,10 @@ public class UserSliderInput : UserUIElement
     [Header("Inner Field")]
     public bool useInnerField = false;
     public string innerFieldName;
+
+    [Header("Data Storage")]
+    [SerializeField] private bool doUseDataStorage;
+    [SerializeField] private DataStorage dataStorage;
 
     [Header("References")]
     [SerializeField] private Slider slider;
@@ -63,11 +70,16 @@ public class UserSliderInput : UserUIElement
 
     private void ModifyField()
     {
-        if (fieldModifier == null) Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
+        if (fieldModifier == null)
+        {
+            Debug.LogWarning("FieldModifier not set. UserSliderInput: " + this.name);
+        }
         else
         {
-            if (useInnerField) fieldModifier.ModifyClassField(innerFieldName, slider.value);
-            else fieldModifier.ModifyField(slider.value);
+            if (useInnerField)
+                fieldModifier.ModifyClassField(innerFieldName, slider.value);
+            else
+                fieldModifier.ModifyField(slider.value);
         }
     }
 
@@ -76,7 +88,29 @@ public class UserSliderInput : UserUIElement
         if (userSliderInput != null)
         {
             userSliderInput.gameObject.SetActive(active);
-            if (active) userSliderInput.startValue = activeValue;
+            if (active)
+            {
+                if (Application.isPlaying) userSliderInput.SetValue(activeValue);
+                #if UNITY_EDITOR
+                    else EditorApplication.delayCall += () => userSliderInput.SetValue(activeValue);
+                #endif
+            }
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (doUseDataStorage && dataStorage != null && Application.isPlaying)
+        {
+            if (DataStorage.hasValue) startValue = dataStorage.GetValue<float>();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (doUseDataStorage && dataStorage != null && Application.isPlaying)
+        {
+            dataStorage.SetValue(slider.value);
         }
     }
 }

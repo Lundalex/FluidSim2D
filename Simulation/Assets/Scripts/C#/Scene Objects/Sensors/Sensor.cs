@@ -87,6 +87,7 @@ public abstract class Sensor : MonoBehaviour
         graphController = gameObject.GetComponent<GraphController>();
     }
 
+    // Warning: Super unreadable code. However, it's only this function.
     private void InitSensorUI()
     {
         GameObject sensorUIObject = Instantiate(sensorUIPrefab, sensorUIContainer);
