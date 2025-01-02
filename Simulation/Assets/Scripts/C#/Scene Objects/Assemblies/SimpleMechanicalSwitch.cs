@@ -66,7 +66,7 @@ public class SimpleMechanicalSwitch : Assembly
         borderBoundaryCenter.y = Func.Avg(boundaryDims.y - yOffset.y, yOffset.x);
 
         // Border colliser mesh points
-        Vector2[] borderColliderPoints = GeometryUtils.Rectangle(boundaryDims.y - yOffset.y, yOffset.x, xOffset.x, boundaryDims.x - xOffset.y);
+        Vector2[] borderColliderPoints = GeometryUtils.Rectangle(boundaryDims.y - yOffset.y - main.RigidBodyPadding, yOffset.x + main.RigidBodyPadding, xOffset.x + main.RigidBodyPadding, boundaryDims.x - xOffset.y - main.RigidBodyPadding);
         borderCollider.OverridePolygonPoints(borderColliderPoints);
         borderCollider.gameObject.transform.position = Vector3.zero;
 
@@ -82,12 +82,12 @@ public class SimpleMechanicalSwitch : Assembly
         if (axis == Axis2D.X)
         {
             railSize = new(width + minOffset + maxOffset, height);
-            offset   = new((maxOffset - minOffset) * 0.5f, 0f);
+            offset = new((maxOffset - minOffset) * 0.5f, 0f);
         }
         else // axis == Axis2D.Y
         {
             railSize = new(width, height + minOffset + maxOffset);
-            offset   = new(0f, (maxOffset - minOffset) * 0.5f);
+            offset = new(0f, (maxOffset - minOffset) * 0.5f);
         }
         Vector2[] railVisualizationPoints = GeometryUtils.CenteredRectangle(railSize.x + railPadding, railSize.y + railPadding);
         railVisualization.OverridePolygonPoints(railVisualizationPoints);
@@ -98,6 +98,11 @@ public class SimpleMechanicalSwitch : Assembly
         // Other properties
         borderCollider.rbInput.mass = mass;
         sceneCollider.rbInput.mass = mass;
+        if (colliderType == ColliderType.Fluid || colliderType == ColliderType.None)
+        {
+            Debug.LogWarning("Collider type set to 'Fluid' or 'None'. This is not allowed for mechanical switches. Defaulting to 'All'");
+            colliderType = ColliderType.All;
+        }
         sceneCollider.rbInput.colliderType = colliderType;
     }
 }

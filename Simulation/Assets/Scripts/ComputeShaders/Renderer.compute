@@ -147,7 +147,7 @@ float3 SampleTextureBilinear(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<u
 
 float3 SampleTexturePoint(float2 uv, uint2 texLoc, uint2 texDims, Texture2D<unorm float4> tex)
 {
-    uint2 texelCoord = texLoc + (uint2)(uv * float2(texDims.x, texDims.y));
+    uint2 texelCoord = texLoc + ((2 + (uint2)(uv * float2(texDims.x, texDims.y))) % texDims);
     float3 sampleCol = tex.Load(int3(texelCoord, 0)).rgb;
  
     return sampleCol;
@@ -898,7 +898,9 @@ void RenderRigidBodySprings(uint3 id : SV_DispatchThreadID)
     int matIndex = 0;
     int highestRenderPriority = -1;
     #if !DO_USE_FAST_COMPILATION
-        [unroll(MAX_RIGIDBODIES_NUM)]
+        // Improves performance slightly, but significantly increases build times, even when DO_USE_FAST_COMPILATION = false
+        // Only uncomment this for final builds
+        // [unroll(MAX_RIGIDBODIES_NUM)]
     #endif
     for (uint rbIndex = 0; rbIndex < MAX_RIGIDBODIES_NUM; rbIndex++)
     {

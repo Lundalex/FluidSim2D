@@ -56,12 +56,11 @@
     </ui:Foldout>
     <ui:Foldout text="Sensor Normalization" name="SensorNormalization" value="true" tooltip="Settings for normalizing sensor display data" style="-unity-font-style: bold; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 2px; border-top-width: 2px; border-bottom-color: rgb(0, 0, 0);">
         <uie:PropertyField binding-path="SimUnitToMetersFactor" label="Sim To Meters" tooltip="Convertion factor for simulation length to meters. This value is used in sensor calculations and affects length calculations, as well as derived values such as volume, density, etc." />
-        <uie:PropertyField binding-path="VolumeFactor" label="Volume Factor" tooltip="Calculated volume values are multiplied by this value" />
         <uie:PropertyField binding-path="PressureFactor" label="Pressure Factor" tooltip="Calculated pressure values are multiplied by this value" />
     </ui:Foldout>
     <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:Foldout text="Fluids" name="Fluids" toggle-on-label-click="true" value="true">
-            <ui:Slider label="Interaction Radius" value="40" high-value="100" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
+            <ui:Slider label="Interaction Radius" value="40" high-value="200" binding-path="MaxInteractionRadius" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Attraction Power" value="50" high-value="50" binding-path="InteractionAttractionPower" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Repulsion Power" value="0.5" high-value="10" binding-path="InteractionRepulsionPower" low-value="0" fill="true" show-input-field="true" />
             <ui:Slider label="Fountain Power" value="42" high-value="10" binding-path="InteractionFountainPower" show-input-field="true" fill="true" />
@@ -69,7 +68,7 @@
             <ui:Slider label="Interaction Dampening" value="0.5" high-value="1" binding-path="InteractionDampening" low-value="0" fill="true" show-input-field="true" />
         </ui:Foldout>
         <ui:Foldout text="Rigid Bodies" name="RigidBodies" value="true">
-            <ui:Slider label="Interaction Radius" value="42" high-value="100" show-input-field="true" fill="true" binding-path="RB_MaxInteractionRadius" />
+            <ui:Slider label="Interaction Radius" value="42" high-value="200" show-input-field="true" fill="true" binding-path="RB_MaxInteractionRadius" />
             <ui:Slider label="Attraction Power" value="42" high-value="50" show-input-field="true" fill="true" binding-path="RB_InteractionAttractionPower" tooltip="A factor of the attraction force applied to rigid bodies when interacted with by the mouse." />
             <ui:Slider label="Repulsion Power" value="42" high-value="10" show-input-field="true" fill="true" binding-path="RB_InteractionRepulsionPower" tooltip="A factor of the repulsion force applied to rigid bodies when interacted with by the mouse." />
             <ui:Slider label="Interaction Dampening" value="0.5" high-value="1" show-input-field="true" fill="true" binding-path="RB_InteractionDampening" tooltip="A factor used for calculating the dampening forces applied to interacted rigid bodies." />

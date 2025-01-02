@@ -25,6 +25,7 @@ public class ProgramManager : ScriptableObject
 
     // Globally accessed variables
     [NonSerialized] public bool programStarted;
+    [NonSerialized] public bool sceneIsResetting;
     [NonSerialized] public bool doOnSettingsChanged;
     [NonSerialized] public float globalBrightnessFactor;
     [NonSerialized] public float timeScale = 1;
@@ -101,7 +102,6 @@ public class ProgramManager : ScriptableObject
         ScreenToViewFactor = GetScreenToViewFactor();
         (ViewScale, ViewOffset) = GetViewTransform();
         SetStaticUIPositions();
-        SubscribeToActions();
     }
 
     public void Start()
@@ -117,10 +117,11 @@ public class ProgramManager : ScriptableObject
 
     public void Update()
     {
+        if (sceneIsResetting) return;
         CheckStartConfirmation();
-        bool doResetScene = CheckKeyInputs();
 
-        if (doResetScene)
+        sceneIsResetting = CheckKeyInputs();
+        if (sceneIsResetting)
         {
             ResetScene();
             return;
@@ -215,21 +216,15 @@ public class ProgramManager : ScriptableObject
         }
         else if (Input.GetKey(KeyCode.F) && rapidFrameSteppingTimer.Check())
         {
-            if (!programPaused) Debug.Log("Program paused");
-            programPaused = true;
+            if (!programPaused) OnSetNewPauseState?.Invoke(true);
             frameStep = !frameStep;
         }
         else if (Input.GetKeyDown(KeyCode.S))
         {
             if (frameStep || programPaused)
             {
-                if (programPaused)
-                {
-                    OnSetNewPauseState?.Invoke(!programPaused);
-                }
+                if (programPaused) OnSetNewPauseState?.Invoke(false);
                 frameStep = false;
-                Debug.Log("Slow motion activated");
-                if (slowMotionActive) return false;
             }
             OnSetNewSlowMotionState?.Invoke(!slowMotionActive);
         }
@@ -292,6 +287,7 @@ public class ProgramManager : ScriptableObject
     public void ResetData()
     {
         programStarted = true;
+        sceneIsResetting = false;
         doOnSettingsChanged = false;
         isAnySensorSettingsViewActive = false;
         programPaused = false;
@@ -541,10 +537,16 @@ public class ProgramManager : ScriptableObject
         }
     }
 
-    private void SubscribeToActions()
+    public void SubscribeToActions()
     {
         OnSetNewPauseState += OnNewPauseState;
         OnSetNewSlowMotionState += OnNewSlowMotionState;
+    }
+
+    public void UnsubscribeFromActions()
+    {
+        OnSetNewPauseState -= OnNewPauseState;
+        OnSetNewSlowMotionState -= OnNewSlowMotionState;
     }
 
     private void OnNewPauseState(bool state)

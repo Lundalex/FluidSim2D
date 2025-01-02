@@ -21,7 +21,9 @@ public class PauseToggle : MonoBehaviour
         PM.Instance.TriggerSetPauseState(state);
         ChangeState(state);
     }
-}
 
-// PM on button press -> event called here (and in PM)
-// Press here, call the same event
+    private void OnDestroy()
+    {
+        PM.Instance.OnSetNewPauseState -= ChangeState;
+    }
+}

@@ -126,15 +126,12 @@ public class FluidSensor : Sensor
                 sumFluidDatas.MultiplyAllProperties(sampleDensityCorrection);
                 sumFluidDatas.numContributions = numContributions * sampleDensityCorrection;
 
-                // TOOD: Fix normalization.
-                // When "/main.SimUnitToMetersFactor" is used on the volume, width * height = volume, which is correct. Something to do with 3D<->2D is wrong!
-
                 // Final liquid depth, width & volume calculations
                 float chunkSize = main.MaxInfluenceRadius * main.SimUnitToMetersFactor;
                 float avgChunkDepth = totChunkDepths * SampleSpacing / Mathf.Max(totColumnsWithLiquid, 0.1f);
                 float estimatedDepth = avgChunkDepth * chunkSize;
                 float estimatedWidth = totColumnsWithLiquid * SampleSpacing * chunkSize;
-                float estimatedVolume = totChunksWithLiquid * Func.Sqr(SampleSpacing * chunkSize) * main.VolumeFactor;
+                float estimatedVolume = estimatedDepth * estimatedWidth * 1000; // *1000: m^3 -> dl^3
 
                 // Normalize sumFluidDatas values
                 sumFluidDatas.totMass *= 0.001f;

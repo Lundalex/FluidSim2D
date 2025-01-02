@@ -144,11 +144,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4635625488756825924, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.777778
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4635625488756825924, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.777778
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4635625488756825924, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: m_LocalScale.z
@@ -204,7 +204,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6847724261262821045, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: m_Color.a
-      value: 0.19607843
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7747469941630071035, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: m_Name
@@ -216,7 +216,7 @@ PrefabInstance:
       objectReference: {fileID: 7119758701585612307}
     - target: {fileID: 9078018557484793554, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: fadeDuration
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9078018557484793554, guid: 01b0144f2c7534a6ea75e824758fc2a6, type: 3}
       propertyPath: doEditorAnimation

@@ -11,6 +11,7 @@ public class ConfigHelper : MonoBehaviour
     [SerializeField] private ConfigCollection[] collections;
 
     // Automatically update the active config when a value changes in the Inspector
+#if UNITY_EDITOR
     private void OnValidate()
     {
         if (Application.isPlaying) return;
@@ -40,6 +41,7 @@ public class ConfigHelper : MonoBehaviour
         if (Application.isPlaying) SetActiveConfigByIndex(collectionIndex, configIndex);
         else EditorApplication.delayCall += () => SetActiveConfigByIndex(collectionIndex, configIndex);
     }
+#endif
 
     public void SetActiveConfigByIndex(int collectionIndex, int configIndex)
     {
@@ -114,6 +116,8 @@ public class ConfigHelper : MonoBehaviour
 
         // Delay the execution when not playing to avoid SendMessage warnings
         if (Application.isPlaying) SetActiveConfigByIndex(collectionIndex, configIndex);
-        else EditorApplication.delayCall += () => SetActiveConfigByIndex(collectionIndex, configIndex);
+        #if UNITY_EDITOR
+            else EditorApplication.delayCall += () => SetActiveConfigByIndex(collectionIndex, configIndex);
+        #endif
     }
 }

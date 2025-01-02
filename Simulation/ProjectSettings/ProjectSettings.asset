@@ -20,10 +20,10 @@ PlayerSettings:
   m_ShowUnitySplashScreen: 1
   m_ShowUnitySplashLogo: 0
   m_SplashScreenOverlayOpacity: 1
-  m_SplashScreenAnimation: 2
+  m_SplashScreenAnimation: 0
   m_SplashScreenLogoStyle: 1
   m_SplashScreenDrawMode: 1
-  m_SplashScreenBackgroundAnimationZoom: 0.757
+  m_SplashScreenBackgroundAnimationZoom: 0
   m_SplashScreenLogoAnimationZoom: 0.6061
   m_SplashScreenBackgroundLandscapeAspect: 1
   m_SplashScreenBackgroundPortraitAspect: 1
@@ -336,7 +336,7 @@ PlayerSettings:
   openGLRequireES31AEP: 0
   openGLRequireES32: 0
   m_TemplateCustomTags:
-    PRODUCT_DESCRIPTION: Fysiksimulering
+    PRODUCT_DESCRIPTION: Whirl - Fysiksimulering
   mobileMTRendering:
     Android: 1
     iPhone: 1
@@ -585,9 +585,9 @@ PlayerSettings:
   ps4IncludedModules: []
   ps4attribVROutputEnabled: 0
   monoEnv: 
-  splashScreenBackgroundSourceLandscape: {fileID: -6931088814071227600, guid: 05f7b76233cc343a6b979a0512167026, type: 3}
+  splashScreenBackgroundSourceLandscape: {fileID: 2103732080799595523, guid: 48702376aaaad22488b7a5ad4687f407, type: 3}
   splashScreenBackgroundSourcePortrait: {fileID: 0}
-  blurSplashScreenBackground: 1
+  blurSplashScreenBackground: 0
   spritePackerPolicy: 
   webGLMemorySize: 32
   webGLExceptionSupport: 1

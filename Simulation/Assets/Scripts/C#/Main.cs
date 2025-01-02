@@ -39,7 +39,6 @@ public class Main : MonoBehaviour
 
 #region Sensor Normalization
     public float SimUnitToMetersFactor = 0.005f;
-    public float VolumeFactor = 40.0f;
     public float PressureFactor = 1.77f;
 #endregion
 
@@ -463,7 +462,7 @@ public class Main : MonoBehaviour
         if (DoUseFastShaderCompilation)
         {
             #if !UNITY_EDITOR
-                Debug.LogError("Fast shader compilation enabled in build version. This may slightly decrease runtime performance");
+                Debug.LogWarning("Fast shader compilation enabled in build version. This may slightly decrease runtime performance");
             #else
                 // Debug.Log("Fast shader compilation enabled in build version. This may slightly decrease runtime performance");
             #endif
@@ -514,10 +513,10 @@ public class Main : MonoBehaviour
         switch (Application.platform)
         {
             case RuntimePlatform.WindowsEditor:
-                GlobalBrightness = 1;
-                Contrast = 1;
-                Saturation = 1;
-                Gamma = 1;
+                GlobalBrightness = 1.0f;
+                Contrast = 1.1f;
+                Saturation = 1.2f;
+                Gamma = 1.2f;
                 SettingsViewDarkTintPercent = 0.8f;
                 break;
             case RuntimePlatform.OSXEditor:

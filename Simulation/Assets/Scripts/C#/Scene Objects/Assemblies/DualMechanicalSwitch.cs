@@ -103,12 +103,12 @@ public class DualMechanicalSwitch : Assembly
         if (axis == Axis2D.X)
         {
             railSize += new Vector2(width + minOffset + maxOffset, height);
-            offset   = new((maxOffset - minOffset) * 0.5f, 0f);
+            offset = new((maxOffset - minOffset) * 0.5f, 0f);
         }
         else // axis == Axis2D.Y
         {
             railSize += new Vector2(width, height + minOffset + maxOffset);
-            offset   = new(0f, (maxOffset - minOffset) * 0.5f);
+            offset = new(0f, (maxOffset - minOffset) * 0.5f);
         }
         Vector2[] railVisualizationPoints = GeometryUtils.CenteredRectangle(railSize.x + railPadding, railSize.y + railPadding);
         railVisualization.OverridePolygonPoints(railVisualizationPoints);
@@ -119,6 +119,11 @@ public class DualMechanicalSwitch : Assembly
         // Other properties
         borderCollider.rbInput.mass = mass;
         sceneCollider.rbInput.mass = mass;
+        if (colliderType == ColliderType.Fluid || colliderType == ColliderType.None)
+        {
+            Debug.LogWarning("Collider type set to 'Fluid' or 'None'. This is not allowed for mechanical switches. Defaulting to 'All'");
+            colliderType = ColliderType.All;
+        }
         sceneCollider.rbInput.colliderType = colliderType;
     }
 }

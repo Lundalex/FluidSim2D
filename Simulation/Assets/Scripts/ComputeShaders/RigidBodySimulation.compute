@@ -305,7 +305,9 @@ void SimulateRB_RB(uint3 id : SV_DispatchThreadID)
     if (isNotRBCollider) return;
     
     #if !DO_USE_FAST_COMPILATION
-        [unroll(MAX_RIGIDBODIES_NUM)]
+        // Improves performance slightly, but significantly increases build times, even when DO_USE_FAST_COMPILATION = false
+        // Only uncomment this for final builds
+        // [unroll(MAX_RIGIDBODIES_NUM)]
     #endif
     for (uint rbBIndex = rbAIndex + 1; rbBIndex < NumRigidBodies; rbBIndex++)
     {
@@ -727,10 +729,10 @@ void SimulateRBSprings(uint3 id : SV_DispatchThreadID)
     AccumulateDeltaRotVel(i, deltaRotVelA_Int);
     AccumulateDeltaRotVel(rbA.linkedRBIndex, deltaRotVelB_Int);
 
-    // Accumulate spring force (not considering dampingForceMagnitude)
-    if (springForceMagnitude != 0) // Alternatively: totalForceMagnitude
+    // Record spring force
+    if (springForceMagnitude != 0)
     {
-        float absSpringForce = abs(totalForceMagnitude) * 0.001; // Alternatively: totalForceMagnitude
+        float absSpringForce = abs(springForceMagnitude) * 0.001;
         int recordedSpringForce_Int = FloatAsInt(absSpringForce, INT_FLOAT_PRECISION_RB);
         AccumulateSpringForce(i, recordedSpringForce_Int);
     }

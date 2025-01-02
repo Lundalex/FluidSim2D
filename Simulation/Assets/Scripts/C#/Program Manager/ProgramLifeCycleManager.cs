@@ -35,7 +35,6 @@ public class ProgramLifeCycleManager : MonoBehaviour
         // Show start confirmation (only when starting the program)
         if (!PM.hasShownStartConfirmation)
         {
-            PM.hasShownStartConfirmation = true;
             startConfirmationWindow.SetActive(true);
             darkBackground.SetActive(true);
         }
@@ -44,6 +43,8 @@ public class ProgramLifeCycleManager : MonoBehaviour
             startConfirmationWindow.SetActive(false);
             darkBackground.SetActive(false);
         }
+
+        PM.Instance.SubscribeToActions();
     }
 
     private void Start()
@@ -76,6 +77,7 @@ public class ProgramLifeCycleManager : MonoBehaviour
     {
         darkBackground.transform.SetParent(startConfirmationWindow.transform);
         darkBackground.transform.SetSiblingIndex(0);
+        PM.hasShownStartConfirmation = true;
 
         StartCoroutine(StartConfirmationDelayCoroutine());
     }
@@ -91,4 +93,6 @@ public class ProgramLifeCycleManager : MonoBehaviour
         yield return new WaitForSeconds(Func.MsToSeconds(PM.msControlsTipDelay));
         notificationManager.OpenNotification("ControlsTip");
     }
+
+    private void OnDestroy() => PM.Instance.UnsubscribeFromActions();
 }

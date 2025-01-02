@@ -1,3 +1,4 @@
+using Resources2;
 using UnityEngine;
 using UnityEngine.UI;
 using PM = ProgramManager;
@@ -5,16 +6,17 @@ using PM = ProgramManager;
 public class SplashImage : MonoBehaviour
 {
     // Inspector
-    [SerializeField] private float fadeDuration;
     [SerializeField] private bool doEditorAnimation;
     [SerializeField] private Image image;
+
+    private static readonly float fadeDuration = 1.0f;
 
     // Nonserialized
     private float timePassed = 0.0f;
 
-    private void Start()
+    private void OnEnable()
     {
-        if (Application.isEditor && !doEditorAnimation) 
+        if (Application.isEditor && !doEditorAnimation || PM.hasShownStartConfirmation) 
         {
             gameObject.SetActive(false);
             return;

@@ -632,8 +632,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   msRigidBodyDataRetrievalInterval: 40
   msFluidDataRetrievalInterval: 40
-  msGraphPointSubmissionFrequency: 50
-  doUpdateGraphsAsync: 0
+  msGraphPointSubmissionFrequency: 100
+  doUpdateGraphsAsync: 1
   msGraphUpdateFrequency: 1000
 --- !u!1 &195317908
 GameObject:
@@ -5025,7 +5025,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
-      value: 4.5166664
+      value: 4.516667
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
@@ -5033,7 +5033,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
-      value: 4.5166664
+      value: 4.516667
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
@@ -5041,7 +5041,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
-      value: -4.5166664
+      value: -4.516667
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
@@ -5049,7 +5049,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6132482722789610898, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
-      value: -4.5166664
+      value: -4.516667
       objectReference: {fileID: 0}
     - target: {fileID: 8635991356798325462, guid: 7977412a115a9404ba32fba55aed5f02, type: 3}
       propertyPath: m_LocalPosition.x

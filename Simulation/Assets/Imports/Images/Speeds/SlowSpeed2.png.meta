@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 48702376aaaad22488b7a5ad4687f407
+guid: 911746fc313db2240a719f6e1cb44ed1
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2103732080799595523
-    second: Whirl_11zon_0
+      213: 1242004443630702886
+    second: SlowSpeed2_0
+  - first:
+      213: -2479256286885077732
+    second: SlowSpeed2_1
+  - first:
+      213: 7133707076112263442
+    second: SlowSpeed2_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -139,13 +145,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Whirl_11zon_0
+      name: SlowSpeed2_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 3840
-        height: 2160
+        y: 315
+        width: 90
+        height: 42
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +160,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 30c37a27e25f13d10800000000000000
-      internalID: 2103732080799595523
+      spriteID: 6219018067c7c3110800000000000000
+      internalID: 1242004443630702886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SlowSpeed2_1
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 35
+        width: 481
+        height: 442
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1d9f01fa89e79dd0800000000000000
+      internalID: -2479256286885077732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SlowSpeed2_2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 155
+        width: 90
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 219ac5b2ac4000360800000000000000
+      internalID: 7133707076112263442
       vertices: []
       indices: 
       edges: []
@@ -173,8 +223,7 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable:
-      Whirl_11zon_0: 2103732080799595523
+    nameFileIdTable: {}
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
