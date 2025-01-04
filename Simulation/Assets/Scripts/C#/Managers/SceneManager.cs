@@ -121,12 +121,12 @@ public class SceneManager : MonoBehaviour
             if (matInput.colorTexture != null)
             {
                 Rect rect = rects[rectIndex];
-                mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rect), GetTexDims(rect));
+                mat = InitMat(matInput, matInput.baseColor, GetTexLoc(rect), GetTexDims(rect), matInput.sampleOffset);
                 rectIndex++;
             }
             else
             {
-                mat = InitMat(matInput, matInput.baseColor, -1, -1);
+                mat = InitMat(matInput, matInput.baseColor, -1, -1, -1);
             }
             renderMats[i] = mat;
         }
@@ -134,12 +134,13 @@ public class SceneManager : MonoBehaviour
         return (atlas, renderMats);
     }
 
-    private Mat InitMat(MatInput matInput, float3 baseCol, int2 colTexLoc, int2 colTexDims)
+    private Mat InitMat(MatInput matInput, float3 baseCol, int2 colTexLoc, int2 colTexDims, float2 sampleOffset)
     {
         return new Mat
         {
             colTexLoc = colTexLoc,
             colTexDims = colTexDims,
+            sampleOffset = sampleOffset,
             colTexUpScaleFactor = matInput.colorTextureUpScaleFactor,
             baseCol = baseCol,
             opacity = Mathf.Clamp(matInput.opacity, 0.0f, 1.0f),

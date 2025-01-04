@@ -13,6 +13,7 @@ public class FluidSensor : Sensor
     public Rect measurementZone;
     [SerializeField] private float patternModulo;
     [Range(1, 20), SerializeField] private int SampleSpacing;
+    [SerializeField] private bool allowDepthGaps;
 
     private int minX, maxX, minY, maxY;
     private float sampleDensityCorrection;
@@ -96,11 +97,14 @@ public class FluidSensor : Sensor
                     bool anyLiquidInColumn = false;
                     bool underSurface = true;
                     int chunkDepth = 0;
+                    int potentialChunkDepth = 0;
                     for (int y = minY; y <= maxY; y += SampleSpacing)
                     {
                         if (0 > y || y >= chunksNum.y) continue;
                         
                         int chunkKey = GetChunkKey(x, y);
+
+                        potentialChunkDepth++;
 
                         RecordedFluidData_Translated fluidData = new(sensorManager.retrievedFluidDatas[chunkKey], main.FloatIntPrecisionP);
                         if (fluidData.numContributions > 0)
@@ -114,7 +118,8 @@ public class FluidSensor : Sensor
 
                             // Liquid depth & volume check
                             totChunksWithLiquid++;
-                            if (underSurface) chunkDepth++;
+                            if (allowDepthGaps) chunkDepth = potentialChunkDepth;
+                            else if (underSurface) chunkDepth++;
                         }
                         else underSurface = false;
                     }
@@ -234,6 +239,7 @@ public class FluidSensor : Sensor
 
         if (Mathf.Abs(value * Mathf.Pow(10, 3 * (3 - minPrefixIndex))) < minDisplayValue) value = 0.0f;
 
+        value *= valueMultiplier;
         value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
@@ -246,7 +252,8 @@ public class FluidSensor : Sensor
     public override bool SetSensorUnit(string prefix = "")
     {
         string baseUnit = prefix;
-        switch (fluidSensorType)
+        if (doUseCustomUnit) baseUnit = customUnit;
+        else switch (fluidSensorType)
         {
             case FluidSensorType.Mass:
                 baseUnit = "kg";
@@ -317,7 +324,17 @@ public class FluidSensor : Sensor
                 prefix = "";
                 unit = "g";
                 break;
+
+            case "μkg":
+                prefix = "";
+                unit = "mg";
+                break;
             
+            case "nkg":
+                prefix = "";
+                unit = "μg";
+                break;
+
             default:
                 break;
         }

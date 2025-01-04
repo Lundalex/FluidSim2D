@@ -265,14 +265,14 @@ public class Main : MonoBehaviour
 
         SimTimeElapsed = 0;
 
-        // Particles
-        PData[] PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
-        ParticlesNum = PDatas.Length;
-
         // Boundary
         BoundaryDims = sceneManager.GetBounds(MaxInfluenceRadius);
         ChunksNum = BoundaryDims / MaxInfluenceRadius;
         ChunksNumAll = ChunksNum.x * ChunksNum.y;
+
+        // Particles
+        PData[] PDatas = sceneManager.GenerateParticles(MaxStartingParticlesNum);
+        ParticlesNum = PDatas.Length;
 
         // Rigid bodies & sensor areas
         (RBData[] RBDatas, RBVector[] RBVectors, SensorArea[] SensorAreas) = sceneManager.CreateRigidBodies();
@@ -324,7 +324,7 @@ public class Main : MonoBehaviour
 
         StringUtils.LogIfInEditor("Simulation started with " + ParticlesNum + " particles, " + NumRigidBodies + " rigid bodies, and " + NumRigidBodyVectors + " vertices. Platform: " + Application.platform);
     }
-
+    
     public void UpdateScript()
     {
         UpdateSimulationPDatas();

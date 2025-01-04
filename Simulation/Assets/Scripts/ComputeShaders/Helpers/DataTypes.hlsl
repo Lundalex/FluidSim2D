@@ -4,6 +4,7 @@ struct Mat
 {
     int2 colTexLoc;
     int2 colTexDims;
+    float2 sampleOffset;
     float colTexUpScaleFactor;
     float3 baseCol;
     float opacity;

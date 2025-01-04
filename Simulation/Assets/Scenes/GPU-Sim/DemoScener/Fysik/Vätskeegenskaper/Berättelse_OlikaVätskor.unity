@@ -254,7 +254,7 @@ MonoBehaviour:
   BoundaryDims:
     x: 480
     y: 270
-  FluidPadding: 1
+  FluidPadding: 0.1
   RigidBodyPadding: 0
   BoundaryElasticity: 0.5
   BoundaryFriction: 0

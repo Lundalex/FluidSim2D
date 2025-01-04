@@ -51,6 +51,10 @@ MonoBehaviour:
     m_Key: Interference
     m_Metadata:
       m_Items: []
+  - m_Id: 13070718717136896
+    m_Key: Density
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

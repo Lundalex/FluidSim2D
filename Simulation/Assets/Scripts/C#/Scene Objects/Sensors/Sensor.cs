@@ -32,6 +32,9 @@ public abstract class Sensor : MonoBehaviour
     [Header("Overrides")]
     public bool doUseCustomTitle = false;
     public string customTitle = "Title Here";
+    public bool doUseCustomUnit = false;
+    public string customUnit = "Unit Here";
+    public float valueMultiplier = 1.0f;
     public float valueOffset = 0.0f;
     public float graphPositionOffsetX = 0.0f;
 

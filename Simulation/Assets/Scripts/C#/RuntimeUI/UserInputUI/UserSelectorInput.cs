@@ -35,6 +35,7 @@ public class UserSelectorInput : UserUIElement
     {
         containerTrimImage.color = primaryColor;
         updateTimer = new Timer(Func.MsToSeconds(msMaxUpdateFrequency), TimeType.Clamped, true, Func.MsToSeconds(msMaxUpdateFrequency));
+        lastValue = selector.index;
     }
 
     private void Update()

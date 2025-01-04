@@ -109,6 +109,7 @@ public class RigidBodySensor : Sensor
 
         if (Mathf.Abs(value * Mathf.Pow(10, 3 * (3 - minPrefixIndex))) < minDisplayValue) value = 0.0f;
         
+        value *= valueMultiplier;
         value += valueOffset;
 
         (string prefix, float displayValue) = GetMagnitudePrefix(value, minPrefixIndex);
@@ -122,7 +123,8 @@ public class RigidBodySensor : Sensor
     public override bool SetSensorUnit(string prefix = "")
     {
         string baseUnit = "";
-        switch (rigidBodySensorType)
+        if (doUseCustomUnit) baseUnit = customUnit;
+        else switch (rigidBodySensorType)
         {
             case RigidBodySensorType.Mass:
                 baseUnit = "g";

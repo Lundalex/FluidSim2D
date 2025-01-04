@@ -7,6 +7,7 @@ public struct MatInput
 {
     public Texture2D colorTexture;
     public float colorTextureUpScaleFactor;
+    public float2 sampleOffset;
     public float opacity;
     public bool transparentEdges;
     public float3 baseColor;
