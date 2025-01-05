@@ -136,7 +136,7 @@ public class FluidSensor : Sensor
                 float avgChunkDepth = totChunkDepths * SampleSpacing / Mathf.Max(totColumnsWithLiquid, 0.1f);
                 float estimatedDepth = avgChunkDepth * chunkSize;
                 float estimatedWidth = totColumnsWithLiquid * SampleSpacing * chunkSize;
-                float estimatedVolume = estimatedDepth * estimatedWidth * 1000; // *1000: m^3 -> dl^3
+                float estimatedVolume = estimatedDepth * estimatedWidth * main.ZDepthMeters * 1000; // *1000: m^3 -> dl^3
 
                 // Normalize sumFluidDatas values
                 sumFluidDatas.totMass *= 0.001f;

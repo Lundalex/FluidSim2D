@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Resources2;
 using UnityEngine;
+using PM = ProgramManager;
 
 #if UNITY_EDITOR
-using UnityEditor;
+    using UnityEditor;
 #endif
 
 [RequireComponent(typeof(PolygonCollider2D)), ExecuteAlways]
@@ -24,7 +25,8 @@ public class SceneRigidBody : Polygon
     public Sensor[] linkedSensors;
     public RBInput rbInput;
 
-    [Header("Estimated Spring Values At Start")]
+    [Header("Approximated Starting Values")]
+    public string approximatedVolume;
     public string approximatedSpringLength;
     public string approximatedSpringForce;
 
@@ -181,9 +183,7 @@ public class SceneRigidBody : Polygon
     public Vector2[] GeneratePoints(float gridSpacing, Vector2 offset)
     {
         if (gridSpacing == 0 || doOverrideGridSpacing) gridSpacing = defaultGridSpacing;
-        #if UNITY_EDITOR
-            gridSpacing *= 2;
-        #endif
+        if (!Application.isPlaying) gridSpacing *= 2;
         SetPolygonData();
 
         List<Vector2> generatedPoints = new();
@@ -222,6 +222,9 @@ public class SceneRigidBody : Polygon
         int numPoints = points.Length;
         if (numPoints == 0) return Vector2.zero;
 
+        // Update the approximated volume in the inspector
+        ApproximateVolume(numPoints, gridSpacing);
+
         // Calculate centroid
         Vector2 centroid = Vector2.zero;
         foreach (Vector2 point in points) centroid += point;
@@ -243,6 +246,9 @@ public class SceneRigidBody : Polygon
         Vector2[] points = GeneratePoints(gridSpacing, offset);
         int numPoints = points.Length;
         if (numPoints == 0) return (0f, 0f);
+
+        // Update the approximated volume in the inspector
+        ApproximateVolume(numPoints, gridSpacing);
 
         float pointMass = rbInput.mass / numPoints;
 
@@ -288,8 +294,20 @@ public class SceneRigidBody : Polygon
 
             maxRadiusSqr = Mathf.Max(maxRadiusSqr, validatedVec.sqrMagnitude);
         }
+        maxRadiusSqr += 1.0f; // small offset to render edges properly
 
         return (inertia, maxRadiusSqr);
+    }
+
+    private void ApproximateVolume(int numPoints, float gridSpacing)
+    {
+        if (!Application.isPlaying) gridSpacing *= 2;
+
+        if (PM.Instance.main == null) PM.Instance.main = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Main>();
+
+        // Z-depth = 1
+        float approxVolume = numPoints * Func.Sqr(gridSpacing * PM.Instance.main.SimUnitToMetersFactor) * PM.Instance.main.ZDepthMeters * 1000; // *1000: m^3 -> dm^3 = l
+        approximatedVolume = approxVolume.ToString() + " l";
     }
 
     private (bool hasAltCentroid, Vector2 altCentroid) GetAlternativeCentroid()

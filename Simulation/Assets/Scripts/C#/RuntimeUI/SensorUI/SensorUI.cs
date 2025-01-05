@@ -62,6 +62,11 @@ public class SensorUI : MonoBehaviour
     private const float PointerHoverCooldown = 0.25f;
     private Timer pointerMoveTimer;
     private const float PointerMoveDelay = 0.25f;
+    private bool settingsPanelIsClosing = false;
+
+    // Private - Transform fields
+    private Vector2 lastPositionFieldValues = Vector2.positiveInfinity;
+    private bool positionFieldsHaveBeenModified = false;
 
     // Private - Scale
     private readonly Vector3 BaseScale = new(0.6f, 0.6f, 0.6f);
@@ -70,7 +75,7 @@ public class SensorUI : MonoBehaviour
     private const float GraphViewActiveFixedScale = 1.5f;
     private const float MouseDraggingFixedScale = 1.2f;
 
-    // Display value interpolation
+    // Private - Display value interpolation
     private float currentValue = 0f;
     private float targetValue = 0f;
     private bool isInterpolating = false;
@@ -159,10 +164,16 @@ public class SensorUI : MonoBehaviour
             return;
         }
 
-        // Set the new position
+        Vector2 positionFieldsPosition = ClampToScreenBounds(GetPositionFromInputFields());
         if (dashedRectangle != null)
         {
-            dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(ClampToScreenBounds(GetPositionFromInputFields())));
+            dashedRectangle.SetPosition(TransformUtils.SimSpaceToWorldSpace(positionFieldsPosition));
+        }
+
+        if (lastPositionFieldValues.x == Vector2.positiveInfinity.x) lastPositionFieldValues = positionFieldsPosition;
+        else if (positionFieldsPosition != lastPositionFieldValues)
+        {
+            positionFieldsHaveBeenModified = true;
         }
     }
 
@@ -174,7 +185,7 @@ public class SensorUI : MonoBehaviour
         sliderScale = userScale;
 
         // Set position from field inputs (only for fluid sensors)
-        if (sensor is FluidSensor)
+        if (sensor is FluidSensor && positionFieldsHaveBeenModified)
         {
             Vector2 simPos = GetPositionFromInputFields();
             rectTransform.localPosition = ClampToScreenBounds(sensor.SimSpaceToCanvasSpace(simPos));
@@ -191,8 +202,10 @@ public class SensorUI : MonoBehaviour
             sensor.valueOffset = 0.0f;
             sensor.valueMultiplier = 1.0f;
             sensor.minPrefixIndex = 2;
-            sensor.numGraphDecimals = 0;
+            sensor.numGraphDecimals = 1;
             sensor.numGraphTimeDecimals = 1;
+            sensor.displayValueLerpThreshold = 0.0f;
+            sensor.minDisplayValue = 0.0f;
             sensor.graphController.SetNumGraphDecimals(sensor.numGraphDecimals, sensor.numGraphTimeDecimals);
             if (rigidBodySensorTypeDropdownUsed && sensor is RigidBodySensor rigidBodySensor)
             {
@@ -307,7 +320,7 @@ public class SensorUI : MonoBehaviour
 
     public void SetPosition(Vector2 uiPos)
     {
-        if ((pointerHoverArea.CheckIfHovering() && pointerHoverTimer.Check(false)) || PM.Instance.isAnySensorSettingsViewActive)
+        if (((pointerHoverArea.CheckIfHovering() && pointerHoverTimer.Check(false)) || PM.Instance.isAnySensorSettingsViewActive) && !settingsPanelIsClosing)
         {
             uiPos = rectTransform.localPosition;
             isPointerHovering = true;
@@ -338,6 +351,7 @@ public class SensorUI : MonoBehaviour
 
     private IEnumerator SetDashedRectangleTransformCoroutine()
     {
+        settingsPanelIsClosing = true;
         Timer timer = new(0.2f);
         Vector2 lastSimPos = Vector2.zero;
         while (!timer.Check())
@@ -358,10 +372,6 @@ public class SensorUI : MonoBehaviour
                 continue;
             }
 
-            // Set the input field contents
-            positionXInput.text = ((int)simPos.x).ToString();
-            positionYInput.text = ((int)simPos.y).ToString();
-
             // Set the dashed rectangle transform
             if (dashedRectangle != null)
             {
@@ -371,6 +381,12 @@ public class SensorUI : MonoBehaviour
 
             yield return new WaitForSeconds(1 / 30.0f);
         }
+
+        // Set the input field contents
+        positionXInput.text = ((int)lastSimPos.x).ToString();
+        positionYInput.text = ((int)lastSimPos.y).ToString();
+        lastPositionFieldValues = Vector2.positiveInfinity;
+        settingsPanelIsClosing = false;
     }
 
     public void SetSettingsViewAsDisabled()

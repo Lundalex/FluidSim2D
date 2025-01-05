@@ -77,8 +77,8 @@ public class EditorManager : Editor
                 lerpColor = Color.Lerp(SpringBaseColor, SpringStressedColor,
                                        approxForce * springForceFactor);
 
-                rigidBody.approximatedSpringLength = approxLength.ToString();
-                rigidBody.approximatedSpringForce = approxForce.ToString();
+                rigidBody.approximatedSpringLength = approxLength.ToString() + " sim l.e";
+                rigidBody.approximatedSpringForce = approxForce.ToString() + " sim k.e";
             }
 
             // Draw the spring

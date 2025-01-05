@@ -484,7 +484,6 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
     float totNoiseDensity = 0;
     bool doDrawFluid = false;
     bool drawOutline = false;
-    bool doContinue = true;
     float minDstSqr = 1.#INF;
     #if !USE_METABALLS
         float minLiquidRadius = min(MaxInfluenceRadius, VisualLiquidParticleRadius);
@@ -496,9 +495,9 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         float totVelocities = 0;
         int numParticles = 0;
     #endif
-    for (int x = -1; x <= 1 && doContinue; x++)
+    for (int x = -1; x <= 1; x++)
     {
-        for (int y = -1; y <= 1 && doContinue; y++)
+        for (int y = -1; y <= 1; y++)
         {
             int2 curChunk = chunk + int2(x, y);
 
@@ -506,9 +505,10 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
 
             int chunkKey = GetChunkKey(curChunk);
             int startIndex = StartIndices[chunkKey];
-
+            
+            int iterationCount = 0;
             int index = startIndex;
-            while (index < ParticlesNum && chunkKey == SpatialLookup[index].y)
+            while (index < ParticlesNum && chunkKey == SpatialLookup[index].y && iterationCount++ < MAX_SPATIAL_LOOKUP_RENDER_ITERATIONS)
             {
                 int pIndex = SpatialLookup[index].x;
                 PData pData = PDatas[pIndex];
@@ -681,7 +681,6 @@ void RenderFluids(uint3 id : SV_DispatchThreadID)
         SetResultColor(id.xy, result);
     #endif
 }
-
 
 [numthreads(TN_R,TN_R,1)]
 void RenderRigidBodies(uint3 id : SV_DispatchThreadID)

@@ -47,11 +47,19 @@ public class MultiWeights : Assembly
         switch (weightsType)
         {
             case WeightsType.Potatoes:
-                configHelper.SetActiveConfigByName("Obstacles", "None");
+                configHelper.SetActiveConfigByName("Weights", "Potatoes");
+                break;
+
+            case WeightsType.Rocks:
+                configHelper.SetActiveConfigByName("Weights", "Rocks");
+                break;
+
+            case WeightsType.LeadWeights:
+                configHelper.SetActiveConfigByName("Weights", "LeadWeights");
                 break;
 
             default:
-                Debug.LogWarning("ObstaclesType '" + weightsType + "' not recognized. MultiObstacles: " + this.name);
+                Debug.LogWarning("WeightsType '" + weightsType + "' not recognized. MultiWeights: " + this.name);
                 break;
         }
 

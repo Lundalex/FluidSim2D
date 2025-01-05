@@ -41,8 +41,8 @@
         </ui:Foldout>
     </ui:Foldout>
     <ui:Foldout text="Simulation Time" name="SimulationTime" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
-        <uie:PropertyField binding-path="TimeStepsPerFrame" label="Time Steps Per Frame" tooltip="Number of simulation time steps per frame. Increase this value increases simulation stability." />
-        <uie:PropertyField binding-path="SubTimeStepsPerFrame" label="Sub Time Steps Per Frame" tooltip="Number of simulation time sub-steps per regular step. Increase this value increases simulation stability." />
+        <uie:PropertyField binding-path="TimeStepsPerFrame" label="Time Steps Per Frame" tooltip="Number of simulation time steps per frame. Increasing this value increases simulation stability." />
+        <uie:PropertyField binding-path="SubTimeStepsPerFrame" label="Sub Time Steps Per Frame" tooltip="Number of simulation time sub-steps per regular step. Increasing this value increases simulation stability." />
         <ui:EnumField label="Time Step Type" value="Center" type="TimeStepType, Assembly-CSharp" tooltip="Recommended: &quot;Dynamic&quot;. If set to &quot;Fixed&quot;, &quot;DeltaTime&quot; will be set to &quot;Time Step&quot;, independantly from the frame rate. This means low frame rates would lead to less simulation time passing per real life unit of time." binding-path="TimeStepType" />
         <uie:PropertyField binding-path="TargetFrameRate" label="Target Frame Rate" tooltip="The target fram rate of the program. A value of 0 (or lower) will enable vSync (which overrides the target frame rate). IMPORTANT: The web app can only run at a maximum of 60FPS." />
         <ui:Slider label="Time Step" value="42" high-value="0.02" binding-path="TimeStep" fill="true" show-input-field="true" tooltip="If &quot;TimeStepType&quot; is set to &quot;Fixed&quot;, this represents &quot;DeltaTime&quot; for each frame. Otherwise, this represents the highest allowed value for &quot;DeltaTime&quot;, preventing low frame rates or performance spikes from breaking the simulation." low-value="0.001" />
@@ -56,6 +56,7 @@
     </ui:Foldout>
     <ui:Foldout text="Sensor Normalization" name="SensorNormalization" value="true" tooltip="Settings for normalizing sensor display data" style="-unity-font-style: bold; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; border-bottom-width: 2px; border-top-width: 2px; border-bottom-color: rgb(0, 0, 0);">
         <uie:PropertyField binding-path="SimUnitToMetersFactor" label="Sim To Meters" tooltip="Convertion factor for simulation length to meters. This value is used in sensor calculations and affects length calculations, as well as derived values such as volume, density, etc." />
+        <uie:PropertyField binding-path="ZDepthMeters" label="Z Depth" tooltip="The z-depth used by sensors to compute volume values" />
         <uie:PropertyField binding-path="PressureFactor" label="Pressure Factor" tooltip="Calculated pressure values are multiplied by this value" />
     </ui:Foldout>
     <ui:Foldout text="Mouse Interaction" name="MouseInteraction" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">

@@ -39,6 +39,7 @@ public class Main : MonoBehaviour
 
 #region Sensor Normalization
     public float SimUnitToMetersFactor = 0.005f;
+    public float ZDepthMeters = 0.1f;
     public float PressureFactor = 1.77f;
 #endregion
 
