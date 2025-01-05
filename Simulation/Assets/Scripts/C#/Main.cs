@@ -396,7 +396,7 @@ public class Main : MonoBehaviour
     private void InitCausticsGen()
     {
         if (causticsGen == null) causticsGen = GameObject.FindGameObjectWithTag("CausticsGenerator");
-        causticsGen.SetActive(DoUseCaustics);
+        causticsGen.SetActive(DoUseCaustics && Application.isEditor);
     }
 
     public void UpdateSettings()

@@ -274,6 +274,8 @@ public class SceneManager : MonoBehaviour
             // Sensors
             foreach (var sensor in rigidBody.linkedSensors)
             {
+                if (!sensor.isActiveAndEnabled) continue;
+
                 if (sensors.Contains(sensor))
                 {
                     Debug.LogWarning("Duplicate sensor " + sensor.name);
