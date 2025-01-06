@@ -95,9 +95,10 @@ public class Main : MonoBehaviour
 #region Render Pipeline
     public FluidRenderMethod FluidRenderMethod;
     public SampleMethod SampleMethod;
+    public CausticsType CausticsTypeEditor;
+    public CausticsType CausticsTypeBuild;
     public bool DoDrawFluidOutlines;
     public bool DoDisplayFluidVelocities;
-    [SerializeField] public bool DoUseCaustics;
     public bool DoDrawUnoccupiedFluidSensorArea;
     public bool DoDrawRBOutlines;
     public bool DoDrawRBCentroids;
@@ -123,6 +124,9 @@ public class Main : MonoBehaviour
     public float Saturation;
     public float Gamma;
     public float SettingsViewDarkTintPercent;
+    public float PrecomputedCausticsFPS;
+    public float CausticsScaleFactor;
+    public float PrecomputedCausticsZBlurFactor;
 
     // Rigid Body Springs
     public float SpringRenderWidth;
@@ -181,7 +185,8 @@ public class Main : MonoBehaviour
 #region References
     // Textures
     public RenderTexture uiTexture;
-    public RenderTexture causticsTexture;
+    public RenderTexture dynamicCausticsTexture;
+    public Texture2DArray precomputedCausticsTexture;
 
     // Scripts
     public MaterialInput materialInput;
@@ -237,6 +242,8 @@ public class Main : MonoBehaviour
     [NonSerialized] public int NumRigidBodies;
     [NonSerialized] public int NumRigidBodyVectors;
     [NonSerialized] public int NumFluidSensors;
+    [NonSerialized] public CausticsType CausticsType;
+    [NonSerialized] public int3 PrecomputedCausticsDims;
 
     // Private references
     [NonSerialized] public RenderTexture renderTexture;
@@ -396,7 +403,7 @@ public class Main : MonoBehaviour
     private void InitCausticsGen()
     {
         if (causticsGen == null) causticsGen = GameObject.FindGameObjectWithTag("CausticsGenerator");
-        causticsGen.SetActive(DoUseCaustics && Application.isEditor);
+        causticsGen.SetActive(CausticsType == CausticsType.Dynamic);
     }
 
     public void UpdateSettings()
@@ -476,8 +483,10 @@ public class Main : MonoBehaviour
         else renderShader.DisableKeyword("DRAW_FLUID_OUTLINES");
         if (DoDisplayFluidVelocities) renderShader.EnableKeyword("DISPLAY_FLUID_VELOCITIES");
         else renderShader.DisableKeyword("DISPLAY_FLUID_VELOCITIES");
-        if (DoUseCaustics) renderShader.EnableKeyword("USE_CAUSTICS");
+        if (CausticsType != CausticsType.None) renderShader.EnableKeyword("USE_CAUSTICS");
         else renderShader.DisableKeyword("USE_CAUSTICS");
+        if (CausticsType == CausticsType.Dynamic) renderShader.EnableKeyword("USE_DYNAMIC_CAUSTICS");
+        else renderShader.DisableKeyword("USE_DYNAMIC_CAUSTICS");
         if (DoDrawUnoccupiedFluidSensorArea) renderShader.EnableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
         else renderShader.DisableKeyword("DRAW_UNOCCUPIED_FLUID_SENSOR_AREA");
         if (DoDrawRBOutlines) renderShader.EnableKeyword("DRAW_RB_OUTLINES");
@@ -568,6 +577,8 @@ public class Main : MonoBehaviour
         ParticlesNum_NextPow2 = Func.NextPow2(MaxParticlesNum);
         ParticlesNum_NextLog2 = (int)Math.Log(ParticlesNum_NextPow2, 2);
         PTypesNum = pTypeInput.particleTypeStates.Length * 3;
+        CausticsType = Application.isEditor ? CausticsTypeEditor : CausticsTypeBuild;
+        PrecomputedCausticsDims = new(precomputedCausticsTexture.width, precomputedCausticsTexture.height, precomputedCausticsTexture.depth);
     }
 
     private void InitializeBuffers(PData[] PDatas, RBData[] RBDatas, RBVector[] RBVectors, SensorArea[] SensorAreas)
@@ -715,6 +726,7 @@ public class Main : MonoBehaviour
             PM.Instance.timeSetRandTimer %= TimeSetRandInterval;
         }
         renderShader.SetFloat("TimeSetLerpFactor", PM.Instance.timeSetRandTimer / TimeSetRandInterval);
+        renderShader.SetInt("PrecomputedCausticsZ", Mathf.FloorToInt(PM.Instance.totalScaledTimeElapsed * PrecomputedCausticsFPS));
 
         // Global brightness
         renderShader.SetFloat("GlobalBrightnessFactor", PM.Instance.globalBrightnessFactor);

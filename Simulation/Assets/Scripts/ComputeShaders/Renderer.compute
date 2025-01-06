@@ -8,6 +8,7 @@
 #pragma multi_compile _ DRAW_FLUID_OUTLINES
 #pragma multi_compile _ DISPLAY_FLUID_VELOCITIES
 #pragma multi_compile _ USE_CAUSTICS
+#pragma multi_compile _ USE_DYNAMIC_CAUSTICS
 #pragma multi_compile _ DRAW_UNOCCUPIED_FLUID_SENSOR_AREA
 #pragma multi_compile _ DRAW_RB_OUTLINES
 #pragma multi_compile _ USE_METABALLS
@@ -69,6 +70,9 @@ const int ParticlesNum;
 const uint PTypesNum;
 const uint NumRigidBodies;
 const uint NumFluidSensors;
+const int3 PrecomputedCausticsDims;
+const float CausticsScaleFactor;
+const float PrecomputedCausticsZBlurFactor;
 
 // Global rendering settings
 const float3 GlobalBrightness;
@@ -82,11 +86,14 @@ const float TotalScaledTimeElapsed;
 const int LastTimeSetRand;
 const int NextTimeSetRand;
 const float TimeSetLerpFactor;
+const int PrecomputedCausticsZ;
 
 RWStructuredBuffer<int> RecordedElements;
 RWTexture2D<unorm float4> Result;
 
-Texture2D<unorm float4> Caustics;
+Texture2D<unorm float4> DynamicCaustics;
+Texture2DArray<unorm float> PrecomputedCaustics;
+
 Texture2D<unorm float4> LiquidVelocityGradient;
 Texture2D<unorm float4> GasVelocityGradient;
 Texture2D<unorm float4> UITexture;
@@ -382,14 +389,34 @@ float NoiseDensity(float dst, float invRadius, int pSeed)
 
 float3 SampleCaustics(uint2 threadID, float3 sampleColMul)
 {
-    float2 causticsTexDims = GetTexDims(Caustics);
-    float2 baseCausticsRes = 512;
+    float2 referenceCausticsRes = 512;
 
-    uint2 wrappedThreadID = (threadID * causticsTexDims / (baseCausticsRes)) % causticsTexDims;
+    float caustics;
+    #if USE_DYNAMIC_CAUSTICS
+        float2 causticsTexDims = GetTexDims(DynamicCaustics);
+    
+        uint2 wrappedThreadID = (uint2)(threadID * CausticsScaleFactor * causticsTexDims / referenceCausticsRes) % causticsTexDims;
+    
+        caustics = (float)DynamicCaustics[wrappedThreadID].rgb;
+    #else
+        uint2 wrappedThreadID = (uint2)(threadID * CausticsScaleFactor * PrecomputedCausticsDims.xy / referenceCausticsRes) % PrecomputedCausticsDims.xy;
 
-    float3 fluidCol = sampleColMul * Caustics[wrappedThreadID].rgb;
+        uint zDim = PrecomputedCausticsDims.z;
+        uint z = PrecomputedCausticsZ;
 
-    return fluidCol;
+        float current = PrecomputedCaustics.Load(int4(wrappedThreadID, z % zDim, 0));
+        float next = PrecomputedCaustics.Load(int4(wrappedThreadID, (z + 1) % zDim, 0));
+        float prev = PrecomputedCaustics.Load(int4(wrappedThreadID, (z - 1 + zDim) % zDim, 0));
+        
+        float noBlur = current;
+        float fullBlur = (current + next + prev) / 3.0;
+        
+        caustics = lerp(noBlur, fullBlur, PrecomputedCausticsZBlurFactor);
+    #endif
+
+    float3 color = caustics * sampleColMul;
+
+    return color;
 }
 
 float2 MirrorRepeatUV(float2 uv)

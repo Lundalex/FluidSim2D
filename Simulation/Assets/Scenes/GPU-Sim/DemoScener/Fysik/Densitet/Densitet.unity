@@ -132,8 +132,6 @@ GameObject:
   - component: {fileID: 486539}
   - component: {fileID: 486544}
   - component: {fileID: 486538}
-  - component: {fileID: 486542}
-  - component: {fileID: 486543}
   m_Layer: 0
   m_Name: Simulation
   m_TagString: MainCamera
@@ -249,8 +247,8 @@ MonoBehaviour:
   LookAheadTime: 0.017
   StateThresholdPadding: 0.36
   MaxInfluenceRadius: 2
-  MaxParticlesNum: 15000
-  MaxStartingParticlesNum: 10000
+  MaxParticlesNum: 30000
+  MaxStartingParticlesNum: 20000
   MaxSpringsPerParticle: 0
   BoundaryDims:
     x: 480
@@ -263,11 +261,11 @@ MonoBehaviour:
   RB_RBCollisionCorrectionFactor: 0.5
   RB_RBFixedCollisionCorrection: 0
   RB_RBRigidConstraintCorrectionFactor: 10
-  TimeStepsPerFrame: 2
-  SubTimeStepsPerFrame: 4
+  TimeStepsPerFrame: 3
+  SubTimeStepsPerFrame: 3
   TimeStepType: 1
   TargetFrameRate: 0
-  TimeStep: 0.001
+  TimeStep: 0.0015
   ProgramSpeed: 7
   MaxInteractionRadius: 0
   InteractionAttractionPower: 8
@@ -281,9 +279,10 @@ MonoBehaviour:
   RB_InteractionDampening: 0.5
   FluidRenderMethod: 0
   SampleMethod: 1
+  CausticsTypeEditor: 1
+  CausticsTypeBuild: 1
   DoDrawFluidOutlines: 1
   DoDisplayFluidVelocities: 1
-  DoUseCaustics: 1
   DoDrawUnoccupiedFluidSensorArea: 1
   DoDrawRBOutlines: 1
   DoDrawRBCentroids: 0
@@ -302,6 +301,9 @@ MonoBehaviour:
   Saturation: 1
   Gamma: 1
   SettingsViewDarkTintPercent: 0.8
+  PrecomputedCausticsFPS: 30
+  CausticsScaleFactor: 0.6
+  PrecomputedCausticsZBlurFactor: 1
   SpringRenderWidth: 20
   SpringRenderMatWidth: 2
   SpringRenderRodLength: 3
@@ -311,7 +313,7 @@ MonoBehaviour:
     x: 10
     y: 1
   LiquidMetaballsThreshold: 2.2
-  LiquidMetaballsEdgeDensityWidth: 1
+  LiquidMetaballsEdgeDensityWidth: 0.7
   VisualLiquidParticleRadius: 1.5
   LiquidEdgeWidth: 0.5
   LiquidVelocityGradient:
@@ -398,7 +400,8 @@ MonoBehaviour:
   BackgroundUpScaleFactor: 1
   MirrorRepeatBackgroundUV: 0
   uiTexture: {fileID: 8400000, guid: 3f8f5277ec04f5048946bcec7a320ab1, type: 2}
-  causticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
+  dynamicCausticsTexture: {fileID: 8400000, guid: c94d9a94a54ed7644930b02601923171, type: 2}
+  precomputedCausticsTexture: {fileID: 18700000, guid: 7113ae531c521ed4983e6fc8829ec351, type: 2}
   materialInput: {fileID: 607467576}
   pTypeInput: {fileID: 1543420959}
   sceneManager: {fileID: 1751344381}
@@ -408,59 +411,6 @@ MonoBehaviour:
   rbSimShader: {fileID: 7200000, guid: 262942b13b71cb34685c0e9873f5a06c, type: 3}
   sortShader: {fileID: 7200000, guid: 3758f915db2f95643b063d688e601ef2, type: 3}
   debugShader: {fileID: 7200000, guid: edb6c9c322a48a74e8d30bb0c1a89728, type: 3}
---- !u!33 &486542
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 486536}
-  m_Mesh: {fileID: 0}
---- !u!23 &486543
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 486536}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: a0c946359134cf64ebb6ea0f0b504cee, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &486544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2655,7 +2605,7 @@ MonoBehaviour:
     sampleColorMultiplier:
       x: 0
       y: 0
-      z: 2
+      z: 3
     edgeColor:
       x: 1
       y: 1
@@ -2824,9 +2774,9 @@ MonoBehaviour:
       y: 0
       z: 0
     sampleColorMultiplier:
-      x: 2
-      y: 2
-      z: 2
+      x: 1.5
+      y: 1.5
+      z: 1.5
     edgeColor:
       x: 1
       y: 1
@@ -6645,6 +6595,10 @@ PrefabInstance:
       value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: displayValueLerpThreshold
       value: 0
       objectReference: {fileID: 0}
@@ -6777,6 +6731,10 @@ PrefabInstance:
     - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: rigidBodySensorType
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
+      propertyPath: graphPositionOffsetX
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9058606896333537449, guid: 4f231bc4239e6f442a36fa0d9a225722, type: 3}
       propertyPath: displayValueLerpThreshold
@@ -7817,7 +7775,7 @@ MonoBehaviour:
   m_animateInEditMode: 1
   m_pause: 0
   m_unscaledTime: 1
-  m_density: 1
+  m_density: 0.85
   m_height: 1
   m_speed: 1
   m_flow: 0

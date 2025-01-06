@@ -15,7 +15,7 @@
         <ui:Slider label="Rigid Correction" value="5" high-value="50" binding-path="RB_RBRigidConstraintCorrectionFactor" show-input-field="true" fill="true" tooltip="Correction factor for rigid RB-RB constraints. A low value will decrease jittering at the cost of simulation accuracy. A very high value may make the simulation unstable." low-value="0.1" />
     </ui:Foldout>
     <ui:Foldout text="Scene Boundary" name="SceneBoundary" value="true" style="-unity-font-style: bold; border-bottom-width: 2px; border-top-width: 2px; border-right-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-bottom: 4px; padding-right: 4px; padding-left: 4px;">
-        <uie:PropertyField binding-path="BoundaryDims" tooltip="The dimensions of the simulation boundary." name="BoundaryDims" label="BoundaryDims" style="left: -3px;" />
+        <uie:PropertyField binding-path="BoundaryDims" tooltip="The dimensions of the simulation boundary measured in sim. l.u" label="Dimensions" style="left: -3px;" />
         <uie:PropertyField binding-path="FluidPadding" tooltip="Boundary padding unable for particles to enter." />
         <uie:PropertyField binding-path="RigidBodyPadding" tooltip="The boundary padding which rigid bodies cannot enter." label="Rigid Body Padding" />
         <ui:Slider label="Boundary Elasticity" value="0.2" high-value="1" binding-path="BoundaryElasticity" fill="true" page-size="0" show-input-field="true" tooltip="The boundary elasticity used for rigidbody-boundary collisions." />
@@ -78,9 +78,10 @@
     <ui:Foldout text="Render Pipeline" name="RenderPipeline" value="true" style="-unity-font-style: bold; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-color: rgb(0, 0, 0); padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
         <ui:EnumField label="Fluid Render Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="FluidRenderMethod" tooltip="Which algorithm to use for defining &amp; drawing of the fluids." />
         <ui:EnumField label="Sample Method" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="SampleMethod" tooltip="Which method to use for texture sampling. &apos;Bilinear&apos; is more computationally expensive than &apos;Point&apos; but also has higher sample quality." />
+        <ui:EnumField label="Editor Caustics" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="CausticsTypeEditor" tooltip="Whether to use a caustics texture for fluid rendering, and if so, whether it should be procedually generated (Dynamic) or sampled from a precomputed texture (Precomputed). Only affects the program when run in the editor" />
+        <ui:EnumField label="Build Caustics" value="Left" type="FluidRenderMethod, Assembly-CSharp" binding-path="CausticsTypeBuild" tooltip="Whether to use a caustics texture for fluid rendering, and if so, whether it should be procedually generated (Dynamic) or sampled from a precomputed texture (Precomputed). Only affects the program when run as a build" />
         <ui:Toggle label="Fluid Outlines" binding-path="DoDrawFluidOutlines" tooltip="Whether to draw fluid outlines (at the &quot;RenderFluids&quot; render step)." />
         <ui:Toggle label="Fluid Velocities" value="true" binding-path="DoDisplayFluidVelocities" tooltip="Whether to display fluid velocities by tinting the red color channel with the average velocity of the neighbouring particles." />
-        <ui:Toggle label="Use Caustics" binding-path="DoUseCaustics" tooltip="Whether to use the caustics generator for fluid rendering. This may affect performance (depending on the caustics generator settings)." name="Toggle" />
         <ui:Toggle label="Unoccupied Area" binding-path="DoDrawUnoccupiedFluidSensorArea" tooltip="Whether to tint unoccupied fluid sensor area." value="true" />
         <ui:Toggle label="Rigid Body Outlines" tooltip="Whether to draw rigid body outlines (at &quot;RenderRigidBodies&quot; render step)." binding-path="DoDrawRBOutlines" />
         <ui:Toggle label="Rigid Body Centroids" binding-path="DoDrawRBCentroids" tooltip="Whether to draw rigid body centroids (at &quot;RenderRigidBodies&quot; render step)." />
@@ -92,11 +93,16 @@
         <uie:PropertyField binding-path="UIPadding" label="UI Padding" tooltip="Border padding for UI elements." />
         <uie:PropertyField binding-path="LightingSettings" label="Lighting Settings" tooltip="Recommended: Set to the target platform. Global render lighting settings." />
         <uie:PropertyField binding-path="GlobalBrightness" label="Global Brightness" tooltip="Brightness modifier used for all textures." />
+        <ui:Slider label="Brightness Speed" value="0.4" high-value="10" binding-path="GlobalBrightnessChangeSpeed" tooltip="The speed of the interpolation between the target global brightness, and the current value." show-input-field="true" fill="true" name="Slider" low-value="0.1" />
         <ui:Slider label="Contrast" value="1" high-value="2" binding-path="Contrast" tooltip="Global render color contrast." show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Saturation" value="1" high-value="2" binding-path="Saturation" tooltip="Global render color saturation." show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Gamma" value="1" high-value="2" binding-path="Gamma" tooltip="Global render color gamma." show-input-field="true" fill="true" name="Slider" />
         <ui:Slider label="Settings View Dark Tint" value="0.4" high-value="1" binding-path="SettingsViewDarkTintPercent" tooltip="Darkness modifier applied to the whole render texture whenever a sensor settings view is active." show-input-field="true" fill="true" name="Slider" />
-        <ui:Slider label="Brightness Speed" value="0.4" high-value="10" binding-path="GlobalBrightnessChangeSpeed" tooltip="The speed of the interpolation between the target global brightness, and the current value." show-input-field="true" fill="true" name="Slider" low-value="0.1" />
+        <ui:Foldout text="Caustics" name="Caustics" value="true" style="-unity-font-style: bold;">
+            <uie:PropertyField binding-path="PrecomputedCausticsFPS" label="Precomputed FPS" tooltip="Frames of the precomputed caustics texture scrolled through per second. This directly influences the scroll speed" />
+            <uie:PropertyField binding-path="CausticsScaleFactor" label="Scale Factor" tooltip="Scale factor applied to each pixel&apos;s position value before sampling the caustics texture" />
+            <ui:Slider label="Precomputed Z Blur" value="1" high-value="1" binding-path="PrecomputedCausticsZBlurFactor" tooltip="How much to blur the samples from neighbouring frames of the caustics texture. 0: Only sample the current frame in the sequence. 1: Give equal weights to the current, previous, and next frames in the sequence" show-input-field="true" fill="true" name="Slider" />
+        </ui:Foldout>
         <ui:Foldout text="Fluids" name="Fluids" value="true" style="-unity-font-style: bold;">
             <ui:Foldout text="Liquids" name="Liquids" value="true">
                 <uie:PropertyField binding-path="LiquidMetaballsThreshold" label="Metaballs Threshold" tooltip="The threshold for the metaballs step function which determines whether a pixel is inside or outside the liquid." />
@@ -148,10 +154,11 @@
             <ui:Toggle label="Mirror Repeat" value="false" tooltip="Whether to use a mirrored uv repetition pattern. Otherwise, A modulo 1 operation will be applied." binding-path="MirrorRepeatBackgroundUV" />
         </ui:Foldout>
     </ui:Foldout>
-    <ui:Foldout text="References" name="References" toggle-on-label-click="true" value="false" style="-unity-font-style: bold; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
+    <ui:Foldout text="References" name="References" toggle-on-label-click="true" value="true" style="-unity-font-style: bold; padding-bottom: 4px; padding-top: 4px; padding-right: 4px; padding-left: 4px;">
         <ui:Label text="Textures" style="left: -10px;" />
         <uie:ObjectField label="UI" binding-path="uiTexture" />
-        <uie:ObjectField label="Caustics" binding-path="causticsTexture" />
+        <uie:ObjectField label="Dynamic Caustics" binding-path="dynamicCausticsTexture" />
+        <uie:ObjectField label="Precomputed Caustics" binding-path="precomputedCausticsTexture" />
         <ui:Label text="Scripts" style="left: -10px;" />
         <uie:ObjectField label="Material Input" binding-path="materialInput" />
         <uie:ObjectField label="Particle Type Input" binding-path="pTypeInput" />
