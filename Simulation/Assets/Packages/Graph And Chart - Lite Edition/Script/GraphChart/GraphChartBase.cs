@@ -73,7 +73,6 @@ namespace ChartAndGraph
         /// <summary>
         /// The height ratio of the chart
         /// </summary>
-        [SerializeField]
         public float HeightRatio
         {
             get { return heightRatio; }

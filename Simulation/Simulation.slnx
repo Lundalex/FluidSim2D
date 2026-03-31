@@ -1,0 +1,8 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="GraphAndChart.csproj" />
+  <Project Path="BuildReportTool.csproj" />
+  <Project Path="WaterCausticsModules.TexGen.csproj" />
+  <Project Path="Bitsplash.GraphAndChart.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+</Solution>

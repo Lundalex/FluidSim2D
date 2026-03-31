@@ -56,11 +56,11 @@
         "temp/": true,
         "Temp/": true,
         "files.associations": {
-            "*.shader" : "hlsl",
-            "*.compute" : "hlsl"
-          }
+            "*.shader": "hlsl",
+            "*.compute": "hlsl"
+        }
     },
-    "dotnet.defaultSolution": "Simulation.sln",
+    "dotnet.defaultSolution": "Simulation.slnx",
     "cmake.configureOnOpen": true,
     "git.ignoreLimitWarning": true
 }

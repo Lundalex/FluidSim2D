@@ -23,6 +23,7 @@ TagManager:
   - LifeCycleManager
   - FluidSensor
   - NotificationManager2
+  - FPSTAGTEMP
   layers:
   - Default
   - TransparentFX

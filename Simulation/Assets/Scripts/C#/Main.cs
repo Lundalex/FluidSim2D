@@ -7,6 +7,7 @@ using Resources2;
 using System.Collections.Generic;
 using PM = ProgramManager;
 using Debug = UnityEngine.Debug;
+using TMPro;
 
 public class Main : MonoBehaviour
 {
@@ -335,6 +336,9 @@ public class Main : MonoBehaviour
     
     public void UpdateScript()
     {
+        TMP_Text fpsText = GameObject.FindGameObjectWithTag("FPSTAGTEMP").GetComponent<TMP_Text>();
+        fpsText.text = (1f / Time.deltaTime).ToString();
+
         UpdateSimulationPDatas();
 
         DeltaTime = GetDeltaTime();
